@@ -1,10 +1,10 @@
-#Diff
+# Diff
 
 Makes a `diff` between two strings, pointing out the different characters.
 
-##Example
+## Example
 
-###In C
+### In C
 
 As in `main.c`...
 
@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 }
 ```
 
-###In the command line
+### In the command line
 
 ``` bash
 $ ./diff algorithm algorism
