@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "diff.h"
@@ -6,20 +5,18 @@
 #define DELTA 5
 #define ALPHA 1
 
-static char *loc[3] = {
-    "qwertyuiop",
-    "asdfghjkl",
-    "zxcvbnm"
+static char *loc[] = {
+    "\"!@#$%*()_+",
+    "'1234567890-=",
+    "qwertyuiop[`{",
+    "asdfghjklç~]^{",
+    "\\|zxcvbnm,.<>;/:"
 };
 
-int abs(int x) {
-    return x < 0 ? -x : x;
-}
-
-int coord(char c, int *x, int *y)
+static int coord(char c, int *x, int *y)
 {
     char coff = 'A' - 'a'; // Case offset
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < sizeof(loc)/sizeof(*loc); i++) {
         char *line = loc[i];
         for (int j = 0; j < strlen(line); j++) {
             char ch = line[j];
@@ -33,26 +30,26 @@ int coord(char c, int *x, int *y)
     return 1;
 }
 
-int alpha(char a, char b)
+static int alpha(char a, char b)
 {
     if (a == b) return 0;
     int posa[2], posb[2];
-    if (coord(a, &posa[0], &posa[1])) return 1;
-    if (coord(b, &posb[0], &posb[1])) return 1;
+    if (coord(a, &posa[0], &posa[1])) return ALPHA;
+    if (coord(b, &posb[0], &posb[1])) return ALPHA;
     return abs(posa[0] - posb[0]) + abs(posa[1] - posb[1]);
 }
 
 int diff(char *s1, char *s2)
 {
-    if (!s1 || !s2) return 1;
+    if (!s1 || !s2) return -1;
 
     int l1 = strlen(s1), l2 = strlen(s2);
     int *M = malloc((l1+1)*sizeof(int));
-    if (!M) return 1;
+    if (!M) return -1;
     int *N = malloc((l1+1)*sizeof(int));
     if (!N) {
         free(M);
-        return 1;
+        return -1;
     }
 
     for (int i = 0; i <= l1; i++)
@@ -75,9 +72,10 @@ int diff(char *s1, char *s2)
         }
     }
 
-    printf("Cost = %d\n", M[l1]);
+    int cost = M[l1];
 
     free(M);
     free(N);
-    return 0;
+
+    return cost;
 }
