@@ -1,29 +1,21 @@
 #include <stdio.h>
 #include "graph.h"
 
-int free_count = 0;
+Graph *g = NULL;
 
-void free_cb(void *p)
+char *test(GraphReturnID *pid, size_t v)
 {
-    ++free_count;
-}
-
-char *test(GraphReturnID *pid, int v)
-{
-    Graph *g;
-    if (*pid = GraphCreate(&g, v, free_cb))
+    size_t size;
+    if (*pid = GraphCreate(&g, v))
         return "Could not create graph";
-    if (*pid = GraphDestroy(g))
-        return "Could not destroy graph";
-    if (free_count != 0)
-        return "Called free_cb even though no vertices were added";
+    if ((*pid = GraphGetNumberOfVertices(g, &size)) || size != v)
+        return "Could not determine number of vertices or it is wrong";
     return NULL;
 }
 
 int main(int argc, char **argv)
 {
     GraphReturnID id;
-    char *str;
     size_t v = 10;
     if (argc >= 2) {
         if (sscanf(argv[1], "%zu", &v) != 1 || v == 0) {
@@ -31,7 +23,10 @@ int main(int argc, char **argv)
             return 1;
         }
     }
-    if (str = test(&id, v)) {
+    char *str = test(&id, v);
+    GraphDestroy(g);
+    g = NULL;
+    if (str) {
         if (id) {
             fprintf(stderr, "Error #%d: %s\n", id, str);
         } else {

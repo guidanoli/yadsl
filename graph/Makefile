@@ -1,22 +1,34 @@
-lib: libgraph.so
+lib: libset.so libgraph.so
 
-tests: t.graph.out
+tests: set.test.out graph.test.out
 
 all: lib tests
 
-libgraph.so: graph.o
-	$(CC) $< -shared -o $@
+clean:
+	rm -rf *.so *.o *.out
+
+libset.so: set.o
+	$(CC) $^ -shared -o $@
+
+libgraph.so: graph.o set.o
+	$(CC) $^ -shared -o $@
 
 graph.o: graph.c
 	$(CC) -c -fPIC $< -o $@
 
-t.graph.out: t.graph.o libgraph.so
+set.o: set.c
+	$(CC) -c -fPIC $< -o $@
+
+graph.test.out: graph.test.o libgraph.so
 	$(CC) $^ -L. -lgraph -Wl,-R. -o $@
 
-t.graph.o: t.graph.c
+graph.test.o: graph.test.c
 	$(CC) -c $< -o $@
 
-clean:
-	rm -rf *.so *.o *.out
+set.test.out: set.test.o libset.so
+	$(CC) $^ -L. -lset -Wl,-R. -o $@
+
+set.test.o: set.test.c
+	$(CC) -c $< -o $@
 
 .PHONY: lib tests all clean
