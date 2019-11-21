@@ -15,7 +15,7 @@ struct Set
     struct SetItem *last;
 };
 
-SetReturnID SetCreate(Set **ppSet)
+SetReturnID setCreate(Set **ppSet)
 {
     if (ppSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
@@ -30,7 +30,7 @@ SetReturnID SetCreate(Set **ppSet)
 }
 
 // If set contains item, sets it as current item
-SetReturnID SetContains(Set *pSet, size_t value)
+SetReturnID setContains(Set *pSet, size_t value)
 {
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
@@ -56,11 +56,11 @@ SetReturnID SetContains(Set *pSet, size_t value)
     return contains;
 }
 
-SetReturnID SetAdd(Set *pSet, size_t value)
+SetReturnID setAdd(Set *pSet, size_t value)
 {
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (SetContains(pSet, value) == SET_RETURN_CONTAINS)
+    if (setContains(pSet, value) == SET_RETURN_CONTAINS)
         return SET_RETURN_CONTAINS;
     struct SetItem *pItem = malloc(sizeof(struct SetItem));
     if (pItem == NULL)
@@ -111,11 +111,11 @@ SetReturnID SetAdd(Set *pSet, size_t value)
     return SET_RETURN_OK;
 }
 
-SetReturnID SetRemove(Set *pSet, size_t value)
+SetReturnID setRemove(Set *pSet, size_t value)
 {
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (SetContains(pSet, value) == SET_RETURN_DOES_NOT_CONTAIN)
+    if (setContains(pSet, value) == SET_RETURN_DOES_NOT_CONTAIN)
         return SET_RETURN_DOES_NOT_CONTAIN;
     struct SetItem *p = pSet->current;
     if (p->next == NULL)
@@ -132,7 +132,7 @@ SetReturnID SetRemove(Set *pSet, size_t value)
     return SET_RETURN_OK;
 }
 
-void SetDestroy(Set *pSet)
+void setDestroy(Set *pSet)
 {
     if (pSet == NULL)
         return;

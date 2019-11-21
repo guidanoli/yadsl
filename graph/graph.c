@@ -4,54 +4,54 @@
 
 struct Graph
 {
-    Set **adjacency_sets;
-    size_t number_of_vertices;
+    Set **adjs; /* adjacency sets */
+    size_t size; /* number of vertices */
 };
 
 static SetReturnID lid;
 
-GraphReturnID GraphCreate(struct Graph **ppGraph, size_t number_of_vertices)
+GraphReturnID graphCreate(struct Graph **ppGraph, size_t size)
 {
-    if (ppGraph == NULL || number_of_vertices == 0)
+    if (ppGraph == NULL || size == 0)
         return GRAPH_RETURN_INVALID_PARAMETER;
     struct Graph *pGraph = malloc(sizeof(struct Graph));
     if (pGraph == NULL)
         return GRAPH_RETURN_MEMORY;
-    pGraph->adjacency_sets = malloc(sizeof(Set *)*number_of_vertices);
-    if (pGraph->adjacency_sets == NULL) {
+    pGraph->adjs = malloc(sizeof(Set *)*size);
+    if (pGraph->adjs == NULL) {
         free(pGraph);
         return GRAPH_RETURN_MEMORY;
     }
-    for (size_t i = 0; i < number_of_vertices; ++i) {
-        if ((lid = SetCreate(&(pGraph->adjacency_sets[i]))) != SET_RETURN_OK) {
+    for (size_t i = 0; i < size; ++i) {
+        if ((lid = setCreate(&(pGraph->adjs[i]))) != SET_RETURN_OK) {
             for (size_t j = 0; j < i; ++j)
-                SetDestroy(pGraph->adjacency_sets[j]);
-            free(pGraph->adjacency_sets);
+                setDestroy(pGraph->adjs[j]);
+            free(pGraph->adjs);
             free(pGraph);
             if (lid == SET_RETURN_MEMORY)
                 return GRAPH_RETURN_MEMORY;
             return GRAPH_RETURN_UNKNOWN_ERROR;
         }
     }
-    pGraph->number_of_vertices = number_of_vertices;
+    pGraph->size = size;
     *ppGraph = pGraph;
     return GRAPH_RETURN_OK;
 }
 
-GraphReturnID GraphGetNumberOfVertices(struct Graph *pGraph, size_t *pNumber)
+GraphReturnID graphGetNumberOfVertices(struct Graph *pGraph, size_t *pSize)
 {
     if (pGraph == NULL || pNumber == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
-    *pNumber = pGraph->number_of_vertices;
+    *pNumber = pGraph->size;
     return GRAPH_RETURN_OK;
 }
 
-void GraphDestroy(struct Graph *pGraph)
+void graphDestroy(struct Graph *pGraph)
 {
     if (pGraph == NULL)
         return;
-    for (size_t i = 0; i < pGraph->number_of_vertices; ++i)
-        SetDestroy(pGraph->adjacency_sets[i]);
-    free(pGraph->adjacency_sets);
+    for (size_t i = 0; i < pGraph->size; ++i)
+        setDestroy(pGraph->adjs[i]);
+    free(pGraph->adjs);
     free(pGraph);
 }

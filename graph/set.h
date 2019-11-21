@@ -28,10 +28,10 @@ SetReturnID;
 
 typedef struct Set Set;
 
-SetReturnID SetCreate(Set **ppSet);
-SetReturnID SetContains(Set *pSet, size_t value);
-SetReturnID SetAdd(Set *pSet, size_t value);
-SetReturnID SetRemove(Set *pSet, size_t value);
-void SetDestroy(Set *pSet);
+SetReturnID setCreate(Set **ppSet);
+SetReturnID setContains(Set *pSet, size_t value);
+SetReturnID setAdd(Set *pSet, size_t value);
+SetReturnID setRemove(Set *pSet, size_t value);
+void setDestroy(Set *pSet);
 
 #endif

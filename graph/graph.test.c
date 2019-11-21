@@ -6,9 +6,9 @@ Graph *g = NULL;
 char *test(GraphReturnID *pid, size_t v)
 {
     size_t size;
-    if (*pid = GraphCreate(&g, v))
+    if (*pid = graphCreate(&g, v))
         return "Could not create graph";
-    if ((*pid = GraphGetNumberOfVertices(g, &size)) || size != v)
+    if ((*pid = graphGetNumberOfVertices(g, &size)) || size != v)
         return "Could not determine number of vertices or it is wrong";
     return NULL;
 }
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
         }
     }
     char *str = test(&id, v);
-    GraphDestroy(g);
+    graphDestroy(g);
     g = NULL;
     if (str) {
         if (id) {

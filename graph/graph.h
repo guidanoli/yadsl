@@ -27,8 +27,8 @@ GraphReturnID;
 
 typedef struct Graph Graph;
 
-GraphReturnID GraphCreate(Graph **ppGraph, size_t number_of_vertices);
-GraphReturnID GraphGetNumberOfVertices(Graph *pGraph, size_t *pNumber);
-void GraphDestroy(Graph *pGraph);
+GraphReturnID graphCreate(Graph **ppGraph, size_t size);
+GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize);
+void graphDestroy(Graph *pGraph);
 
 #endif
