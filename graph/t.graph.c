@@ -8,10 +8,9 @@ void free_cb(void *p)
     ++free_count;
 }
 
-char *test(GraphReturnID *pid)
+char *test(GraphReturnID *pid, int v)
 {
     Graph *g;
-    const int v = 10;
     if (*pid = GraphCreate(&g, v, free_cb))
         return "Could not create graph";
     if (*pid = GraphDestroy(g))
@@ -21,16 +20,24 @@ char *test(GraphReturnID *pid)
     return NULL;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     GraphReturnID id;
     char *str;
-    if (str = test(&id)) {
+    size_t v = 10;
+    if (argc >= 2) {
+        if (sscanf(argv[1], "%zu", &v) != 1 || v == 0) {
+            fprintf(stderr, "Invalid graph size '%s'\n", argv[1]);
+            return 1;
+        }
+    }
+    if (str = test(&id, v)) {
         if (id) {
             fprintf(stderr, "Error #%d: %s\n", id, str);
         } else {
             fprintf(stderr, "Error: %s\n", str);
         }
+        return 1;
     } else {
         fprintf(stdout, "No errors.\n");
     }
