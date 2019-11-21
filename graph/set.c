@@ -36,7 +36,6 @@ SetReturnID setContains(Set *pSet, size_t value)
         return SET_RETURN_INVALID_PARAMETER;
     char direction = 0;
     struct SetItem *p = pSet->current;
-    SetReturnID contains = SET_RETURN_DOES_NOT_CONTAIN;
     while (p != NULL) {
         char current_direction;
         if (p->value > value) {
@@ -50,10 +49,10 @@ SetReturnID setContains(Set *pSet, size_t value)
             return SET_RETURN_CONTAINS;
         }
         if (current_direction == -direction)
-            return SET_RETURN_DOES_NOT_CONTAIN;
+            break;
         direction = current_direction;
     }
-    return contains;
+    return SET_RETURN_DOES_NOT_CONTAIN;
 }
 
 SetReturnID setAdd(Set *pSet, size_t value)
@@ -127,7 +126,7 @@ SetReturnID setRemove(Set *pSet, size_t value)
         pSet->current = p->next;
         pSet->first = p->next;
         if (p->next != NULL)
-            p->next->previous = p->previous;
+            p->next->previous = NULL;
     }
     return SET_RETURN_OK;
 }
