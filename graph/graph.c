@@ -40,9 +40,9 @@ GraphReturnID graphCreate(struct Graph **ppGraph, size_t size)
 
 GraphReturnID graphGetNumberOfVertices(struct Graph *pGraph, size_t *pSize)
 {
-    if (pGraph == NULL || pNumber == NULL)
+    if (pGraph == NULL || pSize == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
-    *pNumber = pGraph->size;
+    *pSize = pGraph->size;
     return GRAPH_RETURN_OK;
 }
 

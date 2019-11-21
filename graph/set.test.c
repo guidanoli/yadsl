@@ -17,6 +17,18 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
         if (sscanf(numbers[i], "-%zu", &number) == 1) {
             if (*pid = setRemove(s, number))
                 return "Could not remove number from set";
+        } else if (sscanf(numbers[i], "?%zu", &number) == 1) {
+            *pid = setContains(s, number);
+            switch (*pid) {
+                case SET_RETURN_CONTAINS:
+                    fprintf(stdout, "[%d] Contains %zu\n", *nid, number);
+                    break;
+                case SET_RETURN_DOES_NOT_CONTAIN:
+                    fprintf(stdout, "[%d] Does not contain %zu\n", *nid, number);
+                    break;
+                default:
+                    return "Could not assert if set contained number or not";
+            }
         } else {
             if (sscanf(numbers[i], "%zu", &number) != 1) {
                 *pid = INTERNAL_ERROR;
