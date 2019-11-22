@@ -19,7 +19,7 @@ SetReturnID setCreate(Set **ppSet)
 {
     if (ppSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    struct Set *pSet = malloc(sizeof(Set));
+    struct Set *pSet = malloc(sizeof(struct Set));
     if (pSet == NULL)
         return SET_RETURN_MEMORY;
     pSet->current = NULL;

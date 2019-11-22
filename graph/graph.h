@@ -20,8 +20,20 @@ typedef enum
     /* Tried to operate on the same vertex */
     GRAPH_RETURN_SAME_VERTEX,
 
+    /* Tried to operate out of boundaries */
+    GRAPH_RETURN_OUT_OF_BOUNDS,
+
+    /* Graph contains edge */
+    GRAPH_RETURN_CONTAINS_EDGE,
+
+    /* Graph does not contain edge */
+    GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE,
+
     /* When an internal error is unrecognized */
     GRAPH_RETURN_UNKNOWN_ERROR,
+
+    /* Something fatal occurred and left the structure unstable */
+    GRAPH_RETURN_FATAL_ERROR,
 }
 GraphReturnID;
 
@@ -29,6 +41,9 @@ typedef struct Graph Graph;
 
 GraphReturnID graphCreate(Graph **ppGraph, size_t size);
 GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize);
+GraphReturnID graphAddEdge(Graph *pGraph, size_t u, size_t v);
+GraphReturnID graphRemoveEdge(Graph *pGraph, size_t u, size_t v);
+GraphReturnID graphContainsEdge(Graph *pGraph, size_t u, size_t v);
 void graphDestroy(Graph *pGraph);
 
 #endif
