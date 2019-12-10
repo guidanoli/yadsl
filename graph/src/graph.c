@@ -12,23 +12,25 @@ static SetReturnID setID;
 
 GraphReturnID graphCreate(struct Graph **ppGraph, size_t size)
 {
+    struct Graph *pGraph;
+    size_t i, j;
     if (ppGraph == NULL || size == 0)
         return GRAPH_RETURN_INVALID_PARAMETER;
-    struct Graph *pGraph = malloc(sizeof(struct Graph));
+    pGraph = (struct Graph *) malloc(sizeof(struct Graph));
     if (pGraph == NULL)
         return GRAPH_RETURN_MEMORY;
     if (size > ((size_t) -1) / sizeof(Set *)) {
         free(pGraph);
         return GRAPH_RETURN_MEMORY;
     }
-    pGraph->adjs = malloc(sizeof(Set *)*size);
+    pGraph->adjs = (Set **) malloc(sizeof(Set *)*size);
     if (pGraph->adjs == NULL) {
         free(pGraph);
         return GRAPH_RETURN_MEMORY;
     }
-    for (size_t i = 0; i < size; ++i) {
+    for (i = 0; i < size; ++i) {
         if ((setID = setCreate(&(pGraph->adjs[i]))) != SET_RETURN_OK) {
-            for (size_t j = 0; j < i; ++j)
+            for (j = 0; j < i; ++j)
                 setDestroy(pGraph->adjs[j]);
             free(pGraph->adjs);
             free(pGraph);
@@ -123,9 +125,10 @@ GraphReturnID graphRemoveEdge(struct Graph *pGraph, size_t u, size_t v)
 
 void graphDestroy(struct Graph *pGraph)
 {
+    size_t i;
     if (pGraph == NULL)
         return;
-    for (size_t i = 0; i < pGraph->size; ++i)
+    for (i = 0; i < pGraph->size; ++i)
         setDestroy(pGraph->adjs[i]);
     free(pGraph->adjs);
     free(pGraph);

@@ -17,9 +17,10 @@ struct Set
 
 SetReturnID setCreate(Set **ppSet)
 {
+    struct Set *pSet;
     if (ppSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    struct Set *pSet = malloc(sizeof(struct Set));
+    pSet = (struct Set*) malloc(sizeof(struct Set));
     if (pSet == NULL)
         return SET_RETURN_MEMORY;
     pSet->current = NULL;
@@ -32,10 +33,11 @@ SetReturnID setCreate(Set **ppSet)
 // If set contains item, sets it as current item
 SetReturnID setContains(Set *pSet, size_t value)
 {
+    char direction = 0;
+    struct SetItem *p;
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    char direction = 0;
-    struct SetItem *p = pSet->current;
+    p = pSet->current;
     while (p != NULL) {
         char current_direction;
         if (p->value > value) {
@@ -57,17 +59,18 @@ SetReturnID setContains(Set *pSet, size_t value)
 
 SetReturnID setAdd(Set *pSet, size_t value)
 {
+    struct SetItem *pItem, *p;
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
     if (setContains(pSet, value) == SET_RETURN_CONTAINS)
         return SET_RETURN_CONTAINS;
-    struct SetItem *pItem = malloc(sizeof(struct SetItem));
+    pItem = (struct SetItem *) malloc(sizeof(struct SetItem));
     if (pItem == NULL)
         return SET_RETURN_MEMORY;
     pItem->next = NULL;
     pItem->previous = NULL;
     pItem->value = value;
-    struct SetItem *p = pSet->current;
+    p = pSet->current;
     pSet->current = pItem;
     if (p == NULL) {
         // empty set
@@ -112,11 +115,12 @@ SetReturnID setAdd(Set *pSet, size_t value)
 
 SetReturnID setRemove(Set *pSet, size_t value)
 {
+    struct SetItem *p;
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
     if (setContains(pSet, value) == SET_RETURN_DOES_NOT_CONTAIN)
         return SET_RETURN_DOES_NOT_CONTAIN;
-    struct SetItem *p = pSet->current;
+    p = pSet->current;
     if (p->next == NULL)
         pSet->last = p->previous;
     if (p->previous != NULL) {
@@ -133,10 +137,11 @@ SetReturnID setRemove(Set *pSet, size_t value)
 
 void setDestroy(Set *pSet)
 {
+    struct SetItem *current, *next;
     if (pSet == NULL)
         return;
-    struct SetItem *current = pSet->first;
-    struct SetItem *next = NULL;
+    current = pSet->first;
+    next = NULL;
     while (current != NULL) {
         next = current->next;
         free(current);
