@@ -7,6 +7,9 @@ Set *s;
 
 char *test(SetReturnID *pid, int *nid, char **numbers, int count)
 {
+    size_t number;
+    char cmd;
+    int i;
     if (*pid = setCreate(&s)) {
         if (*pid == SET_RETURN_MEMORY)
             s = NULL;
@@ -14,11 +17,9 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
     }
     if ((*pid = setContains(s, 0)) != SET_RETURN_DOES_NOT_CONTAIN)
         return "Found number in empty set";
-    size_t number;
-    char cmd;
-    for (int i = 0; i < count; ++i) {
+    for (i = 0; i < count; ++i) {
         *nid = i+1;
-        if (sscanf(numbers[i], "%zu%c", &number, &cmd) != 2)
+        if (sscanf(numbers[i], "%d%c", &number, &cmd) != 2)
             return "Parsing error";
         switch (cmd) {
             case '-':
@@ -33,10 +34,10 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
                 *pid = setContains(s, number);
                 switch (*pid) {
                     case SET_RETURN_CONTAINS:
-                        fprintf(stdout, "[%d] Contains %zu\n", *nid, number);
+                        fprintf(stdout, "[%d] Contains %d\n", *nid, number);
                         break;
                     case SET_RETURN_DOES_NOT_CONTAIN:
-                        fprintf(stdout, "[%d] Does not contain %zu\n", *nid, number);
+                        fprintf(stdout, "[%d] Does not contain %d\n", *nid, number);
                         break;
                     default:
                         return "Could not assert if set contained number or not";
