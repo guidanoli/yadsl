@@ -3,13 +3,11 @@
 
 Set *s;
 
-#define INTERNAL_ERROR 99
-
 char *test(SetReturnID *pid, int *nid, char **numbers, int count)
 {
     size_t number;
     char cmd;
-    int i;
+    int i, tokens;
     if (*pid = setCreate(&s)) {
         if (*pid == SET_RETURN_MEMORY)
             s = NULL;
@@ -19,32 +17,61 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
         return "Found number in empty set";
     for (i = 0; i < count; ++i) {
         *nid = i+1;
-        if (sscanf(numbers[i], "%d%c", &number, &cmd) != 2)
+        if ((tokens = sscanf(numbers[i], "%d%c", &number, &cmd)) != 2 &&
+            (tokens = sscanf(numbers[i], "%c", &cmd)) != 1)
             return "Parsing error";
-        switch (cmd) {
-            case '-':
-                if (*pid = setRemove(s, number))
-                    return "Could not remove number from set";
-                break;
-            case '+':
-                if (*pid = setAdd(s, number))
-                    return "Could not add number to set";
-                break;
-            case '?':
-                *pid = setContains(s, number);
-                switch (*pid) {
-                    case SET_RETURN_CONTAINS:
-                        fprintf(stdout, "[%d] Contains %d\n", *nid, number);
-                        break;
-                    case SET_RETURN_DOES_NOT_CONTAIN:
-                        fprintf(stdout, "[%d] Does not contain %d\n", *nid, number);
-                        break;
-                    default:
-                        return "Could not assert if set contained number or not";
-                }
-                break;
-            default:
-                return "Unknown command";
+        if (tokens == 1) {
+            switch (cmd) {
+                case 'p':
+                    if (*pid = setPreviousValue(s))
+                        return "Could not go to the previous value";
+                    break;
+                case 'n':
+                    if (*pid = setNextValue(s))
+                        return "Could not go to the next value";
+                    break;
+                case 'c':
+                    if (*pid = setGetCurrent(s, &number))
+                        return "Could not get current value";
+                    fprintf(stdout, "[%d] %d\n", *nid, number);
+                    break;
+                case 'f':
+                    if (*pid = setFirstValue(s))
+                        return "Could not go to the first value";
+                    break;
+                case 'l':
+                    if (*pid = setLastValue(s))
+                        return "Could not go to the last value";
+                    break;
+                default:
+                    return "Unknown command";
+            }
+        } else if (tokens == 2) {
+            switch (cmd) {
+                case '-':
+                    if (*pid = setRemove(s, number))
+                        return "Could not remove number from set";
+                    break;
+                case '+':
+                    if (*pid = setAdd(s, number))
+                        return "Could not add number to set";
+                    break;
+                case '?':
+                    *pid = setContains(s, number);
+                    switch (*pid) {
+                        case SET_RETURN_CONTAINS:
+                            fprintf(stdout, "[%d] Contains %d\n", *nid, number);
+                            break;
+                        case SET_RETURN_DOES_NOT_CONTAIN:
+                            fprintf(stdout, "[%d] Does not contain %d\n", *nid, number);
+                            break;
+                        default:
+                            return "Could not assert if set contained number or not";
+                    }
+                    break;
+                default:
+                    return "Unknown command";
+            }
         }
     }
     return NULL;
