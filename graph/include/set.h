@@ -3,8 +3,9 @@
 
 /**
 * A Set starts empty.
-* You are able to add and remove 64-bit values
-* and check if values are contained within a set.
+* You are able to add and remove 64-bit values,
+* check if values are contained within a set,
+* and iterate through them.
 */
 
 typedef enum
@@ -23,6 +24,12 @@ typedef enum
 
     /* Set does not contain a number */
     SET_RETURN_DOES_NOT_CONTAIN,
+
+    /* Empty set */
+    SET_RETURN_EMPTY,
+
+    /* Could not go backwards of forward in list */
+    SET_RETURN_OUT_OF_BOUNDS,
 }
 SetReturnID;
 
@@ -76,6 +83,64 @@ SetReturnID setAdd(Set *pSet, size_t value);
 *   - set does not contain value
 */
 SetReturnID setRemove(Set *pSet, size_t value);
+
+/**
+* Obtain current value pointed by the cursor
+* pSet      pointer to set
+* pValue    adress of variable that will hold the value
+* Possible errors:
+* SET_RETURN_INVALID_PARAMETER
+*   - "pSet" is NULL
+*   - "pValue" is NULL
+* SET_RETURN_EMPTY
+*/
+SetReturnID setGetCurrent(Set *pSet, size_t *pValue);
+
+/**
+* Make cursor point to the largest value smaller than
+* the one currently pointed to
+* pSet      pointer to set
+* Possible errors:
+* SET_RETURN_INVALID_PARAMETER
+*   - "pSet" is NULL
+* SET_RETURN_EMPTY
+* SET_RETURN_OUT_OF_BOUNDS
+*   - current value pointed is the smallest in set
+*/
+SetReturnID setPreviousValue(Set *pSet);
+
+/**
+* Make cursor point to the smallest value larger than
+* the one currently pointed to
+* pSet      pointer to set
+* Possible errors:
+* SET_RETURN_INVALID_PARAMETER
+*   - "pSet" is NULL
+* SET_RETURN_EMPTY
+* SET_RETURN_OUT_OF_BOUNDS
+*   - current value pointed is the largest in set
+*/
+SetReturnID setNextValue(Set *pSet);
+
+/**
+* Make cursor point to the smallest value in the set
+* pSet      pointer to set
+* Possible errors:
+* SET_RETURN_INVALID_PARAMETER
+*   - "pSet" is NULL
+* SET_RETURN_EMPTY
+*/
+SetReturnID setFirstValue(Set *pSet);
+
+/**
+* Make cursor point to the largest value in the set
+* pSet      pointer to set
+* Possible errors:
+* SET_RETURN_INVALID_PARAMETER
+*   - "pSet" is NULL
+* SET_RETURN_EMPTY
+*/
+SetReturnID setLastValue(Set *pSet);
 
 /**
 * Free set structure from memory

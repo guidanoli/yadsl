@@ -135,6 +135,60 @@ SetReturnID setRemove(Set *pSet, size_t value)
     return SET_RETURN_OK;
 }
 
+SetReturnID setGetCurrent(Set *pSet, size_t *pValue)
+{
+    if (pSet == NULL || pValue == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    if (pSet->current == NULL)
+        return SET_RETURN_EMPTY;
+    *pValue = pSet->current->value;
+    return SET_RETURN_OK;
+}
+
+SetReturnID setPreviousValue(Set *pSet)
+{
+    if (pSet == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    if (pSet->current == NULL)
+        return SET_RETURN_EMPTY;
+    if (pSet->current->previous == NULL)
+        return SET_RETURN_OUT_OF_BOUNDS;
+    pSet->current = pSet->current->previous;
+    return SET_RETURN_OK;
+}
+
+SetReturnID setNextValue(Set *pSet)
+{
+    if (pSet == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    if (pSet->current == NULL)
+        return SET_RETURN_EMPTY;
+    if (pSet->current->next == NULL)
+        return SET_RETURN_OUT_OF_BOUNDS;
+    pSet->current = pSet->current->next;
+    return SET_RETURN_OK;
+}
+
+SetReturnID setFirstValue(Set *pSet)
+{
+    if (pSet == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    if (pSet->current == NULL)
+        return SET_RETURN_EMPTY;
+    pSet->current = pSet->first;
+    return SET_RETURN_OK;
+}
+
+SetReturnID setLastValue(Set *pSet)
+{
+    if (pSet == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    if (pSet->current == NULL)
+        return SET_RETURN_EMPTY;
+    pSet->current = pSet->last;
+    return SET_RETURN_OK;
+}
+
 void setDestroy(Set *pSet)
 {
     struct SetItem *current, *next;
