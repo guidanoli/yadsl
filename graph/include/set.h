@@ -69,6 +69,7 @@ SetReturnID setContains(Set *pSet, size_t value);
 * SET_RETURN_CONTAINS
 *   - set already contains value
 * SET_RETURN_MEMORY
+* [!] This will make the cursor point to the newly added number
 */
 SetReturnID setAdd(Set *pSet, size_t value);
 
@@ -81,6 +82,7 @@ SetReturnID setAdd(Set *pSet, size_t value);
 *   - "pSet" is NULL
 * SET_RETURN_DOES_NOT_CONTAIN
 *   - set does not contain value
+* [!] This can alter the cursor
 */
 SetReturnID setRemove(Set *pSet, size_t value);
 

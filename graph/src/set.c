@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include "set.h"
 
+// A set is represented by an ordered double-linked list
+// in which each item is represented by a 64-bit unsigned int
+
 struct SetItem
 {
     struct SetItem *next;
@@ -14,6 +17,12 @@ struct Set
     struct SetItem *first;
     struct SetItem *last;
 };
+
+// Private functions prototypes
+
+static SetReturnID _setContains(Set *pSet, size_t value, struct SetItem **pItem);
+
+// Public functions
 
 SetReturnID setCreate(Set **ppSet)
 {
@@ -30,31 +39,10 @@ SetReturnID setCreate(Set **ppSet)
     return SET_RETURN_OK;
 }
 
-// If set contains item, sets it as current item
 SetReturnID setContains(Set *pSet, size_t value)
 {
-    char direction = 0;
-    struct SetItem *p;
-    if (pSet == NULL)
-        return SET_RETURN_INVALID_PARAMETER;
-    p = pSet->current;
-    while (p != NULL) {
-        char current_direction;
-        if (p->value > value) {
-            p = p->previous;
-            current_direction = -1;
-        } else if (p->value < value) {
-            p = p->next;
-            current_direction = 1;
-        } else {
-            pSet->current = p;
-            return SET_RETURN_CONTAINS;
-        }
-        if (current_direction == -direction)
-            break;
-        direction = current_direction;
-    }
-    return SET_RETURN_DOES_NOT_CONTAIN;
+    struct SetItem *p; // does nothing with p
+    return _setContains(pSet, value, &p);
 }
 
 SetReturnID setAdd(Set *pSet, size_t value)
@@ -118,20 +106,23 @@ SetReturnID setRemove(Set *pSet, size_t value)
     struct SetItem *p;
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (setContains(pSet, value) == SET_RETURN_DOES_NOT_CONTAIN)
+    if (_setContains(pSet, value, &p) == SET_RETURN_DOES_NOT_CONTAIN)
         return SET_RETURN_DOES_NOT_CONTAIN;
-    p = pSet->current;
     if (p->next == NULL)
         pSet->last = p->previous;
     if (p->previous != NULL) {
-        pSet->current = p->previous;
+        if (p == pSet->current)
+            pSet->current = p->previous;
         p->previous->next = p->next;
     } else {
-        pSet->current = p->next;
+        if (p == pSet->current)
+            pSet->current = p->next;
         pSet->first = p->next;
-        if (p->next != NULL)
-            p->next->previous = NULL;
     }
+    if (p->next != NULL) {
+        p->next->previous = p->previous;
+    }
+    free(p);
     return SET_RETURN_OK;
 }
 
@@ -202,4 +193,34 @@ void setDestroy(Set *pSet)
         current = next;
     }
     free(pSet);
+}
+
+// Private functions
+
+// Checks if number is contained in the set and if it is, makes
+// the pointer of address "pItem" point to it
+SetReturnID _setContains(Set *pSet, size_t value, struct SetItem **pItem)
+{
+    char direction = 0;
+    struct SetItem *p;
+    if (pSet == NULL || pItem == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    p = pSet->current;
+    while (p != NULL) {
+        char current_direction;
+        if (p->value > value) {
+            p = p->previous;
+            current_direction = -1;
+        } else if (p->value < value) {
+            p = p->next;
+            current_direction = 1;
+        } else {
+            *pItem = p;
+            return SET_RETURN_CONTAINS;
+        }
+        if (current_direction == -direction)
+            break;
+        direction = current_direction;
+    }
+    return SET_RETURN_DOES_NOT_CONTAIN;
 }
