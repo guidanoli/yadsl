@@ -1,14 +1,16 @@
 #include <stdio.h>
+#include <string.h>
 #include "graph.h"
 
 Graph *g = NULL;
 
-char *test(GraphReturnID *pid, int *nid, size_t size, char **cmds, int count)
+char *test(GraphReturnID *pid, int *nid, size_t size, GraphEdgeType type, char **cmds, int count)
 {
     size_t pSize, u, v;
-    char cmd;
+    char cmd, flag[128];
     int i, tokens;
-    if (*pid = graphCreate(&g, size)) {
+    GraphEdgeType t;
+    if (*pid = graphCreate(&g, size, type)) {
         if (*pid == GRAPH_RETURN_MEMORY)
             g = NULL;
         return "Could not create graph";
@@ -16,11 +18,38 @@ char *test(GraphReturnID *pid, int *nid, size_t size, char **cmds, int count)
     if ((*pid = graphGetNumberOfVertices(g, &pSize)) || pSize != size)
         return "Could not determine number of vertices or it is wrong";
     for (i = 0; i < count; ++i) {
-        *nid = i+2;
+        *nid = i+1;
+        if (sscanf(cmds[i], "--%s", flag) == 1)
+            continue;
         if ((tokens = sscanf(cmds[i], "%d,%d%c", &u, &v, &cmd)) != 3
-            && (tokens = sscanf(cmds[i], "%d%c", &u, &cmd)) != 2)
+            && (tokens = sscanf(cmds[i], "%d%c", &u, &cmd)) != 2
+            && (tokens = sscanf(cmds[i], "%c", &cmd)) != 1)
             return "Parsing error";
-        if (tokens == 2) {
+        if (tokens == 1) {
+            switch (cmd) {
+            case 't':
+                if (*pid = graphGetType(g, &t))
+                    return "Could not get type";
+                switch (t) {
+                case GRAPH_EDGE_TYPE_DIRECTED:
+                    fprintf(stdout, "[%d] Directed\n", *nid);
+                    break;
+                case GRAPH_EDGE_TYPE_UNDIRECTED:
+                    fprintf(stdout, "[%d] Undirected\n", *nid);
+                    break;
+                default:
+                    return "Unknown graph type";
+                }
+                break;
+            case 'n':
+                if (*pid = graphGetNumberOfVertices(g, &pSize))
+                    return "Could not get number of vertices";
+                fprintf(stdout, "[%d] %d\n", *nid, pSize);
+                break;
+            default:
+                return "Unknown command";
+            }
+        } else if (tokens == 2) {
             switch (cmd) {
             case 'i':
                 switch (*pid = graphGetNextNeighbour(g, u, &v)) {
@@ -74,20 +103,67 @@ char *test(GraphReturnID *pid, int *nid, size_t size, char **cmds, int count)
     return NULL;
 }
 
+char *parse(int *nid, size_t *pSize, GraphEdgeType *pType, char **argv, int argc)
+{
+    int i;
+    char flag[64], value[64], c = '0';
+    *nid = 1;
+    for (i = 0; i < argc; ++i) {
+        if (sscanf(argv[i], "--%[^=]=%s", flag, value) == 2) {
+            if (!strcmp(flag, "size")) {
+                if (sscanf(value, "%d%c", pSize, &c) != 1 || c != '0')
+                    return "Could not set graph size";
+            } else if (!strcmp(flag, "type")) {
+                if (!strcmp(value, "DIRECTED"))
+                    *pType = GRAPH_EDGE_TYPE_DIRECTED;
+                else if (!strcmp(value, "UNDIRECTED"))
+                    *pType = GRAPH_EDGE_TYPE_UNDIRECTED;
+                else
+                    return "Could not set graph type";
+            } else {
+                return "Unknown flag";
+            }
+        } else if (sscanf(argv[i], "--%s", flag) == 1) {
+            if (!strcmp(flag, "help")) {
+                printf("This is an interactive module of the graph library\n");
+                printf("You interact with one graph object at all times\n");
+                printf("Actions to the graph are parsed by the command line arguments\n");
+                printf("The registered actions are the following:\n");
+                printf("n\tprints the number of vertices\n");
+                printf("t\tprints the type of the graph\n");
+                printf("Xi\tprints next neighbour of edge X\n");
+                printf("Xn\tprints the number of neighbours of X\n");
+                printf("X,Y+\tadds edge XY\n");
+                printf("X,Y-\tremoves edge XY\n");
+                printf("X,Y?\tchecks if edge XY exists\n");
+                return NULL; /* abort parsing */
+            } else {
+                return "Unknown flag";
+            }
+        }
+        *nid++;
+    }
+    return NULL;
+}
+
 int main(int argc, char **argv)
 {
     GraphReturnID id;
     int nid = 1;
     size_t v = 10;
-    char **cmds = argc >= 3 ? argv + 2 : NULL;
-    char *str;
-    if (argc >= 2) {
-        if (sscanf(argv[1], "%d", &v) != 1 || v == 0) {
-            fprintf(stderr, "Invalid graph size '%s'\n", argv[1]);
-            return 1;
-        }
+    GraphEdgeType type = GRAPH_EDGE_TYPE_UNDIRECTED;
+    char *str = NULL, c = '0';
+    /* ignore program name */
+    char **commands = argv + 1;
+    int commandCount = argc - 1;
+    /* parse arguments */
+    str = parse(&nid, &v, &type, commands, commandCount);
+    if (str) {
+        fprintf(stderr, "Error while parsing argument #%d (%s): %s\n", nid, argv[nid], str);
+        return 1;
     }
-    str = test(&id, &nid, v, cmds, argc - 2);
+    /* run tests */
+    str = test(&id, &nid, v, type, commands, commandCount);
     if (g)
         graphDestroy(g);
     g = NULL;

@@ -41,12 +41,26 @@ typedef enum
 }
 GraphReturnID;
 
+typedef enum
+{
+    /* Undirected graph */
+    GRAPH_EDGE_TYPE_UNDIRECTED,
+
+    /* Directed graph */
+    GRAPH_EDGE_TYPE_DIRECTED,
+
+    // Technical - don't use this
+    GRAPH_EDGE_TYPE_INVALID,
+}
+GraphEdgeType;
+
 typedef struct Graph Graph;
 
 /**
 * Create a graph with no edges
 * ppGraph   address of pointer to graph
 * size      maximum number of vertices
+* type      type of graph
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER:
 *   - "ppGraph" is NULL
@@ -54,18 +68,29 @@ typedef struct Graph Graph;
 * GRAPH_RETURN_MEMORY
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphCreate(Graph **ppGraph, size_t size);
+GraphReturnID graphCreate(Graph **ppGraph, size_t size, GraphEdgeType type);
 
 /**
 * Get number of vertices in graph
 * pGraph    pointer to graph
-* pSize     address to variable that will hold the number of vertices
+* pSize     address of variable that will hold the number of vertices
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER:
 *   - "pGraph" is NULL
 *   - "pSize" is NULL
 */
 GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize);
+
+/**
+* Get graph type
+* pGraph    pointer to graph
+* pType     adress of variable that will hold the graph type
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER:
+*   - "pGraph" is NULL
+*   - "pType" is NULL
+*/
+GraphReturnID graphGetType(Graph *pGraph, GraphEdgeType *pType);
 
 /**
 * Add edge to graph

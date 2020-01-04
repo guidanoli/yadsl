@@ -6,15 +6,16 @@ struct Graph
 {
     Set **adjs; /* adjacency sets */
     size_t size; /* number of vertices */
+    GraphEdgeType type; /* type of graph */
 };
 
 static SetReturnID setID;
 
-GraphReturnID graphCreate(struct Graph **ppGraph, size_t size)
+GraphReturnID graphCreate(Graph **ppGraph, size_t size, GraphEdgeType type)
 {
     struct Graph *pGraph;
     size_t i, j;
-    if (ppGraph == NULL || size == 0)
+    if (ppGraph == NULL || size == 0 || type >= GRAPH_EDGE_TYPE_INVALID)
         return GRAPH_RETURN_INVALID_PARAMETER;
     pGraph = (struct Graph *) malloc(sizeof(struct Graph));
     if (pGraph == NULL)
@@ -34,12 +35,11 @@ GraphReturnID graphCreate(struct Graph **ppGraph, size_t size)
                 setDestroy(pGraph->adjs[j]);
             free(pGraph->adjs);
             free(pGraph);
-            if (setID == SET_RETURN_MEMORY)
-                return GRAPH_RETURN_MEMORY;
-            return GRAPH_RETURN_UNKNOWN_ERROR;
+            return GRAPH_RETURN_MEMORY;
         }
     }
     pGraph->size = size;
+    pGraph->type = type;
     *ppGraph = pGraph;
     return GRAPH_RETURN_OK;
 }
@@ -49,6 +49,14 @@ GraphReturnID graphGetNumberOfVertices(struct Graph *pGraph, size_t *pSize)
     if (pGraph == NULL || pSize == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
     *pSize = pGraph->size;
+    return GRAPH_RETURN_OK;
+}
+
+GraphReturnID graphGetType(Graph *pGraph, GraphEdgeType *pType)
+{
+    if (pGraph == NULL || pType == NULL)
+        return GRAPH_RETURN_INVALID_PARAMETER;
+    *pType = pGraph->type;
     return GRAPH_RETURN_OK;
 }
 
@@ -70,13 +78,15 @@ GraphReturnID graphAddEdge(struct Graph *pGraph, size_t u, size_t v)
             return GRAPH_RETURN_MEMORY;
         return GRAPH_RETURN_UNKNOWN_ERROR;
     }
-    if ((setID = setAdd(pGraph->adjs[v], u)) != SET_RETURN_OK) {
-        if (setID == SET_RETURN_MEMORY) {
-            if ((setID = setRemove(pGraph->adjs[u], v)) != SET_RETURN_OK)
-                return GRAPH_RETURN_FATAL_ERROR;
-            return GRAPH_RETURN_MEMORY;
+    if (pGraph->type == GRAPH_EDGE_TYPE_UNDIRECTED) {
+        if ((setID = setAdd(pGraph->adjs[v], u)) != SET_RETURN_OK) {
+            if (setID == SET_RETURN_MEMORY) {
+                if ((setID = setRemove(pGraph->adjs[u], v)) != SET_RETURN_OK)
+                    return GRAPH_RETURN_FATAL_ERROR;
+                return GRAPH_RETURN_MEMORY;
+            }
+            return GRAPH_RETURN_UNKNOWN_ERROR;
         }
-        return GRAPH_RETURN_UNKNOWN_ERROR;
     }
     return GRAPH_RETURN_OK;
 }
@@ -115,10 +125,12 @@ GraphReturnID graphRemoveEdge(struct Graph *pGraph, size_t u, size_t v)
     }
     if ((setID = setRemove(pGraph->adjs[u], v)) != SET_RETURN_OK)
         return GRAPH_RETURN_UNKNOWN_ERROR;
-    if ((setID = setRemove(pGraph->adjs[v], u)) != SET_RETURN_OK) {
-        if ((setID = setAdd(pGraph->adjs[u], v)) != SET_RETURN_OK)
-            return GRAPH_RETURN_FATAL_ERROR;
-        return GRAPH_RETURN_UNKNOWN_ERROR;
+    if (pGraph->type == GRAPH_EDGE_TYPE_UNDIRECTED) {
+        if ((setID = setRemove(pGraph->adjs[v], u)) != SET_RETURN_OK) {
+            if ((setID = setAdd(pGraph->adjs[u], v)) != SET_RETURN_OK)
+                return GRAPH_RETURN_FATAL_ERROR;
+            return GRAPH_RETURN_UNKNOWN_ERROR;
+        }
     }
     return GRAPH_RETURN_OK;
 }
