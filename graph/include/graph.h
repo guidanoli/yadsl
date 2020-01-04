@@ -8,14 +8,10 @@
 
 typedef enum
 {
+    // SEMANTIC RETURN VALUES
+
     /* Everything went as excepted */
     GRAPH_RETURN_OK,
-
-    /* Invalid parameter was provided */
-    GRAPH_RETURN_INVALID_PARAMETER,
-
-    /* Could not allocate memory space */
-    GRAPH_RETURN_MEMORY,
 
     /* Tried to operate on the same vertex */
     GRAPH_RETURN_SAME_VERTEX,
@@ -28,6 +24,14 @@ typedef enum
 
     /* Graph does not contain edge */
     GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE,
+    
+    // ERROR RETURN VALUES
+
+    /* Invalid parameter was provided */
+    GRAPH_RETURN_INVALID_PARAMETER,
+
+    /* Could not allocate memory space */
+    GRAPH_RETURN_MEMORY,
 
     /* When an internal error is unrecognized */
     GRAPH_RETURN_UNKNOWN_ERROR,
@@ -116,6 +120,37 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, size_t u, size_t v);
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphContainsEdge(Graph *pGraph, size_t u, size_t v);
+
+/**
+* Get number of neighbours of a given edge
+* pGraph    pointer to graph
+* u         graph edge
+* pNum      adress to variable that will hold the number of neighbours of u
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*   - "pGraph" is NULL
+*   - "pNum" is NULL
+* GRAPH_RETURN_OUT_OF_BOUNDS
+*   - "u" is larger than the number of vertices in the graph
+*/
+
+GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, size_t u, size_t *pNum);
+
+/**
+* Get next neighbour in adjecency list (loops)
+* pGraph    pointer to graph
+* u         graph edge
+* pV        adress to variable that will hold neighbour of u
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*   - "pGraph" is NULL
+*   - "pV" is NULL
+* GRAPH_RETURN_OUT_OF_BOUNDS
+*   - "u" is larger than the number of vertices in the graph
+* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
+*   - "u" does not contain neighbours, that is, edges
+*/
+GraphReturnID graphGetNextNeighbour(Graph *pGraph, size_t u, size_t *pV);
 
 /**
 * Free graph structure from memory

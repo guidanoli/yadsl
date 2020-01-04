@@ -16,6 +16,7 @@ struct Set
     struct SetItem *current;
     struct SetItem *first;
     struct SetItem *last;
+    size_t size;
 };
 
 // Private functions prototypes
@@ -35,6 +36,7 @@ SetReturnID setCreate(Set **ppSet)
     pSet->current = NULL;
     pSet->first = NULL;
     pSet->last = NULL;
+    pSet->size = 0;
     *ppSet = pSet;
     return SET_RETURN_OK;
 }
@@ -80,6 +82,7 @@ SetReturnID setAdd(Set *pSet, size_t value)
                 else
                     pSet->last = pItem;
                 p->next = pItem;
+                pSet->size = pSet->size + 1;
                 return SET_RETURN_OK;
             }
             if (current_direction == 1)
@@ -98,6 +101,7 @@ SetReturnID setAdd(Set *pSet, size_t value)
             pSet->last = pItem;
         }
     }
+    pSet->size = pSet->size + 1;
     return SET_RETURN_OK;
 }
 
@@ -123,6 +127,7 @@ SetReturnID setRemove(Set *pSet, size_t value)
         p->next->previous = p->previous;
     }
     free(p);
+    pSet->size = pSet->size - 1;
     return SET_RETURN_OK;
 }
 
@@ -133,6 +138,14 @@ SetReturnID setGetCurrent(Set *pSet, size_t *pValue)
     if (pSet->current == NULL)
         return SET_RETURN_EMPTY;
     *pValue = pSet->current->value;
+    return SET_RETURN_OK;
+}
+
+SetReturnID setGetSize(Set *pSet, size_t *pValue)
+{
+    if (pSet == NULL || pValue == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    *pValue = pSet->size;
     return SET_RETURN_OK;
 }
 

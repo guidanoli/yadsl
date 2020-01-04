@@ -123,6 +123,31 @@ GraphReturnID graphRemoveEdge(struct Graph *pGraph, size_t u, size_t v)
     return GRAPH_RETURN_OK;
 }
 
+GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, size_t u, size_t *pNum)
+{
+    if (pGraph == NULL || pNum == NULL)
+        return GRAPH_RETURN_INVALID_PARAMETER;
+    if (u >= pGraph->size)
+        return GRAPH_RETURN_OUT_OF_BOUNDS;
+    setGetSize(pGraph->adjs[u], pNum);
+    return GRAPH_RETURN_OK;
+}
+
+GraphReturnID graphGetNextNeighbour(Graph *pGraph, size_t u, size_t *pV)
+{
+    Set *adjList;
+    if (pGraph == NULL || pV == NULL)
+        return GRAPH_RETURN_INVALID_PARAMETER;
+    if (u >= pGraph->size)
+        return GRAPH_RETURN_OUT_OF_BOUNDS;
+    adjList = pGraph->adjs[u];
+    if (setGetCurrent(adjList, pV) == SET_RETURN_EMPTY)
+        return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
+    if (setNextValue(adjList) == SET_RETURN_OUT_OF_BOUNDS)
+        setFirstValue(adjList);
+    return GRAPH_RETURN_OK;
+}
+
 void graphDestroy(struct Graph *pGraph)
 {
     size_t i;

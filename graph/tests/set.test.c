@@ -44,6 +44,11 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
                     if (*pid = setLastValue(s))
                         return "Could not go to the last value";
                     break;
+                case 's':
+                    if (*pid = setGetSize(s, &number))
+                        return "Could not get set size";
+                    fprintf(stdout, "[%d] %d\n", *nid, number);
+                    break;
                 default:
                     return "Unknown command";
             }
@@ -89,6 +94,7 @@ int main(int argc, char **argv)
         printf("You interact with a single set object at all times\n");
         printf("Actions to the set are parsed by the command line arguments\n");
         printf("The registered actions are the following:\n");
+        printf("s\tprints current set size\n");
         printf("c\tprints current number pointed by the cursor\n");
         printf("f\tmake cursor point to smallest number in set\n");
         printf("l\tmake cursor point to biggest number in set\n");

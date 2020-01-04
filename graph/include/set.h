@@ -99,6 +99,17 @@ SetReturnID setRemove(Set *pSet, size_t value);
 SetReturnID setGetCurrent(Set *pSet, size_t *pValue);
 
 /**
+* Obtain number of values contained in the set
+* pSet      pointer to set
+* pValue    adress of variable that will hold the value
+* Possible errors:
+* SET_RETURN_INVALID_PARAMETER
+*   - "pSet" is NULL
+*   - "pValue" is NULL
+*/
+SetReturnID setGetSize(Set *pSet, size_t *pValue);
+
+/**
 * Make cursor point to the largest value smaller than
 * the one currently pointed to
 * pSet      pointer to set
