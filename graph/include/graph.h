@@ -38,6 +38,12 @@ typedef enum
     /* Could not write to or read from file */
     GRAPH_RETURN_FILE_ERROR,
 
+    /* File format is deprecated */
+    GRAPH_RETURN_DEPRECATED_FILE_FORMAT,
+
+    /* File format corruption detected */
+    GRAPH_RETURN_CORRUPTED_FILE_FORMAT,
+
     /* When an internal error is unrecognized */
     GRAPH_RETURN_UNKNOWN_ERROR,
 
@@ -185,7 +191,7 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, unsigned long u, unsigned lon
 /**
 * Serialize graph structure to file
 * pGraph    pointer to graph
-* f         pointer to file
+* f         pointer to file to be written
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
 *   - "pGraph" is NULL
@@ -197,6 +203,26 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, unsigned long u, unsigned lon
 * and closed afterwards by the caller.
 */
 GraphReturnID graphWrite(Graph *pGraph, FILE *fp);
+
+/**
+* Serialize graph structure to file
+* ppGraph   adress of pointer to graph
+* f         pointer to file to be read
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*   - "ppGraph" is NULL
+* GRAPH_RETURN_FILE_ERROR
+*   - Could not read file
+* GRAPH_RETURN_DEPRECATED_FILE_FORMAT
+* GRAPH_RETURN_CORRUPTED_FILE_FORMAT
+* GRAPH_RETURN_MEMORY
+* GRAPH_RETURN_FATAL_ERROR
+* GRAPH_RETURN_UNKNOWN_ERROR
+* [!] The module does not take ownership of the file
+* pointer. It must be previously opened in reading mode
+* and closed afterwards by the caller.
+*/
+GraphReturnID graphRead(Graph **ppGraph, FILE *fp);
 
 /**
 * Free graph structure from memory

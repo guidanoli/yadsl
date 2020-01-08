@@ -5,17 +5,29 @@
 Graph *g = NULL;
 
 char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
-           char **cmds, int count, const char *outFile)
+           char **cmds, int count, const char *inFile, const char *outFile)
 {
     unsigned long pSize, u, v;
     char cmd, flag[128], end = 0;
     int i, tokens;
     GraphEdgeType t;
     FILE *fp;
-    if (*pid = graphCreate(&g, size, type)) {
-        if (*pid == GRAPH_RETURN_MEMORY)
-            g = NULL;
-        return "Could not create graph";
+    if (inFile == NULL) {
+        if (*pid = graphCreate(&g, size, type)) {
+            if (*pid == GRAPH_RETURN_MEMORY)
+                g = NULL;
+            return "Could not create graph";
+        }
+    } else {
+        fp = fopen(inFile, "r");
+        printf("in = %s\n", inFile);
+        if (fp == NULL)
+            return "Could not open input file";
+        if (*pid = graphRead(&g, fp)) {
+            if (*pid == GRAPH_RETURN_MEMORY)
+                g = NULL;
+            return "Could not create graph from file";
+        }
     }
     if ((*pid = graphGetNumberOfVertices(g, &pSize)) || pSize != size)
         return "Could not determine number of vertices or it is wrong";
@@ -115,7 +127,8 @@ char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
     return NULL;
 }
 
-char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType, char **argv, int argc)
+char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
+            char **inputFilename, char **outputFilename, char **argv, int argc)
 {
     int i;
     char flag[64], value[64], c = '0';
@@ -132,6 +145,10 @@ char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType, char **argv, i
                     *pType = GRAPH_EDGE_TYPE_UNDIRECTED;
                 else
                     return "Could not set graph type";
+            } else if (!strcmp(flag, "in")) {
+                *inputFilename = strdup(value);
+            } else if (!strcmp(flag, "out")) {
+                *outputFilename = strdup(value);
             } else {
                 return "Unknown flag";
             }
@@ -160,23 +177,23 @@ char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType, char **argv, i
 
 int main(int argc, char **argv)
 {
-    GraphReturnID id;
+    GraphReturnID id = 0;
     int nid = 1;
     unsigned long v = 10;
     GraphEdgeType type = GRAPH_EDGE_TYPE_UNDIRECTED;
     char *str = NULL, c = '0';
-    const char *outputFilename = "graph.txt";
+    char *inputFilename = NULL, *outputFilename = "out.graph";
     /* ignore program name */
     char **commands = argv + 1;
     int commandCount = argc - 1;
     /* parse arguments */
-    str = parse(&nid, &v, &type, commands, commandCount);
+    str = parse(&nid, &v, &type, &inputFilename, &outputFilename, commands, commandCount);
     if (str) {
         fprintf(stderr, "Error while parsing argument #%d (%s): %s\n", nid, argv[nid], str);
         return 1;
     }
     /* run tests */
-    str = test(&id, &nid, v, type, commands, commandCount, outputFilename);
+    str = test(&id, &nid, v, type, commands, commandCount, inputFilename, outputFilename);
     if (g)
         graphDestroy(g);
     g = NULL;

@@ -1,14 +1,35 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "graph.h"
 #include "set.h"
 
-#define SERIALIZED_FORMAT_VERSION (1)
-#define WRITE(file, format, ...) do {                           \
-    if (fprintf(file, format __VA_OPT__(,) __VA_ARGS__) < 0)    \
-        return GRAPH_RETURN_FILE_ERROR;                         \
+#define WRITE(file, format, ...) do {                               \
+    if (fprintf(file, format __VA_OPT__(,) __VA_ARGS__) < 0)        \
+        return GRAPH_RETURN_FILE_ERROR;                             \
 } while(0)
+
+#define READ(file, n, ptr, format, ...) do {                        \
+    if (fscanf(file, format " " __VA_OPT__(,) __VA_ARGS__) != n) {  \
+        if (ptr != NULL)                                            \
+            graphDestroy(ptr);                                      \
+        return GRAPH_RETURN_FILE_ERROR;                             \
+    }                                                               \
+} while(0)
+
 #define WRITENL(file, format, ...) WRITE(file, format "\n" __VA_OPT__(,) __VA_ARGS__)
+
+#define FILE_FORMAT_VERSION 2
+#define BUFFER_SIZE 128
+
+#define DIRECTED_STR "DIRECTED"
+#define UNDIRECTED_STR "UNDIRECTED"
+#define INVALID_STR "INVALID"
+
+#define VERSION_STR "VERSION %u"
+#define TYPE_STR "TYPE %s"
+#define VERTICES_STR "VERTICES %lu"
+#define REFVERTICES_STR "REF_VERTICES %lu"
 
 struct Graph
 {
@@ -17,7 +38,12 @@ struct Graph
     GraphEdgeType type; /* type of graph */
 };
 
+/* Auxiliary variable */
 static SetReturnID setID;
+
+/* Private functions */
+static GraphEdgeType strToType(const char *str);
+static const char *typeToStr(GraphEdgeType type);
 
 GraphReturnID graphCreate(Graph **ppGraph, unsigned long size, GraphEdgeType type)
 {
@@ -81,15 +107,15 @@ GraphReturnID graphAddEdge(struct Graph *pGraph, unsigned long u, unsigned long 
             return GRAPH_RETURN_CONTAINS_EDGE;
         return GRAPH_RETURN_UNKNOWN_ERROR;
     }
-    if ((setID = setAdd(pGraph->adjs[u], v)) != SET_RETURN_OK) {
+    if (setID = setAdd(pGraph->adjs[u], v)) {
         if (setID == SET_RETURN_MEMORY)
             return GRAPH_RETURN_MEMORY;
         return GRAPH_RETURN_UNKNOWN_ERROR;
     }
     if (pGraph->type == GRAPH_EDGE_TYPE_UNDIRECTED) {
-        if ((setID = setAdd(pGraph->adjs[v], u)) != SET_RETURN_OK) {
+        if (setID = setAdd(pGraph->adjs[v], u)) {
             if (setID == SET_RETURN_MEMORY) {
-                if ((setID = setRemove(pGraph->adjs[u], v)) != SET_RETURN_OK)
+                if (setID = setRemove(pGraph->adjs[u], v))
                     return GRAPH_RETURN_FATAL_ERROR;
                 return GRAPH_RETURN_MEMORY;
             }
@@ -170,35 +196,94 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, unsigned long u, unsigned lon
 
 GraphReturnID graphWrite(Graph *pGraph, FILE *fp)
 {
-    unsigned long i, j, value, setSize;
+    unsigned long u, v, i, setSize, refVertices = 0;
+    GraphReturnID id;
     if (pGraph == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
-    /* File header */
-    WRITENL(fp, "VERSION %d", SERIALIZED_FORMAT_VERSION);
-    WRITENL(fp, "TYPE %s", pGraph->type == GRAPH_EDGE_TYPE_DIRECTED ? "DIRECTED" : "UNDIRECTED");
-    WRITENL(fp, "VERTICES %lu", pGraph->size);
-    /* Adjecency list serialization */
-    for (i = 0; i < pGraph->size; ++i) {
-        Set *pSet = pGraph->adjs[i];
-        setID = setGetSize(pSet, &setSize);
-        if (setID != SET_RETURN_OK)
-            return GRAPH_RETURN_UNKNOWN_ERROR;
+    for (u = 0; u < pGraph->size; ++u) {
+        if (id = graphGetNumberOfNeighbours(pGraph, u, &setSize))
+            return id;
         if (setSize > 0) {
-            WRITE(fp, "%lu ", i);
-            if (setID = setFirstValue(pSet))
-                return GRAPH_RETURN_UNKNOWN_ERROR;
-            for (j = 0; j < setSize; j++) {
-                if (setID = setGetCurrent(pSet, &value))
-                    return GRAPH_RETURN_UNKNOWN_ERROR;
-                WRITE(fp, "%lu ", value);
-                if (j < setSize - 1)
-                    if (setID = setNextValue(pSet))
-                        return GRAPH_RETURN_UNKNOWN_ERROR;
+            if (pGraph->type == GRAPH_EDGE_TYPE_UNDIRECTED) {
+                for (i = 0; i < setSize; ++i) {
+                    if (id = graphGetNextNeighbour(pGraph, u, &v))
+                        return id;
+                    if (u <= v) {
+                        ++refVertices;
+                        break;
+                    }
+                }
+            } else {
+                ++refVertices;
             }
-            WRITENL(fp, "-1");
         }
     }
-    WRITENL(fp, "END");
+    WRITENL(fp, VERSION_STR, FILE_FORMAT_VERSION);
+    WRITENL(fp, TYPE_STR, typeToStr(pGraph->type));
+    WRITENL(fp, VERTICES_STR, pGraph->size);
+    WRITENL(fp, REFVERTICES_STR, refVertices);
+    for (u = 0; u < pGraph->size; ++u) {
+        int hasNeighbour = 0; /* auxiliary flag */
+        if (id = graphGetNumberOfNeighbours(pGraph, u, &setSize))
+            return id;
+        if (setSize > 0) {
+            for (i = 0; i < setSize; ++i) {
+                if (id = graphGetNextNeighbour(pGraph, u, &v))
+                    return id;
+                if (pGraph->type == GRAPH_EDGE_TYPE_DIRECTED || u <= v) {
+                    if (!hasNeighbour) {
+                        WRITE(fp, "%lu ", u);
+                        hasNeighbour = 1;
+                    }
+                    WRITE(fp, "%lu ", v);
+                }
+            }
+            if (hasNeighbour)
+                WRITENL(fp, "-1");
+        }
+    }
+    return GRAPH_RETURN_OK;
+}
+
+GraphReturnID graphRead(Graph **ppGraph, FILE *fp)
+{
+    unsigned int version;
+    char buffer[BUFFER_SIZE];
+    Graph *pGraph = NULL;
+    GraphEdgeType type;
+    GraphReturnID id;
+    unsigned long i, size, refSize, u, v;
+    if (ppGraph == NULL)
+        return GRAPH_RETURN_INVALID_PARAMETER;
+    READ(fp, 1, pGraph, VERSION_STR, &version);
+    if (version != FILE_FORMAT_VERSION)
+        return GRAPH_RETURN_DEPRECATED_FILE_FORMAT;
+    READ(fp, 1, pGraph, TYPE_STR, buffer);
+    if ((type = strToType(buffer)) == GRAPH_EDGE_TYPE_INVALID)
+        return GRAPH_RETURN_CORRUPTED_FILE_FORMAT;
+    READ(fp, 1, pGraph, VERTICES_STR, &size);
+    if (size == 0)
+        return GRAPH_RETURN_CORRUPTED_FILE_FORMAT;
+    if (id = graphCreate(&pGraph, size, type))
+        return id;
+    READ(fp, 1, pGraph, REFVERTICES_STR, &refSize);
+    for (i = 0; i < refSize; ++i) {
+        READ(fp, 1, pGraph, "%lu ", &u);
+        while (1) {
+            READ(fp, 1, pGraph, "%lu ", &v);
+            if (v == -1L)
+                break;
+            if (id = graphAddEdge(pGraph, u, v)) {
+                graphDestroy(pGraph);
+                if (id == GRAPH_RETURN_CONTAINS_EDGE ||
+                    id == GRAPH_RETURN_OUT_OF_BOUNDS ||
+                    id == GRAPH_RETURN_SAME_VERTEX)
+                    return GRAPH_RETURN_CORRUPTED_FILE_FORMAT;
+                return id;
+            }
+        }
+    }
+    *ppGraph = pGraph;
     return GRAPH_RETURN_OK;
 }
 
@@ -211,4 +296,23 @@ void graphDestroy(struct Graph *pGraph)
         setDestroy(pGraph->adjs[i]);
     free(pGraph->adjs);
     free(pGraph);
+}
+
+static GraphEdgeType strToType(const char *str) {
+    if (strcmp(str, DIRECTED_STR) == 0)
+        return GRAPH_EDGE_TYPE_DIRECTED;
+    else if (strcmp(str, UNDIRECTED_STR) == 0)
+        return GRAPH_EDGE_TYPE_UNDIRECTED;
+    return GRAPH_EDGE_TYPE_INVALID;
+}
+
+static const char *typeToStr(GraphEdgeType type) {
+    switch (type) {
+    case GRAPH_EDGE_TYPE_DIRECTED:
+        return DIRECTED_STR;
+    case GRAPH_EDGE_TYPE_UNDIRECTED:
+        return UNDIRECTED_STR;
+    default:
+        return INVALID_STR;
+    }
 }

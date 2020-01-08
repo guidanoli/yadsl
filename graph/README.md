@@ -18,6 +18,8 @@ $ ./graph.test.out --size=42
 $ ./graph.test.out --size=42 --type=DIRECTED
 ```
 
+#### Manipulation
+
 Other than that, you're able to add and remove edges by providing also through command-line parameters the vertices that the edge connects. Add an edge by adding an argument `u,v+`, which connects the vertices u and v (indexes that go from `0` to the `graph size - 1`), and remove an edge by `u,v-`. You can also consult if an edge exists or not by `u,v?`. Observe that this is a simple graph, meaning that `u,u` (also known as an 'arc') cannot exist. Following are some examples of tests.
 
 ``` bash
@@ -39,6 +41,8 @@ $ ./graph.test.out 1,2+ 1,2? 1,2- 1,2? 1,2+ 1,2?
 No errors.
 ```
 
+#### Iteration
+
 You can even iterate through an adjacency list of neighbours of a certain edge `u` by adding an argument `ui`. This is sometimes crucial for certain algorithms that need to have a good time complexity. It can also be provided the number of neighbours of an edge `u` by adding an argument `un` so that, programmatically, all neighbours can be iterated through. See the following example:
 
 ```bash
@@ -52,6 +56,20 @@ $ ./graph.test.out 1,5+ 1,7 1i 1i
 [3] 7
 [4] 5
 No errors.
+```
+
+#### Serialization
+
+The library also allow serializing the graph data structure in a human-readable form. It is also optimized for undirected graphs, reducing the file size by nearly half, if it were to be treated as a directed graph. You can load a graph by the `--in={filename}` flag and write the current graph to a file by adding an argument `w`. The default filename is `out.graph` but it can be altered by the `--out={filename}`. See the following example that proves the correct writing and reading of a graph structure serialized in a file:
+
+```bash
+$ ./graph.test.out 1,2+ 3,4+ 1,3+ 1,4+ 6,4+ 6,2+ w
+[7] Wrote to file
+No errors.
+$ ./graph.test.out --in=out.graph --out=out2.graph w
+[3] Wrote to file
+No errors.
+$ diff out.graph out2.graph
 ```
 
 Additional help can be obtained by parsing the `--help` flag too.
