@@ -8,7 +8,7 @@ struct SetItem
 {
     struct SetItem *next;
     struct SetItem *previous;
-    size_t value;
+    unsigned long value;
 };
 
 struct Set
@@ -16,12 +16,12 @@ struct Set
     struct SetItem *current;
     struct SetItem *first;
     struct SetItem *last;
-    size_t size;
+    unsigned long size;
 };
 
 // Private functions prototypes
 
-static SetReturnID _setContains(Set *pSet, size_t value, struct SetItem **pItem);
+static SetReturnID _setContains(Set *pSet, unsigned long value, struct SetItem **pItem);
 
 // Public functions
 
@@ -41,13 +41,13 @@ SetReturnID setCreate(Set **ppSet)
     return SET_RETURN_OK;
 }
 
-SetReturnID setContains(Set *pSet, size_t value)
+SetReturnID setContains(Set *pSet, unsigned long value)
 {
     struct SetItem *p; // does nothing with p
     return _setContains(pSet, value, &p);
 }
 
-SetReturnID setAdd(Set *pSet, size_t value)
+SetReturnID setAdd(Set *pSet, unsigned long value)
 {
     struct SetItem *pItem, *p;
     if (pSet == NULL)
@@ -105,7 +105,7 @@ SetReturnID setAdd(Set *pSet, size_t value)
     return SET_RETURN_OK;
 }
 
-SetReturnID setRemove(Set *pSet, size_t value)
+SetReturnID setRemove(Set *pSet, unsigned long value)
 {
     struct SetItem *p;
     if (pSet == NULL)
@@ -131,7 +131,7 @@ SetReturnID setRemove(Set *pSet, size_t value)
     return SET_RETURN_OK;
 }
 
-SetReturnID setGetCurrent(Set *pSet, size_t *pValue)
+SetReturnID setGetCurrent(Set *pSet, unsigned long *pValue)
 {
     if (pSet == NULL || pValue == NULL)
         return SET_RETURN_INVALID_PARAMETER;
@@ -141,7 +141,7 @@ SetReturnID setGetCurrent(Set *pSet, size_t *pValue)
     return SET_RETURN_OK;
 }
 
-SetReturnID setGetSize(Set *pSet, size_t *pValue)
+SetReturnID setGetSize(Set *pSet, unsigned long *pValue)
 {
     if (pSet == NULL || pValue == NULL)
         return SET_RETURN_INVALID_PARAMETER;
@@ -212,7 +212,7 @@ void setDestroy(Set *pSet)
 
 // Checks if number is contained in the set and if it is, makes
 // the pointer of address "pItem" point to it
-SetReturnID _setContains(Set *pSet, size_t value, struct SetItem **pItem)
+SetReturnID _setContains(Set *pSet, unsigned long value, struct SetItem **pItem)
 {
     char direction = 0;
     struct SetItem *p;

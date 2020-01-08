@@ -6,7 +6,7 @@ Set *s;
 
 char *test(SetReturnID *pid, int *nid, char **numbers, int count)
 {
-    size_t number;
+    unsigned long number;
     char cmd;
     int i, tokens;
     if (*pid = setCreate(&s)) {
@@ -18,7 +18,7 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
         return "Found number in empty set";
     for (i = 0; i < count; ++i) {
         *nid = i+1;
-        if ((tokens = sscanf(numbers[i], "%d%c", &number, &cmd)) != 2 &&
+        if ((tokens = sscanf(numbers[i], "%lu%c", &number, &cmd)) != 2 &&
             (tokens = sscanf(numbers[i], "%c", &cmd)) != 1)
             return "Parsing error";
         if (tokens == 1) {
@@ -34,7 +34,7 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
                 case 'c':
                     if (*pid = setGetCurrent(s, &number))
                         return "Could not get current value";
-                    fprintf(stdout, "[%d] %d\n", *nid, number);
+                    fprintf(stdout, "[%d] %lu\n", *nid, number);
                     break;
                 case 'f':
                     if (*pid = setFirstValue(s))
@@ -47,7 +47,7 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
                 case 's':
                     if (*pid = setGetSize(s, &number))
                         return "Could not get set size";
-                    fprintf(stdout, "[%d] %d\n", *nid, number);
+                    fprintf(stdout, "[%d] %lu\n", *nid, number);
                     break;
                 default:
                     return "Unknown command";
@@ -66,10 +66,10 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
                     *pid = setContains(s, number);
                     switch (*pid) {
                         case SET_RETURN_CONTAINS:
-                            fprintf(stdout, "[%d] Contains %d\n", *nid, number);
+                            fprintf(stdout, "[%d] Contains %lu\n", *nid, number);
                             break;
                         case SET_RETURN_DOES_NOT_CONTAIN:
-                            fprintf(stdout, "[%d] Does not contain %d\n", *nid, number);
+                            fprintf(stdout, "[%d] Does not contain %lu\n", *nid, number);
                             break;
                         default:
                             return "Could not assert if set contained number or not";

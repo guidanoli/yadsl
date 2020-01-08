@@ -1,20 +1,28 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "graph.h"
 #include "set.h"
+
+#define SERIALIZED_FORMAT_VERSION (1)
+#define WRITE(file, format, ...) do {                           \
+    if (fprintf(file, format __VA_OPT__(,) __VA_ARGS__) < 0)    \
+        return GRAPH_RETURN_FILE_ERROR;                         \
+} while(0)
+#define WRITENL(file, format, ...) WRITE(file, format "\n" __VA_OPT__(,) __VA_ARGS__)
 
 struct Graph
 {
     Set **adjs; /* adjacency sets */
-    size_t size; /* number of vertices */
+    unsigned long size; /* number of vertices */
     GraphEdgeType type; /* type of graph */
 };
 
 static SetReturnID setID;
 
-GraphReturnID graphCreate(Graph **ppGraph, size_t size, GraphEdgeType type)
+GraphReturnID graphCreate(Graph **ppGraph, unsigned long size, GraphEdgeType type)
 {
     struct Graph *pGraph;
-    size_t i, j;
+    unsigned long i, j;
     if (ppGraph == NULL || size == 0 || type >= GRAPH_EDGE_TYPE_INVALID)
         return GRAPH_RETURN_INVALID_PARAMETER;
     pGraph = (struct Graph *) malloc(sizeof(struct Graph));
@@ -44,7 +52,7 @@ GraphReturnID graphCreate(Graph **ppGraph, size_t size, GraphEdgeType type)
     return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphGetNumberOfVertices(struct Graph *pGraph, size_t *pSize)
+GraphReturnID graphGetNumberOfVertices(struct Graph *pGraph, unsigned long *pSize)
 {
     if (pGraph == NULL || pSize == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
@@ -60,7 +68,7 @@ GraphReturnID graphGetType(Graph *pGraph, GraphEdgeType *pType)
     return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphAddEdge(struct Graph *pGraph, size_t u, size_t v)
+GraphReturnID graphAddEdge(struct Graph *pGraph, unsigned long u, unsigned long v)
 {
     if (pGraph == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
@@ -91,7 +99,7 @@ GraphReturnID graphAddEdge(struct Graph *pGraph, size_t u, size_t v)
     return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphContainsEdge(struct Graph *pGraph, size_t u, size_t v)
+GraphReturnID graphContainsEdge(struct Graph *pGraph, unsigned long u, unsigned long v)
 {
     if (pGraph == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
@@ -110,7 +118,7 @@ GraphReturnID graphContainsEdge(struct Graph *pGraph, size_t u, size_t v)
     }
 }
 
-GraphReturnID graphRemoveEdge(struct Graph *pGraph, size_t u, size_t v)
+GraphReturnID graphRemoveEdge(struct Graph *pGraph, unsigned long u, unsigned long v)
 {
     if (pGraph == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
@@ -135,7 +143,7 @@ GraphReturnID graphRemoveEdge(struct Graph *pGraph, size_t u, size_t v)
     return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, size_t u, size_t *pNum)
+GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, unsigned long u, unsigned long *pNum)
 {
     if (pGraph == NULL || pNum == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
@@ -145,7 +153,7 @@ GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, size_t u, size_t *pNum)
     return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphGetNextNeighbour(Graph *pGraph, size_t u, size_t *pV)
+GraphReturnID graphGetNextNeighbour(Graph *pGraph, unsigned long u, unsigned long *pV)
 {
     Set *adjList;
     if (pGraph == NULL || pV == NULL)
@@ -160,9 +168,43 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, size_t u, size_t *pV)
     return GRAPH_RETURN_OK;
 }
 
+GraphReturnID graphWrite(Graph *pGraph, FILE *fp)
+{
+    unsigned long i, j, value, setSize;
+    if (pGraph == NULL)
+        return GRAPH_RETURN_INVALID_PARAMETER;
+    /* File header */
+    WRITENL(fp, "VERSION %d", SERIALIZED_FORMAT_VERSION);
+    WRITENL(fp, "TYPE %s", pGraph->type == GRAPH_EDGE_TYPE_DIRECTED ? "DIRECTED" : "UNDIRECTED");
+    WRITENL(fp, "VERTICES %lu", pGraph->size);
+    /* Adjecency list serialization */
+    for (i = 0; i < pGraph->size; ++i) {
+        Set *pSet = pGraph->adjs[i];
+        setID = setGetSize(pSet, &setSize);
+        if (setID != SET_RETURN_OK)
+            return GRAPH_RETURN_UNKNOWN_ERROR;
+        if (setSize > 0) {
+            WRITE(fp, "%lu ", i);
+            if (setID = setFirstValue(pSet))
+                return GRAPH_RETURN_UNKNOWN_ERROR;
+            for (j = 0; j < setSize; j++) {
+                if (setID = setGetCurrent(pSet, &value))
+                    return GRAPH_RETURN_UNKNOWN_ERROR;
+                WRITE(fp, "%lu ", value);
+                if (j < setSize - 1)
+                    if (setID = setNextValue(pSet))
+                        return GRAPH_RETURN_UNKNOWN_ERROR;
+            }
+            WRITENL(fp, "-1");
+        }
+    }
+    WRITENL(fp, "END");
+    return GRAPH_RETURN_OK;
+}
+
 void graphDestroy(struct Graph *pGraph)
 {
-    size_t i;
+    unsigned long i;
     if (pGraph == NULL)
         return;
     for (i = 0; i < pGraph->size; ++i)

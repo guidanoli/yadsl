@@ -57,7 +57,7 @@ SetReturnID setCreate(Set **ppSet);
 * SET_RETURN_DOES_NOT_CONTAIN
 *   - set does not contain value
 */
-SetReturnID setContains(Set *pSet, size_t value);
+SetReturnID setContains(Set *pSet, unsigned long value);
 
 /**
 * Adds value to set
@@ -71,7 +71,7 @@ SetReturnID setContains(Set *pSet, size_t value);
 * SET_RETURN_MEMORY
 * [!] This will make the cursor point to the newly added number
 */
-SetReturnID setAdd(Set *pSet, size_t value);
+SetReturnID setAdd(Set *pSet, unsigned long value);
 
 /**
 * Remove value from set
@@ -84,7 +84,7 @@ SetReturnID setAdd(Set *pSet, size_t value);
 *   - set does not contain value
 * [!] This can alter the cursor
 */
-SetReturnID setRemove(Set *pSet, size_t value);
+SetReturnID setRemove(Set *pSet, unsigned long value);
 
 /**
 * Obtain current value pointed by the cursor
@@ -96,7 +96,7 @@ SetReturnID setRemove(Set *pSet, size_t value);
 *   - "pValue" is NULL
 * SET_RETURN_EMPTY
 */
-SetReturnID setGetCurrent(Set *pSet, size_t *pValue);
+SetReturnID setGetCurrent(Set *pSet, unsigned long *pValue);
 
 /**
 * Obtain number of values contained in the set
@@ -107,7 +107,7 @@ SetReturnID setGetCurrent(Set *pSet, size_t *pValue);
 *   - "pSet" is NULL
 *   - "pValue" is NULL
 */
-SetReturnID setGetSize(Set *pSet, size_t *pValue);
+SetReturnID setGetSize(Set *pSet, unsigned long *pValue);
 
 /**
 * Make cursor point to the largest value smaller than

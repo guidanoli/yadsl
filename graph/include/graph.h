@@ -1,6 +1,8 @@
 #ifndef __GRAPH_H__
 #define __GRAPH_H__
 
+#include <stdio.h>
+
 /**
 * A Graph starts with a fixed number of vertices and no edges.
 * It is possible to add and remove edges and check neighbourhoods.
@@ -24,7 +26,7 @@ typedef enum
 
     /* Graph does not contain edge */
     GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE,
-    
+
     // ERROR RETURN VALUES
 
     /* Invalid parameter was provided */
@@ -32,6 +34,9 @@ typedef enum
 
     /* Could not allocate memory space */
     GRAPH_RETURN_MEMORY,
+
+    /* Could not write to or read from file */
+    GRAPH_RETURN_FILE_ERROR,
 
     /* When an internal error is unrecognized */
     GRAPH_RETURN_UNKNOWN_ERROR,
@@ -68,7 +73,7 @@ typedef struct Graph Graph;
 * GRAPH_RETURN_MEMORY
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphCreate(Graph **ppGraph, size_t size, GraphEdgeType type);
+GraphReturnID graphCreate(Graph **ppGraph, unsigned long size, GraphEdgeType type);
 
 /**
 * Get number of vertices in graph
@@ -79,7 +84,7 @@ GraphReturnID graphCreate(Graph **ppGraph, size_t size, GraphEdgeType type);
 *   - "pGraph" is NULL
 *   - "pSize" is NULL
 */
-GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize);
+GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize);
 
 /**
 * Get graph type
@@ -109,7 +114,7 @@ GraphReturnID graphGetType(Graph *pGraph, GraphEdgeType *pType);
 * GRAPH_RETURN_MEMORY
 * GRAPH_RETURN_FATAL_ERROR
 */
-GraphReturnID graphAddEdge(Graph *pGraph, size_t u, size_t v);
+GraphReturnID graphAddEdge(Graph *pGraph, unsigned long u, unsigned long v);
 
 /**
 * Remove edge from graph
@@ -127,7 +132,7 @@ GraphReturnID graphAddEdge(Graph *pGraph, size_t u, size_t v);
 * GRAPH_RETURN_UNKNOWN_ERROR
 * GRAPH_RETURN_FATAL_ERROR
 */
-GraphReturnID graphRemoveEdge(Graph *pGraph, size_t u, size_t v);
+GraphReturnID graphRemoveEdge(Graph *pGraph, unsigned long u, unsigned long v);
 
 /**
 * Check whether graph contains edge or not
@@ -144,7 +149,7 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, size_t u, size_t v);
 *   - "u" or "v" is larger than the number of vertices in the graph
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphContainsEdge(Graph *pGraph, size_t u, size_t v);
+GraphReturnID graphContainsEdge(Graph *pGraph, unsigned long u, unsigned long v);
 
 /**
 * Get number of neighbours of a given edge
@@ -159,7 +164,7 @@ GraphReturnID graphContainsEdge(Graph *pGraph, size_t u, size_t v);
 *   - "u" is larger than the number of vertices in the graph
 */
 
-GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, size_t u, size_t *pNum);
+GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, unsigned long u, unsigned long *pNum);
 
 /**
 * Get next neighbour in adjecency list (loops)
@@ -175,7 +180,23 @@ GraphReturnID graphGetNumberOfNeighbours(Graph *pGraph, size_t u, size_t *pNum);
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
 *   - "u" does not contain neighbours, that is, edges
 */
-GraphReturnID graphGetNextNeighbour(Graph *pGraph, size_t u, size_t *pV);
+GraphReturnID graphGetNextNeighbour(Graph *pGraph, unsigned long u, unsigned long *pV);
+
+/**
+* Serialize graph structure to file
+* pGraph    pointer to graph
+* f         pointer to file
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*   - "pGraph" is NULL
+* GRAPH_RETURN_FILE_ERROR
+*   - Could not write to file
+* GRAPH_RETURN_UNKNOWN_ERROR
+* [!] The module does not take ownership of the file
+* pointer. It must be previously opened in writing mode
+* and closed afterwards by the caller.
+*/
+GraphReturnID graphWrite(Graph *pGraph, FILE *fp);
 
 /**
 * Free graph structure from memory
