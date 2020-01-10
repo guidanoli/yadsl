@@ -2,6 +2,30 @@
 #include <string.h>
 #include "graph.h"
 
+/* Help */
+static const char *helpStrings[] = {
+    "This is an interactive module of the graph library",
+    "You will interact with the same graph object at all times",
+    "Actions and flags to the graph are parsed by the command line arguments",
+    "",
+    "The registered actions are the following:",
+    "n\tprints the number of vertices",
+    "t\tprints the type of the graph",
+    "w\twrites the graph to the output file",
+    "Xi\tprints next neighbour of edge X",
+    "Xn\tprints the number of neighbours of X",
+    "X,Y+\tadds edge XY",
+    "X,Y-\tremoves edge XY",
+    "X,Y?\tchecks if edge XY exists",
+    "",
+    "The registered flags are the following:",
+    "size\tsets the number of vertices",
+    "type\tsets the graph type (DIRECTED or UNDIRECTED)",
+    "in\tsets the input graph file",
+    "out\tsets the output graph file",
+    NULL,
+};
+
 /* Private functions prototypes */
 static Graph *g = NULL;
 
@@ -178,17 +202,8 @@ static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeTyp
 }
 
 static void print_help() {
-    printf("This is an interactive module of the graph library\n");
-    printf("You interact with one graph object at all times\n");
-    printf("Actions to the graph are parsed by the command line arguments\n");
-    printf("The registered actions are the following:\n");
-    printf("n\tprints the number of vertices\n");
-    printf("t\tprints the type of the graph\n");
-    printf("Xi\tprints next neighbour of edge X\n");
-    printf("Xn\tprints the number of neighbours of X\n");
-    printf("X,Y+\tadds edge XY\n");
-    printf("X,Y-\tremoves edge XY\n");
-    printf("X,Y?\tchecks if edge XY exists\n");
+    char **str = helpStrings;
+    for (; *str; ++str) puts(*str);
 }
 
 static char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
