@@ -4,7 +4,13 @@ Here sits the graph-related problems that will access a common graph data struct
 
 ## Testing
 
-First, compile the libraries and the tests by running CMake on this very directory. You can find the CMake binaries [here](https://cmake.org/download/). If you're running CMake on Windows, a Visual Studio solution will sit on the `bin` folder. And if you're on Linux, a Makefile will be created instead. That's the magic of CMake.
+First, compile the libraries and the tests by running CMake on this very directory. You can find the CMake binaries [here](https://cmake.org/download/). If you're running CMake on Windows, a Visual Studio solution will sit on the `build` folder. And if you're on Linux, a Makefile will be created instead. That's the magic of CMake. Also, since project is meant to compile for C99, it's very portable. The following project generators were tested and work:
+
+* Visual Studio 17
+* Visual Studio 13
+* Visual Studio 12
+* Code::Blocks + MinGW Makefile
+* Unix Makefile
 
 Every test binary executable takes its arguments as instructions to act on a single data structure. The instructions themselves differ from module but the way they are parsed are pretty much the same.
 
@@ -72,7 +78,7 @@ No errors.
 $ diff out.graph out2.graph
 ```
 
-Additional help can be obtained by parsing the `--help` flag too.
+Additional help can be obtained by running the test module without any arguments whatsoever.
 
 ### Set module testing
 
