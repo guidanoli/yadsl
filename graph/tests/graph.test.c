@@ -3,6 +3,7 @@
 #include "graph.h"
 
 /* Help */
+
 static const char *helpStrings[] = {
     "This is an interactive module of the graph library",
     "You will interact with the same graph object at all times",
@@ -26,8 +27,11 @@ static const char *helpStrings[] = {
     NULL,
 };
 
-/* Private functions prototypes */
+/* Graph */
+
 static Graph *g = NULL;
+
+/* Private functions prototypes */
 
 static char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
     char **inputFilename, char **outputFilename, char **argv, int argc);
@@ -38,6 +42,7 @@ static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeTyp
 static void print_help();
 
 /* Main function */
+
 int main(int argc, char **argv)
 {
     GraphReturnID id = 0;
@@ -202,7 +207,7 @@ static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeTyp
 }
 
 static void print_help() {
-    char **str = helpStrings;
+    const char **str = helpStrings;
     for (; *str; ++str) puts(*str);
 }
 

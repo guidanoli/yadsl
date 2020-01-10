@@ -2,7 +2,65 @@
 #include <string.h>
 #include "set.h"
 
-Set *s;
+/* Help */
+
+static const char *helpStrings[] = {
+    "This is an interactive module of the set library",
+    "You interact with a single set object at all times",
+    "Actions to the set are parsed by the command line arguments",
+    "",
+    "The registered actions are the following:",
+    "s\tprints current set size",
+    "c\tprints current number pointed by the cursor",
+    "f\tmake cursor point to smallest number in set",
+    "l\tmake cursor point to biggest number in set",
+    "p\tmake cursor point to number directly smaller (previous)",
+    "n\tmake cursor point to number directly bigger (next)",
+    "X+\tadd number X to set",
+    "X-\tremove number X from set",
+    "X?\tcheck if number X is contained in the set",
+    NULL,
+};
+
+/* Set */
+
+static Set *s;
+
+/* Private functions prototypes */
+
+static char *test(SetReturnID *pid, int *nid, char **numbers, int count);
+
+static void print_help();
+
+/* Main function */
+
+int main(int argc, char **argv)
+{
+    SetReturnID id;
+    int nid = 0;
+    char **numbers;
+    char *str;
+    if (argc == 1) {
+        print_help();
+        return 0;
+    }
+    numbers = argc >= 2 ? argv + 1 : NULL;
+    str = test(&id, &nid, numbers, argc - 1);
+    if (s)
+        setDestroy(s);
+    s = NULL;
+    if (str) {
+        if (id) {
+            fprintf(stderr, "Error #%d on action #%d (%s): %s\n", id, nid, argv[nid], str);
+        } else {
+            fprintf(stderr, "Error on action #%d (%s): %s\n", nid, argv[nid], str);
+        }
+        return 1;
+    } else {
+        fprintf(stdout, "No errors.\n");
+    }
+    return 0;
+}
 
 char *test(SetReturnID *pid, int *nid, char **numbers, int count)
 {
@@ -83,42 +141,7 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
     return NULL;
 }
 
-int main(int argc, char **argv)
-{
-    SetReturnID id;
-    int nid = 0;
-    char **numbers;
-    char *str;
-    if (argc >= 2 && (strcmp(argv[1],"help") == 0 || strcmp(argv[1],"HELP") == 0)) {
-        printf("This is an interactive module of the set library\n");
-        printf("You interact with a single set object at all times\n");
-        printf("Actions to the set are parsed by the command line arguments\n");
-        printf("The registered actions are the following:\n");
-        printf("s\tprints current set size\n");
-        printf("c\tprints current number pointed by the cursor\n");
-        printf("f\tmake cursor point to smallest number in set\n");
-        printf("l\tmake cursor point to biggest number in set\n");
-        printf("p\tmake cursor point to number directly smaller (previous)\n");
-        printf("n\tmake cursor point to number directly bigger (next)\n");
-        printf("X+\tadd number X to set\n");
-        printf("X-\tremove number X from set\n");
-        printf("X?\tcheck if number X is contained in the set\n");
-        return 0;
-    }
-    numbers = argc >= 2 ? argv + 1 : NULL;
-    str = test(&id, &nid, numbers, argc - 1);
-    if (s)
-        setDestroy(s);
-    s = NULL;
-    if (str) {
-        if (id) {
-            fprintf(stderr, "Error #%d on action #%d (%s): %s\n", id, nid, argv[nid], str);
-        } else {
-            fprintf(stderr, "Error on action #%d (%s): %s\n", nid, argv[nid], str);
-        }
-        return 1;
-    } else {
-        fprintf(stdout, "No errors.\n");
-    }
-    return 0;
+static void print_help() {
+    const char **str = helpStrings;
+    for (; *str; ++str) puts(*str);
 }

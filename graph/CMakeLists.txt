@@ -30,8 +30,6 @@ set_target_properties(settest PROPERTIES C_STANDARD ${CVERSION})
 
 configure_file(graphlib.pc.in graphlib.pc @ONLY)
 
-add_definitions(-D_ISOC99_SOURCE=1)
-
 install(TARGETS graphlib
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
