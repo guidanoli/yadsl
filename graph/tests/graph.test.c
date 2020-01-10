@@ -2,10 +2,61 @@
 #include <string.h>
 #include "graph.h"
 
-Graph *g = NULL;
+/* Private functions prototypes */
+static Graph *g = NULL;
 
-char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
-           char **cmds, int count, const char *inFile, const char *outFile)
+static char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
+    char **inputFilename, char **outputFilename, char **argv, int argc);
+
+static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
+    char **cmds, int count, const char *inFile, const char *outFile);
+
+static void print_help();
+
+/* Main function */
+int main(int argc, char **argv)
+{
+    GraphReturnID id = 0;
+    int nid = 1;
+    unsigned long v = 10;
+    GraphEdgeType type = GRAPH_EDGE_TYPE_UNDIRECTED;
+    char *str = NULL, c = '0';
+    char *inputFilename = NULL, *outputFilename = "out.graph";
+    /* ignore program name */
+    char **commands = argv + 1;
+    int commandCount = argc - 1;
+    /* parse arguments */
+    if (commandCount > 0) {
+        str = parse(&nid, &v, &type, &inputFilename, &outputFilename, commands, commandCount);
+        if (str) {
+            fprintf(stderr, "Error while parsing argument #%d (%s): %s\n", nid, argv[nid], str);
+            return 1;
+        }
+    } else {
+        print_help();
+        return 0;
+    }
+    /* run tests */
+    str = test(&id, &nid, v, type, commands, commandCount, inputFilename, outputFilename);
+    if (g)
+        graphDestroy(g);
+    g = NULL;
+    if (str) {
+        if (id) {
+            fprintf(stderr, "Error #%d on the action #%d (%s): %s\n", id, nid, argv[nid], str);
+        } else {
+            fprintf(stderr, "Error on the action #%d (%s): %s\n", nid, argv[nid], str);
+        }
+        return 1;
+    } else {
+        fprintf(stdout, "No errors.\n");
+    }
+    return 0;
+}
+
+/* Private functions implementations */
+static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
+    char **cmds, int count, const char *inFile, const char *outFile)
 {
     unsigned long pSize, u, v;
     char cmd, flag[128], end = 0;
@@ -31,7 +82,7 @@ char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
     if ((*pid = graphGetNumberOfVertices(g, &pSize)) || pSize != size)
         return "Could not determine number of vertices or it is wrong";
     for (i = 0; i < count; ++i) {
-        *nid = i+1;
+        *nid = i + 1;
         if (sscanf(cmds[i], "--%s", flag) == 1)
             continue;
         if ((tokens = sscanf(cmds[i], "%lu,%lu%c%c", &u, &v, &cmd, &end)) != 3
@@ -106,15 +157,15 @@ char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
                 break;
             case '?':
                 *pid = graphContainsEdge(g, u, v);
-                switch(*pid) {
-                    case GRAPH_RETURN_CONTAINS_EDGE:
-                        fprintf(stdout, "[%d] Contains (%lu,%lu)\n", *nid, u, v);
-                        break;
-                    case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
-                        fprintf(stdout, "[%d] Does not contain (%lu,%lu)\n", *nid, u, v);
-                        break;
-                    default:
-                        return "Could not assert if edge was added or not";
+                switch (*pid) {
+                case GRAPH_RETURN_CONTAINS_EDGE:
+                    fprintf(stdout, "[%d] Contains (%lu,%lu)\n", *nid, u, v);
+                    break;
+                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+                    fprintf(stdout, "[%d] Does not contain (%lu,%lu)\n", *nid, u, v);
+                    break;
+                default:
+                    return "Could not assert if edge was added or not";
                 }
                 break;
             default:
@@ -126,8 +177,22 @@ char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
     return NULL;
 }
 
-char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
-            char **inputFilename, char **outputFilename, char **argv, int argc)
+static void print_help() {
+    printf("This is an interactive module of the graph library\n");
+    printf("You interact with one graph object at all times\n");
+    printf("Actions to the graph are parsed by the command line arguments\n");
+    printf("The registered actions are the following:\n");
+    printf("n\tprints the number of vertices\n");
+    printf("t\tprints the type of the graph\n");
+    printf("Xi\tprints next neighbour of edge X\n");
+    printf("Xn\tprints the number of neighbours of X\n");
+    printf("X,Y+\tadds edge XY\n");
+    printf("X,Y-\tremoves edge XY\n");
+    printf("X,Y?\tchecks if edge XY exists\n");
+}
+
+static char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
+    char **inputFilename, char **outputFilename, char **argv, int argc)
 {
     int i;
     char flag[64], value[64], c = '0';
@@ -153,17 +218,7 @@ char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
             }
         } else if (sscanf(argv[i], "--%s", flag) == 1) {
             if (!strcmp(flag, "help")) {
-                printf("This is an interactive module of the graph library\n");
-                printf("You interact with one graph object at all times\n");
-                printf("Actions to the graph are parsed by the command line arguments\n");
-                printf("The registered actions are the following:\n");
-                printf("n\tprints the number of vertices\n");
-                printf("t\tprints the type of the graph\n");
-                printf("Xi\tprints next neighbour of edge X\n");
-                printf("Xn\tprints the number of neighbours of X\n");
-                printf("X,Y+\tadds edge XY\n");
-                printf("X,Y-\tremoves edge XY\n");
-                printf("X,Y?\tchecks if edge XY exists\n");
+                print_help();
                 return NULL; /* abort parsing */
             } else {
                 return "Unknown flag";
@@ -172,39 +227,4 @@ char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
         *nid++;
     }
     return NULL;
-}
-
-int main(int argc, char **argv)
-{
-    GraphReturnID id = 0;
-    int nid = 1;
-    unsigned long v = 10;
-    GraphEdgeType type = GRAPH_EDGE_TYPE_UNDIRECTED;
-    char *str = NULL, c = '0';
-    char *inputFilename = NULL, *outputFilename = "out.graph";
-    /* ignore program name */
-    char **commands = argv + 1;
-    int commandCount = argc - 1;
-    /* parse arguments */
-    str = parse(&nid, &v, &type, &inputFilename, &outputFilename, commands, commandCount);
-    if (str) {
-        fprintf(stderr, "Error while parsing argument #%d (%s): %s\n", nid, argv[nid], str);
-        return 1;
-    }
-    /* run tests */
-    str = test(&id, &nid, v, type, commands, commandCount, inputFilename, outputFilename);
-    if (g)
-        graphDestroy(g);
-    g = NULL;
-    if (str) {
-        if (id) {
-            fprintf(stderr, "Error #%d on the action #%d (%s): %s\n", id, nid, argv[nid], str);
-        } else {
-            fprintf(stderr, "Error on the action #%d (%s): %s\n", nid, argv[nid], str);
-        }
-        return 1;
-    } else {
-        fprintf(stdout, "No errors.\n");
-    }
-    return 0;
 }
