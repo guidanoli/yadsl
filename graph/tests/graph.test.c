@@ -20,7 +20,6 @@ char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
         }
     } else {
         fp = fopen(inFile, "r");
-        printf("in = %s\n", inFile);
         if (fp == NULL)
             return "Could not open input file";
         if (*pid = graphRead(&g, fp)) {

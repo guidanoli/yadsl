@@ -4,20 +4,20 @@
 #include "graph.h"
 #include "set.h"
 
-#define WRITE(file, format, ...) do {                               \
-    if (fprintf(file, format __VA_OPT__(,) __VA_ARGS__) < 0)        \
-        return GRAPH_RETURN_FILE_ERROR;                             \
+#define WRITE(file, format, ...) do {           \
+    if (fprintf(file, format, __VA_ARGS__) < 0) \
+        return GRAPH_RETURN_FILE_ERROR;         \
 } while(0)
 
-#define READ(file, n, ptr, format, ...) do {                        \
-    if (fscanf(file, format " " __VA_OPT__(,) __VA_ARGS__) != n) {  \
-        if (ptr != NULL)                                            \
-            graphDestroy(ptr);                                      \
-        return GRAPH_RETURN_FILE_ERROR;                             \
-    }                                                               \
+#define READ(file, n, ptr, format, ...) do {            \
+    if (fscanf(file, format " ", __VA_ARGS__) != n) {   \
+        if (ptr != NULL)                                \
+            graphDestroy(ptr);                          \
+        return GRAPH_RETURN_FILE_ERROR;                 \
+    }                                                   \
 } while(0)
 
-#define WRITENL(file, format, ...) WRITE(file, format "\n" __VA_OPT__(,) __VA_ARGS__)
+#define WRITENL(file, format, ...) WRITE(file, format "\n", __VA_ARGS__)
 
 #define FILE_FORMAT_VERSION 2
 #define BUFFER_SIZE 128
@@ -239,7 +239,7 @@ GraphReturnID graphWrite(Graph *pGraph, FILE *fp)
                 }
             }
             if (hasNeighbour)
-                WRITENL(fp, "-1");
+                WRITENL(fp, "%d", -1);
         }
     }
     return GRAPH_RETURN_OK;
