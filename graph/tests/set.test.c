@@ -22,38 +22,37 @@ static const char *helpStrings[] = {
     NULL,
 };
 
-/* Set */
-
-static Set *s;
-
 /* Private functions prototypes */
 
-static char *test(SetReturnID *pid, int *nid, char **numbers, int count);
+static char *parseCmds(Set **ppSet, SetReturnID *pSetId, unsigned int *pActionIndex, char **actions, int actionCount);
 
-static void print_help();
+static void printHelpMessage();
 
 /* Main function */
 
 int main(int argc, char **argv)
 {
-    SetReturnID id;
-    int nid = 0;
-    char **numbers;
-    char *str;
+    Set *testSet = NULL;
+    SetReturnID setId = SET_RETURN_OK;
+    unsigned int actionIndex = 0;
+    char *errorString = NULL;
     if (argc == 1) {
-        print_help();
+        printHelpMessage();
         return 0;
     }
-    numbers = argc >= 2 ? argv + 1 : NULL;
-    str = test(&id, &nid, numbers, argc - 1);
-    if (s)
-        setDestroy(s);
-    s = NULL;
-    if (str) {
-        if (id) {
-            fprintf(stderr, "Error #%d on action #%d (%s): %s\n", id, nid, argv[nid], str);
+    /* ignore program name */
+    errorString = parseCmds(&testSet, &setId, &actionIndex, argv + 1, argc - 1);
+    if (testSet != NULL)
+        setDestroy(testSet);
+    testSet = NULL;
+    /* print error message, if there is */
+    if (errorString != NULL) {
+        if (setId != SET_RETURN_OK) {
+            fprintf(stderr, "Error #%d on action #%d (%s): %s\n",
+                setId, actionIndex, argv[actionIndex], errorString);
         } else {
-            fprintf(stderr, "Error on action #%d (%s): %s\n", nid, argv[nid], str);
+            fprintf(stderr, "Error on action #%d (%s): %s\n",
+                actionIndex, argv[actionIndex], errorString);
         }
         return 1;
     } else {
@@ -62,72 +61,72 @@ int main(int argc, char **argv)
     return 0;
 }
 
-char *test(SetReturnID *pid, int *nid, char **numbers, int count)
+static char *parseCmds(Set **ppSet, SetReturnID *pSetId, unsigned int *pActionIndex, char **actions, int actionCount)
 {
     unsigned long number;
-    char cmd;
-    int i, tokens;
-    if (*pid = setCreate(&s)) {
-        if (*pid == SET_RETURN_MEMORY)
-            s = NULL;
+    char c;
+    int i, tokenCount;
+    if (*pSetId = setCreate(ppSet)) {
+        if (*pSetId == SET_RETURN_MEMORY)
+            *ppSet = NULL;
         return "Could not create set";
     }
-    if ((*pid = setContains(s, 0)) != SET_RETURN_DOES_NOT_CONTAIN)
+    if ((*pSetId = setContains(*ppSet, 0)) != SET_RETURN_DOES_NOT_CONTAIN)
         return "Found number in empty set";
-    for (i = 0; i < count; ++i) {
-        *nid = i+1;
-        if ((tokens = sscanf(numbers[i], "%lu%c", &number, &cmd)) != 2 &&
-            (tokens = sscanf(numbers[i], "%c", &cmd)) != 1)
+    for (i = 0; i < actionCount; ++i) {
+        *pActionIndex = i+1;
+        if ((tokenCount = sscanf(actions[i], "%lu%c", &number, &c)) != 2 &&
+            (tokenCount = sscanf(actions[i], "%c", &c)) != 1)
             return "Parsing error";
-        if (tokens == 1) {
-            switch (cmd) {
+        if (tokenCount == 1) {
+            switch (c) {
                 case 'p':
-                    if (*pid = setPreviousValue(s))
+                    if (*pSetId = setPreviousValue(*ppSet))
                         return "Could not go to the previous value";
                     break;
                 case 'n':
-                    if (*pid = setNextValue(s))
+                    if (*pSetId = setNextValue(*ppSet))
                         return "Could not go to the next value";
                     break;
                 case 'c':
-                    if (*pid = setGetCurrent(s, &number))
+                    if (*pSetId = setGetCurrent(*ppSet, &number))
                         return "Could not get current value";
-                    fprintf(stdout, "[%d] %lu\n", *nid, number);
+                    fprintf(stdout, "[%d] %lu\n", *pActionIndex, number);
                     break;
                 case 'f':
-                    if (*pid = setFirstValue(s))
+                    if (*pSetId = setFirstValue(*ppSet))
                         return "Could not go to the first value";
                     break;
                 case 'l':
-                    if (*pid = setLastValue(s))
+                    if (*pSetId = setLastValue(*ppSet))
                         return "Could not go to the last value";
                     break;
                 case 's':
-                    if (*pid = setGetSize(s, &number))
+                    if (*pSetId = setGetSize(*ppSet, &number))
                         return "Could not get set size";
-                    fprintf(stdout, "[%d] %lu\n", *nid, number);
+                    fprintf(stdout, "[%d] %lu\n", *pActionIndex, number);
                     break;
                 default:
                     return "Unknown command";
             }
-        } else if (tokens == 2) {
-            switch (cmd) {
+        } else if (tokenCount == 2) {
+            switch (c) {
                 case '-':
-                    if (*pid = setRemove(s, number))
+                    if (*pSetId = setRemove(*ppSet, number))
                         return "Could not remove number from set";
                     break;
                 case '+':
-                    if (*pid = setAdd(s, number))
+                    if (*pSetId = setAdd(*ppSet, number))
                         return "Could not add number to set";
                     break;
                 case '?':
-                    *pid = setContains(s, number);
-                    switch (*pid) {
+                    *pSetId = setContains(*ppSet, number);
+                    switch (*pSetId) {
                         case SET_RETURN_CONTAINS:
-                            fprintf(stdout, "[%d] Contains %lu\n", *nid, number);
+                            fprintf(stdout, "[%d] Contains %lu\n", *pActionIndex, number);
                             break;
                         case SET_RETURN_DOES_NOT_CONTAIN:
-                            fprintf(stdout, "[%d] Does not contain %lu\n", *nid, number);
+                            fprintf(stdout, "[%d] Does not contain %lu\n", *pActionIndex, number);
                             break;
                         default:
                             return "Could not assert if set contained number or not";
@@ -141,7 +140,7 @@ char *test(SetReturnID *pid, int *nid, char **numbers, int count)
     return NULL;
 }
 
-static void print_help() {
+static void printHelpMessage() {
     const char **str = helpStrings;
     for (; *str; ++str) puts(*str);
 }
