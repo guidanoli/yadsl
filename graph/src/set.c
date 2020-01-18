@@ -15,7 +15,8 @@ struct SetItem
 
 struct Set
 {
-    struct SetItem *current;
+    struct SetItem *cursor;  /* For external use */
+    struct SetItem *current; /* For internal use */
     struct SetItem *first;
     struct SetItem *last;
     unsigned long size;
@@ -24,6 +25,8 @@ struct Set
 // Private functions prototypes
 
 static SetReturnID _setContains(Set *pSet, void *item, struct SetItem **pSetItem);
+static SetReturnID _setContainsCustom(Set *pSet, struct SetItem **pSetItem,
+    void *arg, int (*func) (void *item, void *arg));
 
 // Public functions
 
@@ -32,10 +35,11 @@ SetReturnID setCreate(Set **ppSet)
     struct Set *pSet;
     if (ppSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    pSet = (struct Set*) malloc(sizeof(struct Set));
+    pSet = malloc(sizeof(struct Set));
     if (pSet == NULL)
         return SET_RETURN_MEMORY;
     pSet->current = NULL;
+    pSet->cursor = NULL;
     pSet->first = NULL;
     pSet->last = NULL;
     pSet->size = 0;
@@ -49,6 +53,24 @@ SetReturnID setContainsItem(Set *pSet, void *item)
     return _setContains(pSet, item, &p);
 }
 
+SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
+    void *arg, void **pItem)
+{
+    struct SetItem *p;
+    unsigned long size;
+    if (pSet == NULL || func == NULL || pItem == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    size = pSet->size;
+    for (p = pSet->current; size--; p = p->next ? p->next : pSet->first) {
+        if (func(p->item, arg)) {
+            *pItem = p->item;
+            pSet->current = p;
+            return SET_RETURN_OK;
+        }
+    }
+    return SET_RETURN_DOES_NOT_CONTAIN;
+}
+
 SetReturnID setAddItem(Set *pSet, void *item)
 {
     struct SetItem *pItem, *p;
@@ -56,7 +78,7 @@ SetReturnID setAddItem(Set *pSet, void *item)
         return SET_RETURN_INVALID_PARAMETER;
     if (setContainsItem(pSet, item) == SET_RETURN_CONTAINS)
         return SET_RETURN_CONTAINS;
-    pItem = (struct SetItem *) malloc(sizeof(struct SetItem));
+    pItem = malloc(sizeof(struct SetItem));
     if (pItem == NULL)
         return SET_RETURN_MEMORY;
     pItem->next = NULL;
@@ -66,6 +88,7 @@ SetReturnID setAddItem(Set *pSet, void *item)
     pSet->current = pItem;
     if (p == NULL) {
         // empty set
+        pSet->cursor = pItem;
         pSet->first = pItem;
         pSet->last = pItem;
     } else {
@@ -119,10 +142,14 @@ SetReturnID setRemoveItem(Set *pSet, void *item)
     if (p->previous != NULL) {
         if (p == pSet->current)
             pSet->current = p->previous;
+        if (p == pSet->cursor)
+            pSet->cursor = p->previous;
         p->previous->next = p->next;
     } else {
         if (p == pSet->current)
             pSet->current = p->next;
+        if (p == pSet->cursor)
+            pSet->cursor = p->next;
         pSet->first = p->next;
     }
     if (p->next != NULL) {
@@ -137,9 +164,9 @@ SetReturnID setGetCurrentItem(Set *pSet, void **pItem)
 {
     if (pSet == NULL || pItem == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (pSet->current == NULL)
+    if (pSet->cursor == NULL)
         return SET_RETURN_EMPTY;
-    *pItem = pSet->current->item;
+    *pItem = pSet->cursor->item;
     return SET_RETURN_OK;
 }
 
@@ -155,11 +182,11 @@ SetReturnID setPreviousItem(Set *pSet)
 {
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (pSet->current == NULL)
+    if (pSet->cursor == NULL)
         return SET_RETURN_EMPTY;
-    if (pSet->current->previous == NULL)
+    if (pSet->cursor->previous == NULL)
         return SET_RETURN_OUT_OF_BOUNDS;
-    pSet->current = pSet->current->previous;
+    pSet->cursor = pSet->cursor->previous;
     return SET_RETURN_OK;
 }
 
@@ -167,11 +194,11 @@ SetReturnID setNextItem(Set *pSet)
 {
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (pSet->current == NULL)
+    if (pSet->cursor == NULL)
         return SET_RETURN_EMPTY;
-    if (pSet->current->next == NULL)
+    if (pSet->cursor->next == NULL)
         return SET_RETURN_OUT_OF_BOUNDS;
-    pSet->current = pSet->current->next;
+    pSet->cursor = pSet->cursor->next;
     return SET_RETURN_OK;
 }
 
@@ -179,9 +206,9 @@ SetReturnID setFirstItem(Set *pSet)
 {
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (pSet->current == NULL)
+    if (pSet->cursor == NULL)
         return SET_RETURN_EMPTY;
-    pSet->current = pSet->first;
+    pSet->cursor = pSet->first;
     return SET_RETURN_OK;
 }
 
@@ -189,13 +216,18 @@ SetReturnID setLastItem(Set *pSet)
 {
     if (pSet == NULL)
         return SET_RETURN_INVALID_PARAMETER;
-    if (pSet->current == NULL)
+    if (pSet->cursor == NULL)
         return SET_RETURN_EMPTY;
-    pSet->current = pSet->last;
+    pSet->cursor = pSet->last;
     return SET_RETURN_OK;
 }
 
 void setDestroy(Set *pSet)
+{
+    setDestroyDeep(pSet, NULL, NULL);
+}
+
+void setDestroyDeep(Set *pSet, void (*freeItem)(void *item, void *arg), void *arg)
 {
     struct SetItem *current, *next;
     if (pSet == NULL)
@@ -204,6 +236,8 @@ void setDestroy(Set *pSet)
     next = NULL;
     while (current != NULL) {
         next = current->next;
+        if (freeItem)
+            freeItem(current->item, arg);
         free(current);
         current = next;
     }
@@ -236,6 +270,23 @@ static SetReturnID _setContains(Set *pSet, void *item, struct SetItem **pSetItem
         if (current_direction == -direction)
             break;
         direction = current_direction;
+    }
+    return SET_RETURN_DOES_NOT_CONTAIN;
+}
+
+// Checks if there is an item that satisfies func(item, arg) and if there is,
+// makes the pointer "pSetItem" point to it
+static SetReturnID _setContainsCustom(Set *pSet, struct SetItem **pSetItem,
+    void *arg, int (*func) (void *item, void *arg))
+{
+    struct SetItem *p;
+    if (pSet == NULL || pSetItem == NULL || func == NULL)
+        return SET_RETURN_INVALID_PARAMETER;
+    for (p = pSet->first; p; p = p->next) {
+        if (func(p->item, arg)) {
+            *pSetItem = p;
+            return SET_RETURN_CONTAINS;
+        }
     }
     return SET_RETURN_DOES_NOT_CONTAIN;
 }

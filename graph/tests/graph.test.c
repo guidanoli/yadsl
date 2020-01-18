@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "graph.h"
+#include "graphio.h"
+#include "var.h"
 
 /* Help */
 
@@ -33,10 +35,12 @@ static Graph *g = NULL;
 
 /* Private functions prototypes */
 
-static char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
-    char **inputFilename, char **outputFilename, char **argv, int argc);
+static int _cmpVariables(Variable *pVariableA, Variable *pVariableB);
 
-static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeType type,
+static char *parse(int *nid, GraphEdgeType *pType, char **inputFilename,
+    char **outputFilename, char **argv, int argc);
+
+static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
     char **cmds, int count, const char *inFile, const char *outFile);
 
 static void print_help();
@@ -45,18 +49,17 @@ static void print_help();
 
 int main(int argc, char **argv)
 {
-    GraphReturnID id = 0;
+    GraphReturnID id = GRAPH_RETURN_OK;
     int nid = 1;
-    unsigned long v = 10;
     GraphEdgeType type = GRAPH_EDGE_TYPE_UNDIRECTED;
-    char *str = NULL, c = '0';
+    char *str = NULL;
     char *inputFilename = NULL, *outputFilename = "out.graph";
     /* ignore program name */
     char **commands = argv + 1;
     int commandCount = argc - 1;
     /* parse arguments */
     if (commandCount > 0) {
-        str = parse(&nid, &v, &type, &inputFilename, &outputFilename, commands, commandCount);
+        str = parse(&nid, &type, &inputFilename, &outputFilename, commands, commandCount);
         if (str) {
             fprintf(stderr, "Error while parsing argument #%d (%s): %s\n", nid, argv[nid], str);
             return 1;
@@ -66,7 +69,7 @@ int main(int argc, char **argv)
         return 0;
     }
     /* run tests */
-    str = test(&id, &nid, v, type, commands, commandCount, inputFilename, outputFilename);
+    str = test(&id, &nid, type, commands, commandCount, inputFilename, outputFilename);
     if (g)
         graphDestroy(g);
     g = NULL;
@@ -93,7 +96,7 @@ static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeTyp
     GraphEdgeType t;
     FILE *fp;
     if (inFile == NULL) {
-        if (*pid = graphCreate(&g, size, type)) {
+        if (*pid = graphCreate(&g, type, _cmpVariables, varDestroy)) {
             if (*pid == GRAPH_RETURN_MEMORY)
                 g = NULL;
             return "Could not create graph";
@@ -102,7 +105,7 @@ static char *test(GraphReturnID *pid, int *nid, unsigned long size, GraphEdgeTyp
         fp = fopen(inFile, "r");
         if (fp == NULL)
             return "Could not open input file";
-        if (*pid = graphRead(&g, fp)) {
+        if (*pid = graphRead(&g, fp)) { // Como escrever e salvar texto arbitrário?
             if (*pid == GRAPH_RETURN_MEMORY)
                 g = NULL;
             return "Could not create graph from file";
@@ -247,4 +250,11 @@ static char *parse(int *nid, unsigned long *pSize, GraphEdgeType *pType,
         *nid++;
     }
     return NULL;
+}
+
+static int _cmpVariables(Variable *pVariableA, Variable *pVariableB)
+{
+    int cmpResult;
+    if (varCompare(pVariableA, pVariableB, &cmpResult)) return 0;
+    return cmpResult;
 }

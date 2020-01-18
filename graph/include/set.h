@@ -9,12 +9,20 @@
 * It does not acquire the ownership of the items it
 * stores and, therefore, does not deallocates them
 * when destroyed.
+* HINT: SET_RETURN_OK will always be 0, therefore
+* it can be used as a boolean value to check if a
+* function went OK or not, eg:
+* if (setId = setFunction(pSet)) { ... }
+* HINT: The set stores items according to their
+* address, thus, totally arbitrarily. The list
+* does not give any information about the value
+* stored at all.
 */
 
 typedef enum
 {
     /* All went ok */
-    SET_RETURN_OK,
+    SET_RETURN_OK = 0,
 
     /* Invalid parameter was provided */
     SET_RETURN_INVALID_PARAMETER,
@@ -66,7 +74,7 @@ SetReturnID setCreate(Set **ppSet);
 * Check whether set contains item or not
 * pSet      pointer to set
 * item      item to be consulted
-* Possible errors:
+* Possible return values:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
 * SET_RETURN_CONTAINS
@@ -75,6 +83,26 @@ SetReturnID setCreate(Set **ppSet);
 *   - set does not contain item
 */
 SetReturnID setContainsItem(Set *pSet, void *item);
+
+/**
+* Filter through the set with a filtering function and returns
+* the first item that returns with positive response.
+* pSet      pointer to set
+* func      filtering function: takes an item from the set and
+*           an auxiliary argument as parameters, in that order,
+*           and returns a boolean.
+* arg       auxiliary argument parsed to the filtering function
+* pItem     address of pointer that will point to the found item
+* Possible errors:
+* SET_RETURN_INVALID_PARAMETER
+*   - "pSet" is NULL
+*   - "func" is NULL
+*   - "pItem" is NULL
+* SET_RETURN_DOES_NOT_CONTAIN
+*   - set does not contain such item
+*/
+SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
+    void *arg, void **pItem);
 
 /**
 * Adds item to set
@@ -86,7 +114,6 @@ SetReturnID setContainsItem(Set *pSet, void *item);
 * SET_RETURN_CONTAINS
 *   - set already contains item
 * SET_RETURN_MEMORY
-* [!] This will make the cursor point to the newly added item
 */
 SetReturnID setAddItem(Set *pSet, void *item);
 
@@ -99,12 +126,11 @@ SetReturnID setAddItem(Set *pSet, void *item);
 *   - "pSet" is NULL
 * SET_RETURN_DOES_NOT_CONTAIN
 *   - set does not contain item
-* [!] This can alter the cursor
 */
 SetReturnID setRemoveItem(Set *pSet, void *item);
 
 /**
-* Obtain current item pointed by the cursor
+* Obtain item currently pointed by the cursor
 * pSet      pointer to set
 * pItem     adress of variable that will hold the item
 * Possible errors:
@@ -175,5 +201,15 @@ SetReturnID setLastItem(Set *pSet);
 * pSet      pointer to set
 */
 void setDestroy(Set *pSet);
+
+/**
+* Free set structure from memory and call a special function
+* for each item that is removed, avoiding memory leak
+* pSet      pointer to set
+* item      function that will be called for every
+*           item in the set exactly once
+* arg       auxiliary argument
+*/
+void setDestroyDeep(Set *pSet, void (*freeItem)(void *item, void *arg), void *arg);
 
 #endif
