@@ -68,6 +68,9 @@ GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize)
 // It cannot be manipulated by any other function
 // This is because the user must be in control of
 // which vertex he thinks the cursor is pointing to!
+// Other internal functions can use the cursor too but
+// must not alter its state after the call (or can
+// alter it coherently)
 GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV)
 {
     SetReturnID setId;
@@ -143,6 +146,66 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v)
             return GRAPH_RETURN_UNKNOWN_ERROR;
         }
     }
+    return GRAPH_RETURN_OK;
+}
+
+GraphReturnID graphRemoveVertex(Graph *pGraph, void *v)
+{
+    struct GraphVertex *pVertex, *pAux;
+    unsigned long count;
+    GraphReturnID graphId;
+    SetReturnID setId;
+    if (pGraph == NULL)
+        return GRAPH_RETURN_INVALID_PARAMETER;
+    if (graphId = _parseVertices(pGraph, v, &pVertex))
+        return graphId;
+    /* Removing the edges that connect to the vertex */
+    if (pGraph->type == GRAPH_EDGE_TYPE_DIRECTED) {
+        // Directed graph
+        if (graphId = graphGetNumberOfVertices(pGraph, &count))
+            return GRAPH_RETURN_UNKNOWN_ERROR;
+        while (count--) {
+            if (setId = setGetCurrentItem(pGraph->adjListSet, &pAux))
+                // Cannot be SET_RETURN_EMPTY because then count
+                // would be 0 and it would not have entered the while loop
+                return GRAPH_RETURN_FATAL_ERROR; // Cursor moved
+            if (setId = setNextItem(pGraph->adjListSet)) {
+                // Cannot be SET_RETURN_EMPTY for the same reason as
+                // the one previously described
+                if (setId != SET_RETURN_OUT_OF_BOUNDS)
+                    return GRAPH_RETURN_FATAL_ERROR; // Cursor moved
+                setFirstItem(pGraph->adjListSet);
+            }
+            if (setId = setRemoveItem(pAux->adjList, pVertex))
+                if (setId != SET_RETURN_DOES_NOT_CONTAIN)
+                    return GRAPH_RETURN_UNKNOWN_ERROR;
+        }
+    } else { // Assuming there are only two graph edge types
+        // Undirected graph
+        if (setId = setGetSize(pVertex->adjList, &count))
+            return GRAPH_RETURN_UNKNOWN_ERROR;
+        while (count--) {
+            if (setId = setGetCurrentItem(pVertex->adjList, &pAux))
+                // Cannot be SET_RETURN_EMPTY because then count
+                // would be 0 and it would not have entered the while loop
+                return GRAPH_RETURN_UNKNOWN_ERROR;
+            if (setId = setNextItem(pVertex->adjList)) {
+                // Cannot be SET_RETURN_EMPTY for the same reason as
+                // the one previously described
+                if (setId != SET_RETURN_OUT_OF_BOUNDS)
+                    return GRAPH_RETURN_UNKNOWN_ERROR;
+                setFirstItem(pVertex->adjList);
+            }
+            if (setRemoveItem(pAux->adjList, pVertex))
+                return GRAPH_RETURN_UNKNOWN_ERROR;
+        }
+    }
+    /* Removing the vertex itself and its dependencies */
+    if (setId = setRemoveItem(pGraph->adjListSet, pVertex))
+        // Cannot be SET_RETURN_DOES_NOT_CONTAIN because it
+        // was obtained from it
+        return GRAPH_RETURN_UNKNOWN_ERROR;
+    _freeVertex(pVertex, pGraph->freeVertex);
     return GRAPH_RETURN_OK;
 }
 

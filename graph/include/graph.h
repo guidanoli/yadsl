@@ -187,7 +187,18 @@ GraphReturnID graphContainsVertex(Graph *pGraph, void *v);
 */
 GraphReturnID graphAddVertex(Graph *pGraph, void *v);
 
-//GraphReturnID graphRemoveVertex(Graph *pGraph, void *v);
+/**
+* Remove vertex and all edges containing it
+* pGraph    pointer to graph
+* v         graph vertex
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*   - "pGraph" is NULL
+* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* GRAPH_RETURN_UNKNOWN_ERROR
+* GRAPH_RETURN_FATAL_ERROR
+*/
+GraphReturnID graphRemoveVertex(Graph *pGraph, void *v);
 
 /**
 * Check whether graph contains edge or not

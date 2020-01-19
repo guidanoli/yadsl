@@ -20,6 +20,7 @@ static const char *helpStrings[] = {
     "Xi\tprints next neighbour of edge X",
     "Xn\tprints the number of neighbours of X",
     "X+\tadds vertex X",
+    "X-\tremoves vertex X",
     "X?\tchecks if vertex X exists",
     "X,Y+\tadds edge XY",
     "X,Y-\tremoves edge XY",
@@ -128,7 +129,7 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
         if (sscanf(cmds[i], "--%s", flag) == 1)
             continue;
         if ((tokens = sscanf(cmds[i], "%[^,],%[^+?-]%c%c", buff1, buff2, &cmd, &end)) != 3
-            && (tokens = sscanf(cmds[i], "%[^in+?,]%c%c", buff1, &cmd, &end)) != 2
+            && (tokens = sscanf(cmds[i], "%[^in+?-]%c%c", buff1, &cmd, &end)) != 2
             && (tokens = sscanf(cmds[i], "%c%c", &cmd, &end)) != 1)
             return "Parsing error";
         if (tokens == 1) {
@@ -223,6 +224,10 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
                 if (*pid = graphAddVertex(g, v1))
                     return "Could not add vertex";
                 _transferOwnership(&v1);
+                break;
+            case '-':
+                if (*pid = graphRemoveVertex(g, v1))
+                    return "Could not remove vertex";
                 break;
             default:
                 return "Unknown command";
