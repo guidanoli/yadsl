@@ -17,6 +17,9 @@ typedef enum
     /* Invalid parameter was provided */
     VAR_RETURN_INVALID_PARAMETER,
     
+    /* Serialized form is corrupted */
+    VAR_RETURN_FILE_FORMAT_ERROR,
+
     /* Could not write to file stream */
     VAR_RETURN_WRITING_ERROR,
 
@@ -43,7 +46,7 @@ VarReturnID varCreate(const char *text, Variable **ppVariable);
 * Compare two variables in respect to type and value
 * pVariableA    first variable
 * pVariableB    second variable
-* pResult       (return) boolean return (0 = equal, else, not)
+* pResult       (return) boolean return (0 = different, else, equal)
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
 *   - "pVariableA" is NULL
@@ -65,11 +68,40 @@ VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB, int *pResult)
 */
 VarReturnID varWrite(Variable *pVariable, FILE *fp);
 
+/**
+* Writes to file stream the encoded contents of the variable
+* pVariable     variable
+* fp            file pointer
+* Possible errors:
+* VAR_RETURN_INVALID_PARAMETER
+*   - "pVariable" is NULL
+* VAR_RETURN_WRITING_ERROR
+* [!] The module does not take ownership of the file
+* pointer (closing or opening it)
+*/
+VarReturnID varSerializeWrite(Variable *pVariable, FILE *fp);
+
+/**
+* Reads from file with encoded contents of variable and
+* creates variable object from it
+* ppVariable    address of variable
+* fp            file pointer
+* VAR_RETURN_INVALID_PARAMETER
+*   - "ppVariable" is NULL
+* VAR_RETURN_FILE_FORMAT_ERROR
+* VAR_RETURN_MEMORY
+*/
+VarReturnID varSerializeRead(Variable **ppVariable, FILE *fp);
+
 #ifdef _DEBUG
 /* Not safe */
 int varGetRefCount();
 #endif
 
+/**
+* Safely dispose of variable
+* pVariable     variable
+*/
 void varDestroy(Variable *pVariable);
 
 #endif

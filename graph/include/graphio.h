@@ -23,6 +23,9 @@ typedef enum
     /* Could not allocate memory space */
     GRAPH_IO_RETURN_MEMORY,
 
+    /* Could not write vertex to file */
+    GRAPH_IO_RETURN_WRITING_FAILURE,
+
     /* Could not create specific vertex */
     GRAPH_IO_RETURN_CREATION_FAILURE,
 
@@ -52,6 +55,7 @@ GraphIoReturnID;
 * fp            pointer to file to be written
 * writeVertex   callback function called to write to the
 *               file "fp" the contents of the vertex "v"
+*               Returns 0 on success and else on failure
 *               [!] Separation characters (spaces, tabs and
 *               line feeds) in the beggining or in the end
 *               will be deliberately ignored when reading.
@@ -61,28 +65,29 @@ GraphIoReturnID;
 *   - "writeVertex" is NULL
 * GRAPH_IO_RETURN_FILE_ERROR
 *   - Could not write to file
+* GRAPH_IO_RETURN_WRITING_FAILURE
 * GRAPH_IO_RETURN_UNKNOWN_ERROR
 * [!] The module does not take ownership of the file
 * pointer. It must be previously opened in writing mode
 * and closed afterwards by the caller.
 */
 GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
-    void (*writeVertex)(FILE *fp, void *v));
+    int (*writeVertex)(FILE *fp, void *v));
 
 /**
 * Serialize graph structure to file
 * ppGraph       adress of pointer to graph
 * fp            pointer to file to be read
 * readVertex    function responsible for reading
-*               one vertex from the file stream
-*               returns vertex by reference
+*               one vertex from the file stream.
+*               Returns vertex by reference
 *               [!] Cannot return copies, otherwise
 *               indicates GRAPH_IO_RETURN_SAME_CREATION
-*               returns 0 if successful
-*                       else, indicates failure by
-*                       GRAPH_IO_RETURN_CREATION_FAILURE
+*               returns 0 if successful, else, failed
+* cmpVertices   function responsible for comparing
+*               vertices (0 = different, else, equal)
 * freeVertex    function responsible for freeing
-*               one vertex in case of failure
+*               one vertex
 * Possible errors:
 * GRAPH_IO_RETURN_INVALID_PARAMETER
 *   - "ppGraph" is NULL
@@ -101,6 +106,7 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 */
 GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
     int (*readVertex)(FILE *fp, void **ppVertex),
+    int (*cmpVertices)(void *a, void *b),
     void (*freeVertex)(void *v));
 
 #endif

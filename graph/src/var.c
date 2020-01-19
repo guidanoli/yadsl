@@ -10,6 +10,7 @@ struct VariableType {
     const char *typeId;
     int (*compare)(void *var1, void *var2); // 0 = not equal, else, equal
     int (*write)(FILE *fp, void *var); // 0 = success, else, failure
+    int (*swrite)(FILE *fp, void *var); // 0 = success, else, failure
     int (*read)(const char *text, void **pVar); // 0 = success, else, failure
 };
 
@@ -32,12 +33,16 @@ static int _printInteger(FILE *fp, _INT *a);
 static int _printDecimal(FILE *fp, _DEC *a);
 static int _printString(FILE *fp, _STR a);
 
+static int _swriteInteger(FILE *fp, _INT *a);
+static int _swriteDecimal(FILE *fp, _DEC *a);
+static int _swriteString(FILE *fp, _STR a);
+
 static int _readInteger(const char *text, _INT **b);
 static int _readDecimal(const char *text, _DEC **b);
 static int _readString(const char *text, _STR *b);
 
 #define VARTYPE(label) { #label, _cmp ## label, _print ## label, \
-    _read ## label }
+    _swrite ## label, _read ## label }
 
 static struct VariableType varTypes[] = {
     VARTYPE(Integer),
@@ -65,7 +70,12 @@ VarReturnID varCreate(const char *text, Variable **ppVariable)
             *ppVariable = pVariable;
 #ifdef _DEBUG
             ++refCount;
-#endif
+#ifdef _MEMLEAK
+            printf("Allocated ");
+            varWrite(pVariable, stdout);
+            printf("\n");
+#endif /* _MEMLEAK */
+#endif /* _DEBUG */
             return VAR_RETURN_OK;
         }
     }
@@ -103,6 +113,56 @@ VarReturnID varWrite(Variable *pVariable, FILE *fp)
     return VAR_RETURN_OK;
 }
 
+VarReturnID varSerializeWrite(Variable *pVariable, FILE *fp)
+{
+    if (pVariable == NULL)
+        return VAR_RETURN_INVALID_PARAMETER;
+    if (pVariable->type->swrite(fp, pVariable->value))
+        return VAR_RETURN_WRITING_ERROR;
+    return VAR_RETURN_OK;
+}
+
+VarReturnID varSerializeRead(Variable **ppVariable, FILE *fp)
+{
+    size_t index = 0, bufferSize = 1024;
+    char *buffer, *temp, c, escape = 0;
+    VarReturnID ret;
+    if (ppVariable == NULL)
+        return VAR_RETURN_INVALID_PARAMETER;
+    if ((c = fgetc(fp)) != '"')
+        return VAR_RETURN_FILE_FORMAT_ERROR;
+    buffer = malloc(bufferSize);
+    if (buffer == NULL)
+        return VAR_RETURN_MEMORY;
+    while ((c = fgetc(fp)) != '"' || escape) {
+        if (c == EOF) {
+            free(buffer);
+            return VAR_RETURN_FILE_FORMAT_ERROR;
+        }
+        if (c == '\\' && !escape) {
+            escape = 1;
+        } else {
+            escape = 0;
+            buffer[index] = c;
+            ++index;
+            if (index >= bufferSize) {
+                temp = realloc(buffer, bufferSize*2);
+                if (temp == NULL) {
+                    free(buffer);
+                    return VAR_RETURN_MEMORY;
+                }
+                bufferSize *= 2;
+                buffer = temp;
+            }
+        }
+    }
+    buffer[index] = '\0';
+    ret = varCreate(buffer, ppVariable);
+    free(buffer);
+    return ret;
+}
+
+
 #ifdef _DEBUG
 int varGetRefCount() {
     return refCount;
@@ -113,11 +173,16 @@ void varDestroy(Variable *pVariable)
 {
     if (pVariable == NULL)
         return;
-    free(pVariable->value);
-    free(pVariable);
 #ifdef _DEBUG
     --refCount;
-#endif
+#ifdef _MEMLEAK
+    printf("Deallocated ");
+    varWrite(pVariable, stdout);
+    printf("\n");
+#endif /* _MEMLEAK */
+#endif /* _DEBUG */
+    free(pVariable->value);
+    free(pVariable);
 }
 
 /* Private functions definitions */
@@ -151,7 +216,7 @@ static int _printInteger(FILE *fp, _INT *a)
 static int _printDecimal(FILE *fp, _DEC *a)
 {
     if (a == NULL) return 1;
-    if (fprintf(fp, "%lf", *a) < 0) return 1;
+    if (fprintf(fp, "%.16g", *a) < 0) return 1;
     return 0;
 }
 
@@ -160,6 +225,54 @@ static int _printString(FILE *fp, _STR a)
     if (a == NULL) return 1;
     if (fprintf(fp, "%s", a) < 0) return 1;
     return 0;
+}
+
+// Serialize write
+
+static int _swriteInteger(FILE *fp, _INT *a)
+{
+    int ret;
+    if (fprintf(fp, "\"") < 0) return 1;
+    ret = _printInteger(fp, a);
+    if (fprintf(fp, "\"") < 0) return 1;
+    return ret;
+}
+
+static int _swriteDecimal(FILE *fp, _DEC *a)
+{
+    int ret;
+    if (fprintf(fp, "\"") < 0) return 1;
+    ret = _printDecimal(fp, a);
+    if (fprintf(fp, "\"") < 0) return 1;
+    return ret;
+}
+
+static int _swriteString(FILE *fp, _STR a)
+{
+    size_t i, j = 0, strSize = strlen(a), escapeCount = 0;
+    char *b;
+    int ret;
+    for (i = 0; i < strSize; ++i)
+        if (a[i] == '"' || a[i] == '\\')
+            ++escapeCount;
+    b = malloc(sizeof(char)*(escapeCount+strSize+3));
+    if (b == NULL)
+        return 1;
+    b[0] = '"';
+    for (i = 0; i < strSize; ++i) {
+        if (a[i] == '"' || a[i] == '\\') {
+            b[i+j+1] = '\\';
+            b[i+j+2] = a[i];
+            ++j;
+        } else {
+            b[i+j+1] = a[i];
+        }
+    }
+    b[strSize+escapeCount+1] = '"';
+    b[strSize+escapeCount+2] = '\0';
+    ret = _printString(fp, b);
+    free(b);
+    return ret;
 }
 
 // Read
@@ -184,7 +297,7 @@ static int _readDecimal(const char *text, _DEC **b)
     char end = 0;
     a = malloc(sizeof(_DEC));
     if (a == NULL) return 1;
-    if (sscanf(text, "%lf%c", a, &end) != 1 || end) {
+    if (sscanf(text, "%.16g%c", a, &end) != 1 || end) {
         free(a);
         return 1;
     }

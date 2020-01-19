@@ -52,7 +52,7 @@ static void _freeEntry(void *address, void *data, void (*freeVertex)(void *v));
 /* Public functions */
 
 GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
-    void (*writeVertex)(FILE *fp, void *v))
+    int (*writeVertex)(FILE *fp, void *v))
 {
     GraphEdgeType type;
     unsigned long vCount, nbCount, i, j;
@@ -70,7 +70,8 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
         if (graphGetNextVertex(pGraph, &pVertex))
             return GRAPH_IO_RETURN_UNKNOWN_ERROR;
         WRITE(fp, VERTEX_ADDR_STR, pVertex);
-        writeVertex(fp, pVertex);
+        if (writeVertex(fp, pVertex))
+            return GRAPH_IO_RETURN_WRITING_FAILURE;
         WRITENL(fp, "");
     }
     for (i = vCount; i; --i) {
@@ -92,6 +93,7 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 
 GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
     int (*readVertex)(FILE *fp, void **ppVertex),
+    int (*cmpVertices)(void *a, void *b),
     void (*freeVertex)(void *v))
 {
     unsigned int version;
@@ -123,7 +125,7 @@ GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
         return GRAPH_IO_RETURN_UNKNOWN_ERROR;
     }
     /* Graph to be created */
-    if (graphId = graphCreate(&pGraph, type, NULL freeVertex)) {
+    if (graphId = graphCreate(&pGraph, type, cmpVertices, freeVertex)) {
         mapDestroy(pMap);
         if (graphId == GRAPH_RETURN_MEMORY)
             return GRAPH_IO_RETURN_MEMORY;

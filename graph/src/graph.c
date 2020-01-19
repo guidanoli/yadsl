@@ -11,10 +11,10 @@ struct GraphVertex
 
 struct Graph
 {
-    Set *adjListSet; /* adjecency list set */
-    GraphEdgeType type; /* type of graph */
-    int (*cmpVertices)(void *a, void *b);
-    void (*freeVertex)(void *v);
+    Set *adjListSet; /* set of struct GraphVertex */
+    GraphEdgeType type; /* type of graph (directed or undirected) */
+    int (*cmpVertices)(void *a, void *b); /* compares GraphVertex::item (0 = different) */
+    void (*freeVertex)(void *v); /* frees GraphVertex::item */
 };
 
 /* Private functions prototypes */
@@ -26,7 +26,7 @@ struct _cmpVertexItemParam
 };
 
 static int _cmpVertexItem(struct GraphVertex *pVertex, struct _cmpVertexItemParam *par);
-static void _freeVertex(struct GraphVertex *pVertex);
+static void _freeVertex(struct GraphVertex *pVertex, void (*freeVertex)(void *v));
 
 #define _parseVertices(...) __parseVertices(__VA_ARGS__, NULL)
 static GraphReturnID __parseVertices(Graph *pGraph, void *item,
@@ -66,6 +66,8 @@ GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize)
 
 // Has the monopoly over the adjListSet cursor!!
 // It cannot be manipulated by any other function
+// This is because the user must be in control of
+// which vertex he thinks the cursor is pointing to!
 GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV)
 {
     SetReturnID setId;
@@ -129,12 +131,14 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v)
         free(pVertex);
         return GRAPH_RETURN_MEMORY;
     }
-    if (setId = setAddItem(pGraph->adjListSet, v)) {
+    if (setId = setAddItem(pGraph->adjListSet, pVertex)) {
         setDestroy(pVertex->adjList);
         free(pVertex);
         switch (setId) {
         case SET_RETURN_MEMORY:
             return GRAPH_RETURN_MEMORY;
+        // can't be SET_RETURN_CONTAINS because it has
+        // been already checked with graphContainsVertex
         default:
             return GRAPH_RETURN_UNKNOWN_ERROR;
         }
@@ -149,7 +153,7 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v)
     SetReturnID setId;
     if (pGraph == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
-    if (u == v) /* Assumes simple graph */
+    if (pGraph->cmpVertices(u,v)) /* Assumes simple graph */
         return GRAPH_RETURN_SAME_VERTEX;
     if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
         return graphId;
@@ -183,10 +187,13 @@ GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v)
     GraphReturnID graphId;
     if (pGraph == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
-    if (u == v) /* Assumes simple graph */
+    if (pGraph->cmpVertices(u,v)) /* Assumes simple graph */
         return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
-    if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
+    if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV)) {
+        if (graphId == GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX)
+            return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
         return graphId;
+    }
     switch (setContainsItem(pVertexU->adjList, pVertexV)) {
     case SET_RETURN_CONTAINS:
         return GRAPH_RETURN_CONTAINS_EDGE;
@@ -204,7 +211,7 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v)
     SetReturnID setId;
     if (pGraph == NULL)
         return GRAPH_RETURN_INVALID_PARAMETER;
-    if (u == v) /* Assumes simple graph */
+    if (pGraph->cmpVertices(u,v)) /* Assumes simple graph */
         return GRAPH_RETURN_SAME_VERTEX;
     if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
         return graphId;
@@ -279,7 +286,7 @@ static int _cmpVertexItem(struct GraphVertex *pVertex, struct _cmpVertexItemPara
     if (par == NULL || pVertex == NULL) return 0;
     if (par->cmpVertices == NULL)
         return pVertex->item == par->item;
-    return par->cmpVertices(pVertex->item, item);
+    return par->cmpVertices(pVertex->item, par->item);
 }
 
 // Deallocates vertex from memory properly
@@ -311,8 +318,8 @@ static GraphReturnID __parseVertices(Graph *pGraph, void *item, struct GraphVert
                 return GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX;
             return GRAPH_RETURN_UNKNOWN_ERROR;
         }
-        item = va_arg(va, void *);
-        if (item == NULL)
+        param.item = va_arg(va, void *);
+        if (param.item == NULL)
             break; /* Found sentinel */
         ppVertex = va_arg(va, struct GraphVertex **);
     } while(1);

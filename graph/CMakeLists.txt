@@ -89,6 +89,15 @@ set_target_properties(graphiolib PROPERTIES
 	PUBLIC_HEADER ${INCLUDE_DIR}/graphio.h)
 
 ############################################################
+# Variable test module
+############################################################
+
+add_executable(vartest ${TESTS_DIR}/var.test.c)
+target_include_directories(vartest PRIVATE ${INCLUDE_DIR})
+target_link_libraries(vartest varlib)
+set_target_properties(vartest PROPERTIES C_STANDARD ${CVERSION})
+
+############################################################
 # Set test module
 ############################################################
 
