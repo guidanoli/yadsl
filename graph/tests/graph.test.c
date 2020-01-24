@@ -16,18 +16,18 @@ static const char *helpStrings[] = {
     "The registered actions are the following:",
     "n\tprints the number of vertices",
     "i\tprints next vertex",
-    "t\tprints the type of the graph", // todo - ok
-    "w\twrites the graph to the output file", // todo - ok
-    "Xi\tprints next in-neighbour of vertex X", // todo - ok
-    "Xo\tprints next out-neighbour of vertex X", // todo - ok
-    "Xn\tprints neighbour of X", // todo
-    "Xd\tprints the degree of X", // todo
+    "t\tprints the type of the graph",
+    "w\twrites the graph to the output file",
+    "Xi\tprints next in-neighbour of vertex X",
+    "Xo\tprints next out-neighbour of vertex X",
+    "Xn\tprints neighbour of X",
+    "Xd\tprints the degree of X",
     "X+\tadds vertex X",
     "X-\tremoves vertex X",
     "X?\tchecks if vertex X exists",
-    "X,Y-\tremoves edge XY", // todo - ok
-    "X,Y?\tchecks if edge XY exists", // todo
-    "X,Y,E+\tadds edge E between XY", // todo - ok
+    "X,Y-\tremoves edge XY",
+    "X,Y?\tchecks if edge XY exists",
+    "X,Y,E+\tadds edge E between XY",
     "",
     "The registered flags are the following:",
     "type\tsets the graph type (DIRECTED or UNDIRECTED)",

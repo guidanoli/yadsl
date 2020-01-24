@@ -19,17 +19,6 @@
 
 #define FILE_FORMAT_VERSION 3
 
-struct EdgeType {
-    char label;
-    int isDirected;
-};
-
-static struct EdgeType edgeTypes[] = {
-    { 'D', 1 },
-    { 'U', 0 },
-    { (char) 0, -1 },
-};
-
 #define VERSION_STR         "VERSION %u"
 #define TYPE_STR            "EDGE_TYPE %c"
 #define VERTICES_STR        "VERTEX_COUNT %lu"
