@@ -59,10 +59,17 @@ GraphIoReturnID;
 *               [!] Separation characters (spaces, tabs and
 *               line feeds) in the beggining or in the end
 *               will be deliberately ignored when reading.
+* writeEdge     callback function called to write to the
+*               file "fp" the contents of the edge "e"
+*               Returns 0 on success and else on failure
+*               [!] Separation characters (spaces, tabs and
+*               line feeds) in the beggining or in the end
+*               will be deliberately ignored when reading.
 * Possible errors:
 * GRAPH_IO_RETURN_INVALID_PARAMETER
 *   - "pGraph" is NULL
 *   - "writeVertex" is NULL
+*   - "writeEdge" is NULL
 * GRAPH_IO_RETURN_FILE_ERROR
 *   - Could not write to file
 * GRAPH_IO_RETURN_WRITING_FAILURE
@@ -72,11 +79,12 @@ GraphIoReturnID;
 * and closed afterwards by the caller.
 */
 GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
-    int (*writeVertex)(FILE *fp, void *v));
+    int (*writeVertex)(FILE *fp, void *v),
+    int (*writeEdge)(FILE *fp, void *e));
 
 /**
 * Serialize graph structure to file
-* ppGraph       adress of pointer to graph
+* ppGraph       address of pointer to graph
 * fp            pointer to file to be read
 * readVertex    function responsible for reading
 *               one vertex from the file stream.
@@ -84,13 +92,23 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 *               [!] Cannot return copies, otherwise
 *               indicates GRAPH_IO_RETURN_SAME_CREATION
 *               returns 0 if successful, else, failed
+* readEdge      function responsible for reading
+*               one edge from the file stream.
+*               Returns edge by reference
+*               returns 0 if successful, else, failed
 * cmpVertices   function responsible for comparing
 *               vertices (0 = different, else, equal)
 * freeVertex    function responsible for freeing
 *               one vertex
+* cmpEdges      function responsible for comparing
+*               edges (0 = different, else, equal)
+* freeEdge      function responsible for freeing
+*               one edge
 * Possible errors:
 * GRAPH_IO_RETURN_INVALID_PARAMETER
 *   - "ppGraph" is NULL
+*   - "readVertex" is NULL
+*   - "readEdge" is NULL
 * GRAPH_IO_RETURN_FILE_ERROR
 *   - Could not read file
 * GRAPH_IO_RETURN_SAME_CREATION
@@ -106,7 +124,10 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 */
 GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
     int (*readVertex)(FILE *fp, void **ppVertex),
+    int (*readEdge)(FILE *fp, void **ppEdge),
     int (*cmpVertices)(void *a, void *b),
-    void (*freeVertex)(void *v));
+    void (*freeVertex)(void *v),
+    int (*cmpEdges)(void *a, void *b),
+    void (*freeEdge)(void *e));
 
 #endif

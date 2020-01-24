@@ -100,6 +100,8 @@ SetReturnID setContainsItem(Set *pSet, void *item);
 *   - "pItem" is NULL
 * SET_RETURN_DOES_NOT_CONTAIN
 *   - set does not contain such item
+* [!] The filter function must not alter the set state (like adding,
+* deleting or freeing items), since it can corrupt the set
 */
 SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
     void *arg, void **pItem);
@@ -132,7 +134,7 @@ SetReturnID setRemoveItem(Set *pSet, void *item);
 /**
 * Obtain item currently pointed by the cursor
 * pSet      pointer to set
-* pItem     adress of variable that will hold the item
+* pItem     address of variable that will hold the item
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -144,7 +146,7 @@ SetReturnID setGetCurrentItem(Set *pSet, void **pItem);
 /**
 * Obtain number of items contained in the set
 * pSet      pointer to set
-* pItem     adress of variable that will hold the value
+* pItem     address of variable that will hold the value
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -206,7 +208,7 @@ void setDestroy(Set *pSet);
 * Free set structure from memory and call a special function
 * for each item that is removed, avoiding memory leak
 * pSet      pointer to set
-* item      function that will be called for every
+* freeItem  function that will be called for every
 *           item in the set exactly once
 * arg       auxiliary argument
 */

@@ -18,17 +18,16 @@
 #define WRITENL(file, format, ...) WRITE(file, format "\n", __VA_ARGS__)
 
 #define FILE_FORMAT_VERSION 3
-#define BUFFER_SIZE 128
 
 struct EdgeType {
     char label;
-    GraphEdgeType type;
+    int isDirected;
 };
 
 static struct EdgeType edgeTypes[] = {
-    { 'D', GRAPH_EDGE_TYPE_DIRECTED },
-    { 'U', GRAPH_EDGE_TYPE_UNDIRECTED },
-    { (char) 0, (GraphEdgeType) -1 },
+    { 'D', 1 },
+    { 'U', 0 },
+    { (char) 0, -1 },
 };
 
 #define VERSION_STR         "VERSION %u"
@@ -36,55 +35,53 @@ static struct EdgeType edgeTypes[] = {
 #define VERTICES_STR        "VERTEX_COUNT %lu"
 #define VERTEX_ADDR_STR     "%x "
 #define NBCOUNT_STR         "%lu"
-#define NB_ADDR_STR         " %x"
+#define NB_ADDR_STR         " %x "
 
 /* Private functions prototypes */
 
-static GraphEdgeType _charToType(const char c);
-static char _typeToChar(GraphEdgeType type);
-
-static GraphIoReturnID _read(FILE *fp, Graph *pGraph, struct Vertex *pVertices,
-    const char *format, void *arg, void (*freeVertex)(void *v));
+static int _charToType(const char c);
+static char _typeToChar(int type);
 static void _housekeep(Graph *pGraph, Map *pMap);
-
-static void _freeEntry(void *address, void *data, void (*freeVertex)(void *v));
 
 /* Public functions */
 
 GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
-    int (*writeVertex)(FILE *fp, void *v))
+    int (*writeVertex)(FILE *fp, void *v),
+    int (*writeEdge)(FILE *fp, void *e))
 {
-    GraphEdgeType type;
+    int isDirected;
     unsigned long vCount, nbCount, i, j;
-    void *pVertex, *pNeighbour;
-    if (pGraph == NULL || writeVertex == NULL)
+    void *pVertex, *pNeighbour, *pEdge;
+    if (pGraph == NULL || writeVertex == NULL || writeEdge == NULL)
         return GRAPH_IO_RETURN_INVALID_PARAMETER;
-    if (graphGetType(pGraph, &type))
+    if (graphIsDirected(pGraph, &isDirected))
         return GRAPH_IO_RETURN_UNKNOWN_ERROR;
     if (graphGetNumberOfVertices(pGraph, &vCount))
         return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-    WRITENL(fp, VERSION_STR, FILE_FORMAT_VERSION);
-    WRITENL(fp, TYPE_STR, _typeToChar(type));
-    WRITENL(fp, VERTICES_STR, vCount);
+    WRITENL(fp, VERSION_STR, FILE_FORMAT_VERSION); // Version
+    WRITENL(fp, TYPE_STR, _typeToChar(isDirected)); // Type
+    WRITENL(fp, VERTICES_STR, vCount); // Vertex count
     for (i = vCount; i; --i) {
         if (graphGetNextVertex(pGraph, &pVertex))
             return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-        WRITE(fp, VERTEX_ADDR_STR, pVertex);
-        if (writeVertex(fp, pVertex))
+        WRITE(fp, VERTEX_ADDR_STR, pVertex); // Vertex address
+        if (writeVertex(fp, pVertex)) // Vertex data serialization
             return GRAPH_IO_RETURN_WRITING_FAILURE;
         WRITENL(fp, "");
     }
     for (i = vCount; i; --i) {
         if (graphGetNextVertex(pGraph, &pVertex))
             return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-        if (graphGetNumberOfNeighbours(pGraph, pVertex, &nbCount))
+        if (graphGetVertexOutDegree(pGraph, pVertex, &nbCount))
             return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-        WRITE(fp, VERTEX_ADDR_STR, pVertex);
-        WRITE(fp, NBCOUNT_STR, nbCount);
+        WRITE(fp, VERTEX_ADDR_STR, pVertex); // Vertex address
+        WRITE(fp, NBCOUNT_STR, nbCount); // Vertex degree
         for (j = nbCount; j; --j) {
-            if (graphGetNextNeighbour(pGraph, pVertex, &pNeighbour))
+            if (graphGetNextOutNeighbour(pGraph, pVertex, &pNeighbour, &pEdge))
                 return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-            WRITE(fp, NB_ADDR_STR, pNeighbour);
+            WRITE(fp, NB_ADDR_STR, pNeighbour); // Neighbour address
+            if (writeEdge(fp, pEdge)) // Edge data serialization
+                return GRAPH_IO_RETURN_WRITING_FAILURE;
         }
         WRITENL(fp, "");
     }
@@ -93,39 +90,40 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 
 GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
     int (*readVertex)(FILE *fp, void **ppVertex),
+    int (*readEdge)(FILE *fp, void **ppEdge),
     int (*cmpVertices)(void *a, void *b),
-    void (*freeVertex)(void *v))
+    void (*freeVertex)(void *v),
+    int (*cmpEdges)(void *a, void *b),
+    void (*freeEdge)(void *e))
 {
     unsigned int version;
     unsigned long vCount, nbCount, i, j;
     char typeChar;
     GraphReturnID graphId;
     MapReturnID mapId;
-    GraphEdgeType type;
+    int isDirected;
     Graph *pGraph = NULL;
     Map *pMap = NULL;
     void *pVertexAddress, *pNeighbourAddress,
-        *pVertexItem, *pNeighbourItem;
-    if (ppGraph == NULL || readVertex == NULL)
+        *pVertexItem, *pNeighbourItem, *pEdge;
+    if (ppGraph == NULL || readVertex == NULL || readEdge == NULL)
         return GRAPH_IO_RETURN_INVALID_PARAMETER;
-    /* File format version */
-    READ(VERSION_STR, &version);
+    READ(VERSION_STR, &version); // Version
     if (version != FILE_FORMAT_VERSION)
         return GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT;
-    /* Graph edge type */
-    READ(TYPE_STR, &typeChar);
-    if ((type = _charToType(typeChar)) == GRAPH_EDGE_TYPE_INVALID)
+    READ(TYPE_STR, &typeChar); // Type
+    if ((isDirected = _charToType(typeChar)) == -1)
         return GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT;
-    /* Vertex count */
-    READ(VERTICES_STR, &vCount);
-    /* Map allocation: keys = addresses, values = vertex */
-    if (mapId = mapCreate(&pMap, NULL, _freeEntry, freeVertex)) {
+    READ(VERTICES_STR, &vCount); // Vertex count
+    /* Map where key = vertex address and values = vertex data */
+    if (mapId = mapCreate(&pMap, NULL, NULL, NULL)) {
         if (mapId == MAP_RETURN_MEMORY)
             return GRAPH_IO_RETURN_MEMORY;
         return GRAPH_IO_RETURN_UNKNOWN_ERROR;
     }
     /* Graph to be created */
-    if (graphId = graphCreate(&pGraph, type, cmpVertices, freeVertex)) {
+    if (graphId = graphCreate(&pGraph, isDirected, cmpVertices,
+        freeVertex, cmpEdges, freeEdge)) {
         mapDestroy(pMap);
         if (graphId == GRAPH_RETURN_MEMORY)
             return GRAPH_IO_RETURN_MEMORY;
@@ -133,34 +131,32 @@ GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
     }
     for (i = vCount; i; --i) {
         void *pPreviousValue = NULL;
-        READ(VERTEX_ADDR_STR, &pVertexAddress);
-        if (readVertex(fp, &pVertexItem)) {
+        READ(VERTEX_ADDR_STR, &pVertexAddress); // Vertex address
+        if (readVertex(fp, &pVertexItem)) { // Vertex data serialization
             _housekeep(pGraph, pMap);
             return GRAPH_IO_RETURN_CREATION_FAILURE;
         }
-        switch (mapPutEntry(pMap, pVertexAddress, pVertexItem, &pPreviousValue)) {
-        case MAP_RETURN_OK:
-            /* New entry (new address) */
-            break;
-        case MAP_RETURN_OVERWROTE_ENTRY:
-            /* Repeated vertex address */
-            freeVertex(pPreviousValue);
+        if (mapId = mapPutEntry(pMap, pVertexAddress, pVertexItem, &pPreviousValue)) {
+            freeVertex(pVertexItem);
             _housekeep(pGraph, pMap);
-            return GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT;
-        case MAP_RETURN_MEMORY:
-            _housekeep(pGraph, pMap);
-            return GRAPH_IO_RETURN_MEMORY;
-        default:
-            _housekeep(pGraph, pMap);
-            return GRAPH_IO_RETURN_UNKNOWN_ERROR;
+            switch(mapId) {
+            case MAP_RETURN_OVERWROTE_ENTRY:
+                freeVertex(pPreviousValue); // old entry
+                return GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT;
+            case MAP_RETURN_MEMORY:
+                return GRAPH_IO_RETURN_MEMORY;
+            default:
+                return GRAPH_IO_RETURN_UNKNOWN_ERROR;
+            }
         }
         if (graphId = graphAddVertex(pGraph, pVertexItem)) {
+            freeVertex(pVertexItem);
             _housekeep(pGraph, pMap);
             switch (graphId) {
             case GRAPH_RETURN_MEMORY:
                 return GRAPH_IO_RETURN_MEMORY;
             case GRAPH_RETURN_CONTAINS_VERTEX:
-                /* Repeated vertex */
+                // Repeated vertex data
                 return GRAPH_IO_RETURN_SAME_CREATION;
             default:
                 return GRAPH_IO_RETURN_UNKNOWN_ERROR;
@@ -168,55 +164,67 @@ GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
         }
     }
     for (i = vCount; i; --i) {
-        READ(VERTEX_ADDR_STR, &pVertexAddress);
+        unsigned long arcCount = 0;
+        READ(VERTEX_ADDR_STR, &pVertexAddress); // Vertex address
         if (mapId = mapGetEntry(pMap, pVertexAddress, &pVertexItem)) {
             _housekeep(pGraph, pMap);
             return GRAPH_IO_RETURN_UNKNOWN_ERROR;
         }
-        READ(NBCOUNT_STR, &nbCount);
+        READ(NBCOUNT_STR, &nbCount); // Vertex degree
         for (j = nbCount; j; --j) {
-            READ(NB_ADDR_STR, &pNeighbourAddress);
+            READ(NB_ADDR_STR, &pNeighbourAddress); // Neighbour address
+            if (readEdge(fp, &pEdge)) {
+                _housekeep(pGraph, pMap);
+                return GRAPH_IO_RETURN_CREATION_FAILURE;
+            }
             if (mapId = mapGetEntry(pMap, pNeighbourAddress, &pNeighbourItem)) {
+                freeEdge(pEdge);
                 _housekeep(pGraph, pMap);
                 return GRAPH_IO_RETURN_UNKNOWN_ERROR;
             }
-            if (graphId = graphAddEdge(pGraph, pVertexItem, pNeighbourItem)) {
-                _housekeep(pGraph, pMap);
+            if (graphId = graphAddEdge(pGraph, pVertexItem, pNeighbourItem, pEdge)) {
+                freeEdge(pEdge);
                 switch (graphId) {
                 case GRAPH_RETURN_MEMORY:
+                    _housekeep(pGraph, pMap);
                     return GRAPH_IO_RETURN_MEMORY;
                 case GRAPH_RETURN_CONTAINS_EDGE:
-                    return GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT;
+                    if (pVertexAddress == pNeighbourAddress && ++arcCount > 1) {
+                        _housekeep(pGraph, pMap);
+                        return GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT;
+                    }
+                    break;
                 default:
+                    _housekeep(pGraph, pMap);
                     return GRAPH_IO_RETURN_UNKNOWN_ERROR;
                 }
             }
         }
     }
+    mapDestroy(pMap);
+    *ppGraph = pGraph;
     return GRAPH_IO_RETURN_OK;
 }
 
 /* Private functions */
 
 // Converts character to type
-static GraphEdgeType _charToType(const char c)
+static int _charToType(const char c)
 {
-    char label;
-    struct EdgeType *pEdgeType = edgeTypes;
-    for (; label = pEdgeType->label; ++pEdgeType)
-        if (label == c)
-            return pEdgeType->type;
-    return GRAPH_EDGE_TYPE_INVALID;
+    switch (c) {
+    case 'U':
+        return 0;
+    case 'D':
+        return 1;
+    default:
+        return -1;
+    }
 }
 
 // Converts type to character
-static char _typeToChar(GraphEdgeType type)
+static char _typeToChar(int type)
 {
-    struct EdgeType *pEdgeType = edgeTypes;
-    for (; pEdgeType->label; ++pEdgeType)
-        if (pEdgeType->type == type)
-            return pEdgeType->label;
-    return 'I';
+    return type ? 'D' : 'U';
 }
 
 static void _housekeep(Graph *pGraph, Map *pMap)
@@ -225,10 +233,4 @@ static void _housekeep(Graph *pGraph, Map *pMap)
         graphDestroy(pGraph);
     if (pMap)
         mapDestroy(pMap);
-}
-
-static void _freeEntry(void *address, void *data, void (*freeVertex)(void *v))
-{
-    if (freeVertex)
-        freeVertex(data);
 }

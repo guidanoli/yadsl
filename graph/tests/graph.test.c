@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include "graph.h"
 #include "graphio.h"
 #include "var.h"
@@ -15,16 +16,18 @@ static const char *helpStrings[] = {
     "The registered actions are the following:",
     "n\tprints the number of vertices",
     "i\tprints next vertex",
-    "t\tprints the type of the graph",
-    "w\twrites the graph to the output file",
-    "Xi\tprints next neighbour of edge X",
-    "Xn\tprints the number of neighbours of X",
+    "t\tprints the type of the graph", // todo - ok
+    "w\twrites the graph to the output file", // todo - ok
+    "Xi\tprints next in-neighbour of vertex X", // todo - ok
+    "Xo\tprints next out-neighbour of vertex X", // todo - ok
+    "Xn\tprints neighbour of X", // todo
+    "Xd\tprints the degree of X", // todo
     "X+\tadds vertex X",
     "X-\tremoves vertex X",
     "X?\tchecks if vertex X exists",
-    "X,Y+\tadds edge XY",
-    "X,Y-\tremoves edge XY",
-    "X,Y?\tchecks if edge XY exists",
+    "X,Y-\tremoves edge XY", // todo - ok
+    "X,Y?\tchecks if edge XY exists", // todo
+    "X,Y,E+\tadds edge E between XY", // todo - ok
     "",
     "The registered flags are the following:",
     "type\tsets the graph type (DIRECTED or UNDIRECTED)",
@@ -36,10 +39,11 @@ static const char *helpStrings[] = {
 /* Graph */
 
 static Graph *g = NULL;
-Variable *v1 = NULL, *v2 = NULL;
+Variable *v1 = NULL, *v2 = NULL, *v3 = NULL;
 
 /* Private functions prototypes */
 
+static void free_filenames(char *input, char *output);
 static void print_help();
 static int _cmpVariables(void *a, void *b);
 static void _freeVariables(void *v);
@@ -48,9 +52,9 @@ static int _writeVariables(FILE *fp, void *v);
 static void _garbageCollectVariables();
 #define _transferOwnership(...) __transferOwnership(__VA_ARGS__, NULL);
 static void __transferOwnership(Variable **v, ...);
-static char *parse(int *nid, GraphEdgeType *pType, char **inputFilename,
+static char *parse(int *nid, int *isDirected, char **inputFilename,
     char **outputFilename, char **argv, int argc);
-static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
+static char *test(GraphReturnID *pid, int *nid, int isDirected,
     char **cmds, int count, const char *inFile, const char *outFile);
 
 /* Main function */
@@ -59,7 +63,7 @@ int main(int argc, char **argv)
 {
     GraphReturnID id = GRAPH_RETURN_OK;
     int nid = 1;
-    GraphEdgeType type = GRAPH_EDGE_TYPE_UNDIRECTED;
+    int isDirected = 0;
     char *str = NULL;
     char *inputFilename = NULL, *outputFilename = "out.graph";
     /* ignore program name */
@@ -67,17 +71,19 @@ int main(int argc, char **argv)
     int commandCount = argc - 1;
     /* parse arguments */
     if (commandCount > 0) {
-        str = parse(&nid, &type, &inputFilename, &outputFilename, commands, commandCount);
+        str = parse(&nid, &isDirected, &inputFilename, &outputFilename, commands, commandCount);
         if (str) {
             fprintf(stderr, "Error while parsing argument #%d (%s): %s\n", nid, argv[nid], str);
+            free_filenames(inputFilename, outputFilename);
             return 1;
         }
     } else {
         print_help();
+        free_filenames(inputFilename, outputFilename);
         return 0;
     }
     /* run tests */
-    str = test(&id, &nid, type, commands, commandCount, inputFilename, outputFilename);
+    str = test(&id, &nid, isDirected, commands, commandCount, inputFilename, outputFilename);
     _garbageCollectVariables();
     if (g)
         graphDestroy(g);
@@ -92,24 +98,26 @@ int main(int argc, char **argv)
         } else {
             fprintf(stderr, "Error on the action #%d (%s): %s\n", nid, argv[nid], str);
         }
+        free_filenames(inputFilename, outputFilename);
         return 1;
     } else {
         fprintf(stdout, "No errors.\n");
     }
+    free_filenames(inputFilename, outputFilename);
     return 0;
 }
 
 /* Private functions implementations */
-static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
+static char *test(GraphReturnID *pid, int *nid, int isDirected,
     char **cmds, int count, const char *inFile, const char *outFile)
 {
     unsigned long pSize;
-    char cmd, flag[128], buff1[1024], buff2[1024], end = 0;
-    int i, tokens, ret;
-    GraphEdgeType t;
+    char cmd, flag[128], buff1[1024], buff2[1024], buff3[1024], end = 0;
+    int i, tokens, ret, dir;
     FILE *fp;
     if (inFile == NULL) {
-        if (*pid = graphCreate(&g, type, _cmpVariables, _freeVariables)) {
+        if (*pid = graphCreate(&g, isDirected, _cmpVariables, _freeVariables,
+            _cmpVariables, _freeVariables)) {
             if (*pid == GRAPH_RETURN_MEMORY)
                 g = NULL;
             return "Could not create graph";
@@ -118,7 +126,8 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
         fp = fopen(inFile, "r");
         if (fp == NULL)
             return "Could not open input file";
-        if (*pid = graphRead(&g, fp, _readVariables, _cmpVariables, _freeVariables)) {
+        if (*pid = graphRead(&g, fp, _readVariables, _readVariables, _cmpVariables,
+            _freeVariables, _cmpVariables, _freeVariables)) {
             if (*pid == GRAPH_RETURN_MEMORY)
                 g = NULL;
             return "Could not create graph from file";
@@ -128,25 +137,18 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
         *nid = i + 1;
         if (sscanf(cmds[i], "--%s", flag) == 1)
             continue;
-        if ((tokens = sscanf(cmds[i], "%[^,],%[^+?-]%c%c", buff1, buff2, &cmd, &end)) != 3
-            && (tokens = sscanf(cmds[i], "%[^in+?-]%c%c", buff1, &cmd, &end)) != 2
+        if ((tokens = sscanf(cmds[i], "%[^,],%[^,],%[^+]%c%c", buff1, buff2, buff3, &cmd, &end)) != 4
+            && (tokens = sscanf(cmds[i], "%[^,],%[^?-]%c%c", buff1, buff2, &cmd, &end)) != 3
+            && (tokens = sscanf(cmds[i], "%[^nodi+?-]%c%c", buff1, &cmd, &end)) != 2
             && (tokens = sscanf(cmds[i], "%c%c", &cmd, &end)) != 1)
             return "Parsing error";
         if (tokens == 1) {
             switch (cmd) {
             case 't':
-                if (*pid = graphGetType(g, &t))
+                if (*pid = graphIsDirected(g, &dir))
                     return "Could not get type";
-                switch (t) {
-                case GRAPH_EDGE_TYPE_DIRECTED:
-                    fprintf(stdout, "[%d] Directed\n", *nid);
-                    break;
-                case GRAPH_EDGE_TYPE_UNDIRECTED:
-                    fprintf(stdout, "[%d] Undirected\n", *nid);
-                    break;
-                default:
-                    return "Unknown graph type";
-                }
+                fprintf(stdout, "[%d] %s\n", *nid, dir ?
+                    "Directed" : "Undirected");
                 break;
             case 'n':
                 if (*pid = graphGetNumberOfVertices(g, &pSize))
@@ -157,7 +159,7 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
                 fp = fopen(outFile, "w");
                 if (!fp)
                     return "Could not open file";
-                *pid = graphWrite(g, fp, _writeVariables);
+                *pid = graphWrite(g, fp, _writeVariables, _writeVariables);
                 fclose(fp);
                 if (*pid)
                     return "Could not write to file";
@@ -179,29 +181,104 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
                 return "Could not create variable";
             switch (cmd) {
             case 'i':
-                switch (*pid = graphGetNextNeighbour(g, v1, &v2)) {
+                switch (*pid = graphGetNextInNeighbour(g, v1, &v2, &v3)) {
                 case GRAPH_RETURN_OK:
                     fprintf(stdout, "[%d] ", *nid);
                     ret = varWrite(v2, stdout);
-                    _transferOwnership(&v2);
+                    if (!ret)
+                        fprintf(stdout, " (edge = ");
+                    ret = ret || varWrite(v3, stdout);
+                    _transferOwnership(&v2, &v3);
                     if (ret)
                         return "Could not write variable";
-                    fprintf(stdout, "\n");
+                    fprintf(stdout, ")\n");
+                    break;
+                case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+                    fprintf(stdout, "[%d] Vertex ", *nid);
+                    if (varWrite(v1, stdout))
+                        return "Could not write variable";
+                    fprintf(stdout, " is not in the graph\n");
                     break;
                 case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
                     fprintf(stdout, "[%d] Edge ", *nid);
                     if (varWrite(v1, stdout))
                         return "Could not write variable";
-                    fprintf(stdout, " has no neighbours\n");
+                    fprintf(stdout, " has no in-neighbours\n");
                     break;
                 default:
-                    return "Could not get next neighbour";
+                    return "Could not get next in-neighbour";
+                }
+                break;
+            case 'o':
+                switch (*pid = graphGetNextOutNeighbour(g, v1, &v2, &v3)) {
+                case GRAPH_RETURN_OK:
+                    fprintf(stdout, "[%d] ", *nid);
+                    ret = varWrite(v2, stdout);
+                    if (!ret)
+                        fprintf(stdout, " (edge = ");
+                    ret = ret || varWrite(v3, stdout);
+                    _transferOwnership(&v2, &v3);
+                    if (ret)
+                        return "Could not write variable";
+                    fprintf(stdout, ")\n");
+                    break;
+                case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+                    fprintf(stdout, "[%d] Vertex ", *nid);
+                    if (varWrite(v1, stdout))
+                        return "Could not write variable";
+                    fprintf(stdout, " is not in the graph\n");
+                    break;
+                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+                    fprintf(stdout, "[%d] Edge ", *nid);
+                    if (varWrite(v1, stdout))
+                        return "Could not write variable";
+                    fprintf(stdout, " has no out-neighbours\n");
+                    break;
+                default:
+                    return "Could not get next out-neighbour";
                 }
                 break;
             case 'n':
-                if (*pid = graphGetNumberOfNeighbours(g, v1, &pSize))
-                    return "Could not get number of neighbours";
-                fprintf(stdout, "[%d] %lu\n", *nid, pSize);
+                switch (*pid = graphGetNextNeighbour(g, v1, &v2, &v3)) {
+                case GRAPH_RETURN_OK:
+                    fprintf(stdout, "[%d] ", *nid);
+                    ret = varWrite(v2, stdout);
+                    if (!ret)
+                        fprintf(stdout, " (edge = ");
+                    ret = ret || varWrite(v3, stdout);
+                    _transferOwnership(&v2, &v3);
+                    if (ret)
+                        return "Could not write variable";
+                    fprintf(stdout, ")\n");
+                    break;
+                case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+                    fprintf(stdout, "[%d] Vertex ", *nid);
+                    if (varWrite(v1, stdout))
+                        return "Could not write variable";
+                    fprintf(stdout, " is not in the graph\n");
+                    break;
+                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+                    fprintf(stdout, "[%d] Vertex ", *nid);
+                    if (varWrite(v1, stdout))
+                        return "Could not write variable";
+                    fprintf(stdout, " has no out-neighbours\n");
+                    break;
+                default:
+                    return "Could not get next out-neighbour";
+                }
+                break;
+            case 'd':
+                if (*pid = graphGetVertexDegree(g, v1, &pSize))
+                    return "Could not get vertex degree";
+                fprintf(stdout, "[%d] %lu neighbour(s) in total\n", *nid, pSize);
+                if (isDirected) {
+                    if (*pid = graphGetVertexInDegree(g, v1, &pSize))
+                        return "Could not get number of in-neighbours";
+                    fprintf(stdout, "[%d] %lu in-neighbour(s)\n", *nid, pSize);
+                    if (*pid = graphGetVertexOutDegree(g, v1, &pSize))
+                        return "Could not get number of out-neighbours";
+                    fprintf(stdout, "[%d] %lu out-neighbour(s)\n", *nid, pSize);
+                }
                 break;
             case '?':
                 *pid = graphContainsVertex(g, v1);
@@ -238,10 +315,6 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
             if (varCreate(buff2, &v2))
                 return "Could not create second variable";
             switch (cmd) {
-            case '+':
-                if (*pid = graphAddEdge(g, v1, v2))
-                    return "Could not add edge";
-                break;
             case '-':
                 if (*pid = graphRemoveEdge(g, v1, v2))
                     return "Could not remove edge";
@@ -250,19 +323,35 @@ static char *test(GraphReturnID *pid, int *nid, GraphEdgeType type,
                 *pid = graphContainsEdge(g, v1, v2);
                 switch (*pid) {
                 case GRAPH_RETURN_CONTAINS_EDGE:
-                    fprintf(stdout, "[%d] Contains ", *nid);
+                    fprintf(stdout, "[%d] Contains: ", *nid);
+                    if (*pid = graphGetEdge(g, v1, v2, &v3))
+                        return "Could not get edge";
+                    varWrite(v3, stdout);
+                    fprintf(stdout, "\n");
+                    _transferOwnership(&v3);
                     break;
                 case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
-                    fprintf(stdout, "[%d] Does not contain ", *nid);
+                    fprintf(stdout, "[%d] Does not contain edge\n", *nid);
                     break;
                 default:
                     return "Could not assert if edge was added or not";
                 }
-                fprintf(stdout, "<");
-                varWrite(v1, stdout);
-                fprintf(stdout, ", ");
-                varWrite(v2, stdout);
-                fprintf(stdout, ">\n");
+                break;
+            default:
+                return "Unknown command";
+            }
+        } else if (tokens == 4) {
+            if (varCreate(buff1, &v1))
+                return "Could not create first variable";
+            if (varCreate(buff2, &v2))
+                return "Could not create second variable";
+            if (varCreate(buff3, &v3))
+                return "Could not create third variable";
+            switch (cmd) {
+            case '+':
+                if (*pid = graphAddEdge(g, v1, v2, v3))
+                    return "Could not add edge";
+                _transferOwnership(&v3);
                 break;
             default:
                 return "Unknown command";
@@ -279,7 +368,7 @@ static void print_help() {
     for (; *str; ++str) puts(*str);
 }
 
-static char *parse(int *nid, GraphEdgeType *pType, char **inputFilename,
+static char *parse(int *nid, int *isDirected, char **inputFilename,
     char **outputFilename, char **argv, int argc)
 {
     int i;
@@ -289,9 +378,9 @@ static char *parse(int *nid, GraphEdgeType *pType, char **inputFilename,
         if (sscanf(argv[i], "--%[^=]=%s", flag, value) == 2) {
             if (!strcmp(flag, "type")) {
                 if (!strcmp(value, "DIRECTED"))
-                    *pType = GRAPH_EDGE_TYPE_DIRECTED;
+                    *isDirected = 1;
                 else if (!strcmp(value, "UNDIRECTED"))
-                    *pType = GRAPH_EDGE_TYPE_UNDIRECTED;
+                    *isDirected = 0;
                 else
                     return "Could not set graph type";
             } else if (!strcmp(flag, "in")) {
@@ -340,8 +429,10 @@ static void _garbageCollectVariables()
 {
     if (v1) varDestroy(v1);
     if (v2) varDestroy(v2);
+    if (v3) varDestroy(v3);
     v1 = NULL;
     v2 = NULL;
+    v3 = NULL;
 }
 
 static void __transferOwnership(Variable **v, ...)
@@ -351,4 +442,12 @@ static void __transferOwnership(Variable **v, ...)
     do { *v = NULL; }
     while (v = va_arg(va, Variable **));
     va_end(va);
+}
+
+static void free_filenames(char *input, char *output)
+{
+    if (input)
+        free(input);
+    if (output && strcmp(output, "out.graph"))
+        free(output);
 }

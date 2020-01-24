@@ -235,9 +235,9 @@ void setDestroyDeep(Set *pSet, void (*freeItem)(void *item, void *arg), void *ar
     current = pSet->first;
     next = NULL;
     while (current != NULL) {
-        next = current->next;
         if (freeItem)
             freeItem(current->item, arg);
+        next = current->next;
         free(current);
         current = next;
     }
