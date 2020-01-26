@@ -13,12 +13,13 @@ static char *loc[] = {
     "\\|zxcvbnm,.<>;/:"
 };
 
-static int coord(char c, int *x, int *y)
+static int coord(char c, size_t *x, size_t *y)
 {
+    size_t i, j;
     char coff = 'A' - 'a'; // Case offset
-    for (int i = 0; i < sizeof(loc)/sizeof(*loc); i++) {
+    for (i = 0; i < sizeof(loc)/sizeof(*loc); i++) {
         char *line = loc[i];
-        for (int j = 0; j < strlen(line); j++) {
+        for (j = 0; j < strlen(line); j++) {
             char ch = line[j];
             if (ch == c || ch == (c + coff)) {
                 *x = i;
@@ -30,52 +31,52 @@ static int coord(char c, int *x, int *y)
     return 1;
 }
 
-static int alpha(char a, char b)
+static size_t modsub(size_t a, size_t b)
 {
-    if (a == b) return 0;
-    int posa[2], posb[2];
-    if (coord(a, &posa[0], &posa[1])) return ALPHA;
-    if (coord(b, &posb[0], &posb[1])) return ALPHA;
-    return abs(posa[0] - posb[0]) + abs(posa[1] - posb[1]);
+    return (a > b) ? (a - b) : (b - a);
 }
 
-int diff(char *s1, char *s2)
+static size_t alpha(char a, char b)
 {
-    if (!s1 || !s2) return -1;
+    size_t posa[2], posb[2];
+    if (a == b) return 0;
+    if (coord(a, &posa[0], &posa[1])) return ALPHA;
+    if (coord(b, &posb[0], &posb[1])) return ALPHA;
+    return modsub(posa[0], posb[0]) + modsub(posa[1], posb[1]);
+}
 
-    int l1 = strlen(s1), l2 = strlen(s2);
-    int *M = malloc((l1+1)*sizeof(int));
-    if (!M) return -1;
-    int *N = malloc((l1+1)*sizeof(int));
+size_t diff(const char *s1, const char *s2)
+{
+    size_t v[3], lv, cost, i, j, k, l1, l2, *M, *N;
+    if (!s1 || !s2) return -1;
+    l1 = strlen(s1);
+    l2 = strlen(s2);
+    M = malloc((l1 + 1)*sizeof(size_t));
+    if (!M) return DIFFERR;
+    N = malloc((l1 + 1)*sizeof(size_t));
     if (!N) {
         free(M);
-        return -1;
+        return DIFFERR;
     }
-
-    for (int i = 0; i <= l1; i++)
+    for (i = 0; i <= l1; i++)
         M[i] = i*DELTA;
-
-    int v[3];
-    for (int j = 1; j <= l2; j++) {
-        for (int i = 0; i <= l1; i++)
+    for (j = 1; j <= l2; j++) {
+        for (i = 0; i <= l1; i++)
             N[i] = M[i];
         M[0] = j*DELTA;
-        for (int i = 1; i <= l1; i++) {
+        for (i = 1; i <= l1; i++) {
             v[0] = alpha(s1[j-1], s2[i-1]) + N[i-1];
             v[1] = DELTA + M[i-1];
             v[2] = DELTA + N[i];
-            int lv = v[0];
-            for (int k = 1; k < 3; k++)
+            lv = v[0];
+            for (k = 1; k < 3; k++)
                 if (v[k] < lv)
                     lv = v[k];
             M[i] = lv;
         }
     }
-
-    int cost = M[l1];
-
+    cost = M[l1];
     free(M);
     free(N);
-
     return cost;
 }
