@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "graph.h"
 #include "graphio.h"
+#include "graphsearch.h"
 #include "var.h"
 
 /* Help */
@@ -28,6 +29,7 @@ static const char *helpStrings[] = {
     "X,Y-\tremoves edge XY",
     "X,Y?\tchecks if edge XY exists",
     "X,Y,E+\tadds edge E between XY",
+    "\\dfs(X)\tdoes a dfs from X"
     "",
     "The registered flags are the following:",
     "type\tsets the graph type (DIRECTED or UNDIRECTED)",
@@ -49,6 +51,7 @@ static int _cmpVariables(void *a, void *b);
 static void _freeVariables(void *v);
 static int _readVariables(FILE *fp, void **ppVertex);
 static int _writeVariables(FILE *fp, void *v);
+static void _printVariables(void *v);
 static void _garbageCollectVariables();
 #define _transferOwnership(...) __transferOwnership(__VA_ARGS__, NULL);
 static void __transferOwnership(Variable **v, ...);
@@ -113,7 +116,7 @@ static char *test(GraphReturnID *pid, int *nid, int isDirected,
 {
     unsigned long pSize;
     char cmd, flag[128], buff1[1024], buff2[1024], buff3[1024], end = 0;
-    int i, tokens, ret, dir;
+    int i, ret, dir;
     FILE *fp;
     if (inFile == NULL) {
         if (*pid = graphCreate(&g, isDirected, _cmpVariables, _freeVariables,
@@ -135,48 +138,70 @@ static char *test(GraphReturnID *pid, int *nid, int isDirected,
     }
     for (i = 0; i < count; ++i) {
         *nid = i + 1;
+        // Ignore flags (--.*)
         if (sscanf(cmds[i], "--%s", flag) == 1)
             continue;
-        if ((tokens = sscanf(cmds[i], "%[^,],%[^,],%[^+]%c%c", buff1, buff2, buff3, &cmd, &end)) != 4
-            && (tokens = sscanf(cmds[i], "%[^,],%[^?-]%c%c", buff1, buff2, &cmd, &end)) != 3
-            && (tokens = sscanf(cmds[i], "%[^nodi+?-]%c%c", buff1, &cmd, &end)) != 2
-            && (tokens = sscanf(cmds[i], "%c%c", &cmd, &end)) != 1)
-            return "Parsing error";
-        if (tokens == 1) {
+        // Special functions (\.*(.*)$)
+        if (sscanf(cmds[i], "\\%[^(](%[^)])%c", buff1, buff2, &end) == 2) {
+            if (strcmp(buff1, "dfs") == 0) {
+                if (varCreate(buff2, &v1))
+                    return "Could not create variable";
+                if (*pid = graphDFS(g, v1, _printVariables))
+                    return "Could not do DFS";
+            } else {
+                return "Unknown command";
+            }
+        // Commands with three arguments (.*,.*,.*[+]$)
+        } else if (sscanf(cmds[i], "%[^,],%[^,],%[^+]%c%c", buff1, buff2, buff3, &cmd, &end) == 4) {
+            if (varCreate(buff1, &v1))
+                return "Could not create first variable";
+            if (varCreate(buff2, &v2))
+                return "Could not create second variable";
+            if (varCreate(buff3, &v3))
+                return "Could not create third variable";
             switch (cmd) {
-            case 't':
-                if (*pid = graphIsDirected(g, &dir))
-                    return "Could not get type";
-                fprintf(stdout, "[%d] %s\n", *nid, dir ?
-                    "Directed" : "Undirected");
-                break;
-            case 'n':
-                if (*pid = graphGetNumberOfVertices(g, &pSize))
-                    return "Could not get number of vertices";
-                fprintf(stdout, "[%d] %lu\n", *nid, pSize);
-                break;
-            case 'w':
-                fp = fopen(outFile, "w");
-                if (!fp)
-                    return "Could not open file";
-                *pid = graphWrite(g, fp, _writeVariables, _writeVariables);
-                fclose(fp);
-                if (*pid)
-                    return "Could not write to file";
-                fprintf(stdout, "[%d] Wrote to file\n", *nid);
-                break;
-            case 'i':
-                if (*pid = graphGetNextVertex(g, &v1))
-                    return "Could not get next vertex";
-                fprintf(stdout, "[%d] ", *nid);
-                varWrite(v1, stdout);
-                fprintf(stdout, "\n");
-                _transferOwnership(&v1);
+            case '+':
+                if (*pid = graphAddEdge(g, v1, v2, v3))
+                    return "Could not add edge";
+                _transferOwnership(&v3);
                 break;
             default:
                 return "Unknown command";
             }
-        } else if (tokens == 2) {
+        // Commands with two arguments (.*,.*[?-]$)
+        } else if (sscanf(cmds[i], "%[^,],%[^?-]%c%c", buff1, buff2, &cmd, &end) == 3) {
+            if (varCreate(buff1, &v1))
+                return "Could not create first variable";
+            if (varCreate(buff2, &v2))
+                return "Could not create second variable";
+            switch (cmd) {
+            case '-':
+                if (*pid = graphRemoveEdge(g, v1, v2))
+                    return "Could not remove edge";
+                break;
+            case '?':
+                *pid = graphContainsEdge(g, v1, v2);
+                switch (*pid) {
+                case GRAPH_RETURN_CONTAINS_EDGE:
+                    fprintf(stdout, "[%d] Contains: ", *nid);
+                    if (*pid = graphGetEdge(g, v1, v2, &v3))
+                        return "Could not get edge";
+                    varWrite(v3, stdout);
+                    fprintf(stdout, "\n");
+                    _transferOwnership(&v3);
+                    break;
+                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+                    fprintf(stdout, "[%d] Does not contain edge\n", *nid);
+                    break;
+                default:
+                    return "Could not assert if edge was added or not";
+                }
+                break;
+            default:
+                return "Unknown command";
+            }
+        // Unary commands (.*[nodi+?-]$)
+        } else if (sscanf(cmds[i], "%[^nodi+?-]%c%c", buff1, &cmd, &end) == 2) {
             if (varCreate(buff1, &v1))
                 return "Could not create variable";
             switch (cmd) {
@@ -308,54 +333,44 @@ static char *test(GraphReturnID *pid, int *nid, int isDirected,
                 break;
             default:
                 return "Unknown command";
-            }
-        } else if (tokens == 3) {
-            if (varCreate(buff1, &v1))
-                return "Could not create first variable";
-            if (varCreate(buff2, &v2))
-                return "Could not create second variable";
+            }    
+        // One character commands (.$)
+        } else if (sscanf(cmds[i], "%c%c", &cmd, &end) == 1) {
             switch (cmd) {
-            case '-':
-                if (*pid = graphRemoveEdge(g, v1, v2))
-                    return "Could not remove edge";
+            case 't':
+                if (*pid = graphIsDirected(g, &dir))
+                    return "Could not get type";
+                fprintf(stdout, "[%d] %s\n", *nid, dir ?
+                    "Directed" : "Undirected");
                 break;
-            case '?':
-                *pid = graphContainsEdge(g, v1, v2);
-                switch (*pid) {
-                case GRAPH_RETURN_CONTAINS_EDGE:
-                    fprintf(stdout, "[%d] Contains: ", *nid);
-                    if (*pid = graphGetEdge(g, v1, v2, &v3))
-                        return "Could not get edge";
-                    varWrite(v3, stdout);
-                    fprintf(stdout, "\n");
-                    _transferOwnership(&v3);
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
-                    fprintf(stdout, "[%d] Does not contain edge\n", *nid);
-                    break;
-                default:
-                    return "Could not assert if edge was added or not";
-                }
+            case 'n':
+                if (*pid = graphGetNumberOfVertices(g, &pSize))
+                    return "Could not get number of vertices";
+                fprintf(stdout, "[%d] %lu\n", *nid, pSize);
+                break;
+            case 'w':
+                fp = fopen(outFile, "w");
+                if (!fp)
+                    return "Could not open file";
+                *pid = graphWrite(g, fp, _writeVariables, _writeVariables);
+                fclose(fp);
+                if (*pid)
+                    return "Could not write to file";
+                fprintf(stdout, "[%d] Wrote to file\n", *nid);
+                break;
+            case 'i':
+                if (*pid = graphGetNextVertex(g, &v1))
+                    return "Could not get next vertex";
+                fprintf(stdout, "[%d] ", *nid);
+                varWrite(v1, stdout);
+                fprintf(stdout, "\n");
+                _transferOwnership(&v1);
                 break;
             default:
                 return "Unknown command";
             }
-        } else if (tokens == 4) {
-            if (varCreate(buff1, &v1))
-                return "Could not create first variable";
-            if (varCreate(buff2, &v2))
-                return "Could not create second variable";
-            if (varCreate(buff3, &v3))
-                return "Could not create third variable";
-            switch (cmd) {
-            case '+':
-                if (*pid = graphAddEdge(g, v1, v2, v3))
-                    return "Could not add edge";
-                _transferOwnership(&v3);
-                break;
-            default:
-                return "Unknown command";
-            }
+        } else {
+            return "Parsing error";
         }
         /* Local variables will be deallocated */
         _garbageCollectVariables();
@@ -450,4 +465,11 @@ static void free_filenames(char *input, char *output)
         free(input);
     if (output && strcmp(output, "out.graph"))
         free(output);
+}
+
+static void _printVariables(void *v)
+{
+    fprintf(stdout, "Visited ");
+    varWrite(v, stdout);
+    fprintf(stdout, "\n");
 }

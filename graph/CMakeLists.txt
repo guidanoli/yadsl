@@ -89,12 +89,30 @@ set_target_properties(graphiolib PROPERTIES
 	PUBLIC_HEADER ${INCLUDE_DIR}/graphio.h)
 
 ############################################################
+# Graph Search library
+############################################################
+
+add_library(graphsearchlib SHARED
+	${SOURCE_DIR}/graphsearch.c
+	${INCLUDE_DIR}/graphsearch.h
+	${INCLUDE_DIR}/graph.h
+	${INCLUDE_DIR}/map.h)
+target_include_directories(graphsearchlib PRIVATE ${INCLUDE_DIR})
+target_link_libraries(graphsearchlib graphlib maplib)
+set_target_properties(graphsearchlib PROPERTIES
+	VERSION ${PROJECT_VERSION}
+	SOVERSION 1
+	C_STANDARD ${CVERSION}
+	PUBLIC_HEADER ${INCLUDE_DIR}/graphsearch.h)
+
+############################################################
 # Variable test module
 ############################################################
 
 add_executable(vartest ${TESTS_DIR}/var.test.c)
 target_include_directories(vartest PRIVATE ${INCLUDE_DIR})
-target_link_libraries(vartest varlib)
+target_link_libraries(vartest
+	varlib)
 set_target_properties(vartest PROPERTIES C_STANDARD ${CVERSION})
 
 ############################################################
@@ -103,7 +121,9 @@ set_target_properties(vartest PROPERTIES C_STANDARD ${CVERSION})
 
 add_executable(settest ${TESTS_DIR}/set.test.c)
 target_include_directories(settest PRIVATE ${INCLUDE_DIR})
-target_link_libraries(settest setlib varlib)
+target_link_libraries(settest
+	setlib
+	varlib)
 set_target_properties(settest PROPERTIES C_STANDARD ${CVERSION})
 
 ############################################################
@@ -112,7 +132,11 @@ set_target_properties(settest PROPERTIES C_STANDARD ${CVERSION})
 
 add_executable(graphtest ${TESTS_DIR}/graph.test.c)
 target_include_directories(graphtest PRIVATE ${INCLUDE_DIR})
-target_link_libraries(graphtest graphlib graphiolib varlib)
+target_link_libraries(graphtest
+	graphlib
+	graphiolib
+	graphsearchlib
+	varlib)
 set_target_properties(graphtest PROPERTIES C_STANDARD ${CVERSION})
 
 ############################################################
@@ -121,7 +145,9 @@ set_target_properties(graphtest PROPERTIES C_STANDARD ${CVERSION})
 
 add_executable(maptest ${TESTS_DIR}/map.test.c)
 target_include_directories(maptest PRIVATE ${INCLUDE_DIR})
-target_link_libraries(maptest maplib varlib)
+target_link_libraries(maptest
+	maplib
+	varlib)
 set_target_properties(maptest PROPERTIES C_STANDARD ${CVERSION})
 
 ############################################################

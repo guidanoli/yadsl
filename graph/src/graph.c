@@ -522,6 +522,15 @@ GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV, void *
     return GRAPH_RETURN_OK;
 }
 
+GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
+    int (**pCmpVertices)(void *a, void *b))
+{
+    if (pGraph == NULL || pCmpVertices == NULL)
+        return GRAPH_RETURN_INVALID_PARAMETER;
+    *pCmpVertices = pGraph->cmpVertices;
+    return GRAPH_RETURN_OK;
+}
+
 void graphDestroy(Graph *pGraph)
 {
     if (pGraph == NULL)

@@ -354,6 +354,19 @@ GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
 GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v);
 
 /**
+* Obtain graph vertex comparison function provided
+* on graphCreate as parameter
+* pGraph        poitner to graph
+* cmpVertices   (return) comparison function
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*   - "pGraph" is NULL
+*   - "pCmpVertices" is NULL
+*/
+GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
+    int (**pCmpVertices)(void *a, void *b));
+
+/**
 * Free graph structure from memory
 * pGraph    pointer to graph
 */
