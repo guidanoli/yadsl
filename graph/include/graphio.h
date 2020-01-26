@@ -73,6 +73,7 @@ GraphIoReturnID;
 * GRAPH_IO_RETURN_FILE_ERROR
 *   - Could not write to file
 * GRAPH_IO_RETURN_WRITING_FAILURE
+* GRAPH_IO_RETURN_MEMORY
 * GRAPH_IO_RETURN_UNKNOWN_ERROR
 * [!] The module does not take ownership of the file
 * pointer. It must be previously opened in writing mode
