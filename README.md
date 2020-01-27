@@ -2,9 +2,9 @@
 
 This is a repository for toy projects that sparked from the lectures given by Eduardo Sany Laber, professor at PUC-Rio. I hope it comes to any help to you. Feel free to contribute to the repository too.
 
-## Structure
+## Modules
 
-Each subfolder generally contains a source file (`module.c`), a header file (`module.h`), a test module (`module.test.c`), and documentation (`README.md`).
+Each subfolder generally contains a source file (`module.c`), a header file (`module.h`), a test module (`module.test.c`), and a documentation file (`README.md`), as well as a compilation file.
 
 ## Compilation
 
@@ -18,4 +18,4 @@ cmake ..
 
 ## Tests
 
-All test modules take work pretty much the same way. You'll be interaction with a single instance of the data structure through command line arguments. For further information on a given test module, simply run the test module executable with no arguments whatsoever.
+All test modules work pretty much the same way, letting you interact with a single instance of the data structure through command line arguments. If you seek further information about a given test module, simply run the test module executable with no arguments whatsoever and you'll be prompted with some useful help messages.
