@@ -5,7 +5,8 @@
 #include "graph.h"
 
 /**
-* Graph IO library
+* Auxiliary module for Graph I/O utilities
+* such as serialization and deserialization
 */
 
 typedef enum
@@ -84,7 +85,7 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
     int (*writeEdge)(FILE *fp, void *e));
 
 /**
-* Serialize graph structure to file
+* Deserialize graph structure from file
 * ppGraph       address of pointer to graph
 * fp            pointer to file to be read
 * readVertex    function responsible for reading

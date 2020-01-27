@@ -4,7 +4,7 @@
 #include "graph.h"
 
 /**
-* Graph Search library
+* Auxiliary module for searching in Graphs
 */
 
 typedef enum

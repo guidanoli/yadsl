@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.0)
+project(aa VERSION 1.0.0 DESCRIPTION "Algorithm Analysis")
+set(CMAKE_C_STANDARD 99)
+
+add_subdirectory(var)
+add_subdirectory(set)
+add_subdirectory(map)
+add_subdirectory(graph)
+add_subdirectory(graphio)
+add_subdirectory(graphsearch)
+add_subdirectory(queue)
+add_subdirectory(diff)

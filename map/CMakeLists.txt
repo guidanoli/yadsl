@@ -1,0 +1,5 @@
+add_library(map map.c map.h)
+target_link_libraries(map set)
+add_executable(maptest map.test.c)
+target_link_libraries(maptest map var)
+target_include_directories(map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
