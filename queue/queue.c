@@ -3,13 +3,14 @@
 
 struct QueueItem
 {
-    struct QueueItem *next;
+    struct QueueItem *previous;
     void *item;
 };
 
 struct Queue
 {
-    struct QueueItem *top;
+    struct QueueItem *entrance;
+    struct QueueItem *exit;
     void (*freeItem)(void *item);
 };
 
@@ -23,7 +24,8 @@ QueueReturnID queueCreate(Queue **ppQueue,
     if (pQueue == NULL)
         return QUEUE_RETURN_MEMORY;
     pQueue->freeItem = freeItem;
-    pQueue->top = NULL;
+    pQueue->entrance = NULL;
+    pQueue->exit = NULL;
     *ppQueue = pQueue;
     return QUEUE_RETURN_OK;
 }
@@ -38,36 +40,42 @@ QueueReturnID queueQueue(Queue *pQueue,
     if (pQueueItem == NULL)
         return QUEUE_RETURN_MEMORY;
     pQueueItem->item = item;
-    pQueueItem->next = pQueue->top;
-    pQueue->top = pQueueItem;
+    pQueueItem->previous = NULL;
+    if (pQueue->entrance != NULL)
+        pQueue->entrance->previous = pQueueItem;
+    pQueue->entrance = pQueueItem;
+    if (pQueue->exit == NULL)
+        pQueue->exit = pQueueItem;
     return QUEUE_RETURN_OK;
 }
 
 QueueReturnID queueDequeue(Queue *pQueue,
     void **pItem)
 {
-    struct QueueItem *next;
+    struct QueueItem *newExit;
     if (pQueue == NULL || pItem == NULL)
         return QUEUE_RETURN_OK;
-    if (pQueue->top == NULL)
+    if (pQueue->exit == NULL)
         return QUEUE_RETURN_EMPTY;
-    *pItem = pQueue->top->item;
-    next = pQueue->top->next;
-    free(pQueue->top);
-    pQueue->top = next;
+    newExit = pQueue->exit->previous;
+    *pItem = pQueue->exit->item;
+    free(pQueue->exit);
+    pQueue->exit = newExit;
+    if (newExit == NULL)
+        pQueue->entrance = NULL;
     return QUEUE_RETURN_OK;
 }
 
 void queueDestroy(Queue *pQueue)
 {
-    struct QueueItem *old;
+    struct QueueItem *current;
     if (pQueue == NULL)
         return;
-    while (old = pQueue->top) {
-        pQueue->top = old->next;
+    while (current = pQueue->exit) {
+        pQueue->exit = current->previous;
         if (pQueue->freeItem)
-            pQueue->freeItem(old->item);
-        free(old);
+            pQueue->freeItem(current->item);
+        free(current);
     }
     free(pQueue);
 }

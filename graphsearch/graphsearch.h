@@ -32,13 +32,26 @@ GraphSearchReturnID;
 
 /**
 * Visit every neighbour in the graph that can be accessed from
-* the initial vertex
+* the initial vertex, in a depth-first-search
 * pGraph            pointer to graph
 * initialVertex     initial vertex
 * visit_cb          function that will be called for every
 *                   non-visited vertex in the graph
 */
 GraphSearchReturnID graphDFS(Graph *pGraph,
+    void *initialVertex,
+    void (*visit_cb)(void *vertex));
+
+
+/**
+* Visit every neighbour in the graph that can be accessed from
+* the initial vertex, in a breadth-first-search
+* pGraph            pointer to graph
+* initialVertex     initial vertex
+* visit_cb          function that will be called for every
+*                   non-visited vertex in the graph
+*/
+GraphSearchReturnID graphBFS(Graph *pGraph,
     void *initialVertex,
     void (*visit_cb)(void *vertex));
 

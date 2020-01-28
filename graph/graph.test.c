@@ -29,7 +29,8 @@ static const char *helpStrings[] = {
     "X,Y-\tremoves edge XY",
     "X,Y?\tchecks if edge XY exists",
     "X,Y,E+\tadds edge E between XY",
-    "\\dfs(X)\tdoes a dfs from X"
+    "\\bfs(X)\tdoes a bfs from X",
+    "\\dfs(X)\tdoes a dfs from X",
     "",
     "The registered flags are the following:",
     "type\tsets the graph type (DIRECTED or UNDIRECTED)",
@@ -148,6 +149,11 @@ static char *test(GraphReturnID *pid, int *nid, int isDirected,
                     return "Could not create variable";
                 if (*pid = graphDFS(g, v1, _printVariables))
                     return "Could not do DFS";
+            } else if (strcmp(buff1, "bfs") == 0) {
+                if (varCreate(buff2, &v1))
+                    return "Could not create variable";
+                if (*pid = graphBFS(g, v1, _printVariables))
+                    return "Could not do BFS";
             } else {
                 return "Unknown command";
             }
