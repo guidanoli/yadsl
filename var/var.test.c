@@ -16,7 +16,7 @@ DEFPARSECB(w) /* Write */
 
 static Command cmds[] = {
     DEFCMD(add, 2),
-    DEFCMD(cmp, 2),
+    DEFCMD(cmp, 3),
     DEFCMD(dmp, 1),
     DEFCMD(expect, 0),
     DEFCMD(r, 2),
@@ -30,12 +30,12 @@ static const char *helpStrings[] = {
     "Actions are parsed by command line arguments",
     "The registered actions are the following:",
     "",
-    "add <index> <text>     adds variable from text to index",
-    "cmp <index1> <index2>  compares variables from two indices",
-    "dmp <index>            dump variable contents",
-    "expect                 expect error"
-    "r <index> <filename>   serialize (read) from file",
-    "w <index> <filename>   serialize (write) variable to file",
+    "add <index> <text>                 adds variable from text to index",
+    "cmp <index1> <index2> <areequal>   compares variables from two indices",
+    "dmp <index>                        dump variable contents",
+    "expect                             expect error"
+    "r <index> <filename>               serialize (read) from file",
+    "w <index> <filename>               serialize (write) variable to file",
     NULL,
 };
 
@@ -117,15 +117,18 @@ static char *_add(int argc, char **argv)
 
 static char *_cmp(int argc, char **argv)
 {
-    int indexA, indexB, result;
+    int indexA, indexB, result, areequal;
     if (parseIndex(argv[0], &indexA))
         return "Could not parse first index";
     if (parseIndex(argv[1], &indexB))
         return "Could not parse second index";
     if (!vars[indexA] || !vars[indexB])
         return "One of the two variables does not exist";
+    areequal = strcmp(argv[2], "EQUAL") == 0;
     if (varId = varCompare(vars[indexA], vars[indexB], &result))
         return "Could not compare variables";
+    if (areequal != result)
+        return "Expectation did not match reality";
     printf("Variables are %s\n", result ? "equal" : "different");
     return NULL;
 }
