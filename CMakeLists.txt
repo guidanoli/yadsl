@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
-project(aa VERSION 1.0.0 DESCRIPTION "Algorithm Analysis")
+project(aa VERSION 1.0.0
+	DESCRIPTION "Algorithm Analysis"
+	LANGUAGES C)
 set(CMAKE_C_STANDARD 99)
 enable_testing()
 

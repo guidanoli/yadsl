@@ -4,10 +4,6 @@ branches:
     - master
 install:
   - cmake --version
-before_script:
-  - mkdir build
-  - cd build
-  - cmake .. -G "${GENERATOR}"
 script-anchors:
   - &script-Makefiles
     - mkdir ${TRAVIS_BUILD_DIR}/build
