@@ -38,6 +38,8 @@ static void _printHelpMessage();
 static char *_parseActions(Map **ppMap, MapReturnID *pMapId,
     unsigned int *pActionIndex, char **actions, int actionCount);
 
+static int expectFailure = 0;
+
 int main(int argc, char **argv)
 {
     Map *pTestMap = NULL;
@@ -53,11 +55,13 @@ int main(int argc, char **argv)
         argv + 1, argc - 1);
     if (pTestMap != NULL)
         mapDestroy(pTestMap);
-#ifdef _DEBUG
-    if ((refCount = varGetRefCount()) != 0)
-        printf("%lld leaked variables!\n", refCount);
-#endif
     pTestMap = NULL;
+#ifdef _DEBUG
+    if ((refCount = varGetRefCount()) != 0) {
+        printf("%lld leaked variables!\n", refCount);
+        return 1;
+    }
+#endif
     if (errorString != NULL) {
         if (mapId != MAP_RETURN_OK) {
             fprintf(stderr, "Error #%d on action #%d (%s): %s\n",
@@ -66,9 +70,18 @@ int main(int argc, char **argv)
             fprintf(stderr, "Error on action #%d (%s): %s\n",
                 actionIndex, argv[actionIndex], errorString);
         }
-        return 1;
+        if (expectFailure) {
+            puts("Expected error!");
+        } else {
+            return 1;
+        }
     } else {
-        fprintf(stdout, "No errors.\n");
+        if (expectFailure) {
+            puts("Expected error but none occurred!");
+            return 1;
+        } else {
+            puts("No errors");
+        }
     }
     return 0;
 }
@@ -176,6 +189,8 @@ static char *_parseActions(Map **ppMap, MapReturnID *pMapId,
             } else {
                 return "Could not parse character";
             }
+        } else if (strcmp(actions[i], "ERROR") == 0) {
+            expectFailure = 1;
         } else {
             return "Could not parse action";
         }

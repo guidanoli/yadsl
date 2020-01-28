@@ -18,6 +18,7 @@ static char *_parse(int *pArgIndex, QueueReturnID *pId, int cmdCount,
     char **cmds);
 
 static Queue *pQueue = NULL;
+static int expectFailure = 0;
 
 int main(int argc, char **argv)
 {
@@ -33,8 +34,10 @@ int main(int argc, char **argv)
     if (pQueue)
         queueDestroy(pQueue);
 #ifdef _DEBUG
-    if (varGetRefCount())
+    if (varGetRefCount()) {
         fprintf(stderr, "Memory leak detected\n");
+        return 1;
+    }
 #endif
     if (err) {
         if (id) {
@@ -44,9 +47,18 @@ int main(int argc, char **argv)
             fprintf(stderr, "Error on action #%d: %s\n",
                 argIndex, err);
         }
-        return 1;
+        if (expectFailure) {
+            puts("Expected error!");
+        } else {
+            return 1;
+        }
     } else {
-        puts("No errors");
+        if (expectFailure) {
+            puts("Expected error but none occurred!");
+            return 1;
+        } else {
+            puts("No errors");
+        }
     }
     return 0;
 }
@@ -75,6 +87,8 @@ static char *_parse(int *pArgIndex, QueueReturnID *pId, int cmdCount,
                 varDestroy(var);
                 return "Could not queue";
             }
+        } else if (strcmp(cmds[*pArgIndex], "ERROR") == 0) {
+            expectFailure = 1;
         } else {
             return "Parsing error";
         }
