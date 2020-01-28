@@ -7,6 +7,7 @@ install:
 script-anchors:
   - &script-Makefiles
     - mkdir ${TRAVIS_BUILD_DIR}/build
+    - cd ${TRAVIS_BUILD_DIR}/build
     - cmake .. -G"${GENERATOR}"
     - cmake --build . --config Release
     - ctest -C Release
