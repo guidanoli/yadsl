@@ -3,6 +3,7 @@ project(aa)
 set(CMAKE_C_STANDARD 99)
 enable_testing()
 
+add_subdirectory(targp)
 add_subdirectory(var)
 add_subdirectory(queue)
 add_subdirectory(set)

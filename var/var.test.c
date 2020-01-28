@@ -2,41 +2,27 @@
 #include <string.h>
 #include <stdlib.h>
 #include "var.h"
+#include "targp.h"
 
 #define VARCNT 10
 #define MAXARGCNT 10
 
-typedef struct
-{
-    const char *cmd;
-    char *argTypes;
-    char *(*parse_cb)(int argc, char **argv);
-}
-Command;
-
-/* Command arguments */
-
-#define DEFPARSECB(label) static char * _ ## label (int argc, char **argv);
-#define DEFCMD(label, cmds) { #label , cmds, _ ## label },
-
 DEFPARSECB(add) /* Add variable */
 DEFPARSECB(cmp) /* Compare variables */
 DEFPARSECB(dmp) /* Dump variable */
-DEFPARSECB(help) /* Help */
+DEFPARSECB(expect) /* Expect error */
 DEFPARSECB(r) /* Read */
 DEFPARSECB(w) /* Write */
 
 static Command cmds[] = {
-    DEFCMD(add, "it")
-    DEFCMD(cmp, "ii")
-    DEFCMD(dmp, "i")
-    DEFCMD(help, "")
-    DEFCMD(r, "it")
-    DEFCMD(w, "it")
-    { NULL, NULL, NULL }, /* Sentinel -- don't mess with it */
+    DEFCMD(add, 2),
+    DEFCMD(cmp, 2),
+    DEFCMD(dmp, 1),
+    DEFCMD(expect, 0),
+    DEFCMD(r, 2),
+    DEFCMD(w, 2),
+    END_CMDS
 };
-
-/* Help */
 
 static const char *helpStrings[] = {
     "This is an interactive module of the variable library",
@@ -47,67 +33,35 @@ static const char *helpStrings[] = {
     "add <index> <text>     adds variable from text to index",
     "cmp <index1> <index2>  compares variables from two indices",
     "dmp <index>            dump variable contents",
-    "help                   get further help",
+    "expect                 expect error"
     "r <index> <filename>   serialize (read) from file",
     "w <index> <filename>   serialize (write) variable to file",
-    NULL, /* Sentinel -- don't mess with it */
+    NULL,
 };
 
 /* Global fields */
 
 static VarReturnID varId = VAR_RETURN_OK;
 static Variable *vars[VARCNT];
+static int expectError = 0;
 
 /* Private functions prototypes */
 
 static void initVarsArray();
-static void houseKeep();
+static int houseKeep();
 static int parseIndex(char *text, int *pIndex);
+static void error_cb(int argi, char *arg, char *errorMessage);
 
 /* Main function */
 
 int main(int argc, char **argv)
 {
-    /* argi points to the current argument */
-    int argi = 0, cmd_argc;
+    int ret;
     initVarsArray();
-    /* Disconsider program name */
-    --argc;
-    ++argv;
-    /* Parse the rest of the arguments */
-    while (argi < argc) {
-        Command *pCmd, *currCmd = NULL;
-        char *errorMessage;
-        /* Search for a command that matches the current argument */
-        for (pCmd = cmds; pCmd->cmd; ++pCmd) {
-            if (!strcmp(pCmd->cmd, argv[argi])) {
-                currCmd = pCmd;
-                break;
-            }
-        }
-        /* If could not find, throw error */
-        if (currCmd == NULL) {
-            fprintf(stderr, "\"%s\" is not a valid command.\n", argv[argi]);
-            houseKeep();
-            return 1;
-        }
-        /* Execute command and move to the next one */
-        cmd_argc = strlen(currCmd->argTypes);
-        if (errorMessage = currCmd->parse_cb(cmd_argc, argv + argi + 1)) {
-            if (varId) {
-                fprintf(stderr, "Error on command #%d (\"%s\"): %s\n",
-                    argi + 1, argv[argi], errorMessage);
-            } else {
-                fprintf(stderr, "Error #%d on command #%d (\"%s\"): %s\n",
-                    varId, argi + 1, argv[argi], errorMessage);
-            }
-            houseKeep();
-            return 1;
-        }
-        argi += cmd_argc + 1;
-    }
-    houseKeep();
-    return 0;
+    ret = targp(argc, argv, helpStrings, cmds, error_cb);
+    if (expectError) ret = !ret;
+    if (houseKeep()) ret = 1;
+    return ret;
 }
 
 static void initVarsArray()
@@ -117,7 +71,7 @@ static void initVarsArray()
     for (i = 0; i < size; ++i) *(pVars++) = NULL;
 }
 
-static void houseKeep()
+static int houseKeep()
 {
     static Variable **pVars = vars;
     size_t i, size = sizeof(vars)/sizeof(*vars);
@@ -128,9 +82,23 @@ static void houseKeep()
         }
     }
 #ifdef _DEBUG
-    if (varGetRefCount())
+    if (varGetRefCount()) {
         puts("Memory leak detected");
+        return 1;
+    }
 #endif
+    return 0;
+}
+
+static void error_cb(int argi, char *arg, char *errorMessage)
+{
+    if (varId) {
+        fprintf(stderr, "Error #%d on argument #%d '%s': %s\n",
+            varId, argi, arg, errorMessage);
+    } else {
+        fprintf(stderr, "Error on argument #%d '%s': %s\n",
+            argi, arg, errorMessage);
+    }
 }
 
 static char *_add(int argc, char **argv)
@@ -175,10 +143,9 @@ static char *_dmp(int argc, char **argv)
     return NULL;
 }
 
-static char *_help(int argc, char **argv)
+static char *_expect(int argc, char **argv)
 {
-    const char **str = helpStrings;
-    for (; *str; ++str) puts(*str);
+    expectError = 1;
     return NULL;
 }
 
