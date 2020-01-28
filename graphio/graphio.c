@@ -3,17 +3,18 @@
 #include "graphio.h"
 #include "map.h"
 
-#define WRITE(file, format, ...) do {           \
-    if (fprintf(file, format, __VA_ARGS__) < 0) \
-        return GRAPH_IO_RETURN_FILE_ERROR;      \
+#define WRITE(file, format, arg) do {       \
+    if (fprintf(file, format, arg) < 0)     \
+        return GRAPH_IO_RETURN_FILE_ERROR;  \
 } while(0)
 
-#define READ(format, arg) do {                      \
+#define READ(file, format, arg) do {                \
     if (fscanf(fp, " " format " ", arg) != 1)       \
         return GRAPH_IO_RETURN_FILE_ERROR;          \
 } while(0)
 
-#define WRITENL(file, format, ...) WRITE(file, format "\n", __VA_ARGS__)
+#define WRITENL(file, format, arg) \
+    WRITE(file, format "\n", arg)
 
 #define FILE_FORMAT_VERSION 4
 
@@ -72,11 +73,11 @@ GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
     void **addressMap;
     if (ppGraph == NULL || readVertex == NULL || readEdge == NULL)
         return GRAPH_IO_RETURN_INVALID_PARAMETER;
-    READ(VERSION_STR, &version); // Version
+    READ(fp, VERSION_STR, &version); // Version
     if (version != FILE_FORMAT_VERSION)
         return GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT;
-    READ(DIRECTED_STR, &isDirected); // Directed
-    READ(VCOUNT_STR, &vCount); // Vertex count
+    READ(fp, DIRECTED_STR, &isDirected); // Directed
+    READ(fp, VCOUNT_STR, &vCount); // Vertex count
     /* Graph to be created */
     if (graphId = graphCreate(&pGraph, isDirected, cmpVertices,
         freeVertex, cmpEdges, freeEdge)) {
@@ -131,9 +132,9 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
         }
         if (writeVertex(fp, pVertex)) // Vertex item
             return GRAPH_IO_RETURN_WRITING_FAILURE;
-        WRITE(fp, " ");
+        WRITE(fp, "%c", ' ');
     }
-    WRITENL(fp, "");
+    WRITE(fp, "%c", '\n');
     for (i = vCount; i; --i) {
         if (graphGetNextVertex(pGraph, &pVertex))
             return GRAPH_IO_RETURN_UNKNOWN_ERROR;
@@ -149,7 +150,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
             if (writeEdge(fp, pEdge)) // Edge item
                 return GRAPH_IO_RETURN_WRITING_FAILURE;
         }
-        WRITENL(fp, "");
+        WRITE(fp, "%c", '\n');
     }
     return GRAPH_IO_RETURN_OK;
 }
@@ -185,9 +186,9 @@ static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
     }
     for (i = 0; i < vCount; ++i) {
         pVertexItem = addressMap[i];
-        READ(NBCOUNT_STR, &nbCount); // Vertex degree
+        READ(fp, NBCOUNT_STR, &nbCount); // Vertex degree
         for (j = 0; j < nbCount; ++j) {
-            READ(NB_IDX_STR, &index); // Neighbour index
+            READ(fp, NB_IDX_STR, &index); // Neighbour index
             pNeighbourItem = addressMap[index];
             if (readEdge(fp, &pEdgeItem)) // Edge item
                 return GRAPH_IO_RETURN_CREATION_FAILURE;
