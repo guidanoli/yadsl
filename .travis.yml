@@ -6,7 +6,15 @@ install:
   - cmake --version
 script-anchors:
   - &script-Makefiles
-    - mkdir ${TRAVIS_BUILD_DIR}/build
+    - mkdir "${TRAVIS_BUILD_DIR}/build"
+    - cd "${TRAVIS_BUILD_DIR}/build"
+    - cmake .. -G"${GENERATOR}"
+    - cmake --build . --config Release
+    - ctest -C Release
+    - cmake --build . --config Debug
+    - ctest -C Debug
+  - &script-VS15
+    - mkdir "${TRAVIS_BUILD_DIR}/build"
     - cd ${TRAVIS_BUILD_DIR}/build
     - cmake .. -G"${GENERATOR}"
     - cmake --build . --config Release
@@ -22,3 +30,6 @@ matrix:
       osx_image: xcode7.3
       env: GENERATOR="Unix Makefiles"
       script: *script-Makefiles
+    - os: windows
+      env: GENERATOR="Visual Studio 15 2017 Win64"
+      script: *script-VS15
