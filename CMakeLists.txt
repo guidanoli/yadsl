@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(aa VERSION 1.0.0 DESCRIPTION "Algorithm Analysis")
 set(CMAKE_C_STANDARD 99)
+enable_testing()
 
 add_subdirectory(var)
 add_subdirectory(queue)
