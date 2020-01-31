@@ -438,12 +438,12 @@ static int _cmpVariables(void *a, void *b)
 
 static int _readVariables(FILE *fp, void **ppVertex)
 {
-    return varSerializeRead(ppVertex, fp);
+    return varDeserialize(ppVertex, fp);
 }
 
 static int _writeVariables(FILE *fp, void *v)
 {
-    return varSerializeWrite(v, fp);
+    return varSerialize(v, fp);
 }
 
 static void _garbageCollectVariables()

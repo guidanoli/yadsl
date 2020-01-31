@@ -69,7 +69,7 @@ VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB, int *pResult)
 VarReturnID varWrite(Variable *pVariable, FILE *fp);
 
 /**
-* Writes to file stream the encoded contents of the variable
+* Serializes variable to file
 * pVariable     variable
 * fp            file pointer
 * Possible errors:
@@ -79,11 +79,10 @@ VarReturnID varWrite(Variable *pVariable, FILE *fp);
 * [!] The module does not take ownership of the file
 * pointer (closing or opening it)
 */
-VarReturnID varSerializeWrite(Variable *pVariable, FILE *fp);
+VarReturnID varSerialize(Variable *pVariable, FILE *fp);
 
 /**
-* Reads from file with encoded contents of variable and
-* creates variable object from it
+* Deserializes file and creates variable object from it
 * ppVariable    address of variable
 * fp            file pointer
 * VAR_RETURN_INVALID_PARAMETER
@@ -91,7 +90,7 @@ VarReturnID varSerializeWrite(Variable *pVariable, FILE *fp);
 * VAR_RETURN_FILE_FORMAT_ERROR
 * VAR_RETURN_MEMORY
 */
-VarReturnID varSerializeRead(Variable **ppVariable, FILE *fp);
+VarReturnID varDeserialize(Variable **ppVariable, FILE *fp);
 
 #ifdef _DEBUG
 /* Not safe */

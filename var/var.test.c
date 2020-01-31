@@ -2,202 +2,182 @@
 #include <string.h>
 #include <stdlib.h>
 #include "var.h"
-#include "targp.h"
+#include "tester.h"
 
+#ifndef VARCNT
 #define VARCNT 10
-#define MAXARGCNT 10
+#endif
 
-DEFPARSECB(add) /* Add variable */
-DEFPARSECB(cmp) /* Compare variables */
-DEFPARSECB(dmp) /* Dump variable */
-DEFPARSECB(expect) /* Expect error */
-DEFPARSECB(r) /* Read */
-DEFPARSECB(w) /* Write */
+#define _STR(X) #X
+#define XSTR(X) _STR(X)
 
-static Command cmds[] = {
-    DEFCMD(add, 2),
-    DEFCMD(cmp, 3),
-    DEFCMD(dmp, 1),
-    DEFCMD(expect, 0),
-    DEFCMD(r, 2),
-    DEFCMD(w, 2),
-    END_CMDS
-};
+#define matches(a, b) (strcmp(a, b) == 0)
+#define isValidIndex(i) (i >= 0 && i < VARCNT)
 
-static const char *helpStrings[] = {
-    "This is an interactive module of the variable library",
-    "You can interact with multiple variable objects at a time",
-    "Actions are parsed by command line arguments",
-    "The registered actions are the following:",
-    "",
-    "add <index> <text>                 adds variable from text to index",
-    "cmp <index1> <index2> <areequal>   compares variables from two indices",
-    "dmp <index>                        dump variable contents",
-    "expect                             expect error"
-    "r <index> <filename>               serialize (read) from file",
-    "w <index> <filename>               serialize (write) variable to file",
-    NULL,
-};
-
-/* Global fields */
-
-static VarReturnID varId = VAR_RETURN_OK;
 static Variable *vars[VARCNT];
-static int expectError = 0;
+static char buffer[TESTER_BUFFER_SIZE];
 
-/* Private functions prototypes */
+static TesterReturnValue convertReturnValue(VarReturnID varId);
 
-static void initVarsArray();
-static int houseKeep();
-static int parseIndex(char *text, int *pIndex);
-static void error_cb(int argi, char *arg, char *errorMessage);
-
-/* Main function */
-
-int main(int argc, char **argv)
-{
-    int ret;
-    initVarsArray();
-    ret = targp(argc, argv, helpStrings, cmds, error_cb);
-    if (expectError) ret = !ret;
-    if (houseKeep()) ret = 1;
-    return ret;
-}
-
-static void initVarsArray()
+TesterReturnValue TesterInitCallback()
 {
     static Variable **pVars = vars;
     size_t i, size = sizeof(vars)/sizeof(*vars);
     for (i = 0; i < size; ++i) *(pVars++) = NULL;
+    return TESTER_RETURN_OK;
 }
 
-static int houseKeep()
+TesterReturnValue TesterParseCallback(const char *command)
 {
-    static Variable **pVars = vars;
-    size_t i, size = sizeof(vars)/sizeof(*vars);
-    for (i = 0; i < size; ++i) {
-        if (pVars[i] != NULL) {
-            varDestroy(pVars[i]);
-            pVars[i] = NULL;
+    VarReturnID varId = VAR_RETURN_OK;
+    int idx1, idx2, expected, obtained;
+    FILE *f;
+    if matches(command, "add") {
+        if (TesterParseArguments("is", &idx1, buffer) != 2)
+            return TESTER_RETURN_PARSING_ARGUMENT;
+        if (!isValidIndex(idx1))
+            return VARTEST_RETURN_INVALID_INDEX;
+        if (vars[idx1]) {
+            varDestroy(vars[idx1]);
+            vars[idx1] = NULL;
+        }
+        varId = varCreate(buffer, &vars[idx1]);
+    } else if matches(command, "rmv") {
+        if (TesterParseArguments("i", &idx1) != 1)
+            return TESTER_RETURN_PARSING_ARGUMENT;
+        if (!isValidIndex(idx1))
+            return VARTEST_RETURN_INVALID_INDEX;
+        if (!vars[idx1])
+            return VARTEST_RETURN_UNDEFINED_VARIABLE;
+        varDestroy(vars[idx1]);
+        vars[idx1] = NULL;
+    } else if matches(command, "cmp") {
+        if (TesterParseArguments("iis", &idx1, &idx2, buffer) != 3)
+            return TESTER_RETURN_PARSING_ARGUMENT;
+        if (!isValidIndex(idx1) || !isValidIndex(idx2))
+            return VARTEST_RETURN_INVALID_INDEX;
+        if (!vars[idx1] || !vars[idx2])
+            return VARTEST_RETURN_UNDEFINED_VARIABLE;
+        expected = matches(buffer, "EQUAL");
+        varId = varCompare(vars[idx1], vars[idx2], &obtained);
+        if (varId == VAR_RETURN_OK && obtained != expected)
+            return TESTER_RETURN_UNEXPECTED_RETURN;
+    } else if matches(command, "dmp") {
+        if (TesterParseArguments("i", &idx1) != 1)
+            return TESTER_RETURN_PARSING_ARGUMENT;
+        if (!isValidIndex(idx1))
+            return VARTEST_RETURN_INVALID_INDEX;
+        if (!vars[idx1])
+            return VARTEST_RETURN_UNDEFINED_VARIABLE;
+        varId = varWrite(vars[idx1], stdout);
+        if (varId == VAR_RETURN_OK)
+            printf("\n");
+    } else if matches(command, "dsr") {
+        if (TesterParseArguments("is", &idx1, buffer) != 2)
+            return TESTER_RETURN_PARSING_ARGUMENT;
+        if (!isValidIndex(idx1))
+            return VARTEST_RETURN_INVALID_INDEX;
+        if (vars[idx1]) {
+            varDestroy(vars[idx1]);
+            vars[idx1] = NULL;
+        }
+        if ((f = fopen(buffer, "r")) == NULL)
+            return VARTEST_RETURN_OPEN_FILE;
+        varId = varDeserialize(&vars[idx1], f);
+        fclose(f);
+    } else if matches(command, "ser") {
+        if (TesterParseArguments("is", &idx1, buffer) != 2)
+            return TESTER_RETURN_PARSING_ARGUMENT;
+        if (!isValidIndex(idx1))
+            return VARTEST_RETURN_INVALID_INDEX;
+        if (!vars[idx1])
+            return VARTEST_RETURN_UNDEFINED_VARIABLE;
+        if ((f = fopen(buffer, "w")) == NULL)
+            return VARTEST_RETURN_OPEN_FILE;
+        varId = varSerialize(vars[idx1], f);
+        fclose(f);
+    } else if matches(command, "wef") {
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_PARSING_ARGUMENT;
+        if ((f = fopen(buffer, "w")) == NULL)
+            return VARTEST_RETURN_OPEN_FILE;
+        fclose(f);
+    } else {
+        return TESTER_RETURN_PARSING_COMMAND;
+    }
+    return convertReturnValue(varId);
+}
+
+TesterReturnValue TesterExitCallback()
+{
+    size_t i;
+    for (i = 0; i < VARCNT; ++i) {
+        if (vars[i] != NULL) {
+            varDestroy(vars[i]);
+            vars[i] = NULL;
         }
     }
 #ifdef _DEBUG
     if (varGetRefCount()) {
         puts("Memory leak detected");
-        return 1;
+        return TESTER_RETURN_MEMORY_LEAK;
     }
 #endif
-    return 0;
+    return TESTER_RETURN_OK;
 }
 
-static void error_cb(int argi, char *arg, char *errorMessage)
+static TesterReturnValue convertReturnValue(VarReturnID varId)
 {
-    if (varId) {
-        fprintf(stderr, "Error #%d on argument #%d '%s': %s\n",
-            varId, argi, arg, errorMessage);
-    } else {
-        fprintf(stderr, "Error on argument #%d '%s': %s\n",
-            argi, arg, errorMessage);
+    switch (varId) {
+    case VAR_RETURN_OK:
+        return TESTER_RETURN_OK;
+    case VAR_RETURN_INVALID_PARAMETER:
+        return VARTEST_RETURN_INVALID_PARAMETER;
+    case VAR_RETURN_FILE_FORMAT_ERROR:
+        return VARTEST_RETURN_FILE_FORMAT_ERROR;
+    case VAR_RETURN_WRITING_ERROR:
+        return VARTEST_RETURN_WRITING_ERROR;
+    case VAR_RETURN_MEMORY:
+        return VARTEST_RETURN_MEMORY;
+    default:
+        return VARTEST_RETURN_UNKNOWN;
     }
 }
 
-static char *_add(int argc, char **argv)
+const char *TesterLoadCustomReturnValueInfo(TesterReturnValue value)
 {
-    int index;
-    if (parseIndex(argv[0], &index))
-        return "Could not parse index";
-    if (vars[index]) {
-        varDestroy(vars[index]);
-        vars[index] = NULL;
+    switch (value) {
+    case VARTEST_RETURN_INVALID_INDEX:
+        return "Invalid index (must be between 0 and " XSTR(VARCNT-1) ")";
+    case VARTEST_RETURN_UNDEFINED_VARIABLE:
+        return "Variable at that index is not yet initialized";
+    case VARTEST_RETURN_OPEN_FILE:
+        return "Could not open file for reading or writting";
+    case VARTEST_RETURN_INVALID_PARAMETER:
+        return "Parameter passed to function is invalid";
+    case VARTEST_RETURN_FILE_FORMAT_ERROR:
+        return "Serialized form is corrupted";
+    case VARTEST_RETURN_WRITING_ERROR:
+        return "Could not write to file";
+    case VARTEST_RETURN_MEMORY:
+        return "Could not allocate memory space (in var module)";
+    case VARTEST_RETURN_UNKNOWN:
+        return "Unkown error return value";
+    default:
+        return NULL;
     }
-    if (varId = varCreate(argv[1], &vars[index]))
-        return "Could not create variable";
-    return NULL;
 }
 
-static char *_cmp(int argc, char **argv)
-{
-    int indexA, indexB, result, areequal;
-    if (parseIndex(argv[0], &indexA))
-        return "Could not parse first index";
-    if (parseIndex(argv[1], &indexB))
-        return "Could not parse second index";
-    if (!vars[indexA] || !vars[indexB])
-        return "One of the two variables does not exist";
-    areequal = strcmp(argv[2], "EQUAL") == 0;
-    if (varId = varCompare(vars[indexA], vars[indexB], &result))
-        return "Could not compare variables";
-    if (areequal != result)
-        return "Expectation did not match reality";
-    printf("Variables are %s\n", result ? "equal" : "different");
-    return NULL;
-}
-
-static char *_dmp(int argc, char **argv)
-{
-    int index;
-    if (parseIndex(argv[0], &index))
-        return "Could not parse index";
-    if (!vars[index])
-        return "Variable does not exist";
-    if (varId = varWrite(vars[index], stdout))
-        return "Could not dump variable";
-    printf("\n");
-    return NULL;
-}
-
-static char *_expect(int argc, char **argv)
-{
-    expectError = 1;
-    return NULL;
-}
-
-static char *_r(int argc, char **argv)
-{
-    int index;
-    FILE *f;
-    if (parseIndex(argv[0], &index))
-        return "Could not parse index";
-    if (vars[index]) {
-        varDestroy(vars[index]);
-        vars[index] = NULL;
-    }
-    if ((f = fopen(argv[1], "r")) == NULL)
-        return "Could not open file in reading mode";
-    varId = varSerializeRead(&vars[index], f);
-    fclose(f);
-    if (varId)
-        return "Could not read from file to variable";
-    return NULL;
-}
-
-static char *_w(int argc, char **argv)
-{
-    int index;
-    FILE *f;
-    if (parseIndex(argv[0], &index))
-        return "Could not parse index";
-    if (!vars[index])
-        return "Variable does not exist";
-    if ((f = fopen(argv[1], "w")) == NULL)
-        return "Could not open file in writing mode";
-    varId = varSerializeWrite(vars[index], f);
-    fclose(f);
-    if (varId)
-        return "Could not write variable to file";
-    return NULL;
-}
-
-static int parseIndex(char *text, int *pIndex)
-{
-    int index;
-    char end = 0;
-    if (text == NULL || pIndex == NULL)
-        return 1; // invalid parameters
-    if (sscanf(text, "%d%c", &index, &end) != 1 || end)
-        return 1; // string isn't numeric
-    if (index < 0 || index > VARCNT)
-        return 1; // index is invalid
-    *pIndex = index;
-    return 0;
-}
+const char *TesterHelpStrings[] = {
+    "This is an interactive module of the variable library",
+    "You can interact with up to " XSTR(VARCNT_S) " variables at a time",
+    "",
+    "/add <index> <text>                add variable from text to index",
+    "/rmv <index>                       remove variable at index",
+    "/cmp <index1> <index2> [EQUAL|*]   compare variables from two indices",
+    "/dmp <index>                       dump variable contents",
+    "/ser <index> <filename>            serialize to file",
+    "/dsr <index> <filename>            deserialize from file",
+    "/wef <filename>                    write empty file",
+    NULL,
+};

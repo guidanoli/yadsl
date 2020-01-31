@@ -113,7 +113,7 @@ VarReturnID varWrite(Variable *pVariable, FILE *fp)
     return VAR_RETURN_OK;
 }
 
-VarReturnID varSerializeWrite(Variable *pVariable, FILE *fp)
+VarReturnID varSerialize(Variable *pVariable, FILE *fp)
 {
     if (pVariable == NULL)
         return VAR_RETURN_INVALID_PARAMETER;
@@ -122,7 +122,7 @@ VarReturnID varSerializeWrite(Variable *pVariable, FILE *fp)
     return VAR_RETURN_OK;
 }
 
-VarReturnID varSerializeRead(Variable **ppVariable, FILE *fp)
+VarReturnID varDeserialize(Variable **ppVariable, FILE *fp)
 {
     size_t index = 0, bufferSize = 1024;
     char *buffer, *temp, c, escape = 0;

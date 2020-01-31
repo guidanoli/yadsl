@@ -1,0 +1,10 @@
+/help
+/print s mystring
+/print s "My String With Spaces In It: Chapter I"
+/print s "My String With Tabs In It:	Chapter II"
+/print i 1234
+/print i -1234
+/print f 3.1415
+/print f 1e-2
+/throw
+/expect 1
