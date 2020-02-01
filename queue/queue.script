@@ -1,0 +1,61 @@
+## Empty queue
+
+# Try to dequeue an empty queue
+/dequeue X
+/catch empty
+
+# It is empty
+/empty true
+
+/empty false
+/catch return
+
+## One item
+
+/queue X
+
+# It is not empty
+/empty false
+
+/empty true
+/catch return
+
+## Dequeue item
+
+/dequeue X
+
+# Empty again
+/empty true
+
+/empty false
+/catch return
+
+# Try dequeuing an empty queue again
+/dequeue X
+/catch empty
+
+## Dequeue incorrect item
+
+/queue X
+/dequeue Y
+/catch return
+
+## Queue and dequeue many items
+
+/empty true
+/queue X
+/empty false
+/queue A
+/empty false
+/dequeue X
+/empty false
+/queue B
+/empty false
+/queue C
+/empty false
+/dequeue A
+/empty false
+/dequeue B
+/empty false
+/dequeue C
+/empty true

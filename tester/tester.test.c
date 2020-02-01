@@ -24,30 +24,30 @@ TesterReturnValue TesterParseCallback(const char *command)
         TesterPrintHelpStrings(stdout);
     } else if matches(command, "print") {
         if (TesterParseArguments("s", buffer) != 1)
-            return TESTER_RETURN_PARSING_ARGUMENT;
+            return TESTER_RETURN_ARGUMENT;
         if (strlen(buffer) != 1)
-            return TESTER_RETURN_PARSING_ARGUMENT;
+            return TESTER_RETURN_ARGUMENT;
         if matches(buffer, "s") {
             if (TesterParseArguments("s", buffer) != 1)
-                return TESTER_RETURN_PARSING_ARGUMENT;
+                return TESTER_RETURN_ARGUMENT;
             printf("String: '%s'\n", buffer);
         } else if matches(buffer, "i") {
             int i;
             if (TesterParseArguments("i", &i) != 1)
-                return TESTER_RETURN_PARSING_ARGUMENT;
+                return TESTER_RETURN_ARGUMENT;
             printf("Integer: '%d'\n", i);
         } else if matches(buffer, "f") {
             float f;
             if (TesterParseArguments("f", &f) != 1)
-                return TESTER_RETURN_PARSING_ARGUMENT;
+                return TESTER_RETURN_ARGUMENT;
             printf("Float: '%f'\n", f);
         } else {
-            return TESTER_RETURN_PARSING_ARGUMENT;
+            return TESTER_RETURN_ARGUMENT;
         }
     } else if matches(command, "throw") {
-        return TesterExternalValue(1, "Custom return value");
+        return TesterExternalReturnValue("custom");
     } else {
-        return TESTER_RETURN_PARSING_COMMAND;
+        return TESTER_RETURN_COMMAND;
     }
     return TESTER_RETURN_OK;
 }

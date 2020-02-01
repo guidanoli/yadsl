@@ -67,6 +67,18 @@ QueueReturnID queueDequeue(Queue *pQueue,
     void **pItem);
 
 /**
+* Checks whether queue is empty or not
+* pQueue    pointer to queue
+* pIsEmpty  (return) is empty
+* Possible errors:
+* QUEUE_RETURN_INVALID_PARAMETER
+*   - "pQueue" is NULL
+*   - "pIsEmpty" is NULL
+*/
+QueueReturnID queueIsEmpty(Queue *pQueue,
+    int *pIsEmpty);
+
+/**
 * Destroy queue and items left
 * pQueue    pointer to queue
 */

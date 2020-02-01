@@ -54,7 +54,7 @@ QueueReturnID queueDequeue(Queue *pQueue,
 {
     struct QueueItem *newExit;
     if (pQueue == NULL || pItem == NULL)
-        return QUEUE_RETURN_OK;
+        return QUEUE_RETURN_INVALID_PARAMETER;
     if (pQueue->exit == NULL)
         return QUEUE_RETURN_EMPTY;
     newExit = pQueue->exit->previous;
@@ -63,6 +63,15 @@ QueueReturnID queueDequeue(Queue *pQueue,
     pQueue->exit = newExit;
     if (newExit == NULL)
         pQueue->entrance = NULL;
+    return QUEUE_RETURN_OK;
+}
+
+QueueReturnID queueIsEmpty(Queue *pQueue,
+    int *pIsEmpty)
+{
+    if (pQueue == NULL || pIsEmpty == NULL)
+        return QUEUE_RETURN_INVALID_PARAMETER;
+    *pIsEmpty = pQueue->exit == NULL;
     return QUEUE_RETURN_OK;
 }
 

@@ -37,33 +37,27 @@
 *
 * NATIVE COMMANDS
 *
-* /catch [ext] <return-value>
-*   if return-value equals the last command
-*   return value, then, it is ignored. else,
-*   an error will be thrown.
-*   the 'ext' flag is optional, for
-*   catching external return values
+* /catch <return>
+*   if <return> is equal to the last value
+*   returned, the error is ignored.
 ***********************************************/
 
 /**
-* Enumeration of all possible return values intelligible
-* to the Tester framework.
-* OBS: TESTER_RETURN_COUNT is not meant to be used as return
-* values, since it serves merely for internal purposes.
-* OBS: TESTER_RETURN_EXTERNAL is not meant to be used directly.
-* Use the TesterExternalValue function instead.
+* Enumeration of tester return values.
+* OBS: TESTER_RETURN_COUNT and TESTER_RETURN_EXTERNAL are
+* not meant to be used as return values, since they serve
+* merely for internal purposes.
 */
 typedef enum
 {
     TESTER_RETURN_OK = 0,
     TESTER_RETURN_FILE,
-    TESTER_RETURN_MEMORY_LACK,
-    TESTER_RETURN_MEMORY_LEAK,
-    TESTER_RETURN_BUFFER_OVERFLOW,
-    TESTER_RETURN_PARSING_COMMAND,
-    TESTER_RETURN_PARSING_ARGUMENT,
-    TESTER_RETURN_UNEXPECTED_ARGUMENT,
-    TESTER_RETURN_UNEXPECTED_RETURN,
+    TESTER_RETURN_MALLOC,
+    TESTER_RETURN_MEMLEAK,
+    TESTER_RETURN_OVERFLOW,
+    TESTER_RETURN_COMMAND,
+    TESTER_RETURN_ARGUMENT,
+    TESTER_RETURN_RETURN,
     TESTER_RETURN_EXTERNAL,
     TESTER_RETURN_COUNT,
 }
@@ -135,13 +129,11 @@ extern TesterReturnValue TesterExitCallback();
 int TesterParseArguments(const char *format, ...);
 
 /**
-* Create an external value (and, optionally, information)
-* for an specific error occurred during TesterParseCallback.
-* Its return should be the return value of TesterParseCallback,
-* i.e. "return TesterExternalValue(404, "Page not found");"
-* HINT: The external value can be caught by /catch ext <val>
+* Create an external value for an specific error.
+* Usage: "return TesterExternalReturnValue("myerror");"
+* HINT: The external value can be caught by '/catch' too.
 */
-TesterReturnValue TesterExternalValue(int value, const char *info);
+TesterReturnValue TesterExternalReturnValue(const char *info);
 
 /**
 * Prints help strings provided in the same

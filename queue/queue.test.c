@@ -1,97 +1,100 @@
 #include <stdio.h>
 #include <string.h>
+#include "tester.h"
 #include "queue.h"
 #include "var.h"
 
-static char *helpStrings[] = {
+#define matches(a, b) (strcmp(a, b) == 0)
+
+const char *TesterHelpStrings[] = {
     "This is the queue test module",
     "You will be interacting with the same queue at all times",
-    "Actions are parsed by command line arguments",
-    "The available actions are the following:",
+    "The available actions and possible error return values are the following:",
     "",
-    "X+\tqueue X",
-    "-\tdequeue",
+    "/queue X         queue variable X",
+    "/dequeue X       dequeue and compare top with X",
+    "                 -> empty: queue is empty",
+    "                 -> return: X is not equal to queue top",
+    "/empty <isempty> check whether queue is empty (<isempty> = true)",
+    "                 or not (<isempty> = ^true)",
+    "                 -> return: obtained doen't match expected",
     NULL
 };
 
-static char *_parse(int *pArgIndex, QueueReturnID *pId, int cmdCount,
-    char **cmds);
-
+static char buffer[TESTER_BUFFER_SIZE];
 static Queue *pQueue = NULL;
-static int expectFailure = 0;
+static TesterReturnValue convertReturnValue(QueueReturnID queueId);
 
-int main(int argc, char **argv)
+TesterReturnValue TesterInitCallback()
 {
-    QueueReturnID id;
-    int argIndex = 0;
-    char *err = NULL;
-    if (argc == 1) {
-        char **s = helpStrings;
-        for (;*s;++s) puts(*s);
-        return 0;
-    }
-    err = _parse(&argIndex, &id, argc, argv);
-    if (pQueue)
-        queueDestroy(pQueue);
-#ifdef _DEBUG
-    if (varGetRefCount()) {
-        fprintf(stderr, "Memory leak detected\n");
-        return 1;
-    }
-#endif
-    if (err) {
-        if (id) {
-            fprintf(stderr, "Error #%d on action #%d: %s\n",
-                id, argIndex, err);
-        } else {
-            fprintf(stderr, "Error on action #%d: %s\n",
-                argIndex, err);
-        }
-        if (expectFailure) {
-            puts("Expected error!");
-        } else {
-            return 1;
-        }
-    } else {
-        if (expectFailure) {
-            puts("Expected error but none occurred!");
-            return 1;
-        } else {
-            puts("No errors");
-        }
-    }
-    return 0;
+    if (queueCreate(&pQueue, varDestroy))
+        return TESTER_RETURN_MALLOC;
+    return TESTER_RETURN_OK;
 }
 
-static char *_parse(int *pArgIndex, QueueReturnID *pId, int cmdCount,
-    char **cmds)
+TesterReturnValue TesterParseCallback(const char *command)
 {
-    Queue *tempQueue;
-    Variable *var;
-    char buffer[1024], end;
-    if (*pId = queueCreate(&tempQueue, varDestroy))
-        return "Could not create queue";
-    pQueue = tempQueue;
-    for (*pArgIndex = 1; *pArgIndex < cmdCount; ++(*pArgIndex)) {
-        if (strcmp(cmds[*pArgIndex], "-") == 0) {
-            if (*pId = queueDequeue(pQueue, &var))
-                return "Could not dequeue";
-            fprintf(stdout, "[%d] ", *pArgIndex);
-            varWrite(var, stdout);
-            fprintf(stdout, "\n");
+    Variable *var, *var2;
+    QueueReturnID queueId = QUEUE_RETURN_OK;
+    if matches(command, "queue") {
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &var) != VAR_RETURN_OK)
+            return TESTER_RETURN_MALLOC;
+        if (queueId = queueQueue(pQueue, var))
             varDestroy(var);
-        } else if (sscanf(cmds[*pArgIndex], "%[^+]+%c", buffer, &end) == 1) {
-            if (varCreate(buffer, &var))
-                return "Could not create variable";
-            if (*pId = queueQueue(pQueue, var)) {
-                varDestroy(var);
-                return "Could not queue";
-            }
-        } else if (strcmp(cmds[*pArgIndex], "ERROR") == 0) {
-            expectFailure = 1;
+    } else if matches(command, "dequeue") {
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &var) != VAR_RETURN_OK)
+            return TESTER_RETURN_MALLOC;
+        if (queueId = queueDequeue(pQueue, &var2)) {
+            varDestroy(var);
         } else {
-            return "Parsing error";
+            int result;
+            VarReturnID varId = varCompare(var, var2, &result);
+            varDestroy(var);
+            varDestroy(var2);
+            if (varId || !result)
+                return TESTER_RETURN_RETURN;
         }
+    } else if matches(command, "empty") {
+        int expected, obtained;
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        expected = matches(buffer, "true");
+        queueId = queueIsEmpty(pQueue, &obtained);
+        if (queueId == QUEUE_RETURN_OK && expected != obtained)
+            return TESTER_RETURN_RETURN;
+    } else {
+        return TESTER_RETURN_COMMAND;
     }
-    return NULL;
+    return convertReturnValue(queueId);
+}
+
+TesterReturnValue TesterExitCallback()
+{
+    queueDestroy(pQueue);
+    pQueue = NULL;
+#ifdef _DEBUG
+    if (varGetRefCount())
+        return TESTER_RETURN_MEMLEAK;
+#endif
+    return TESTER_RETURN_OK;
+}
+
+static TesterReturnValue convertReturnValue(QueueReturnID queueId)
+{
+    switch (queueId) {
+    case QUEUE_RETURN_OK:
+        return TESTER_RETURN_OK;
+    case QUEUE_RETURN_EMPTY:
+        return TesterExternalReturnValue("empty");
+    case QUEUE_RETURN_INVALID_PARAMETER:
+        return TesterExternalReturnValue("parameter");
+    case QUEUE_RETURN_MEMORY:
+        return TesterExternalReturnValue("malloc");
+    default:
+        return TesterExternalReturnValue("unknown");
+    }
 }

@@ -7,12 +7,11 @@
 * STATIC VARIABLES DECLARATIONS
 ***********************************************/
 
-static int externalReturnValue = 0; // external return value
 static unsigned long line; // line count
-static const char *returnValueInfos[TESTER_RETURN_COUNT]; // return value infos
+static const char *externalReturnValueInfo = NULL; // external return value info
+static const char *nativeReturnValueInfos[TESTER_RETURN_COUNT]; // return value infos
 static char buffer[TESTER_BUFFER_SIZE], // file line
             command[TESTER_BUFFER_SIZE], // command string
-            argtemp[TESTER_BUFFER_SIZE], // command argument string
             sep[TESTER_BUFFER_SIZE], // separation characters
             temp[TESTER_BUFFER_SIZE]; // temp. variable
 static char *cursor; // buffer cursor
@@ -89,10 +88,9 @@ int TesterParseArguments(const char *format, ...)
     return argc;
 }
 
-TesterReturnValue TesterExternalValue(int value, const char *info)
+TesterReturnValue TesterExternalReturnValue(const char *info)
 {
-    externalReturnValue = value;
-    returnValueInfos[TESTER_RETURN_EXTERNAL] = info;
+    externalReturnValueInfo = info;
     return TESTER_RETURN_EXTERNAL;
 }
 
@@ -106,10 +104,12 @@ const char *TesterGetReturnValueInfo(TesterReturnValue returnValue)
 {
     if (returnValue >= TESTER_RETURN_COUNT)
         return "Invalid return value";
-    if (returnValue == TESTER_RETURN_EXTERNAL &&
-        !returnValueInfos[returnValue])
-        return "Undefined external value";
-    return returnValueInfos[returnValue];
+    if (returnValue == TESTER_RETURN_EXTERNAL)
+        if (externalReturnValueInfo == NULL)
+            return "Missing external return value information";
+        else
+            return externalReturnValueInfo;
+    return nativeReturnValueInfos[returnValue];
 }
 
 /**********************************************
@@ -149,7 +149,7 @@ static TesterReturnValue _TesterParse(FILE *fp)
         size_t bufflen = strlen(buffer);
         // Make sure it doesn't overflow
         if (bufflen == TESTER_BUFFER_SIZE - 1)
-            return TESTER_RETURN_BUFFER_OVERFLOW;
+            return TESTER_RETURN_OVERFLOW;
         // Iterate through the buffer with a cursor
         for (cursor = buffer; cursor < buffer + bufflen; ++cursor) {
             if (*cursor == '\t' || *cursor == ' ' || *cursor == '\n')
@@ -169,15 +169,16 @@ static TesterReturnValue _TesterParse(FILE *fp)
                         if (ret)
                             return ret;
                         // Call the command parser (can move cursor)
+                        externalReturnValueInfo = NULL;
                         ret = TesterParseCallback(command);
                     }
                 } else {
                     // Command does not match regex
-                    return TESTER_RETURN_PARSING_COMMAND;
+                    return TESTER_RETURN_COMMAND;
                 }
             } else {
                 // Unexpected character
-                return TESTER_RETURN_UNEXPECTED_ARGUMENT;
+                return TESTER_RETURN_ARGUMENT;
             }
         }
         // Increase the line counter
@@ -193,21 +194,19 @@ static void _TesterLoadReturnValueInfos()
     };
     size_t i;
     struct returnValue nativeValues[] = {
-        {TESTER_RETURN_OK, "Success"},
-        {TESTER_RETURN_FILE, "File error"},
-        {TESTER_RETURN_MEMORY_LACK, "Could not allocate memory"},
-        {TESTER_RETURN_MEMORY_LEAK, "Memory leak detected"},
-        {TESTER_RETURN_BUFFER_OVERFLOW, "Buffer overflow"},
-        {TESTER_RETURN_PARSING_COMMAND, "Malformed command"},
-        {TESTER_RETURN_PARSING_ARGUMENT, "Malformed argument"},
-        {TESTER_RETURN_UNEXPECTED_ARGUMENT, "Unexpected argument"},
-        {TESTER_RETURN_UNEXPECTED_RETURN, "Unexpected return"},
-        // TESTER_RETURN_EXTERNAL is not meant to be defined
-        // See TesterGetReturnValueInfo
+        {TESTER_RETURN_OK, "ok"},
+        {TESTER_RETURN_FILE, "file"},
+        {TESTER_RETURN_MALLOC, "malloc"},
+        {TESTER_RETURN_MEMLEAK, "memleak"},
+        {TESTER_RETURN_OVERFLOW, "overflow"},
+        {TESTER_RETURN_COMMAND, "command"},
+        {TESTER_RETURN_ARGUMENT, "argument"},
+        {TESTER_RETURN_RETURN, "return"},
+        {TESTER_RETURN_EXTERNAL, "external"},
     };
     for (i = 0; i < sizeof(nativeValues)/sizeof(nativeValues[0]); ++i) {
         struct returnValue retVal = nativeValues[i];
-        returnValueInfos[retVal.value] = retVal.info;
+        nativeReturnValueInfos[retVal.value] = retVal.info;
     }
 }
 
@@ -239,21 +238,20 @@ static int _TesterParseStr(char *arg, int *inc)
 
 static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
 {
-    int caughtExternValue;
-    TesterReturnValue caughtValue;
-    if (TesterParseArguments("si", argtemp, &caughtExternValue) == 2 &&
-        strcmp(argtemp, "ext") == 0) {
-        if (ret != TESTER_RETURN_EXTERNAL)
-            return TESTER_RETURN_UNEXPECTED_RETURN;
-        if (caughtExternValue != externalReturnValue)
-            return TESTER_RETURN_UNEXPECTED_RETURN;
-    } else if (TesterParseArguments("i", &caughtValue) == 1) {
-        if (caughtValue != ret)
-            return TESTER_RETURN_UNEXPECTED_RETURN;
-    } else {
-        return TESTER_RETURN_PARSING_ARGUMENT;
+    char arg[TESTER_BUFFER_SIZE];
+    if (TesterParseArguments("s", arg) == 1) {
+        if (ret == TESTER_RETURN_EXTERNAL) {
+            if (externalReturnValueInfo != NULL &&
+                strcmp(externalReturnValueInfo, arg) == 0)
+                return TESTER_RETURN_OK;
+        } else {
+            if (strcmp(nativeReturnValueInfos[ret], arg) == 0)
+                return TESTER_RETURN_OK;
+        }
     }
-    return TESTER_RETURN_OK;
+    fprintf(stderr, "Error could not be caught: \"%s\"\n",
+    TesterGetReturnValueInfo(ret));
+    return TESTER_RETURN_ARGUMENT;
 }
 
 static void _TesterPrintReturnValueInfo(TesterReturnValue ret)
@@ -266,7 +264,5 @@ static void _TesterPrintReturnValueInfo(TesterReturnValue ret)
         if (buffer[bufflen - 1] != '\n') fprintf(stderr, "\n");
         while (col--) fprintf(stderr, " ");
         fprintf(stderr, "^\n");
-    } else {
-        fprintf(stdout, "%s\n", TesterGetReturnValueInfo(ret));
     }
 }
