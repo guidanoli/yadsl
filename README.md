@@ -15,6 +15,7 @@ All the compilation process is described in form of `CMakeLists.txt`. Having ins
 mkdir build
 cd build
 cmake ..
+cmake --build .
 ```
 
 ## Tests
