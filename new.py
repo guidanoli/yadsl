@@ -46,7 +46,8 @@ def new_project(prj, no_test = False, **kwargs):
 			lines = list()
 			headers = ["tester"] + [(prj + hend) for hend in hends]
 			lines += ["#include \"{}.h\"".format(h) for h in headers]
-			lines += ["", "const char *TesterHelpStrings[] = NULL;", "",
+			lines += ["", "const char *TesterHelpStrings[] = {",
+			"    \"This is the {} test module\"".format(prj + fend), "};", "",
 			"TesterReturnValue TesterInitCallback()",
 			"{", "    return TESTER_RETURN_OK;", "}", "",
 			"TesterReturnValue TesterParseCallback(const char *command)",
@@ -55,23 +56,20 @@ def new_project(prj, no_test = False, **kwargs):
 			"{","    return TESTER_RETURN_OK;", "}", ""]
 			writelist(f, lines)
 		with open(prj + fend + '.script', 'w') as f:
-			pass # Just create the file
+			writelist(f, ["# " + prj + fend])
 	# Create README.md with <name> title
 	with open("README.md", 'w') as f:
 		writelist(f, ['# ' + prj])
 	# Create CMakeLists.txt with build configurations
 	with open("CMakeLists.txt", 'w') as f:
 		lines = list()
-		sources = ["{}{}.c".format(prj, s[0]) for s in exts["source"]]
-		headers = ["{}{}.h".format(prj, h[0]) for h in exts["header"]]
+		sources = [prj + fend + '.c' for fend, _ in exts["source"]]
+		headers = [prj + fend + '.h' for fend, _ in exts["header"]]
 		lines += ["add_library({} {})".format(prj, " ".join(sources + headers))]
-		tests = [(prj + t[0] + 'test', prj + t[0] + '.test.c', t[0]) for t in exts["test"]]
-		lines += ["add_executable({} {})".format(t, s) for t, s, _ in tests]
-		lines += ["target_link_libraries({} tester {})".format(t, prj) for t, _, _ in tests]
-		lines += ["get_filename_component({}_SCRIPT_PATH {}.script ABSOLUTE)"
-		.format(target.upper(), target) for target, _, _ in tests]
-		lines += ["add_test(NAME {}Test COMMAND {} ${{{}_SCRIPT_PATH}})"
-		.format(prj.title() + ext.title(), t, t.upper()) for t, _, ext in tests]
+		testnames = [prj + fend for fend, _ in exts["test"]]
+		tests = [(t + 'test', t + '.test.c', t + '.script') for t in testnames]
+		lines += ["add_tester_module({} SOURCES {} LINKS {})".format(tgt, src, prj) for tgt, src, _ in tests]
+		lines += ["add_tester_script({} SOURCES {})".format(tgt, script) for tgt, _, script in tests]
 		lines += ["target_include_directories({} PUBLIC ${{CMAKE_CURRENT_SOURCE_DIR}})".format(prj)]
 		writelist(f, lines)
 	# Add project to root CMakeLists.txt

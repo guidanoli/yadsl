@@ -19,4 +19,11 @@ cmake ..
 
 ## Tests
 
-All test modules work pretty much the same way, letting you interact with a single instance of the data structure through command line arguments. If you seek further information about a given test module, simply run the test module executable with no arguments whatsoever and you'll be prompted with some useful help messages.
+All test modules implement the specific functions of the `tester` framework. To read more about it, go to `tester/README.md`. In order to run the tests, assuming you have [cmake](https://cmake.org/) installed, simply run:
+
+```bash
+cd build
+ctest -C <CONFIG>
+```
+
+Where `CONFIG` stands for the project configuration (like `Debug` or `Release`).
