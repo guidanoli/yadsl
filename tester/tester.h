@@ -37,35 +37,25 @@
 *
 * NATIVE COMMANDS
 *
-* /catch <return-value>
+* /catch [ext] <return-value>
 *   if return-value equals the last command
 *   return value, then, it is ignored. else,
 *   an error will be thrown.
+*   the 'ext' flag is optional, for
+*   catching external return values
 ***********************************************/
 
 /**
 * Enumeration of all possible return values intelligible
-* to the Tester framework. You can import external return
-* values to customize even more your test by defining the
-* path to the file with a list of comma-terminated symbols
-* to TESTER_EXTERNAL_RETURN_VALUES.
-* You can even add further information about the return
-* value by implementing the TesterLoadCustomReturnValueInfo.
-* HINT: External return values will be numerated beggining
-* from 1. That way you can use the correct value for the 
-* /catch command by looking up the position of a given
-* return value on your definitions file.
-* HINT: TESTER_RETURN_COUNT and TESTER_RETURN_FLAG are not
-* meant to be used as return values, since it serves merely
-* for internal purposes.
+* to the Tester framework.
+* OBS: TESTER_RETURN_COUNT is not meant to be used as return
+* values, since it serves merely for internal purposes.
+* OBS: TESTER_RETURN_EXTERNAL is not meant to be used directly.
+* Use the TesterExternalValue function instead.
 */
 typedef enum
 {
     TESTER_RETURN_OK = 0,
-#ifdef TESTER_EXTERNAL_RETURN_VALUES
-    #include TESTER_EXTERNAL_RETURN_VALUES
-#endif
-    TESTER_RETURN_FLAG,
     TESTER_RETURN_FILE,
     TESTER_RETURN_MEMORY_LACK,
     TESTER_RETURN_MEMORY_LEAK,
@@ -74,6 +64,7 @@ typedef enum
     TESTER_RETURN_PARSING_ARGUMENT,
     TESTER_RETURN_UNEXPECTED_ARGUMENT,
     TESTER_RETURN_UNEXPECTED_RETURN,
+    TESTER_RETURN_EXTERNAL,
     TESTER_RETURN_COUNT,
 }
 TesterReturnValue;
@@ -119,18 +110,6 @@ extern TesterReturnValue TesterParseCallback(const char *command);
 */
 extern TesterReturnValue TesterExitCallback();
 
-/**
-* Callback called when Tester return values information
-* are being loaded and custom values are also defined,
-* but whose information must be loaded too.
-* HINT: It is advised to return NULL by default, so
-* that the proper information is assigned to return
-* values with missing information.
-*/
-#ifdef TESTER_EXTERNAL_RETURN_VALUES
-extern const char *TesterLoadCustomReturnValueInfo(TesterReturnValue value);
-#endif
-
 /**********************************************
 * SYMBOLS ALREADY DEFINED
 ***********************************************/
@@ -154,6 +133,15 @@ extern const char *TesterLoadCustomReturnValueInfo(TesterReturnValue value);
 * (*) Can parse strings within quotation marks too.
 */
 int TesterParseArguments(const char *format, ...);
+
+/**
+* Create an external value (and, optionally, information)
+* for an specific error occurred during TesterParseCallback.
+* Its return should be the return value of TesterParseCallback,
+* i.e. "return TesterExternalValue(404, "Page not found");"
+* HINT: The external value can be caught by /catch ext <val>
+*/
+TesterReturnValue TesterExternalValue(int value, const char *info);
 
 /**
 * Prints help strings provided in the same

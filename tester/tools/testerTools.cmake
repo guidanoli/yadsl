@@ -2,17 +2,11 @@ cmake_minimum_required(VERSION 3.0)
 
 # Add tester module
 # add_tester_module(<name> SOURCES source1 [source2 ...]
-#					[LINKS link1 [link2 ...]
-#					[DEFINE_SYMBOL external])
+#					[LINKS link1 [link2 ...])
 function(add_tester_module name)
-	set(oneValueArgs DEFINE_SYMBOL)
 	set(multiValueArgs SOURCES LINKS)
-	cmake_parse_arguments(ARG "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-	add_executable(${name} ${ARG_SOURCES} ${ARG_DEFINE_SYMBOL})
-	if(DEFINED ARG_DEFINE_SYMBOL)
-		target_compile_definitions(${name} PUBLIC
-		TESTER_EXTERNAL_RETURN_VALUES="${ARG_DEFINE_SYMBOL}")
-	endif()
+	cmake_parse_arguments(ARG "" "" "${multiValueArgs}" ${ARGN})
+	add_executable(${name} ${ARG_SOURCES})
 	foreach(LINK ${ARG_LINKS})
 		if (NOT TARGET ${LINK})
 			message(FATAL_ERROR "'${LINK}' is not a target")

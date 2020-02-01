@@ -7,4 +7,4 @@
 /print f 3.1415
 /print f 1e-2
 /throw
-/expect 1
+/catch 1

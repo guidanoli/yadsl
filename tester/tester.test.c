@@ -45,7 +45,7 @@ TesterReturnValue TesterParseCallback(const char *command)
             return TESTER_RETURN_PARSING_ARGUMENT;
         }
     } else if matches(command, "throw") {
-        return TESTERTEST_RETURN_CUSTOM;
+        return TesterExternalValue(1, "Custom return value");
     } else {
         return TESTER_RETURN_PARSING_COMMAND;
     }
@@ -56,14 +56,4 @@ TesterReturnValue TesterExitCallback()
 {
     puts("TesterExitCallback called");
     return TESTER_RETURN_OK;
-}
-
-const char *TesterLoadCustomReturnValueInfo(TesterReturnValue value)
-{
-    switch (value) {
-    case TESTERTEST_RETURN_CUSTOM:
-        return "Custom return value";
-    default:
-        return NULL;
-    }
 }

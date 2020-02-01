@@ -7,93 +7,93 @@
 # Test invalid index
 
 /add -1 x
-/catch 1
+/catch ext 1
 
 /add 11 x
-/catch 1
+/catch ext 1
 
 /rmv -1
-/catch 1
+/catch ext 1
 
 /rmv 11
-/catch 1
+/catch ext 1
 
 /cmp -1 0 x
-/catch 1
+/catch ext 1
 
 /cmp 0 -1 x
-/catch 1
+/catch ext 1
 
 /cmp -1 -1 x
-/catch 1
+/catch ext 1
 
 /cmp 11 0 x
-/catch 1
+/catch ext 1
 
 /cmp 0 11 x
-/catch 1
+/catch ext 1
 
 /cmp 11 11 x
-/catch 1
+/catch ext 1
 
 /cmp 11 -1 x
-/catch 1
+/catch ext 1
 
 /cmp -1 11 x
-/catch 1
+/catch ext 1
 
 /dmp -1
-/catch 1
+/catch ext 1
 
 /dmp 11
-/catch 1
+/catch ext 1
 
 /ser -1 x
-/catch 1
+/catch ext 1
 
 /ser 11 x
-/catch 1
+/catch ext 1
 
 /dsr -1 x
-/catch 1
+/catch ext 1
 
 /dsr 11 x
-/catch 1
+/catch ext 1
 
 # Test undefined variable
 
 /rmv 1
-/catch 2
+/catch ext 2
 
 /cmp 1 0 x
-/catch 2
+/catch ext 2
 
 /cmp 0 1 x
-/catch 2
+/catch ext 2
 
 /cmp 1 1 x
-/catch 2
+/catch ext 2
 
 /dmp 1
-/catch 2
+/catch ext 2
 
 /ser 1 x
-/catch 2
+/catch ext 2
 
 # Test open file
 
 /ser 0 \.:?/
-/catch 3
+/catch ext 3
 
 /dsr 0 \.:?/
-/catch 3
+/catch ext 3
 
 # Can't test invalid parameter
 
 # Test file format error
 
 /dsr 0 empty.txt
-/catch 5
+/catch ext 5
 
 # Can't test writing error
 
