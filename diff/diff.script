@@ -12,3 +12,12 @@
 
 /diff caps CAPS
 /gtr 0
+
+/diff "" ""
+/equ 0
+
+/diff "" A
+/gtr 0
+
+/diff " " ""
+/gtr 0

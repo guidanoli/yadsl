@@ -1,0 +1,131 @@
+## Empty set
+
+# Size should be zero
+/size 0
+
+# Trying to use cursor
+/current X
+/catch empty
+
+/previous
+/catch empty
+
+/next
+/catch empty
+
+/first
+/catch empty
+
+/last
+/catch empty
+
+# Try to filter
+/filter X NO
+
+# Trying to remove NULL
+/remove
+/catch containsnot
+
+# Adding and removing NULL
+/contains NO
+/add
+/contains YES
+/size 1
+
+# Trying to add again
+/add
+/catch contains
+
+# Remove NULL
+/remove
+
+# Does not contain NULL anymore
+/contains NO
+/size 0
+
+## Adding one item
+
+/save ITEM
+
+# Should not contain just yet
+/contains NO
+
+/add
+
+# Checking if it was added
+/contains YES
+/current ITEM
+/filter ITEM YES
+/size 1
+
+# Trying to use cursor
+/first
+/current ITEM
+/last
+/current ITEM
+/first
+/current ITEM
+
+# Try to add again
+/add
+/catch contains
+/contains YES
+/size 1
+
+# Remove item
+/remove
+
+# Checking if it was removed
+/contains NO
+/filter ITEM NO
+/size 0
+
+## Iterating
+
+# Adding three distinct items
+/save A
+/add
+/save B
+/add
+/save C
+/add
+
+# Checking if they were added
+/size 3
+/filter A YES
+/filter B YES
+/filter C YES
+
+# Iterating in the next direction
+/first
+/next
+/next
+
+# Trying to overpass limit
+/next
+/catch bounds
+
+# Iterating in the previous direction
+/last
+/previous
+/previous
+
+# Trying to overpass limit
+/previous
+/catch bounds
+
+# Remove one by one
+/filtersave A
+/remove
+/filter A NO
+/size 2
+
+/filtersave B
+/remove
+/filter B NO
+/size 1
+
+/filtersave C
+/remove
+/filter C NO
+/size 0
