@@ -132,9 +132,11 @@ MapReturnID mapGetNumberOfEntries(Map *pMap, unsigned long *pNum)
 
 void mapDestroy(Map *pMap)
 {
-    struct _freeEntryParameter arg = {pMap->freeEntry, pMap->arg};
+    struct _freeEntryParameter arg;
     if (pMap == NULL)
         return;
+    arg.freeEntry = pMap->freeEntry;
+    arg.arg = pMap->arg;
     setDestroyDeep(pMap->entrySet, _freeEntry, &arg);
     free(pMap);
 }

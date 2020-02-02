@@ -1,0 +1,58 @@
+## Empty map
+
+# Should have 0 entries
+/nentries 0
+
+# Try removing entry
+/remove X
+/catch noentry
+
+# Try getting entry
+/get X X
+/catch noentry
+
+## One entry
+
+# Put entry
+/put ANSWER 42
+
+# Check if entry was put
+/nentries 1
+/get ANSWER 42
+
+# Overwriting entry
+/put ANSWER Seamus
+/catch overwrite
+
+# Checking if entry was overwritten
+/nentries 1
+/get ANSWER Seamus
+
+# Removing entry
+/remove ANSWER
+
+# Check if entry was removed
+/nentries 0
+/get ANSWER X
+/catch noentry
+
+## Many entries
+
+# Putting entries
+/put GOLD "Metal"
+/put NEON "Noble Gas"
+/put HYDROGEN "Metal"
+
+# Checking entries
+/nentries 3
+/get GOLD "Metal"
+/get NEON "Noble Gas"
+/get HYDROGEN "Metal"
+
+# Overwriting one of them
+/put HYDROGEN "No Family"
+/catch overwrite
+
+# Checking if entry was overwritten
+/nentries 3
+/get HYDROGEN "No Family"
