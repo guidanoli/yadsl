@@ -30,6 +30,7 @@ TesterReturnValue TesterInitCallback()
 TesterReturnValue TesterParseCallback(const char *command)
 {
     VarReturnID varId = VAR_RETURN_OK;
+    Variable *temp;
     int idx1, idx2, expected, obtained;
     FILE *f;
     if matches(command, "add") {
@@ -37,11 +38,10 @@ TesterReturnValue TesterParseCallback(const char *command)
             return TESTER_RETURN_ARGUMENT;
         if (!isValidIndex(idx1))
             return TesterExternalReturnValue("index");
-        if (vars[idx1]) {
-            varDestroy(vars[idx1]);
-            vars[idx1] = NULL;
-        }
+        temp = vars[idx1];
         varId = varCreate(buffer, &vars[idx1]);
+        if (!varId && temp)
+            varDestroy(temp);
     } else if matches(command, "rmv") {
         if (TesterParseArguments("i", &idx1) != 1)
             return TESTER_RETURN_ARGUMENT;
@@ -77,13 +77,12 @@ TesterReturnValue TesterParseCallback(const char *command)
             return TESTER_RETURN_ARGUMENT;
         if (!isValidIndex(idx1))
             return TesterExternalReturnValue("index");
-        if (vars[idx1]) {
-            varDestroy(vars[idx1]);
-            vars[idx1] = NULL;
-        }
+        temp = vars[idx1];
         if ((f = fopen(buffer, "r")) == NULL)
             return TESTER_RETURN_FILE;
         varId = varDeserialize(&vars[idx1], f);
+        if (!varId && temp)
+            varDestroy(temp);
         fclose(f);
     } else if matches(command, "ser") {
         if (TesterParseArguments("is", &idx1, buffer) != 2)

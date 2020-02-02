@@ -7,4 +7,4 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tools")
 include(testerTools)
 
 add_tester_module(testertest SOURCES tester.test.c)
-add_tester_script(testertest SOURCES tester.script)
+add_tester_scripts(testertest SOURCES tester.script)

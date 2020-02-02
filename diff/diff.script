@@ -1,0 +1,14 @@
+/diff A B
+/gtr 0
+
+/diff A A
+/equ 0
+
+/diff A AA
+/gtr 0
+
+/diff TYPO TPO
+/gtr 0
+
+/diff caps CAPS
+/gtr 0

@@ -1,3 +1,5 @@
+## TESTING ERROR TYPES
+
 # Add dummy variable
 /add 0 dummy
 
@@ -100,3 +102,69 @@
 # Can't test memory
 
 # Can't test unknown
+
+## TESTING FUNCTIONS
+
+# add has already been tested
+
+# remove
+
+/rmv 0
+
+/rmv 0
+/catch nullvar
+
+# compare
+
+/add 0 A
+/add 1 A
+/cmp 0 1 EQUAL
+/rmv 0
+/rmv 1
+
+/add 0 A
+/add 1 B
+/cmp 0 1 DIFFERENT
+/rmv 0
+/rmv 1
+
+/add 0 A
+/cmp 0 0 EQUAL
+/rmv 0
+
+# dump
+
+/add 0 "This message is supposed to be dumped to stdout"
+/dmp 0
+/rmv 0
+
+/add 0 3.1415
+/dmp 0
+/rmv 0
+
+/add 0 42
+/dmp 0
+/rmv 0
+
+# serialize
+
+/add 0 IhaveA\'"'/InTheMiddle
+/ser 0 ser_string.txt
+/dsr 1 ser_string.txt
+/cmp 0 1 EQUAL
+/rmv 0
+/rmv 1
+
+/add 0 3.141592
+/ser 0 ser_double.txt
+/dsr 1 ser_double.txt
+/cmp 0 1 EQUAL
+/rmv 0
+/rmv 1
+
+/add 0 123456789
+/ser 0 ser_int.txt
+/dsr 1 ser_int.txt
+/cmp 0 1 EQUAL
+/rmv 0
+/rmv 1

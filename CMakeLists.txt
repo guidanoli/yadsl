@@ -7,7 +7,6 @@ enable_testing()
 add_subdirectory(tester)
 
 # Modules
-add_subdirectory(var)
 add_subdirectory(diff)
 add_subdirectory(graph)
 add_subdirectory(graphio)
@@ -15,3 +14,4 @@ add_subdirectory(graphsearch)
 add_subdirectory(map)
 add_subdirectory(set)
 add_subdirectory(queue)
+add_subdirectory(var)

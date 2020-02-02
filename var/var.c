@@ -216,7 +216,7 @@ static int _printInteger(FILE *fp, _INT *a)
 static int _printDecimal(FILE *fp, _DEC *a)
 {
     if (a == NULL) return 1;
-    if (fprintf(fp, "%.16g", *a) < 0) return 1;
+    if (fprintf(fp, "%lf", *a) < 0) return 1;
     return 0;
 }
 
@@ -297,7 +297,7 @@ static int _readDecimal(const char *text, _DEC **b)
     char end = 0;
     a = malloc(sizeof(_DEC));
     if (a == NULL) return 1;
-    if (sscanf(text, "%.16g%c", a, &end) != 1 || end) {
+    if (sscanf(text, "%lf%c", a, &end) != 1 || end) {
         free(a);
         return 1;
     }

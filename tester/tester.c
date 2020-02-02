@@ -23,6 +23,7 @@ static char *cursor; // buffer cursor
 static TesterReturnValue _TesterMain(int argc, char **argv);
 static void _TesterLoadReturnValueInfos();
 static TesterReturnValue _TesterParse(FILE *fp);
+static void _TesterPrintCursorPosition(FILE *fp, int spacing);
 static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret);
 static int _TesterParseArg(const char *format, void *arg, int *inc);
 static int _TesterParseStr(char *arg, int *inc);
@@ -112,6 +113,18 @@ const char *TesterGetReturnValueInfo(TesterReturnValue returnValue)
     return nativeReturnValueInfos[returnValue];
 }
 
+void TesterLog(const char *message, ...)
+{
+    va_list va;
+    int spacing = 0;
+    va_start(va, message);
+    spacing += fprintf(stdout, "LOG: \"");
+    spacing += vfprintf(stdout, message, va);
+    spacing += fprintf(stdout, "\" ");
+    va_end(va);
+    _TesterPrintCursorPosition(stdout, spacing);
+}
+
 /**********************************************
 * STATIC FUNCTIONS DEFINITIONS
 ***********************************************/
@@ -166,8 +179,10 @@ static TesterReturnValue _TesterParse(FILE *fp)
                         if (ret = _TesterParseCatchCommand(ret))
                             return ret;
                     } else {
-                        if (ret)
+                        if (ret) {
+                            fprintf(stderr, "ERROR: Expected /catch command\n");
                             return ret;
+                        }
                         // Call the command parser (can move cursor)
                         externalReturnValueInfo = NULL;
                         ret = TesterParseCallback(command);
@@ -249,7 +264,7 @@ static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
                 return TESTER_RETURN_OK;
         }
     }
-    fprintf(stderr, "Error could not be caught: \"%s\"\n",
+    fprintf(stderr, "ERROR: Could not catch \"%s\"\n",
     TesterGetReturnValueInfo(ret));
     return TESTER_RETURN_ARGUMENT;
 }
@@ -257,12 +272,22 @@ static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
 static void _TesterPrintReturnValueInfo(TesterReturnValue ret)
 {
     if (ret) {
-        size_t col = cursor - buffer, bufflen = strlen(buffer);
-        fprintf(stderr, "Error on line %lu, column %lu: \"%s\"\n",
-        line, cursor - buffer + 1, TesterGetReturnValueInfo(ret));
-        fprintf(stderr, "%s", buffer);
-        if (buffer[bufflen - 1] != '\n') fprintf(stderr, "\n");
-        while (col--) fprintf(stderr, " ");
-        fprintf(stderr, "^\n");
+        int spacing = fprintf(stderr, "ERROR: \"%s\" ", TesterGetReturnValueInfo(ret));
+        _TesterPrintCursorPosition(stderr, spacing);
     }
+}
+
+// Prints the buffer and the cursor current position with an arrow (^)
+// spacing = how many characters have been printed out on the current line
+// HINT: printf-like functions return the number of characters printed out
+static void _TesterPrintCursorPosition(FILE *fp, int spacing)
+{
+    size_t col = cursor - buffer, bufflen = strlen(buffer);
+    if (bufflen == 0) return;
+    spacing += col;
+    spacing += fprintf(fp, "(line %lu, column %lu) ", line, col + 1);
+    fprintf(fp, "%s", buffer);
+    if (buffer[bufflen - 1] != '\n') fprintf(fp, "\n");
+    while (spacing--) fprintf(fp, " ");
+    fprintf(fp, "^\n");
 }

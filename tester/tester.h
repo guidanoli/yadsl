@@ -136,6 +136,12 @@ int TesterParseArguments(const char *format, ...);
 TesterReturnValue TesterExternalReturnValue(const char *info);
 
 /**
+* Log a message with additional information about current
+* parser state and cursor position, wrapping fprintf.
+*/
+void TesterLog(const char *message, ...);
+
+/**
 * Prints help strings provided in the same
 * way as if no arguments were provided.
 * HINT: stdout and stderr are FILE * too.

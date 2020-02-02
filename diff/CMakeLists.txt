@@ -1,12 +1,4 @@
 add_library(diff diff.c diff.h)
-add_executable(difftest diff.test.c)
+add_tester_module(difftest SOURCES diff.test.c)
+add_tester_scripts(difftest SOURCES diff.script)
 target_link_libraries(difftest diff)
-
-add_test(NAME EqualStrings COMMAND difftest
-   abc abc EQUAL)
-add_test(NAME DifferentStrings COMMAND difftest
-   abc def DIFFERENT)
-add_test(NAME CaseTest COMMAND difftest
-   abc aBc DIFFERENT)
-add_test(NAME ShiftTest COMMAND difftest
-   123 "@!#" DIFFERENT)

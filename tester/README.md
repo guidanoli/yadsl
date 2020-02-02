@@ -40,4 +40,4 @@ Start with `#`, followed by any string of characters.
 
 In order to implement a tester module, you must compile the tester framework together with a C file that implements all the undefined extern functions denoted in `tester.h`. Read it for further details, but be sure to check the `testertest` example.
 
-If your project makes use of [cmake](https://cmake.org/), you can use the `add_tester_module` and `add_tester_script` functions available by running `add_subdirectory(tester)` on your parent `CMakeLists.txt`.
+If your project makes use of [cmake](https://cmake.org/), you can use the `add_tester_module` and `add_tester_scripts` functions available by running `add_subdirectory(tester)` on your parent `CMakeLists.txt`.
