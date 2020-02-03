@@ -15,7 +15,7 @@
 #define isValidIndex(i) (i >= 0 && i < VARCNT)
 
 static Variable *vars[VARCNT];
-static char buffer[TESTER_BUFFER_SIZE];
+static char buffer[TESTER_BUFFER_SIZE], buffer2[TESTER_BUFFER_SIZE];
 
 static TesterReturnValue convertReturnValue(VarReturnID varId);
 
@@ -30,7 +30,7 @@ TesterReturnValue TesterInitCallback()
 TesterReturnValue TesterParseCallback(const char *command)
 {
     VarReturnID varId = VAR_RETURN_OK;
-    Variable *temp;
+    Variable *temp, *temp2;
     int idx1, idx2, expected, obtained;
     FILE *f;
     if matches(command, "add") {
@@ -42,6 +42,18 @@ TesterReturnValue TesterParseCallback(const char *command)
         varId = varCreate(buffer, &vars[idx1]);
         if (!varId && temp)
             varDestroy(temp);
+    } else if matches(command, "add2") {
+        if (TesterParseArguments("isis", &idx1, buffer, &idx2, buffer2) != 4)
+            return TESTER_RETURN_ARGUMENT;
+        if (!isValidIndex(idx1) || !isValidIndex(idx2) || idx1 == idx2)
+            return TesterExternalReturnValue("index");
+        temp = vars[idx1];
+        temp2 = vars[idx2];
+        varId = varCreateMultiple(buffer, &vars[idx1], buffer2, &vars[idx2], NULL);
+        if (!varId) {
+            if (temp) varDestroy(temp);
+            if (temp2) varDestroy(temp2);
+        }
     } else if matches(command, "rmv") {
         if (TesterParseArguments("i", &idx1) != 1)
             return TESTER_RETURN_ARGUMENT;
@@ -151,6 +163,7 @@ const char *TesterHelpStrings[] = {
     "The 'malloc' error is not explicit here since it is hardly reproducible",
     "",
     "/add <index> <text>                add variable from text to index",
+    "/add2 <idx1> <txt1> <idx2> <txt2>  add two variables from text to index",
     "/rmv <index>                       remove variable at index",
     "/cmp <index1> <index2> [EQUAL|*]   compare variables from two indices",
     "                                   -> return: expected doesn't match actual",

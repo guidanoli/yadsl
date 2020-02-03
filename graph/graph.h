@@ -26,9 +26,6 @@ typedef enum
     /* Everything went as excepted */
     GRAPH_RETURN_OK = 0,
 
-    /* Tried to operate on the same vertex */
-    GRAPH_RETURN_SAME_VERTEX,
-        
     /* Graph does not contain any vertices whatsoever */
     GRAPH_RETURN_EMPTY,
 
@@ -301,8 +298,6 @@ GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v);
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
 *   - "pGraph" is NULL
-* GRAPH_RETURN_SAME_VERTEX
-*   - "u" is equal to "v"
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 *   - vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_CONTAINS_EDGE
@@ -339,8 +334,6 @@ GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
 *   - "pGraph" is NULL
-* GRAPH_RETURN_SAME_VERTEX
-*   - "u" is equal to "v"
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 *   - vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE

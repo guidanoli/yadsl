@@ -1,481 +1,441 @@
-#include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include "graph.h"
 #include "graphio.h"
 #include "graphsearch.h"
+#include "tester.h"
 #include "var.h"
 
 /* Help */
 
-static const char *helpStrings[] = {
+const char *TesterHelpStrings[] = {
     "This is an interactive module of the graph library",
     "You will interact with the same graph object at all times",
-    "Actions and flags to the graph are parsed by the command line arguments",
-    "",
+    "A directed graph is already created from the start",
     "The registered actions are the following:",
-    "n\tprints the number of vertices",
-    "i\tprints next vertex",
-    "t\tprints the type of the graph",
-    "w\twrites the graph to the output file",
-    "Xi\tprints next in-neighbour of vertex X",
-    "Xo\tprints next out-neighbour of vertex X",
-    "Xn\tprints neighbour of X",
-    "Xd\tprints the degree of X",
-    "X+\tadds vertex X",
-    "X-\tremoves vertex X",
-    "X?\tchecks if vertex X exists",
-    "X,Y-\tremoves edge XY",
-    "X,Y?\tchecks if edge XY exists",
-    "X,Y,E+\tadds edge E between XY",
-    "\\bfs(X)\tdoes a bfs from X",
-    "\\dfs(X)\tdoes a dfs from X",
     "",
-    "The registered flags are the following:",
-    "type\tsets the graph type (DIRECTED or UNDIRECTED)",
-    "in\tsets the input graph file",
-    "out\tsets the output graph file",
+    "Graph commands:",
+    "/create [DIRECTED/UNDIRECTED]          create new graph",
+    "/isdirected [YES/NO]                   check if graph is directed",
+    "/vertexcount <expected>                get graph vertex count",
+    "/nextvertex <expected vertex>          get next vertex in graph",
+    "/outdegree <vertex> <expected>         get vertex out degree",
+    "/indegree <vertex> <expected>          get vertex in degree",
+    "/degree <vertex> <expected>            get vertex (total) degree",
+    "/nextinneighbour <vertex> <nb> <edge>  get next vertex in-neighbour",
+    "/nextoutneighbour <vertex> <nb> <edge> get next vertex out-neighbour",
+    "/nextneighbour <vertex> <nb> <edge>    get next vertex neighbour",
+    "/containsvertex <vertex> [YES/NO]      check if graph contains vertex",
+    "/addvertex <vertex>                    add vertex to graph",
+    "/removevertex <vertex>                 remove vertex from graph",
+    "/containsedge <u> <v> [YES/NO]         check if graph contains edge",
+    "/addedge <u> <v> <edge>                add edge to graph",
+    "/getedge <u> <v> <edge>                get edge from graph",
+    "/removeedege <u> <v>",
     NULL,
 };
 
 /* Graph */
 
-static Graph *g = NULL;
-Variable *v1 = NULL, *v2 = NULL, *v3 = NULL;
+static Graph *pGraph = NULL;
+static char buffer[TESTER_BUFFER_SIZE], buffer2[TESTER_BUFFER_SIZE],
+    buffer3[TESTER_BUFFER_SIZE];
 
-/* Private functions prototypes */
-
-static void free_filenames(char *input, char *output);
-static void print_help();
-static int _cmpVariables(void *a, void *b);
 static void _freeVariables(void *v);
+static int _cmpVariables(void *a, void *b);
 static int _readVariables(FILE *fp, void **ppVertex);
 static int _writeVariables(FILE *fp, void *v);
-static void _printVariables(void *v);
-static void _garbageCollectVariables();
-#define _transferOwnership(...) __transferOwnership(__VA_ARGS__, NULL);
-static void __transferOwnership(Variable **v, ...);
-static char *parse(int *nid, int *isDirected, char **inputFilename,
-    char **outputFilename, char **argv, int argc);
-static char *test(GraphReturnID *pid, int *nid, int isDirected,
-    char **cmds, int count, const char *inFile, const char *outFile);
+static TesterReturnValue convertReturnGraphReturnValue(GraphReturnID graphId);
+static TesterReturnValue convertReturnGraphIoReturnValue(GraphIoReturnID graphIoId);
+static TesterReturnValue convertReturnGraphSearchReturnValue(GraphSearchReturnID graphSearchId);
 
-/* Main function */
-
-int main(int argc, char **argv)
+TesterReturnValue TesterInitCallback()
 {
-    GraphReturnID id = GRAPH_RETURN_OK;
-    int nid = 1;
-    int isDirected = 0;
-    char *str = NULL;
-    char *inputFilename = NULL, *outputFilename = "out.graph";
-    /* ignore program name */
-    char **commands = argv + 1;
-    int commandCount = argc - 1;
-    /* parse arguments */
-    if (commandCount > 0) {
-        str = parse(&nid, &isDirected, &inputFilename, &outputFilename, commands, commandCount);
-        if (str) {
-            fprintf(stderr, "Error while parsing argument #%d (%s): %s\n", nid, argv[nid], str);
-            free_filenames(inputFilename, outputFilename);
-            return 1;
+    GraphReturnID graphId;
+    if (graphId = graphCreate(&pGraph, 1, _cmpVariables, _freeVariables,
+        _cmpVariables, _freeVariables))
+        return convertReturnGraphReturnValue(graphId);
+    return TESTER_RETURN_OK;
+}
+
+#define matches(a, b) (strcmp(a, b) == 0)
+
+static TesterReturnValue parseGraphCommands(const char *command)
+{
+    GraphReturnID graphId = GRAPH_RETURN_OK;
+    if matches(command, "create") {
+        Graph *temp;
+        int isDirected;
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        isDirected = matches(buffer, "DIRECTED");
+        graphId = graphCreate(&temp, isDirected, _cmpVariables, _freeVariables,
+            _cmpVariables, _freeVariables);
+        if (graphId == GRAPH_RETURN_OK) {
+            graphDestroy(pGraph);
+            pGraph = temp;
         }
+    } else if matches(command, "isdirected") {
+        int actual, expected;
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        expected = matches(buffer, "YES");
+        graphId = graphIsDirected(pGraph, &actual);
+        if (graphId == GRAPH_RETURN_OK && expected != actual)
+            return TESTER_RETURN_RETURN;
+    } else if matches(command, "vertexcount") {
+        unsigned long actual, expected;
+        if (TesterParseArguments("i", &expected) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        graphId = graphGetNumberOfVertices(pGraph, &actual);
+        if (graphId == GRAPH_RETURN_OK && expected != actual)
+            return TESTER_RETURN_RETURN;
+    } else if matches(command, "nextvertex") {
+        Variable *pVar, *temp;
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &pVar))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetNextVertex(pGraph, &temp);
+        if (graphId == GRAPH_RETURN_OK) {
+            int areEqual;
+            varCompare(pVar, temp, &areEqual);
+            varDestroy(pVar);
+            if (!areEqual)
+                return TESTER_RETURN_RETURN;
+        } else {
+            varDestroy(pVar);
+        }
+    } else if matches(command, "outdegree") {
+        Variable *pVar;
+        unsigned long actual, expected;
+        if (TesterParseArguments("si", buffer, &expected) != 2)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &pVar))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetVertexOutDegree(pGraph, pVar, &actual);
+        varDestroy(pVar);
+        if (graphId == GRAPH_RETURN_OK && expected != actual)
+            return TESTER_RETURN_RETURN;
+    } else if matches(command, "indegree") {
+        Variable *pVar;
+        unsigned long actual, expected;
+        if (TesterParseArguments("si", buffer, &expected) != 2)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &pVar))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetVertexInDegree(pGraph, pVar, &actual);
+        varDestroy(pVar);
+        if (graphId == GRAPH_RETURN_OK && expected != actual)
+            return TESTER_RETURN_RETURN;
+    } else if matches(command, "degree") {
+        Variable *pVar;
+        unsigned long actual, expected;
+        if (TesterParseArguments("si", buffer, &expected) != 2)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &pVar))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetVertexDegree(pGraph, pVar, &actual);
+        varDestroy(pVar);
+        if (graphId == GRAPH_RETURN_OK && expected != actual)
+            return TESTER_RETURN_RETURN;
+    } else if matches(command, "nextneighbour") {
+        Variable *pVertexVar, *pActualNeighbourVar, *pExpectedNeighbourVar, 
+            *pActualEdgeVar, *pExpectedEdgeVar;
+        if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreateMultiple(
+            buffer, &pVertexVar,
+            buffer2, &pExpectedNeighbourVar,
+            buffer3, &pExpectedEdgeVar, NULL))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetNextNeighbour(pGraph, pVertexVar,
+            &pActualNeighbourVar, &pActualEdgeVar);
+        varDestroy(pVertexVar);
+        if (graphId == GRAPH_RETURN_OK) {
+            int neighbourEqual, edgeEqual;
+            varCompare(pExpectedNeighbourVar, pActualNeighbourVar, &neighbourEqual);
+            varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
+            varDestroy(pExpectedEdgeVar);
+            varDestroy(pExpectedNeighbourVar);
+            if (!neighbourEqual || !edgeEqual)
+                return TESTER_RETURN_RETURN;
+        } else {
+            varDestroy(pExpectedEdgeVar);
+            varDestroy(pExpectedNeighbourVar);
+        }
+    } else if matches(command, "nextinneighbour") {
+        Variable *pVertexVar, *pActualNeighbourVar, *pExpectedNeighbourVar, 
+            *pActualEdgeVar, *pExpectedEdgeVar;
+        if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreateMultiple(
+            buffer, &pVertexVar,
+            buffer2, &pExpectedNeighbourVar,
+            buffer3, &pExpectedEdgeVar, NULL))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetNextInNeighbour(pGraph, pVertexVar,
+            &pActualNeighbourVar, &pActualEdgeVar);
+        varDestroy(pVertexVar);
+        if (graphId == GRAPH_RETURN_OK) {
+            int neighbourEqual, edgeEqual;
+            varCompare(pExpectedNeighbourVar, pActualNeighbourVar, &neighbourEqual);
+            varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
+            varDestroy(pExpectedEdgeVar);
+            varDestroy(pExpectedNeighbourVar);
+            if (!neighbourEqual || !edgeEqual)
+                return TESTER_RETURN_RETURN;
+        } else {
+            varDestroy(pExpectedEdgeVar);
+            varDestroy(pExpectedNeighbourVar);
+        }
+    } else if matches(command, "nextoutneighbour") {
+        Variable *pVertexVar, *pActualNeighbourVar, *pExpectedNeighbourVar, 
+            *pActualEdgeVar, *pExpectedEdgeVar;
+        if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreateMultiple(
+            buffer, &pVertexVar,
+            buffer2, &pExpectedNeighbourVar,
+            buffer3, &pExpectedEdgeVar, NULL))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetNextOutNeighbour(pGraph, pVertexVar,
+            &pActualNeighbourVar, &pActualEdgeVar);
+        varDestroy(pVertexVar);
+        if (graphId == GRAPH_RETURN_OK) {
+            int neighbourEqual, edgeEqual;
+            varCompare(pExpectedNeighbourVar, pActualNeighbourVar, &neighbourEqual);
+            varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
+            varDestroy(pExpectedEdgeVar);
+            varDestroy(pExpectedNeighbourVar);
+            if (!neighbourEqual || !edgeEqual)
+                return TESTER_RETURN_RETURN;
+        } else {
+            varDestroy(pExpectedEdgeVar);
+            varDestroy(pExpectedNeighbourVar);
+        }
+    } else if matches(command, "containsvertex") {
+        Variable *pVar;
+        int actual, expected;
+        if (TesterParseArguments("ss", buffer, buffer2) != 2)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &pVar))
+            return TESTER_RETURN_MALLOC;
+        expected = matches(buffer2, "YES");
+        graphId = graphContainsVertex(pGraph, pVar);
+        varDestroy(pVar);
+        actual = graphId == GRAPH_RETURN_CONTAINS_VERTEX;
+        return (actual == expected) ? TESTER_RETURN_OK : TESTER_RETURN_RETURN;
+    } else if matches(command, "addvertex") {
+        Variable *pVar;
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &pVar))
+            return TESTER_RETURN_MALLOC;
+        if (graphId = graphAddVertex(pGraph, pVar))
+            varDestroy(pVar);
+    } else if matches(command, "removevertex") {
+        Variable *pVar;
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreate(buffer, &pVar))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphRemoveVertex(pGraph, pVar);
+        varDestroy(pVar);
+    } else if matches(command, "containsedge") {
+        Variable *pU, *pV;
+        int actual, expected;
+        if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreateMultiple(buffer, &pU, buffer2, &pV, NULL))
+            return TESTER_RETURN_MALLOC;
+        expected = matches(buffer3, "YES");
+        graphId = graphContainsEdge(pGraph, pU, pV);
+        varDestroy(pU);
+        varDestroy(pV);
+        if (graphId == GRAPH_RETURN_CONTAINS_EDGE ||
+            graphId == GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE) {
+            actual = (graphId == GRAPH_RETURN_CONTAINS_EDGE);
+            if (expected != actual)
+                return TESTER_RETURN_RETURN;
+            return TESTER_RETURN_OK;
+        }
+    } else if matches(command, "addedge") {
+        Variable *pU, *pV, *pEdge;
+        if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreateMultiple(buffer, &pU, buffer2, &pV, buffer3, &pEdge, NULL))
+            return TESTER_RETURN_MALLOC;
+        if (graphId = graphAddEdge(pGraph, pU, pV, pEdge))
+            varDestroy(pEdge);
+        varDestroy(pU);
+        varDestroy(pV);
+    } else if matches(command, "getedge") {
+        Variable *pU, *pV, *pExpected, *pActual;
+        if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreateMultiple(buffer, &pU, buffer2, &pV, buffer3, &pExpected, NULL))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphGetEdge(pGraph, pU, pV, &pActual);
+        varDestroy(pU);
+        varDestroy(pV);
+        if (graphId == GRAPH_RETURN_OK) {
+            int areEqual;
+            varCompare(pExpected, pActual, &areEqual);
+            varDestroy(pExpected);
+            if (!areEqual)
+                return TESTER_RETURN_RETURN;
+        } else {
+            varDestroy(pExpected);
+        }
+    } else if matches(command, "removeedge") {
+        Variable *pU, *pV;
+        if (TesterParseArguments("ss", buffer, buffer2) != 2)
+            return TESTER_RETURN_ARGUMENT;
+        if (varCreateMultiple(buffer, &pU, buffer2, &pV, NULL))
+            return TESTER_RETURN_MALLOC;
+        graphId = graphRemoveEdge(pGraph, pU, pV);
+        varDestroy(pU);
+        varDestroy(pV);
     } else {
-        print_help();
-        free_filenames(inputFilename, outputFilename);
-        return 0;
+        return TESTER_RETURN_COUNT;
     }
-    /* run tests */
-    str = test(&id, &nid, isDirected, commands, commandCount, inputFilename, outputFilename);
-    _garbageCollectVariables();
-    if (g)
-        graphDestroy(g);
-    g = NULL;
+    return convertReturnGraphReturnValue(graphId);
+}
+
+static TesterReturnValue parseGraphIoCommands(const char *command)
+{
+    GraphIoReturnID graphIoId = GRAPH_IO_RETURN_OK;
+    if matches(command, "???") { // todo
+
+    } else {
+        return TESTER_RETURN_COUNT;
+    }
+    return convertReturnGraphIoReturnValue(graphIoId); // TEMP
+}
+
+static TesterReturnValue parseGraphSearchCommands(const char *command)
+{
+    GraphSearchReturnID graphSearchId = GRAPH_SEARCH_RETURN_OK;
+    if matches(command, "???") { // todo
+
+    } else {
+        return TESTER_RETURN_COUNT;
+    }
+    return convertReturnGraphSearchReturnValue(graphSearchId);
+}
+
+// Here the TESTER_RETURN_COUNT is being used as a flag to indicate that
+// the command is not of a certain type, since it is never used truly for
+// testing purposes.
+TesterReturnValue TesterParseCallback(const char *command)
+{
+    TesterReturnValue ret;
+    if ((ret = parseGraphCommands(command))
+        != TESTER_RETURN_COUNT)
+        return ret;
+    if ((ret = parseGraphIoCommands(command))
+        != TESTER_RETURN_COUNT)
+        return ret;
+    if ((ret = parseGraphSearchCommands(command))
+        != TESTER_RETURN_COUNT)
+        return ret;
+    return TESTER_RETURN_COMMAND;
+}
+
+TesterReturnValue TesterExitCallback()
+{
+    if (pGraph) graphDestroy(pGraph);
 #ifdef _DEBUG
     if (varGetRefCount())
-        fprintf(stderr, "Memory leak detected\n");
+        return TESTER_RETURN_MEMLEAK;
 #endif
-    if (str) {
-        if (id) {
-            fprintf(stderr, "Error #%d on the action #%d (%s): %s\n", id, nid, argv[nid], str);
-        } else {
-            fprintf(stderr, "Error on the action #%d (%s): %s\n", nid, argv[nid], str);
-        }
-        free_filenames(inputFilename, outputFilename);
-        return 1;
-    } else {
-        fprintf(stdout, "No errors.\n");
-    }
-    free_filenames(inputFilename, outputFilename);
-    return 0;
-}
-
-/* Private functions implementations */
-static char *test(GraphReturnID *pid, int *nid, int isDirected,
-    char **cmds, int count, const char *inFile, const char *outFile)
-{
-    unsigned long pSize;
-    char cmd, flag[128], buff1[1024], buff2[1024], buff3[1024], end = 0;
-    int i, ret, dir;
-    FILE *fp;
-    if (inFile == NULL) {
-        if (*pid = graphCreate(&g, isDirected, _cmpVariables, _freeVariables,
-            _cmpVariables, _freeVariables)) {
-            if (*pid == GRAPH_RETURN_MEMORY)
-                g = NULL;
-            return "Could not create graph";
-        }
-    } else {
-        fp = fopen(inFile, "r");
-        if (fp == NULL)
-            return "Could not open input file";
-        if (*pid = graphRead(&g, fp, _readVariables, _readVariables, _cmpVariables,
-            _freeVariables, _cmpVariables, _freeVariables)) {
-            if (*pid == GRAPH_RETURN_MEMORY)
-                g = NULL;
-            return "Could not create graph from file";
-        }
-    }
-    for (i = 0; i < count; ++i) {
-        *nid = i + 1;
-        // Ignore flags (--.*)
-        if (sscanf(cmds[i], "--%s", flag) == 1)
-            continue;
-        // Special functions (\.*(.*)$)
-        if (sscanf(cmds[i], "\\%[^(](%[^)])%c", buff1, buff2, &end) == 2) {
-            if (strcmp(buff1, "dfs") == 0) {
-                if (varCreate(buff2, &v1))
-                    return "Could not create variable";
-                if (*pid = graphDFS(g, v1, _printVariables))
-                    return "Could not do DFS";
-            } else if (strcmp(buff1, "bfs") == 0) {
-                if (varCreate(buff2, &v1))
-                    return "Could not create variable";
-                if (*pid = graphBFS(g, v1, _printVariables))
-                    return "Could not do BFS";
-            } else {
-                return "Unknown command";
-            }
-        // Commands with three arguments (.*,.*,.*[+]$)
-        } else if (sscanf(cmds[i], "%[^,],%[^,],%[^+]%c%c", buff1, buff2, buff3, &cmd, &end) == 4) {
-            if (varCreate(buff1, &v1))
-                return "Could not create first variable";
-            if (varCreate(buff2, &v2))
-                return "Could not create second variable";
-            if (varCreate(buff3, &v3))
-                return "Could not create third variable";
-            switch (cmd) {
-            case '+':
-                if (*pid = graphAddEdge(g, v1, v2, v3))
-                    return "Could not add edge";
-                _transferOwnership(&v3);
-                break;
-            default:
-                return "Unknown command";
-            }
-        // Commands with two arguments (.*,.*[?-]$)
-        } else if (sscanf(cmds[i], "%[^,],%[^?-]%c%c", buff1, buff2, &cmd, &end) == 3) {
-            if (varCreate(buff1, &v1))
-                return "Could not create first variable";
-            if (varCreate(buff2, &v2))
-                return "Could not create second variable";
-            switch (cmd) {
-            case '-':
-                if (*pid = graphRemoveEdge(g, v1, v2))
-                    return "Could not remove edge";
-                break;
-            case '?':
-                *pid = graphContainsEdge(g, v1, v2);
-                switch (*pid) {
-                case GRAPH_RETURN_CONTAINS_EDGE:
-                    fprintf(stdout, "[%d] Contains: ", *nid);
-                    if (*pid = graphGetEdge(g, v1, v2, &v3))
-                        return "Could not get edge";
-                    varWrite(v3, stdout);
-                    fprintf(stdout, "\n");
-                    _transferOwnership(&v3);
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
-                    fprintf(stdout, "[%d] Does not contain edge\n", *nid);
-                    break;
-                default:
-                    return "Could not assert if edge was added or not";
-                }
-                break;
-            default:
-                return "Unknown command";
-            }
-        // Unary commands (.*[nodi+?-]$)
-        } else if (sscanf(cmds[i], "%[^nodi+?-]%c%c", buff1, &cmd, &end) == 2) {
-            if (varCreate(buff1, &v1))
-                return "Could not create variable";
-            switch (cmd) {
-            case 'i':
-                switch (*pid = graphGetNextInNeighbour(g, v1, &v2, &v3)) {
-                case GRAPH_RETURN_OK:
-                    fprintf(stdout, "[%d] ", *nid);
-                    ret = varWrite(v2, stdout);
-                    if (!ret)
-                        fprintf(stdout, " (edge = ");
-                    ret = ret || varWrite(v3, stdout);
-                    _transferOwnership(&v2, &v3);
-                    if (ret)
-                        return "Could not write variable";
-                    fprintf(stdout, ")\n");
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
-                    fprintf(stdout, "[%d] Vertex ", *nid);
-                    if (varWrite(v1, stdout))
-                        return "Could not write variable";
-                    fprintf(stdout, " is not in the graph\n");
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
-                    fprintf(stdout, "[%d] Edge ", *nid);
-                    if (varWrite(v1, stdout))
-                        return "Could not write variable";
-                    fprintf(stdout, " has no in-neighbours\n");
-                    break;
-                default:
-                    return "Could not get next in-neighbour";
-                }
-                break;
-            case 'o':
-                switch (*pid = graphGetNextOutNeighbour(g, v1, &v2, &v3)) {
-                case GRAPH_RETURN_OK:
-                    fprintf(stdout, "[%d] ", *nid);
-                    ret = varWrite(v2, stdout);
-                    if (!ret)
-                        fprintf(stdout, " (edge = ");
-                    ret = ret || varWrite(v3, stdout);
-                    _transferOwnership(&v2, &v3);
-                    if (ret)
-                        return "Could not write variable";
-                    fprintf(stdout, ")\n");
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
-                    fprintf(stdout, "[%d] Vertex ", *nid);
-                    if (varWrite(v1, stdout))
-                        return "Could not write variable";
-                    fprintf(stdout, " is not in the graph\n");
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
-                    fprintf(stdout, "[%d] Edge ", *nid);
-                    if (varWrite(v1, stdout))
-                        return "Could not write variable";
-                    fprintf(stdout, " has no out-neighbours\n");
-                    break;
-                default:
-                    return "Could not get next out-neighbour";
-                }
-                break;
-            case 'n':
-                switch (*pid = graphGetNextNeighbour(g, v1, &v2, &v3)) {
-                case GRAPH_RETURN_OK:
-                    fprintf(stdout, "[%d] ", *nid);
-                    ret = varWrite(v2, stdout);
-                    if (!ret)
-                        fprintf(stdout, " (edge = ");
-                    ret = ret || varWrite(v3, stdout);
-                    _transferOwnership(&v2, &v3);
-                    if (ret)
-                        return "Could not write variable";
-                    fprintf(stdout, ")\n");
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
-                    fprintf(stdout, "[%d] Vertex ", *nid);
-                    if (varWrite(v1, stdout))
-                        return "Could not write variable";
-                    fprintf(stdout, " is not in the graph\n");
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
-                    fprintf(stdout, "[%d] Vertex ", *nid);
-                    if (varWrite(v1, stdout))
-                        return "Could not write variable";
-                    fprintf(stdout, " has no out-neighbours\n");
-                    break;
-                default:
-                    return "Could not get next out-neighbour";
-                }
-                break;
-            case 'd':
-                if (*pid = graphGetVertexDegree(g, v1, &pSize))
-                    return "Could not get vertex degree";
-                fprintf(stdout, "[%d] %lu neighbour(s) in total\n", *nid, pSize);
-                if (isDirected) {
-                    if (*pid = graphGetVertexInDegree(g, v1, &pSize))
-                        return "Could not get number of in-neighbours";
-                    fprintf(stdout, "[%d] %lu in-neighbour(s)\n", *nid, pSize);
-                    if (*pid = graphGetVertexOutDegree(g, v1, &pSize))
-                        return "Could not get number of out-neighbours";
-                    fprintf(stdout, "[%d] %lu out-neighbour(s)\n", *nid, pSize);
-                }
-                break;
-            case '?':
-                *pid = graphContainsVertex(g, v1);
-                switch (*pid) {
-                case GRAPH_RETURN_CONTAINS_VERTEX:
-                    fprintf(stdout, "[%d] Contains ", *nid);
-                    varWrite(v1, stdout);
-                    fprintf(stdout, "\n");
-                    break;
-                case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
-                    fprintf(stdout, "[%d] Does not contain ", *nid);
-                    varWrite(v1, stdout);
-                    fprintf(stdout, "\n");
-                    break;
-                default:
-                    return "Could not assert if vertex was added or not";
-                }
-                break;
-            case '+':
-                if (*pid = graphAddVertex(g, v1))
-                    return "Could not add vertex";
-                _transferOwnership(&v1);
-                break;
-            case '-':
-                if (*pid = graphRemoveVertex(g, v1))
-                    return "Could not remove vertex";
-                break;
-            default:
-                return "Unknown command";
-            }    
-        // One character commands (.$)
-        } else if (sscanf(cmds[i], "%c%c", &cmd, &end) == 1) {
-            switch (cmd) {
-            case 't':
-                if (*pid = graphIsDirected(g, &dir))
-                    return "Could not get type";
-                fprintf(stdout, "[%d] %s\n", *nid, dir ?
-                    "Directed" : "Undirected");
-                break;
-            case 'n':
-                if (*pid = graphGetNumberOfVertices(g, &pSize))
-                    return "Could not get number of vertices";
-                fprintf(stdout, "[%d] %lu\n", *nid, pSize);
-                break;
-            case 'w':
-                fp = fopen(outFile, "w");
-                if (!fp)
-                    return "Could not open file";
-                *pid = graphWrite(g, fp, _writeVariables, _writeVariables);
-                fclose(fp);
-                if (*pid)
-                    return "Could not write to file";
-                fprintf(stdout, "[%d] Wrote to file\n", *nid);
-                break;
-            case 'i':
-                if (*pid = graphGetNextVertex(g, &v1))
-                    return "Could not get next vertex";
-                fprintf(stdout, "[%d] ", *nid);
-                varWrite(v1, stdout);
-                fprintf(stdout, "\n");
-                _transferOwnership(&v1);
-                break;
-            default:
-                return "Unknown command";
-            }
-        } else {
-            return "Parsing error";
-        }
-        /* Local variables will be deallocated */
-        _garbageCollectVariables();
-    }
-    return NULL;
-}
-
-static void print_help() {
-    const char **str = helpStrings;
-    for (; *str; ++str) puts(*str);
-}
-
-static char *parse(int *nid, int *isDirected, char **inputFilename,
-    char **outputFilename, char **argv, int argc)
-{
-    int i;
-    char flag[64], value[64], c = '0';
-    *nid = 1;
-    for (i = 0; i < argc; ++i) {
-        if (sscanf(argv[i], "--%[^=]=%s", flag, value) == 2) {
-            if (!strcmp(flag, "type")) {
-                if (!strcmp(value, "DIRECTED"))
-                    *isDirected = 1;
-                else if (!strcmp(value, "UNDIRECTED"))
-                    *isDirected = 0;
-                else
-                    return "Could not set graph type";
-            } else if (!strcmp(flag, "in")) {
-                *inputFilename = strdup(value);
-            } else if (!strcmp(flag, "out")) {
-                *outputFilename = strdup(value);
-            } else {
-                return "Unknown flag";
-            }
-        } else if (sscanf(argv[i], "--%s", flag) == 1) {
-            if (!strcmp(flag, "help")) {
-                print_help();
-                return NULL; /* abort parsing */
-            } else {
-                return "Unknown flag";
-            }
-        }
-        *nid++;
-    }
-    return NULL;
+    return TESTER_RETURN_OK;
 }
 
 static void _freeVariables(void *v)
 {
-    varDestroy(v);
+    varDestroy((Variable *) v);
 }
 
 static int _cmpVariables(void *a, void *b)
 {
     int cmpResult;
-    if (varCompare(a, b, &cmpResult)) return 0;
+    if (varCompare((Variable *) a, (Variable *) b, &cmpResult)) return 0;
     return cmpResult;
 }
 
 static int _readVariables(FILE *fp, void **ppVertex)
 {
-    return varDeserialize(ppVertex, fp);
+    return varDeserialize((Variable **) ppVertex, fp);
 }
 
 static int _writeVariables(FILE *fp, void *v)
 {
-    return varSerialize(v, fp);
+    return varSerialize((Variable *) v, fp);
 }
 
-static void _garbageCollectVariables()
+static TesterReturnValue convertReturnGraphReturnValue(GraphReturnID graphId)
 {
-    if (v1) varDestroy(v1);
-    if (v2) varDestroy(v2);
-    if (v3) varDestroy(v3);
-    v1 = NULL;
-    v2 = NULL;
-    v3 = NULL;
+    switch (graphId) {
+    case GRAPH_RETURN_OK:
+        return TESTER_RETURN_OK;
+    case GRAPH_RETURN_EMPTY:
+        return TesterExternalReturnValue("empty");
+    case GRAPH_RETURN_CONTAINS_VERTEX:
+        return TesterExternalReturnValue("contains vertex");
+    case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+        return TesterExternalReturnValue("does not contain vertex");
+    case GRAPH_RETURN_CONTAINS_EDGE:
+        return TesterExternalReturnValue("contains edge");
+    case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+        return TesterExternalReturnValue("does not contain edge");
+    case GRAPH_RETURN_INVALID_PARAMETER:
+        return TesterExternalReturnValue("invalid parameter");
+    case GRAPH_RETURN_MEMORY:
+        return TesterExternalReturnValue("memory");
+    default:
+        return TesterExternalReturnValue("unknown");
+    }
 }
 
-static void __transferOwnership(Variable **v, ...)
+static TesterReturnValue convertReturnGraphIoReturnValue(GraphIoReturnID graphIoId)
 {
-    va_list va;
-    va_start(va, v);
-    do { *v = NULL; }
-    while (v = va_arg(va, Variable **));
-    va_end(va);
+    switch (graphIoId) {
+    case GRAPH_IO_RETURN_OK:
+        return TESTER_RETURN_OK;
+    case GRAPH_IO_RETURN_INVALID_PARAMETER:
+        return TesterExternalReturnValue("invalid parameter");
+    case GRAPH_IO_RETURN_MEMORY:
+        return TesterExternalReturnValue("memory");
+    case GRAPH_IO_RETURN_WRITING_FAILURE:
+        return TesterExternalReturnValue("writing failure");
+    case GRAPH_IO_RETURN_CREATION_FAILURE:
+        return TesterExternalReturnValue("creation failure");
+    case GRAPH_IO_RETURN_SAME_CREATION:
+        return TesterExternalReturnValue("same creation");
+    case GRAPH_IO_RETURN_FILE_ERROR:
+        return TesterExternalReturnValue("file error");
+    case GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT:
+        return TesterExternalReturnValue("deprecated file format");
+    case GRAPH_RETURN_FATAL_ERROR:
+        return TesterExternalReturnValue("fatal error");
+    default:
+        return TesterExternalReturnValue("unknown");
+    }
 }
 
-static void free_filenames(char *input, char *output)
+static TesterReturnValue convertReturnGraphSearchReturnValue(GraphSearchReturnID graphSearchId)
 {
-    if (input)
-        free(input);
-    if (output && strcmp(output, "out.graph"))
-        free(output);
-}
-
-static void _printVariables(void *v)
-{
-    fprintf(stdout, "Visited ");
-    varWrite(v, stdout);
-    fprintf(stdout, "\n");
+    switch (graphSearchId) {
+    case GRAPH_SEARCH_RETURN_OK:
+        return TESTER_RETURN_OK;
+    case GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+        return TesterExternalReturnValue("does not contain vertex");
+    case GRAPH_SEARCH_RETURN_INVALID_PARAMETER:
+        return TesterExternalReturnValue("invalid parameter");
+    case GRAPH_SEARCH_RETURN_MEMORY:
+        return TesterExternalReturnValue("memory");
+    default:
+        return TesterExternalReturnValue("unknown");
+    }
 }

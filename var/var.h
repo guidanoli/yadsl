@@ -43,6 +43,20 @@ typedef struct Variable Variable;
 VarReturnID varCreate(const char *text, Variable **ppVariable);
 
 /**
+* Create many variables by passing many texts
+* text          text to be parsed
+* ppVariable    (return) pointer to variable
+* ...           follows the same pattern
+* NULL          ends the parameter list
+* Possible errors:
+* VAR_RETURN_INVALID_PARAMETER
+*   - "text" is NULL
+*   - "ppVariable" is NULL
+* VAR_RETURN_MEMORY
+*/
+VarReturnID varCreateMultiple(const char *text, Variable **ppVariable, ...);
+
+/**
 * Compare two variables in respect to type and value
 * pVariableA    first variable
 * pVariableB    second variable

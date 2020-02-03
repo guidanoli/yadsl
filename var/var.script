@@ -168,3 +168,11 @@
 /cmp 0 1 EQUAL
 /rmv 0
 /rmv 1
+
+## Adding 2 variables
+
+/add2 0 A 2 B
+/add 1 A
+/cmp 0 1 EQUAL
+/add 3 B
+/cmp 2 3 EQUAL

@@ -1,0 +1,358 @@
+### Empty graph
+
+## Directed
+
+/create DIRECTED
+/vertexcount 0
+/isdirected YES
+
+/isdirected NO
+/catch return
+
+/removevertex X
+/catch "does not contain vertex"
+
+/nextvertex X
+/catch empty
+
+/outdegree X 0
+/catch "does not contain vertex"
+
+/indegree X 0
+/catch "does not contain vertex"
+
+/degree X 0
+/catch "does not contain vertex"
+
+/nextinneighbour V N E
+/catch "does not contain vertex"
+
+/nextoutneighbour V N E
+/catch "does not contain vertex"
+
+/nextneighbour V N E
+/catch "does not contain vertex"
+
+/containsvertex V NO
+/containsvertex V YES
+/catch return
+
+/containsedge U V NO
+/catch "does not contain vertex"
+
+/addedge U V E
+/catch "does not contain vertex"
+
+/getedge U V E
+/catch "does not contain vertex"
+
+/removeedge U V
+/catch "does not contain vertex"
+
+## Undirected
+
+/create UNDIRECTED
+/vertexcount 0
+/isdirected NO
+
+/isdirected YES
+/catch return
+
+/removevertex X
+/catch "does not contain vertex"
+
+/nextvertex X
+/catch empty
+
+/outdegree X 0
+/catch "does not contain vertex"
+
+/indegree X 0
+/catch "does not contain vertex"
+
+/degree X 0
+/catch "does not contain vertex"
+
+/nextinneighbour V N E
+/catch "does not contain vertex"
+
+/nextoutneighbour V N E
+/catch "does not contain vertex"
+
+/nextneighbour V N E
+/catch "does not contain vertex"
+
+/containsvertex V NO
+/containsvertex V YES
+/catch return
+
+/containsedge U V NO
+/catch "does not contain vertex"
+
+/addedge U V E
+/catch "does not contain vertex"
+
+/getedge U V E
+/catch "does not contain vertex"
+
+/removeedge U V
+/catch "does not contain vertex"
+
+### One vertex
+
+## Directed
+
+/create DIRECTED
+/addvertex V
+
+# Checking if vertex was added
+/vertexcount 1
+/containsvertex V YES
+/nextvertex V
+
+# Checking vertex degrees
+/indegree V 0
+/outdegree V 0
+/degree V 0
+
+# Checking vertex neighbours
+/nextinneighbour V N E
+/catch "does not contain edge"
+/nextoutneighbour V N E
+/catch "does not contain edge"
+/nextneighbour V N E
+/catch "does not contain edge"
+
+# Try removing edge VV
+/removeedge V V
+/catch "does not contain edge"
+
+# Try adding edge VX
+/addedge V X E
+/catch "does not contain vertex"
+/addedge X V E
+/catch "does not contain vertex"
+
+# Try getting edge VV
+/getedge V V E
+/catch "does not contain edge"
+
+# Checking for edge VV
+/containsedge V V NO
+
+# Adding edge VV
+/addedge V V E
+
+# Checking if edge was added
+/containsedge V V YES
+/getedge V V E
+
+# Try adding same vertex
+/addvertex V
+/catch "contains vertex"
+
+# Removing vertex
+/removevertex V
+
+# Checking if vertex was removed
+/containsvertex V NO
+/containsedge V V NO
+/catch "does not contain vertex"
+/getedge V V E
+/catch "does not contain vertex"
+
+# Try removing it again
+/removevertex V
+/catch "does not contain vertex"
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex V
+
+# Checking if vertex was added
+/vertexcount 1
+/containsvertex V YES
+/nextvertex V
+
+# Checking vertex degrees
+/indegree V 0
+/outdegree V 0
+/degree V 0
+
+# Checking vertex neighbours
+/nextinneighbour V N E
+/catch "does not contain edge"
+/nextoutneighbour V N E
+/catch "does not contain edge"
+/nextneighbour V N E
+/catch "does not contain edge"
+
+# Try removing edge VV
+/removeedge V V
+/catch "does not contain edge"
+
+# Try adding edge VX
+/addedge V X E
+/catch "does not contain vertex"
+/addedge X V E
+/catch "does not contain vertex"
+
+# Try getting edge VV
+/getedge V V E
+/catch "does not contain edge"
+
+# Checking for edge VV
+/containsedge V V NO
+
+# Adding edge VV
+/addedge V V E
+
+# Checking if edge was added
+/containsedge V V YES
+/getedge V V E
+
+# Try adding same vertex
+/addvertex V
+/catch "contains vertex"
+
+# Removing vertex
+/removevertex V
+
+# Checking if vertex was removed
+/containsvertex V NO
+/containsedge V V NO
+/catch "does not contain vertex"
+/getedge V V E
+/catch "does not contain vertex"
+
+# Try removing it again
+/removevertex V
+/catch "does not contain vertex"
+
+### Two vertices
+
+## Directed
+
+/create DIRECTED
+/addvertex U
+/addvertex V
+
+# Checking for edges UV/VU
+/containsedge U V NO
+/containsedge V U NO
+/getedge U V UV
+/catch "does not contain edge"
+/getedge V U UV
+/catch "does not contain edge"
+/removeedge U V
+/catch "does not contain edge"
+/removeedge V U
+/catch "does not contain edge"
+
+# Adding edge UV
+/addedge U V UV
+
+# Checking if UV was added
+/containsedge U V YES
+/getedge U V UV
+
+# Directed graph -- VU doesn't exist
+/containsedge V U NO
+/getedge V U UV
+/catch "does not contain edge"
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex U
+/addvertex V
+
+# Checking for edges UV/VU
+/containsedge U V NO
+/containsedge V U NO
+/getedge U V UV
+/catch "does not contain edge"
+/getedge V U UV
+/catch "does not contain edge"
+/removeedge U V
+/catch "does not contain edge"
+/removeedge V U
+/catch "does not contain edge"
+
+# Adding edge UV
+/addedge U V UV
+
+# Checking if UV was added
+/containsedge U V YES
+/getedge U V UV
+
+# Undirected graph -- VU === UV
+/containsedge V U YES
+/getedge V U UV
+
+### Removing edges/vertices
+
+## Directed
+
+/create DIRECTED
+/addvertex U
+/addvertex V
+
+# Add edge UV
+/addedge U V E
+
+# Remove vertex U
+/removevertex U
+
+# Check if edge UV was removed too
+/containsedge U V NO
+/catch "does not contain vertex"
+
+# Add vertex U again
+/addvertex U
+
+# Check if edge UV is long gone
+/containsedge U V NO
+
+# Add edge VU
+/addedge V U E
+
+# Remove vertex U
+/removevertex U
+
+# Check if edge VU was removed too
+/containsedge V U NO
+/catch "does not contain vertex"
+
+## Unirected
+
+/create UNDIRECTED
+/addvertex U
+/addvertex V
+
+# Add edge UV
+/addedge U V E
+
+# Remove vertex U
+/removevertex U
+
+# Check if edge UV was removed too
+/containsedge U V NO
+/catch "does not contain vertex"
+
+# Add vertex U again
+/addvertex U
+
+# Check if edge UV is long gone
+/containsedge U V NO
+
+# Add edge VU
+/addedge V U E
+
+# Remove vertex U
+/removevertex U
+
+# Check if edge VU was removed too
+/containsedge V U NO
+/catch "does not contain vertex"

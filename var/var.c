@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include "var.h"
 
@@ -85,6 +86,35 @@ VarReturnID varCreate(const char *text, Variable **ppVariable)
     * the variable to fail is if strdup fails, which may
     * most likely lay back on memory */
     return VAR_RETURN_MEMORY;
+}
+
+static VarReturnID varCreateMultipleRecursive(va_list va)
+{
+    VarReturnID id;
+    const char *text;
+    Variable **ppVariable;
+    if ((text = va_arg(va, const char *)) == NULL)
+        return VAR_RETURN_OK;
+    if ((ppVariable = va_arg(va, Variable **)) == NULL)
+        return VAR_RETURN_INVALID_PARAMETER;
+    if (id = varCreate(text, ppVariable))
+        return id;
+    id = varCreateMultipleRecursive(va);
+    if (id) varDestroy(*ppVariable);
+    return id;
+}
+
+VarReturnID varCreateMultiple(const char *text, Variable **ppVariable, ...)
+{
+    va_list va;
+    VarReturnID id;
+    if (id = varCreate(text, ppVariable))
+        return id;
+    va_start(va, ppVariable);
+    id = varCreateMultipleRecursive(va);
+    va_end(va);
+    if (id) varDestroy(*ppVariable);
+    return id;
 }
 
 VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB,
