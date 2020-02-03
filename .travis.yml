@@ -10,17 +10,17 @@ script-anchors:
     - cd "${TRAVIS_BUILD_DIR}/build"
     - cmake .. -G"${GENERATOR}"
     - cmake --build . --config Release
-    - ctest -C Release
+    - ctest -V -C Release
     - cmake --build . --config Debug
-    - ctest -C Debug
+    - ctest -V -C Debug
   - &script-VS15
     - mkdir "${TRAVIS_BUILD_DIR}/build"
     - cd ${TRAVIS_BUILD_DIR}/build
     - cmake .. -G"${GENERATOR}"
     - cmake --build . --config Release
-    - ctest -C Release
+    - ctest -V -C Release
     - cmake --build . --config Debug
-    - ctest -C Debug
+    - ctest -V -C Debug
 matrix:
   include:
     - os: linux
