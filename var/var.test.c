@@ -15,7 +15,7 @@
 #define isValidIndex(i) (i >= 0 && i < VARCNT)
 
 static Variable *vars[VARCNT];
-static char buffer[TESTER_BUFFER_SIZE], buffer2[TESTER_BUFFER_SIZE];
+static char buffer[BUFSIZ], buffer2[BUFSIZ];
 
 static TesterReturnValue convertReturnValue(VarReturnID varId);
 

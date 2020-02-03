@@ -16,7 +16,7 @@ const char *TesterHelpStrings[] = {
 
 #define matches(a, b) (strcmp(a, b) == 0)
 
-char X[TESTER_BUFFER_SIZE], Y[TESTER_BUFFER_SIZE];
+char X[BUFSIZ], Y[BUFSIZ];
 unsigned int val;
 size_t eax = -1; /* Last computed value */
 

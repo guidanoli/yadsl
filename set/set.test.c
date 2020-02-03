@@ -51,7 +51,7 @@ TesterReturnValue convertReturn(SetReturnID setId) {
 static Set *pSet = NULL;
 static Variable *pVariable = NULL;
 
-static char buffer[TESTER_BUFFER_SIZE], arg[TESTER_BUFFER_SIZE];
+static char buffer[BUFSIZ], arg[BUFSIZ];
 
 TesterReturnValue TesterInitCallback()
 {

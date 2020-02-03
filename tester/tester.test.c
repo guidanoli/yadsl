@@ -3,7 +3,7 @@
 
 #define matches(command, str) (strcmp(command, str) == 0)
 
-char buffer[TESTER_BUFFER_SIZE];
+char buffer[BUFSIZ];
 
 const char *TesterHelpStrings[] = {
     "/help                   Prints help strings, just like this one",

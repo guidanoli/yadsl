@@ -4,12 +4,6 @@
 #include <stdio.h>
 
 /**********************************************
-* HINT: Lines are limited to TESTER_BUFFER_SIZE
-***********************************************/
-
-#define TESTER_BUFFER_SIZE 1024
-
-/**********************************************
 * TESTER FRAMEWORK
 * 
 * This incorporates the generic part of the
@@ -125,7 +119,7 @@ extern TesterReturnValue TesterExitCallback();
 * If it fails to parse one of the argument, -1 is
 * returned, but the state of the parser is then
 * reversed to that of before the call.
-* (*) Must be of at least the size of the buffer
+* (*) Must be of at least the size of BUFSIZ (stdio.h)
 * (*) Can parse strings within quotation marks too.
 */
 int TesterParseArguments(const char *format, ...);

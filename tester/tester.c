@@ -10,10 +10,10 @@
 static unsigned long line; // line count
 static const char *externalReturnValueInfo = NULL; // external return value info
 static const char *nativeReturnValueInfos[TESTER_RETURN_COUNT]; // return value infos
-static char buffer[TESTER_BUFFER_SIZE], // file line
-            command[TESTER_BUFFER_SIZE], // command string
-            sep[TESTER_BUFFER_SIZE], // separation characters
-            temp[TESTER_BUFFER_SIZE]; // temp. variable
+static char buffer[BUFSIZ], // file line
+            command[BUFSIZ], // command string
+            sep[BUFSIZ], // separation characters
+            temp[BUFSIZ]; // temp. variable
 static char *cursor; // buffer cursor
 
 /**********************************************
@@ -167,7 +167,7 @@ static TesterReturnValue _TesterParse(FILE *fp)
     while (fgets(buffer, sizeof(buffer), fp)) {
         size_t bufflen = strlen(buffer);
         // Make sure it doesn't overflow
-        if (bufflen == TESTER_BUFFER_SIZE - 1)
+        if (bufflen == BUFSIZ - 1)
             return TESTER_RETURN_OVERFLOW;
         // Iterate through the buffer with a cursor
         for (cursor = buffer; cursor < buffer + bufflen; ++cursor) {
@@ -259,7 +259,7 @@ static int _TesterParseStr(char *arg, int *inc)
 
 static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
 {
-    char arg[TESTER_BUFFER_SIZE];
+    char arg[BUFSIZ];
     if (TesterParseArguments("s", arg) == 1) {
         if (ret == TESTER_RETURN_EXTERNAL) {
             if (externalReturnValueInfo != NULL &&

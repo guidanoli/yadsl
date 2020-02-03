@@ -21,7 +21,7 @@ const char *TesterHelpStrings[] = {
     NULL
 };
 
-static char buffer[TESTER_BUFFER_SIZE];
+static char buffer[BUFSIZ];
 static Queue *pQueue = NULL;
 static TesterReturnValue convertReturnValue(QueueReturnID queueId);
 

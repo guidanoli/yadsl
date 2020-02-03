@@ -41,7 +41,7 @@ TesterReturnValue convertReturn(MapReturnID mapId)
 }
 
 static Map *pMap;
-static char key[TESTER_BUFFER_SIZE], value[TESTER_BUFFER_SIZE];
+static char key[BUFSIZ], value[BUFSIZ];
 
 TesterReturnValue TesterInitCallback()
 {

@@ -37,8 +37,7 @@ const char *TesterHelpStrings[] = {
 /* Graph */
 
 static Graph *pGraph = NULL;
-static char buffer[TESTER_BUFFER_SIZE], buffer2[TESTER_BUFFER_SIZE],
-    buffer3[TESTER_BUFFER_SIZE];
+static char buffer[BUFSIZ], buffer2[BUFSIZ], buffer3[BUFSIZ];
 
 static void _freeVariables(void *v);
 static int _cmpVariables(void *a, void *b);
