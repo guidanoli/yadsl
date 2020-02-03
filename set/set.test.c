@@ -160,7 +160,7 @@ TesterReturnValue TesterParseCallback(const char *command)
         }
     } else if matches(command, "size") {
         unsigned long expected, actual;
-        if (TesterParseArguments("i", &expected) != 1)
+        if (TesterParseArguments("l", &expected) != 1)
             return TESTER_RETURN_ARGUMENT;
         setId = setGetSize(pSet, &actual);
         if (setId == SET_RETURN_OK && actual != expected)

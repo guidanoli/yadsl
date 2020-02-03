@@ -74,6 +74,12 @@ int TesterParseArguments(const char *format, ...)
                 (parsingError = _TesterParseArg("%u", arg, &inc)))
                 break;
             break;
+        case 'l':
+            arg = va_arg(va, long *);
+            if ((parsingError = _TesterParseArg("%ld", arg, &inc)) &&
+                (parsingError = _TesterParseArg("%lu", arg, &inc)))
+                break;
+            break;
         case 's':
             str = va_arg(va, char *);
             parsingError = _TesterParseStr(str, &inc);

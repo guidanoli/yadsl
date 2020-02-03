@@ -106,7 +106,7 @@ TesterReturnValue TesterParseCallback(const char *command)
         }
     } else if matches(command, "nentries") {
         unsigned long expected, actual;
-        if (TesterParseArguments("i", &expected) != 1)
+        if (TesterParseArguments("l", &expected) != 1)
             return TESTER_RETURN_ARGUMENT;
         mapId = mapGetNumberOfEntries(pMap, &actual);
         if (mapId == MAP_RETURN_OK && actual != expected)

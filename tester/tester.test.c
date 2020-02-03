@@ -36,6 +36,11 @@ TesterReturnValue TesterParseCallback(const char *command)
             if (TesterParseArguments("i", &i) != 1)
                 return TESTER_RETURN_ARGUMENT;
             printf("Integer: '%d'\n", i);
+        } else if matches(buffer, "l") {
+            long l;
+            if (TesterParseArguments("l", &l) != 1)
+                return TESTER_RETURN_RETURN;
+            printf("Long: '%ld'\n", l);
         } else if matches(buffer, "f") {
             float f;
             if (TesterParseArguments("f", &f) != 1)

@@ -21,10 +21,11 @@
 * script: line | script line
 * line: command | command comment | sep
 * command: cmdname | command sep cmdarg
-* cmdarg: float | string | integer
+* cmdarg: float | string | integer | long
 * float: %f | %g | %e
 * string: string_qm | string_wo_qm
 * integer: %d | %u
+* long: %ld | %lu
 *
 * SCRIPT TOKENS DEFINITIONS
 *
@@ -117,6 +118,7 @@ extern TesterReturnValue TesterExitCallback();
 * to an argument to be parsed, in that order:
 *   'f' .................... float
 *   'i' .................... integer
+*   'l' .................... long
 *   's' .................... string (*)
 * Following the format string, must be passed by
 * reference the argument variables.

@@ -2,8 +2,11 @@
 /print s mystring
 /print s "My String With Spaces In It: Chapter I"
 /print s "My String With Tabs In It:	Chapter II"
-/print i 1234
-/print i -1234
+/print i 4294967295
+/print i 2147483647
+/print i -2147483647
+/print l 2147483647
+/print l 4294967295
 /print f 3.1415
 /print f 1e-2
 /throw

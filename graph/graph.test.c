@@ -84,7 +84,7 @@ static TesterReturnValue parseGraphCommands(const char *command)
             return TESTER_RETURN_RETURN;
     } else if matches(command, "vertexcount") {
         unsigned long actual, expected;
-        if (TesterParseArguments("i", &expected) != 1)
+        if (TesterParseArguments("l", &expected) != 1)
             return TESTER_RETURN_ARGUMENT;
         graphId = graphGetNumberOfVertices(pGraph, &actual);
         if (graphId == GRAPH_RETURN_OK && expected != actual)
@@ -108,7 +108,7 @@ static TesterReturnValue parseGraphCommands(const char *command)
     } else if matches(command, "outdegree") {
         Variable *pVar;
         unsigned long actual, expected;
-        if (TesterParseArguments("si", buffer, &expected) != 2)
+        if (TesterParseArguments("sl", buffer, &expected) != 2)
             return TESTER_RETURN_ARGUMENT;
         if (varCreate(buffer, &pVar))
             return TESTER_RETURN_MALLOC;
@@ -119,7 +119,7 @@ static TesterReturnValue parseGraphCommands(const char *command)
     } else if matches(command, "indegree") {
         Variable *pVar;
         unsigned long actual, expected;
-        if (TesterParseArguments("si", buffer, &expected) != 2)
+        if (TesterParseArguments("sl", buffer, &expected) != 2)
             return TESTER_RETURN_ARGUMENT;
         if (varCreate(buffer, &pVar))
             return TESTER_RETURN_MALLOC;
@@ -130,7 +130,7 @@ static TesterReturnValue parseGraphCommands(const char *command)
     } else if matches(command, "degree") {
         Variable *pVar;
         unsigned long actual, expected;
-        if (TesterParseArguments("si", buffer, &expected) != 2)
+        if (TesterParseArguments("sl", buffer, &expected) != 2)
             return TESTER_RETURN_ARGUMENT;
         if (varCreate(buffer, &pVar))
             return TESTER_RETURN_MALLOC;
