@@ -44,8 +44,9 @@ def new_project(prj, no_test = False, **kwargs):
 	for fend, hends in exts["test"]:
 		with open(prj + fend + '.test.c', 'w') as f:
 			lines = list()
-			headers = ["tester"] + [(prj + hend) for hend in hends]
+			headers = [(prj + hend) for hend in hends]
 			lines += ["#include \"{}.h\"".format(h) for h in headers]
+			lines += ["", "#include \"tester.h\""]
 			lines += ["", "const char *TesterHelpStrings[] = {",
 			"    \"This is the {} test module\"".format(prj + fend), "};", "",
 			"TesterReturnValue TesterInitCallback()",
@@ -68,9 +69,10 @@ def new_project(prj, no_test = False, **kwargs):
 		lines += ["add_library({} {})".format(prj, " ".join(sources + headers))]
 		testnames = [prj + fend for fend, _ in exts["test"]]
 		tests = [(t + 'test', t + '.test.c', t + '.script') for t in testnames]
+		lines += ["target_include_directories({} PUBLIC ${{CMAKE_CURRENT_SOURCE_DIR}})".format(prj)]
+		lines += [""]
 		lines += ["add_tester_module({} SOURCES {} LINKS {})".format(tgt, src, prj) for tgt, src, _ in tests]
 		lines += ["add_tester_scripts({} SOURCES {})".format(tgt, script) for tgt, _, script in tests]
-		lines += ["target_include_directories({} PUBLIC ${{CMAKE_CURRENT_SOURCE_DIR}})".format(prj)]
 		writelist(f, lines)
 	# Add project to root CMakeLists.txt
 	os.chdir("..")
