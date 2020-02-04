@@ -9,6 +9,6 @@
 * characters on the keyboard that were mistaken
 * Returns DIFFERR in case it could not allocate memory
 */
-size_t diff(const char *s1, const char *s2);
+unsigned long diff(const char *s1, const char *s2);
 
 #endif

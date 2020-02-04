@@ -19,7 +19,7 @@ const char *TesterHelpStrings[] = {
 
 char X[BUFSIZ], Y[BUFSIZ];
 unsigned int val;
-size_t eax = -1; /* Last computed value */
+unsigned long eax = -1; /* Last computed value */
 
 TesterReturnValue TesterInitCallback()
 {

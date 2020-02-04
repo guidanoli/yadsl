@@ -16,7 +16,7 @@ static char *loc[] = {
 
 static int coord(char c, size_t *x, size_t *y)
 {
-    size_t i, j;
+    unsigned long i, j;
     char coff = 'A' - 'a'; // Case offset
     for (i = 0; i < sizeof(loc)/sizeof(*loc); i++) {
         char *line = loc[i];
@@ -32,23 +32,23 @@ static int coord(char c, size_t *x, size_t *y)
     return 1;
 }
 
-static size_t modsub(size_t a, size_t b)
+static unsigned long modsub(size_t a, size_t b)
 {
     return (a > b) ? (a - b) : (b - a);
 }
 
-static size_t alpha(char a, char b)
+static unsigned long alpha(char a, char b)
 {
-    size_t posa[2], posb[2];
+    unsigned long posa[2], posb[2];
     if (a == b) return 0;
     if (coord(a, &posa[0], &posa[1])) return ALPHA;
     if (coord(b, &posb[0], &posb[1])) return ALPHA;
     return modsub(posa[0], posb[0]) + modsub(posa[1], posb[1]);
 }
 
-size_t diff(const char *s1, const char *s2)
+unsigned long diff(const char *s1, const char *s2)
 {
-    size_t v[3], lv, cost, i, j, k, l1, l2, *M, *N;
+    unsigned long v[3], lv, cost, i, j, k, l1, l2, *M, *N;
     if (!s1 || !s2) return -1;
     l1 = strlen(s1);
     l2 = strlen(s2);

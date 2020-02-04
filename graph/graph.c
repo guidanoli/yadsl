@@ -271,7 +271,7 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
     _resetAdjListCounters(pEdgeUV->pSource);
     if (setId = setAddItem(pEdgeUV->pDestination->inEdges, pEdgeUV)) {
         if (setId == SET_RETURN_MEMORY) {
-            setId = setRemove(pEdgeUV->pDestination->inEdges, pEdgeUV);
+            setId = setRemoveItem(pEdgeUV->pDestination->inEdges, pEdgeUV);
             free(pEdgeUV);
             if (setId)
                 return GRAPH_RETURN_FATAL_ERROR;
