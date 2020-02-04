@@ -31,6 +31,10 @@ const char *TesterHelpStrings[] = {
     "/addedge <u> <v> <edge>                add edge to graph",
     "/getedge <u> <v> <edge>                get edge from graph",
     "/removeedege <u> <v>",
+    "",
+    "Graph IO commands:",
+    "/write <filename>                      write graph to file",
+    "/read <filename>                       read from file to graph",
     NULL,
 };
 
@@ -304,8 +308,29 @@ static TesterReturnValue parseGraphCommands(const char *command)
 static TesterReturnValue parseGraphIoCommands(const char *command)
 {
     GraphIoReturnID graphIoId = GRAPH_IO_RETURN_OK;
-    if matches(command, "???") { // todo
-
+    FILE *fp;
+    if matches(command, "write") {
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        fp = fopen(buffer, "w");
+        if (fp == NULL)
+            return TESTER_RETURN_FILE;
+        graphIoId = graphWrite(pGraph, fp, _writeVariables, _writeVariables);
+        fclose(fp);
+    } else if matches(command, "read") {
+        Graph *temp;
+        if (TesterParseArguments("s", buffer) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        fp = fopen(buffer, "r");
+        if (fp == NULL)
+            return TESTER_RETURN_FILE;
+        graphIoId = graphRead(&temp, fp, _readVariables, _readVariables,
+            _cmpVariables, _freeVariables, _cmpVariables, _freeVariables);
+        if (graphIoId == GRAPH_IO_RETURN_OK) {
+            graphDestroy(pGraph);
+            pGraph = temp;
+        }
+        fclose(fp);
     } else {
         return TESTER_RETURN_COUNT;
     }

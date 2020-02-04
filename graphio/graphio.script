@@ -1,0 +1,159 @@
+### Empty graph
+
+## Directed
+
+/create DIRECTED
+
+# Serialize/Deserialize
+/write d-empty.graph
+/read d-empty.graph
+
+/vertexcount 0
+/isdirected YES
+
+## Undirected
+
+/create UNDIRECTED
+
+# Serialize/Deserialize
+/write u-empty.graph
+/read u-empty.graph
+
+/vertexcount 0
+/isdirected NO
+
+### One vertex
+
+## Directed
+
+/create DIRECTED
+/addvertex V
+
+# Serialize/Deserialize
+/write d-one.graph
+/read d-one.graph
+
+/vertexcount 1
+/containsvertex V YES
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex V
+
+# Serialize/Deserialize
+/write u-one.graph
+/read u-one.graph
+
+/vertexcount 1
+/containsvertex V YES
+
+### Many vertices
+
+## Directed
+
+/create DIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+
+# Serialize/Deserialize
+/write d-abc.graph
+/read d-abc.graph
+
+/vertexcount 3
+/containsvertex A YES
+/containsvertex B YES
+/containsvertex C YES
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+
+# Serialize/Deserialize
+/write u-abc.graph
+/read u-abc.graph
+
+/vertexcount 3
+/containsvertex A YES
+/containsvertex B YES
+/containsvertex C YES
+
+### Loop
+
+## Directed
+
+/create DIRECTED
+/addvertex V
+/addedge V V E
+
+# Serialize/Deserialize
+/write d-loop.graph
+/read d-loop.graph
+
+/containsvertex V YES
+/containsedge V V YES
+/getedge V V E
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex V
+/addedge V V E
+
+# Serialize/Deserialize
+/write u-loop.graph
+/read u-loop.graph
+
+/containsvertex V YES
+/containsedge V V YES
+/getedge V V E
+
+### Edges
+
+## Directed
+
+/create DIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addedge A B AB
+/addedge B C BC
+
+# Serialize/Deserialize
+/write d-edges.graph
+/read d-edges.graph
+
+/getedge A B AB
+/getedge B C BC
+/degree A 1
+/degree B 2
+/degree C 1
+/indegree A 0
+/indegree B 1
+/indegree C 1
+/outdegree A 1
+/outdegree B 1
+/outdegree C 0
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addedge A B AB
+/addedge B C BC
+
+# Serialize/Deserialize
+/write u-edges.graph
+/read u-edges.graph
+
+/getedge A B AB
+/getedge B C BC
+/degree A 1
+/degree B 2
+/degree C 1
