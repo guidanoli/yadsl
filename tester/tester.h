@@ -3,39 +3,39 @@
 
 #include <stdio.h>
 
-/**********************************************
-* TESTER FRAMEWORK
-* 
-* This incorporates the generic part of the
-* tester framework, which reads the script,
-* and parses commands and its arguments.
-*
-* SCRIPT GRAMMAR DEFINITION
-*
-* script: line | script line
-* line: command | command comment | sep
-* command: cmdname | command sep cmdarg
-* cmdarg: float | string | integer | long
-* float: %f | %g | %e
-* string: string_qm | string_wo_qm
-* integer: %d | %u
-* long: %ld | %lu
-*
-* SCRIPT TOKENS DEFINITIONS
-*
-* sep = [ \t\n]+
-* comment = #.*
-* cmdname = /[^ \t\n]+
-* string_qm = "[^"]*"
-* string_wo_qm = [^ \t\n]+
-* % identifiers from C standard library
-*
-* NATIVE COMMANDS
-*
-* /catch <return>
-*   if <return> is equal to the last value
-*   returned, the error is ignored.
-***********************************************/
+////////////////////////////////////////////////////////////////////////////////
+// TESTER FRAMEWORK
+// 
+// This incorporates the generic part of the
+// tester framework, which reads the script,
+// and parses commands and its arguments.
+//
+// SCRIPT GRAMMAR DEFINITION
+//
+// script: line | script line
+// line: command | command comment | sep
+// command: cmdname | command sep cmdarg
+// cmdarg: float | string | integer | long
+// float: %f | %g | %e
+// string: string_qm | string_wo_qm
+// integer: %d | %u
+// long: %ld | %lu
+//
+// SCRIPT TOKENS DEFINITIONS
+//
+// sep = [ \t\n]+
+// comment = #.*
+// cmdname = /[^ \t\n]+
+// string_qm = "[^"]*"
+// string_wo_qm = [^ \t\n]+
+// % identifiers from C standard library
+//
+// NATIVE COMMANDS
+//
+// /catch <return>
+//   if <return> is equal to the last value
+//   returned, the error is ignored.
+////////////////////////////////////////////////////////////////////////////////
 
 /**
 * Enumeration of tester return values.
@@ -58,14 +58,14 @@ typedef enum
 }
 TesterReturnValue;
 
-/**********************************************
-* SYMBOLS YOU MUST DEFINE
-*
-* The specific functions that must be defined
-* can return TesterReturnValue. If a value other
-* than TESTER_RETURN_OK is returned, the test
-* is interrupted, returning that value.
-***********************************************/
+////////////////////////////////////////////////////////////////////////////////
+// SYMBOLS YOU MUST DEFINE
+//
+// The specific functions that must be defined
+// can return TesterReturnValue. If a value other
+// than TESTER_RETURN_OK is returned, the test
+// is interrupted, returning that value.
+////////////////////////////////////////////////////////////////////////////////
 
 /**
 * When no arguments are provided, help strings
@@ -99,9 +99,9 @@ extern TesterReturnValue TesterParseCallback(const char *command);
 */
 extern TesterReturnValue TesterExitCallback();
 
-/**********************************************
-* SYMBOLS ALREADY DEFINED
-***********************************************/
+////////////////////////////////////////////////////////////////////////////////
+// SYMBOLS ALREADY DEFINED
+////////////////////////////////////////////////////////////////////////////////
 
 /**
 * Parse arguments following the current command,

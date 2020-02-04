@@ -1,24 +1,25 @@
+#include "tester.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "tester.h"
 
-/**********************************************
-* STATIC VARIABLES DECLARATIONS
-***********************************************/
+////////////////////////////////////////////////////////////////////////////////
+// STATIC VARIABLES DECLARATIONS
+////////////////////////////////////////////////////////////////////////////////
 
 static unsigned long line; // line count
-static const char *externalReturnValueInfo = NULL; // external return value info
-static const char *nativeReturnValueInfos[TESTER_RETURN_COUNT]; // return value infos
+static const char *externalReturnValueInfo = NULL; // external return value
+static const char *nativeReturnValueInfos[TESTER_RETURN_COUNT]; // return value
 static char buffer[BUFSIZ], // file line
             command[BUFSIZ], // command string
             sep[BUFSIZ], // separation characters
             temp[BUFSIZ]; // temp. variable
 static char *cursor; // buffer cursor
 
-/**********************************************
-* STATIC FUNCTIONS DECLARATIONS
-***********************************************/
+////////////////////////////////////////////////////////////////////////////////
+// STATIC FUNCTIONS DECLARATIONS
+////////////////////////////////////////////////////////////////////////////////
 
 static TesterReturnValue _TesterMain(int argc, char **argv);
 static void _TesterLoadReturnValueInfos();
@@ -29,9 +30,9 @@ static int _TesterParseArg(const char *format, void *arg, int *inc);
 static int _TesterParseStr(char *arg, int *inc);
 static void _TesterPrintReturnValueInfo(TesterReturnValue ret);
 
-/**********************************************
-* EXTERN FUNCTIONS DEFINITIONS
-***********************************************/
+////////////////////////////////////////////////////////////////////////////////
+// EXTERN FUNCTIONS DEFINITIONS
+////////////////////////////////////////////////////////////////////////////////
 
 /**
 * Usage: <program> [script-path]
@@ -131,9 +132,9 @@ void TesterLog(const char *message, ...)
     _TesterPrintCursorPosition(stdout, spacing);
 }
 
-/**********************************************
-* STATIC FUNCTIONS DEFINITIONS
-***********************************************/
+////////////////////////////////////////////////////////////////////////////////
+// STATIC FUNCTIONS DEFINITIONS
+////////////////////////////////////////////////////////////////////////////////
 
 static TesterReturnValue _TesterMain(int argc, char **argv)
 {
@@ -186,7 +187,8 @@ static TesterReturnValue _TesterParse(FILE *fp)
                             return ret;
                     } else {
                         if (ret) {
-                            fprintf(stderr, "ERROR: Expected /catch command\n");
+                            fprintf(stderr,
+								"ERROR: Expected /catch command\n");
                             return ret;
                         }
                         // Call the command parser (can move cursor)
@@ -278,7 +280,8 @@ static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
 static void _TesterPrintReturnValueInfo(TesterReturnValue ret)
 {
     if (ret) {
-        int spacing = fprintf(stderr, "ERROR: \"%s\" ", TesterGetReturnValueInfo(ret));
+        int spacing = fprintf(stderr, "ERROR: \"%s\" ",
+			TesterGetReturnValueInfo(ret));
         _TesterPrintCursorPosition(stderr, spacing);
     }
 }

@@ -1,5 +1,6 @@
-#include <stdlib.h>
 #include "queue.h"
+
+#include <stdlib.h>
 
 struct QueueItem
 {

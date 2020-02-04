@@ -1,7 +1,9 @@
+#include "queue.h"
+
 #include <stdio.h>
 #include <string.h>
+
 #include "tester.h"
-#include "queue.h"
 #include "var.h"
 
 #define matches(a, b) (strcmp(a, b) == 0)
@@ -9,15 +11,11 @@
 const char *TesterHelpStrings[] = {
     "This is the queue test module",
     "You will be interacting with the same queue at all times",
-    "The available actions and possible error return values are the following:",
+    "The available actions are the following:",
     "",
     "/queue X         queue variable X",
     "/dequeue X       dequeue and compare top with X",
-    "                 -> empty: queue is empty",
-    "                 -> return: X is not equal to queue top",
     "/empty <isempty> check whether queue is empty (<isempty> = true)",
-    "                 or not (<isempty> = ^true)",
-    "                 -> return: obtained doen't match expected",
     NULL
 };
 

@@ -132,7 +132,8 @@ GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV);
 *   - vertex "v" does not exist
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v, unsigned long *pOut);
+GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
+	unsigned long *pOut);
 
 /**
 * Get in degree of a given vertex, that is, how many edges go to it
@@ -147,7 +148,8 @@ GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v, unsigned long *pOu
 *   - vertex "v" does not exist
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v, unsigned long *pIn);
+GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
+	unsigned long *pIn);
 
 /**
 * Get degree of a given vertex, that is, how many edges are incident to it
@@ -164,7 +166,8 @@ GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v, unsigned long *pIn)
 *   - vertex "v" does not exist
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v, unsigned long *pDegree);
+GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
+	unsigned long *pDegree);
 
 /**
 * Get next neighbour of given vertex
@@ -186,7 +189,8 @@ GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v, unsigned long *pDegre
 *   - "u" does not contain neighbours, that is, edges
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV, void **uv);
+GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv);
 
 /**
 * Get next neighbour that has an edge that incides in a given vertex
@@ -208,7 +212,8 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV, void **uv
 *   - "u" does not contain in-neighbours
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV, void **uv);
+GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv);
 
 /**
 * Get next neighbour that has an edge that comes from a given vertex
@@ -230,7 +235,8 @@ GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV, void **
 *   - "u" does not contain out-neighbours
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV, void **uv);
+GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv);
 
 /**
 * Check whether graph contains vertex or not

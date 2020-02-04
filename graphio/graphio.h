@@ -2,6 +2,7 @@
 #define __GRAPH_IO_H__
 
 #include <stdio.h>
+
 #include "graph.h"
 
 /**

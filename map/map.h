@@ -80,7 +80,8 @@ MapReturnID mapCreate(Map **ppMap,
 * [!] In case of overwritting entry, the ownership of the previous
 *   value, returned by reference, is the caller's
 */
-MapReturnID mapPutEntry(Map *pMap, void *key, void *value, void **pPreviousValue);
+MapReturnID mapPutEntry(Map *pMap, void *key, void *value,
+	void **pPreviousValue);
 
 /**
 * Get entry, if existing

@@ -1,8 +1,10 @@
+#include "map.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include "map.h"
+
 #include "tester.h"
 #include "var.h"
 
@@ -19,8 +21,10 @@ const char *TesterHelpStrings[] = {
 };
 
 // Variable functions
-static int cmpVariables(struct Variable *pVariableA, struct Variable *pVariableB);
-static void freeVariable(struct Variable *pKeyVariable, struct Variable *pValueVariable, void *arg);
+static int cmpVariables(struct Variable *pVariableA,
+	struct Variable *pVariableB);
+static void freeVariable(struct Variable *pKeyVariable,
+	struct Variable *pValueVariable, void *arg);
 
 TesterReturnValue convertReturn(MapReturnID mapId)
 {
@@ -123,13 +127,15 @@ TesterReturnValue TesterExitCallback()
     return TESTER_RETURN_OK;
 }
 
-static void freeVariable(struct Variable *pKeyVariable, struct Variable *pValueVariable, void *arg)
+static void freeVariable(struct Variable *pKeyVariable,
+	struct Variable *pValueVariable, void *arg)
 {
     varDestroy(pKeyVariable);
     varDestroy(pValueVariable);
 }
 
-static int cmpVariables(struct Variable *pVariableA, struct Variable *pVariableB)
+static int cmpVariables(struct Variable *pVariableA,
+	struct Variable *pVariableB)
 {
     int cmpReturn = 0; // by default, aren't equal
     if (varCompare(pVariableA, pVariableB, &cmpReturn))

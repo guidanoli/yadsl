@@ -1,5 +1,7 @@
-#include <stdlib.h>
 #include "map.h"
+
+#include <stdlib.h>
+
 #include "set.h"
 
 struct Entry
@@ -30,9 +32,11 @@ struct _freeEntryParameter
     void *arg;
 };
 
-static MapReturnID _allocateEntry(void *key, void *value, struct Entry **ppEntry);
+static MapReturnID _allocateEntry(void *key, void *value,
+	struct Entry **ppEntry);
 static void _freeEntry(struct Entry *pEntry, struct _freeEntryParameter *par);
-static int _cmpEntryKey(struct Entry *pEntry, struct _cmpEntryKeyParameter *par);
+static int _cmpEntryKey(struct Entry *pEntry,
+	struct _cmpEntryKeyParameter *par);
 static MapReturnID _getEntry(Map *pMap, void *key, struct Entry **ppEntry);
 
 /* Public functions */
@@ -62,7 +66,8 @@ MapReturnID mapCreate(Map **ppMap,
     return MAP_RETURN_OK;
 }
 
-MapReturnID mapPutEntry(Map *pMap, void *key, void *value, void **pPreviousValue)
+MapReturnID mapPutEntry(Map *pMap, void *key, void *value,
+	void **pPreviousValue)
 {
     MapReturnID mapId;
     SetReturnID setId;
@@ -150,7 +155,8 @@ static void _freeEntry(struct Entry *pEntry, struct _freeEntryParameter *par)
     free(pEntry);
 }
 
-static int _cmpEntryKey(struct Entry *pEntry, struct _cmpEntryKeyParameter *par)
+static int _cmpEntryKey(struct Entry *pEntry,
+	struct _cmpEntryKeyParameter *par)
 {
     if (par->cmp)
         return par->cmp(pEntry->key, par->key);
@@ -170,7 +176,8 @@ static MapReturnID _getEntry(Map *pMap, void *key, struct Entry **ppEntry)
     return MAP_RETURN_OK;
 }
 
-static MapReturnID _allocateEntry(void *key, void *value, struct Entry **ppEntry)
+static MapReturnID _allocateEntry(void *key, void *value,
+	struct Entry **ppEntry)
 {
     struct Entry *pEntry;
     pEntry = malloc(sizeof(struct Entry));

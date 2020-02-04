@@ -1,6 +1,7 @@
+#include "diff.h"
+
 #include <stdlib.h>
 #include <string.h>
-#include "diff.h"
 
 #define DELTA 5
 #define ALPHA 1

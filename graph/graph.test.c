@@ -1,4 +1,5 @@
 #include <string.h>
+
 #include "graph.h"
 #include "graphio.h"
 #include "graphsearch.h"
@@ -47,16 +48,16 @@ static void _freeVariables(void *v);
 static int _cmpVariables(void *a, void *b);
 static int _readVariables(FILE *fp, void **ppVertex);
 static int _writeVariables(FILE *fp, void *v);
-static TesterReturnValue convertReturnGraphReturnValue(GraphReturnID graphId);
-static TesterReturnValue convertReturnGraphIoReturnValue(GraphIoReturnID graphIoId);
-static TesterReturnValue convertReturnGraphSearchReturnValue(GraphSearchReturnID graphSearchId);
+static TesterReturnValue convertRet(GraphReturnID graphId);
+static TesterReturnValue convertIoRet(GraphIoReturnID graphIoId);
+static TesterReturnValue convertSearchRet(GraphSearchReturnID graphSearchId);
 
 TesterReturnValue TesterInitCallback()
 {
     GraphReturnID graphId;
     if (graphId = graphCreate(&pGraph, 1, _cmpVariables, _freeVariables,
         _cmpVariables, _freeVariables))
-        return convertReturnGraphReturnValue(graphId);
+        return convertRet(graphId);
     return TESTER_RETURN_OK;
 }
 
@@ -156,7 +157,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
         varDestroy(pVertexVar);
         if (graphId == GRAPH_RETURN_OK) {
             int neighbourEqual, edgeEqual;
-            varCompare(pExpectedNeighbourVar, pActualNeighbourVar, &neighbourEqual);
+            varCompare(pExpectedNeighbourVar, pActualNeighbourVar,
+				&neighbourEqual);
             varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
             varDestroy(pExpectedEdgeVar);
             varDestroy(pExpectedNeighbourVar);
@@ -181,7 +183,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
         varDestroy(pVertexVar);
         if (graphId == GRAPH_RETURN_OK) {
             int neighbourEqual, edgeEqual;
-            varCompare(pExpectedNeighbourVar, pActualNeighbourVar, &neighbourEqual);
+            varCompare(pExpectedNeighbourVar, pActualNeighbourVar,
+				&neighbourEqual);
             varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
             varDestroy(pExpectedEdgeVar);
             varDestroy(pExpectedNeighbourVar);
@@ -206,7 +209,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
         varDestroy(pVertexVar);
         if (graphId == GRAPH_RETURN_OK) {
             int neighbourEqual, edgeEqual;
-            varCompare(pExpectedNeighbourVar, pActualNeighbourVar, &neighbourEqual);
+            varCompare(pExpectedNeighbourVar, pActualNeighbourVar,
+				&neighbourEqual);
             varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
             varDestroy(pExpectedEdgeVar);
             varDestroy(pExpectedNeighbourVar);
@@ -266,7 +270,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
         Variable *pU, *pV, *pEdge;
         if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
             return TESTER_RETURN_ARGUMENT;
-        if (varCreateMultiple(buffer, &pU, buffer2, &pV, buffer3, &pEdge, NULL))
+        if (varCreateMultiple(buffer, &pU, buffer2, &pV, buffer3, &pEdge,
+			NULL))
             return TESTER_RETURN_MALLOC;
         if (graphId = graphAddEdge(pGraph, pU, pV, pEdge))
             varDestroy(pEdge);
@@ -276,7 +281,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
         Variable *pU, *pV, *pExpected, *pActual;
         if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
             return TESTER_RETURN_ARGUMENT;
-        if (varCreateMultiple(buffer, &pU, buffer2, &pV, buffer3, &pExpected, NULL))
+        if (varCreateMultiple(buffer, &pU, buffer2, &pV, buffer3, &pExpected,
+			NULL))
             return TESTER_RETURN_MALLOC;
         graphId = graphGetEdge(pGraph, pU, pV, &pActual);
         varDestroy(pU);
@@ -302,7 +308,7 @@ static TesterReturnValue parseGraphCommands(const char *command)
     } else {
         return TESTER_RETURN_COUNT;
     }
-    return convertReturnGraphReturnValue(graphId);
+    return convertRet(graphId);
 }
 
 static TesterReturnValue parseGraphIoCommands(const char *command)
@@ -334,7 +340,7 @@ static TesterReturnValue parseGraphIoCommands(const char *command)
     } else {
         return TESTER_RETURN_COUNT;
     }
-    return convertReturnGraphIoReturnValue(graphIoId); // TEMP
+    return convertIoRet(graphIoId); // TEMP
 }
 
 static TesterReturnValue parseGraphSearchCommands(const char *command)
@@ -345,7 +351,7 @@ static TesterReturnValue parseGraphSearchCommands(const char *command)
     } else {
         return TESTER_RETURN_COUNT;
     }
-    return convertReturnGraphSearchReturnValue(graphSearchId);
+    return convertSearchRet(graphSearchId);
 }
 
 // Here the TESTER_RETURN_COUNT is being used as a flag to indicate that
@@ -398,7 +404,7 @@ static int _writeVariables(FILE *fp, void *v)
     return varSerialize((Variable *) v, fp);
 }
 
-static TesterReturnValue convertReturnGraphReturnValue(GraphReturnID graphId)
+static TesterReturnValue convertRet(GraphReturnID graphId)
 {
     switch (graphId) {
     case GRAPH_RETURN_OK:
@@ -422,7 +428,7 @@ static TesterReturnValue convertReturnGraphReturnValue(GraphReturnID graphId)
     }
 }
 
-static TesterReturnValue convertReturnGraphIoReturnValue(GraphIoReturnID graphIoId)
+static TesterReturnValue convertIoRet(GraphIoReturnID graphIoId)
 {
     switch (graphIoId) {
     case GRAPH_IO_RETURN_OK:
@@ -448,7 +454,7 @@ static TesterReturnValue convertReturnGraphIoReturnValue(GraphIoReturnID graphIo
     }
 }
 
-static TesterReturnValue convertReturnGraphSearchReturnValue(GraphSearchReturnID graphSearchId)
+static TesterReturnValue convertSearchRet(GraphSearchReturnID graphSearchId)
 {
     switch (graphSearchId) {
     case GRAPH_SEARCH_RETURN_OK:

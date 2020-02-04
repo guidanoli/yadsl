@@ -46,20 +46,6 @@ SetReturnID;
 
 typedef struct Set Set;
 
-/*
-* Macros to ensure compatiblity with previous versions
-* of the set module -- when only numbers where stored
-*/
-
-#define setContains(p, v)       setContainsItem(p, (void *) v)
-#define setAdd(p, v)            setAddItem(p, (void *) v)
-#define setRemove(p, v)         setRemoveItem(p, (void *) v)
-#define setGetCurrent(p, pV)    setGetCurrentItem(p, (void **) pV)
-#define setPreviousValue(p)     setPreviousItem(p)
-#define setNextValue(p)         setNextItem(p)
-#define setFirstValue(p)        setFirstItem(p)
-#define setLastValue(p)         setLastItem(p)
-
 /**
 * Create an empty set
 * ppSet     address of pointer to set

@@ -1,7 +1,8 @@
+#include "var.h"
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include "var.h"
 
 #ifdef _DEBUG
 static int refCount = 0;
@@ -127,7 +128,8 @@ VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB,
     else if (strcmp(pVariableA->type->typeId, pVariableB->type->typeId))
         *pResult = 0;
     else
-        *pResult = pVariableA->type->compare(pVariableA->value, pVariableB->value);
+        *pResult = pVariableA->type->compare(pVariableA->value,
+			pVariableB->value);
     return VAR_RETURN_OK;
 }
 

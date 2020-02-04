@@ -1,5 +1,6 @@
-#include <stdlib.h>
 #include "set.h"
+
+#include <stdlib.h>
 
 // A set is represented by an ordered double-linked list
 // in which each item is an opaque pointer.
@@ -24,7 +25,8 @@ struct Set
 
 // Private functions prototypes
 
-static SetReturnID _setContains(Set *pSet, void *item, struct SetItem **pSetItem);
+static SetReturnID _setContains(Set *pSet, void *item,
+	struct SetItem **pSetItem);
 static SetReturnID _setContainsCustom(Set *pSet, struct SetItem **pSetItem,
     void *arg, int (*func) (void *item, void *arg));
 
@@ -227,7 +229,8 @@ void setDestroy(Set *pSet)
     setDestroyDeep(pSet, NULL, NULL);
 }
 
-void setDestroyDeep(Set *pSet, void (*freeItem)(void *item, void *arg), void *arg)
+void setDestroyDeep(Set *pSet, void (*freeItem)(void *item, void *arg),
+	void *arg)
 {
     struct SetItem *current, *next;
     if (pSet == NULL)
@@ -248,7 +251,8 @@ void setDestroyDeep(Set *pSet, void (*freeItem)(void *item, void *arg), void *ar
 
 // Checks if item is contained in the set and if it is, makes
 // the pointer of address "pSetItem" point to it
-static SetReturnID _setContains(Set *pSet, void *item, struct SetItem **pSetItem)
+static SetReturnID _setContains(Set *pSet, void *item,
+	struct SetItem **pSetItem)
 {
     char direction = 0;
     struct SetItem *p;

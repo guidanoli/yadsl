@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 #include "var.h"
 #include "tester.h"
 
@@ -49,7 +50,8 @@ TesterReturnValue TesterParseCallback(const char *command)
             return TesterExternalReturnValue("index");
         temp = vars[idx1];
         temp2 = vars[idx2];
-        varId = varCreateMultiple(buffer, &vars[idx1], buffer2, &vars[idx2], NULL);
+        varId = varCreateMultiple(buffer, &vars[idx1], buffer2, &vars[idx2],
+			NULL);
         if (!varId) {
             if (temp) varDestroy(temp);
             if (temp2) varDestroy(temp2);
@@ -166,12 +168,9 @@ const char *TesterHelpStrings[] = {
     "/add2 <idx1> <txt1> <idx2> <txt2>  add two variables from text to index",
     "/rmv <index>                       remove variable at index",
     "/cmp <index1> <index2> [EQUAL|*]   compare variables from two indices",
-    "                                   -> return: expected doesn't match actual",
     "/dmp <index>                       dump variable contents",
     "/ser <index> <filename>            serialize to file",
-    "                                   -> write: could not write variable",
     "/dsr <index> <filename>            deserialize from file",
-    "                                   -> fileformat: file is corrupted",
     "/wef <filename>                    write empty file",
     NULL,
 };

@@ -1,4 +1,5 @@
 #include <string.h>
+
 #include "tester.h"
 
 #define matches(command, str) (strcmp(command, str) == 0)

@@ -1,6 +1,8 @@
+#include "graphio.h"
+
 #include <string.h>
 #include <stdlib.h>
-#include "graphio.h"
+
 #include "map.h"
 
 #define WRITE(file, format, arg) do {       \
@@ -192,7 +194,8 @@ static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
             pNeighbourItem = addressMap[index];
             if (readEdge(fp, &pEdgeItem)) // Edge item
                 return GRAPH_IO_RETURN_CREATION_FAILURE;
-            if (graphId = graphAddEdge(pGraph, pVertexItem, pNeighbourItem, pEdgeItem)) {
+            if (graphId = graphAddEdge(pGraph, pVertexItem, pNeighbourItem,
+				pEdgeItem)) {
                 if (freeEdge)
                     freeEdge(pEdgeItem);
                 switch (graphId) {

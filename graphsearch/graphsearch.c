@@ -1,5 +1,7 @@
-#include <stdio.h>
 #include "graphsearch.h"
+
+#include <stdio.h>
+
 #include "map.h"
 #include "queue.h"
 

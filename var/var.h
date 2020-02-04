@@ -67,7 +67,8 @@ VarReturnID varCreateMultiple(const char *text, Variable **ppVariable, ...);
 *   - "pVariableB" is NULL
 *   - "pResult" is NULL
 */
-VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB, int *pResult);
+VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB,
+	int *pResult);
 
 /**
 * Write to file stream the contents of the variable
