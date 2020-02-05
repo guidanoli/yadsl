@@ -51,7 +51,7 @@ typedef struct Set Set;
 * ppSet	 address of pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "ppSet" is NULL
+* 	- "ppSet" is NULL
 * SET_RETURN_MEMORY
 */
 SetReturnID setCreate(Set **ppSet);
@@ -62,11 +62,11 @@ SetReturnID setCreate(Set **ppSet);
 * item	  item to be consulted
 * Possible return values:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
+* 	- "pSet" is NULL
 * SET_RETURN_CONTAINS
-*   - set contains item
+* 	- set contains item
 * SET_RETURN_DOES_NOT_CONTAIN
-*   - set does not contain item
+* 	- set does not contain item
 */
 SetReturnID setContainsItem(Set *pSet, void *item);
 
@@ -81,11 +81,11 @@ SetReturnID setContainsItem(Set *pSet, void *item);
 * pItem     address of pointer that will point to the found item
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
-*   - "func" is NULL
-*   - "pItem" is NULL
+* 	- "pSet" is NULL
+* 	- "func" is NULL
+* 	- "pItem" is NULL
 * SET_RETURN_DOES_NOT_CONTAIN
-*   - set does not contain such item
+* 	- set does not contain such item
 * [!] The filter function must not alter the set state (like adding,
 * deleting or freeing items), since it can corrupt the set
 */
@@ -98,9 +98,9 @@ SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
 * item      item to be added
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
+* 	- "pSet" is NULL
 * SET_RETURN_CONTAINS
-*   - set already contains item
+* 	- set already contains item
 * SET_RETURN_MEMORY
 */
 SetReturnID setAddItem(Set *pSet, void *item);
@@ -111,9 +111,9 @@ SetReturnID setAddItem(Set *pSet, void *item);
 * item	item to be removed
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
+* 	- "pSet" is NULL
 * SET_RETURN_DOES_NOT_CONTAIN
-*   - set does not contain item
+* 	- set does not contain item
 */
 SetReturnID setRemoveItem(Set *pSet, void *item);
 
@@ -123,8 +123,8 @@ SetReturnID setRemoveItem(Set *pSet, void *item);
 * pItem     address of variable that will hold the item
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
-*   - "pItem" is NULL
+* 	- "pSet" is NULL
+* 	- "pItem" is NULL
 * SET_RETURN_EMPTY
 */
 SetReturnID setGetCurrentItem(Set *pSet, void **pItem);
@@ -135,8 +135,8 @@ SetReturnID setGetCurrentItem(Set *pSet, void **pItem);
 * pItem	    address of variable that will hold the value
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
-*   - "pValue" is NULL
+* 	- "pSet" is NULL
+* 	- "pValue" is NULL
 */
 SetReturnID setGetSize(Set *pSet, unsigned long *pValue);
 
@@ -145,10 +145,10 @@ SetReturnID setGetSize(Set *pSet, unsigned long *pValue);
 * pSet	  pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
+* 	- "pSet" is NULL
 * SET_RETURN_EMPTY
 * SET_RETURN_OUT_OF_BOUNDS
-*   - current item is the first in the set
+* 	- current item is the first in the set
 */
 SetReturnID setPreviousItem(Set *pSet);
 
@@ -157,10 +157,10 @@ SetReturnID setPreviousItem(Set *pSet);
 * pSet     pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
+* 	- "pSet" is NULL
 * SET_RETURN_EMPTY
 * SET_RETURN_OUT_OF_BOUNDS
-*   - current item is the last in the set
+* 	- current item is the last in the set
 */
 SetReturnID setNextItem(Set *pSet);
 
@@ -169,7 +169,7 @@ SetReturnID setNextItem(Set *pSet);
 * pSet	  pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
+* 	- "pSet" is NULL
 * SET_RETURN_EMPTY
 */
 SetReturnID setFirstItem(Set *pSet);
@@ -179,7 +179,7 @@ SetReturnID setFirstItem(Set *pSet);
 * pSet  pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
-*   - "pSet" is NULL
+* 	- "pSet" is NULL
 * SET_RETURN_EMPTY
 */
 SetReturnID setLastItem(Set *pSet);

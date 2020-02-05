@@ -35,7 +35,7 @@ typedef struct Queue Queue;
 *           function will not be called.
 * Possible errors:
 * QUEUE_RETURN_INVALID_PARAMETER
-*   - "ppQueue" is NULL
+* 	- "ppQueue" is NULL
 * QUEUE_RETURN_MEMORY
 */
 QueueReturnID queueCreate(Queue **ppQueue,
@@ -47,7 +47,7 @@ QueueReturnID queueCreate(Queue **ppQueue,
 * item      item to be queued
 * Possible errors:
 * QUEUE_RETURN_INVALID_PARAMETER
-*   - "pQueue" is NULL
+* 	- "pQueue" is NULL
 * QUEUE_RETURN_MEMORY
 */
 QueueReturnID queueQueue(Queue *pQueue,
@@ -59,9 +59,9 @@ QueueReturnID queueQueue(Queue *pQueue,
 * pItem	    (return) item from top
 * Possible errors:
 * QUEUE_RETURN_INVALID_PARAMETER
-*   - "pQueue" is NULL
+* 	- "pQueue" is NULL
 * QUEUE_RETURN_EMPTY
-*   - no item to be dequeued
+* 	- no item to be dequeued
 */
 QueueReturnID queueDequeue(Queue *pQueue,
 	void **pItem);
@@ -72,8 +72,8 @@ QueueReturnID queueDequeue(Queue *pQueue,
 * pIsEmpty  (return) is empty
 * Possible errors:
 * QUEUE_RETURN_INVALID_PARAMETER
-*   - "pQueue" is NULL
-*   - "pIsEmpty" is NULL
+* 	- "pQueue" is NULL
+* 	- "pIsEmpty" is NULL
 */
 QueueReturnID queueIsEmpty(Queue *pQueue,
 	int *pIsEmpty);

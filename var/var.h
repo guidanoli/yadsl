@@ -36,8 +36,8 @@ typedef struct Variable Variable;
 * ppVariable  (return) pointer to variable
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
-*   - "text" is NULL
-*   - "ppVariable" is NULL
+* 	- "text" is NULL
+* 	- "ppVariable" is NULL
 * VAR_RETURN_MEMORY
 */
 VarReturnID varCreate(const char *text, Variable **ppVariable);
@@ -50,8 +50,8 @@ VarReturnID varCreate(const char *text, Variable **ppVariable);
 * NULL          ends the parameter list
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
-*   - "text" is NULL
-*   - "ppVariable" is NULL
+* 	- "text" is NULL
+* 	- "ppVariable" is NULL
 * VAR_RETURN_MEMORY
 */
 VarReturnID varCreateMultiple(const char *text, Variable **ppVariable, ...);
@@ -63,9 +63,9 @@ VarReturnID varCreateMultiple(const char *text, Variable **ppVariable, ...);
 * pResult       (return) boolean return (0 = different, else, equal)
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
-*   - "pVariableA" is NULL
-*   - "pVariableB" is NULL
-*   - "pResult" is NULL
+* 	- "pVariableA" is NULL
+* 	- "pVariableB" is NULL
+* 	- "pResult" is NULL
 */
 VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB,
 	int *pResult);
@@ -76,7 +76,7 @@ VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB,
 * fp         file pointer
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
-*   - "pVariable" is NULL
+* 	- "pVariable" is NULL
 * VAR_RETURN_WRITING_ERROR
 * [!] The module does not take ownership of the file
 * pointer (closing or opening it)
@@ -89,7 +89,7 @@ VarReturnID varWrite(Variable *pVariable, FILE *fp);
 * fp         file pointer
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
-*   - "pVariable" is NULL
+* 	- "pVariable" is NULL
 * VAR_RETURN_WRITING_ERROR
 * [!] The module does not take ownership of the file
 * pointer (closing or opening it)
@@ -101,7 +101,7 @@ VarReturnID varSerialize(Variable *pVariable, FILE *fp);
 * ppVariable	address of variable
 * fp			file pointer
 * VAR_RETURN_INVALID_PARAMETER
-*   - "ppVariable" is NULL
+* 	- "ppVariable" is NULL
 * VAR_RETURN_FILE_FORMAT_ERROR
 * VAR_RETURN_MEMORY
 */

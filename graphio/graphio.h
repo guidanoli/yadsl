@@ -69,11 +69,11 @@ GraphIoReturnID;
 *               will be deliberately ignored when reading.
 * Possible errors:
 * GRAPH_IO_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "writeVertex" is NULL
-*   - "writeEdge" is NULL
+* 	- "pGraph" is NULL
+* 	- "writeVertex" is NULL
+* 	- "writeEdge" is NULL
 * GRAPH_IO_RETURN_FILE_ERROR
-*   - Could not write to file
+* 	- Could not write to file
 * GRAPH_IO_RETURN_WRITING_FAILURE
 * GRAPH_IO_RETURN_MEMORY
 * GRAPH_IO_RETURN_UNKNOWN_ERROR
@@ -109,11 +109,11 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 *               one edge
 * Possible errors:
 * GRAPH_IO_RETURN_INVALID_PARAMETER
-*   - "ppGraph" is NULL
-*   - "readVertex" is NULL
-*   - "readEdge" is NULL
+* 	- "ppGraph" is NULL
+* 	- "readVertex" is NULL
+* 	- "readEdge" is NULL
 * GRAPH_IO_RETURN_FILE_ERROR
-*   - Could not read file
+* 	- Could not read file
 * GRAPH_IO_RETURN_SAME_CREATION
 * GRAPH_IO_RETURN_CREATION_FAILURE
 * GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT

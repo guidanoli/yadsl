@@ -51,7 +51,7 @@ typedef struct Map Map;
 * arg           extra argument to be parsed to freeEntry
 * Possible errors:
 * MAP_RETURN_INVALID_PARAMETER
-*   - "ppMap" is NULL
+* 	- "ppMap" is NULL
 * MAP_RETURN_MEMORY
 * MAP_RETURN_UNKNOWN_ERROR
 */
@@ -69,10 +69,10 @@ MapReturnID mapCreate(Map **ppMap,
 *                   the key, if such entry already existed.
 * Possible errors:
 * MAP_RETURN_INVALID_PARAMETER
-*   - "pMap" is NULL
-*   - "pPreviousValue" is NULL
+* 	- "pMap" is NULL
+* 	- "pPreviousValue" is NULL
 * MAP_RETURN_OVERWROTE_ENTRY
-*   - pointer of address "pPreviousValue" now points to previous value
+* 	- pointer of address "pPreviousValue" now points to previous value
 * MAP_RETURN_MEMORY
 * MAP_RETURN_UNKNOWN_ERROR
 * [!] In case of error (return isn't OK or OVERWROTE_ENTRY), the
@@ -90,8 +90,8 @@ MapReturnID mapPutEntry(Map *pMap, void *key, void *value,
 * pValue    (return) entry value
 * Possible errors:
 * MAP_RETURN_INVALID_PARAMETER
-*   - "pMap" is NULL
-*   - "pValue" is NULL
+* 	- "pMap" is NULL
+* 	- "pValue" is NULL
 * MAP_RETURN_ENTRY_NOT_FOUND
 * MAP_RETURN_UNKNOWN_ERROR
 * [!] At all circunstances, the map holds the ownership of
@@ -108,9 +108,9 @@ MapReturnID mapGetEntry(Map *pMap, void *key, void **pValue);
 * pValue    (return) entry value
 * Possible errors:
 * MAP_RETURN_INVALID_PARAMETER
-*   - "pMap" is NULL
-*   - "pKey" is NULL
-*   - "pValue" is NULL
+* 	- "pMap" is NULL
+* 	- "pKey" is NULL
+* 	- "pValue" is NULL
 * MAP_RETURN_ENTRY_NOT_FOUND
 * MAP_RETURN_UNKNOWN_ERROR
 * [!] At all circunstances, the ownership of the entry keys
@@ -125,8 +125,8 @@ MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue);
 * pNum  (return) number of entries
 * Possible errors:
 * MAP_RETURN_INVALID_PARAMETER
-*   - "pMap" is NULL
-*   - "pNum" is NULL
+* 	- "pMap" is NULL
+* 	- "pNum" is NULL
 * MAP_RETURN_UNKNOWN_ERROR
 */
 MapReturnID mapGetNumberOfEntries(Map *pMap, unsigned long *pNum);

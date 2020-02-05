@@ -73,7 +73,7 @@ typedef struct Graph Graph;
 *                   if NULL, does nothing to vertex
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "ppGraph" is NULL
+* 	- "ppGraph" is NULL
 * GRAPH_RETURN_MEMORY
 */
 GraphReturnID graphCreate(Graph **ppGraph,
@@ -89,8 +89,8 @@ GraphReturnID graphCreate(Graph **ppGraph,
 * pIsDirected   (return) whether graph is directed or not
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pIsDirected" is NULL
+* 	- "pGraph" is NULL
+* 	- "pIsDirected" is NULL
 */
 GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected);
 
@@ -100,8 +100,8 @@ GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected);
 * pSize     address of variable that will hold the number of vertices
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pSize" is NULL
+* 	- "pGraph" is NULL
+* 	- "pSize" is NULL
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize);
@@ -112,8 +112,8 @@ GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize);
 * pV        address of variable that will hold the vertex
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pV" is NULL
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
 * GRAPH_RETURN_EMPTY
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
@@ -126,10 +126,10 @@ GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV);
 * pOut      (return) out degree of v
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pOut" is NULL
+* 	- "pGraph" is NULL
+* 	- "pOut" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "v" does not exist
+* 	- vertex "v" does not exist
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
@@ -142,10 +142,10 @@ GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
 * pIn       (return) in degree of v
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pIn" is NULL
+* 	- "pGraph" is NULL
+* 	- "pIn" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "v" does not exist
+* 	- vertex "v" does not exist
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
@@ -160,10 +160,10 @@ GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
 * pDegree   (return) degree of v
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pDegree" is NULL
+* 	- "pGraph" is NULL
+* 	- "pDegree" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "v" does not exist
+* 	- vertex "v" does not exist
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
@@ -180,13 +180,13 @@ GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
 * uv        (return) edge between u and v
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pV" is NULL
-*   - "uv" is NULL
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
+* 	- "uv" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "u" does not exist
+* 	- vertex "u" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-*   - "u" does not contain neighbours, that is, edges
+* 	- "u" does not contain neighbours, that is, edges
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
@@ -203,13 +203,13 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 * uv        (return) edge between u and v
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pV" is NULL
-*   - "uv" is NULL
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
+* 	- "uv" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "u" does not exist
+* 	- vertex "u" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-*   - "u" does not contain in-neighbours
+* 	- "u" does not contain in-neighbours
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
@@ -226,13 +226,13 @@ GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 * uv        (return) edge between u and v
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pV" is NULL
-*   - "uv" is NULL
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
+* 	- "uv" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "u" does not exist
+* 	- vertex "u" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-*   - "u" does not contain out-neighbours
+* 	- "u" does not contain out-neighbours
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
@@ -244,11 +244,11 @@ GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 * v         graph vertex
 * Possible return values:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
+* 	- "pGraph" is NULL
 * GRAPH_RETURN_CONTAINS_VERTEX
-*   - vertex "v" exists in the graph
+* 	- vertex "v" exists in the graph
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "v" does not exist in the graph
+* 	- vertex "v" does not exist in the graph
 */
 GraphReturnID graphContainsVertex(Graph *pGraph, void *v);
 
@@ -258,9 +258,9 @@ GraphReturnID graphContainsVertex(Graph *pGraph, void *v);
 * v         graph vertex
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
+* 	- "pGraph" is NULL
 * GRAPH_RETURN_CONTAINS_VERTEX
-*   - graph already contains vertex "v"
+* 	- graph already contains vertex "v"
 * GRAPH_RETURN_UNKNOWN_ERROR
 * GRAPH_RETURN_MEMORY
 */
@@ -272,7 +272,7 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v);
 * v         graph vertex
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
+* 	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * GRAPH_RETURN_UNKNOWN_ERROR
 * GRAPH_RETURN_FATAL_ERROR
@@ -285,13 +285,13 @@ GraphReturnID graphRemoveVertex(Graph *pGraph, void *v);
 * u, v      graph vertices
 * Possible return values:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
+* 	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "u" or vertex "v" does not exist
+* 	- vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_CONTAINS_EDGE
-*   - Edge "uv" exists in the graph
+* 	- Edge "uv" exists in the graph
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-*   - Edge "uv" does not exist in the graph
+* 	- Edge "uv" does not exist in the graph
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v);
@@ -303,11 +303,11 @@ GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v);
 * uv        edge between u and u
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
+* 	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "u" or vertex "v" does not exist
+* 	- vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_CONTAINS_EDGE
-*   - Edge "uv" already exists in the graph
+* 	- Edge "uv" already exists in the graph
 * GRAPH_RETURN_UNKNOWN_ERROR
 * GRAPH_RETURN_MEMORY
 * GRAPH_RETURN_FATAL_ERROR
@@ -324,11 +324,11 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv);
 * uv        (return) edge between u and v
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
+* 	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "u" or vertex "v" does not exist
+* 	- vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-*   - Edge "uv" does not exist in the graph
+* 	- Edge "uv" does not exist in the graph
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
@@ -339,11 +339,11 @@ GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
 * u, v      graph vertices
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
+* 	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*   - vertex "u" or vertex "v" does not exist
+* 	- vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-*   - Edge "uv" does not exist in the graph
+* 	- Edge "uv" does not exist in the graph
 * GRAPH_RETURN_UNKNOWN_ERROR
 * GRAPH_RETURN_FATAL_ERROR
 * [!] Alters the state of the iterator provided by the
@@ -353,14 +353,42 @@ GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
 GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v);
 
 /**
+* Gets flag associated to vertex
+* pGraph    pointer to graph
+* v         graph vertices
+* pFlag     (return) flag
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*	- "pGraph" is NULL
+*	- "pFlag" is NULL
+* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* GRAPH_RETURN_UNKNOWN_ERROR
+*/
+GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag);
+
+/**
+* Sets flag associated to vertex
+* pGraph    pointer to graph
+* v         graph vertices
+* flag      flag to be set
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*	- "pGraph" is NULL
+* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* GRAPH_RETURN_UNKNOWN_ERROR
+*/
+GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag);
+
+/**
 * Obtain graph vertex comparison function provided
+* TO BE DEPRECATED
 * on graphCreate as parameter
 * pGraph        poitner to graph
 * cmpVertices   (return) comparison function
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
-*   - "pGraph" is NULL
-*   - "pCmpVertices" is NULL
+* 	- "pGraph" is NULL
+* 	- "pCmpVertices" is NULL
 */
 GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
 	int (**pCmpVertices)(void *a, void *b));

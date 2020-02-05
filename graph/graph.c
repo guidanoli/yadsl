@@ -17,9 +17,9 @@
 * smallest address to the one with largest address.
 * 
 * > The ownership of the set cursors are given to specific functions:
-*   - Graph::vertexSet -> graphGetNextVertex
-*   - GraphVertex::outEdges -> graphGetNextNeighbour/graphGetNextOutNeighbour
-*   - GraphVertex::inEdge -> graphGetNextNeighbour/graphGetNextInNeighbour
+* 	- Graph::vertexSet -> graphGetNextVertex
+* 	- GraphVertex::outEdges -> graphGetNextNeighbour/graphGetNextOutNeighbour
+* 	- GraphVertex::inEdge -> graphGetNextNeighbour/graphGetNextInNeighbour
 *
 ******************************************************************************/
 
@@ -36,6 +36,7 @@ struct Graph
 struct GraphVertex
 {
 	void *item; /* generic portion of vertex */
+	int flag; /* flag (for dfs, bfs, coloring...) */
 	Set *outEdges; /* edges from which the vertex is SOURCE */
 	int outEdgesIterated; /* counter for graphGetNext*Neighbour */
 	Set *inEdges; /* edges from which the vertex is DESTINATION */
@@ -197,6 +198,7 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v)
 	if (pVertex == NULL)
 		return GRAPH_RETURN_MEMORY;
 	pVertex->item = v;
+	pVertex->flag = 0;
 	pVertex->inEdgesIterated = 0;
 	pVertex->outEdgesIterated = 0;
 	if (setCreate(&pVertex->inEdges)) {
@@ -497,6 +499,30 @@ GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 	return GRAPH_RETURN_OK;
 }
 
+GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag)
+{
+	struct GraphVertex *pVertex;
+	GraphReturnID graphId;
+	if (pGraph == NULL || pFlag == NULL)
+		return GRAPH_RETURN_INVALID_PARAMETER;
+	if (graphId = _parseVertices(pGraph, v, &pVertex))
+		return graphId;
+	*pFlag = pVertex->flag;
+	return GRAPH_RETURN_OK;
+}
+
+GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag)
+{
+	struct GraphVertex *pVertex;
+	GraphReturnID graphId;
+	if (pGraph == NULL)
+		return GRAPH_RETURN_INVALID_PARAMETER;
+	if (graphId = _parseVertices(pGraph, v, &pVertex))
+		return graphId;
+	pVertex->flag = flag;
+	return GRAPH_RETURN_OK;
+}
+
 GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
 	int (**pCmpVertices)(void *a, void *b))
 {
@@ -626,6 +652,8 @@ static GraphReturnID _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
 // The item and ppVertex arguments must be alternated, and end with NULL, eg:
 // __parseVertices(pGrpah, u, &pVertexU, v, &pVertexV, w, &pVertexW, NULL);
 // The macro with only one '_' already does the above requirement.
+// Does not alter the vertexSet cursor pointer, only the current pointer,
+// which is of internal use, and doesn't interfeer with NextVertex iteration.
 // Possible errors:
 // GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 // GRAPH_RETURN_UNKNOWN_ERROR
