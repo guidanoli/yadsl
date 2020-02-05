@@ -34,6 +34,7 @@
 /read d-one.graph
 
 /vertexcount 1
+/degree V 0
 /containsvertex V YES
 
 ## Undirected
@@ -46,6 +47,7 @@
 /read u-one.graph
 
 /vertexcount 1
+/degree V 0
 /containsvertex V YES
 
 ### Many vertices
@@ -65,6 +67,9 @@
 /containsvertex A YES
 /containsvertex B YES
 /containsvertex C YES
+/degree A 0
+/degree B 0
+/degree C 0
 
 ## Undirected
 
@@ -81,6 +86,9 @@
 /containsvertex A YES
 /containsvertex B YES
 /containsvertex C YES
+/degree A 0
+/degree B 0
+/degree C 0
 
 ### Loop
 
@@ -94,8 +102,7 @@
 /write d-loop.graph
 /read d-loop.graph
 
-/containsvertex V YES
-/containsedge V V YES
+/vertexcount 1
 /getedge V V E
 
 ## Undirected
@@ -108,8 +115,7 @@
 /write u-loop.graph
 /read u-loop.graph
 
-/containsvertex V YES
-/containsedge V V YES
+/vertexcount 1
 /getedge V V E
 
 ### Edges
@@ -127,17 +133,12 @@
 /write d-edges.graph
 /read d-edges.graph
 
+/vertexcount 3
 /getedge A B AB
 /getedge B C BC
 /degree A 1
 /degree B 2
 /degree C 1
-/indegree A 0
-/indegree B 1
-/indegree C 1
-/outdegree A 1
-/outdegree B 1
-/outdegree C 0
 
 ## Undirected
 
@@ -152,8 +153,11 @@
 /write u-edges.graph
 /read u-edges.graph
 
+/vertexcount 3
 /getedge A B AB
+/getedge B A AB
 /getedge B C BC
+/getedge C B BC
 /degree A 1
 /degree B 2
 /degree C 1

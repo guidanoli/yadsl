@@ -14,25 +14,25 @@
 
 typedef enum
 {
-    /* All went ok */
-    MAP_RETURN_OK = 0,
+	/* All went ok */
+	MAP_RETURN_OK = 0,
 
-    /* New entry has been registered on top of another
-    * [!] This means that the ownership of the given
-    * key pointer is the caller's */
-    MAP_RETURN_OVERWROTE_ENTRY,
-    
-    /* Entry could not be found */
-    MAP_RETURN_ENTRY_NOT_FOUND,
+	/* New entry has been registered on top of another
+	* [!] This means that the ownership of the given
+	* key pointer is the caller's */
+	MAP_RETURN_OVERWROTE_ENTRY,
+	
+	/* Entry could not be found */
+	MAP_RETURN_ENTRY_NOT_FOUND,
 
-    /* Invalid parameter was provided */
-    MAP_RETURN_INVALID_PARAMETER,
+	/* Invalid parameter was provided */
+	MAP_RETURN_INVALID_PARAMETER,
 
-    /* Could not allocate memory space */
-    MAP_RETURN_MEMORY,
+	/* Could not allocate memory space */
+	MAP_RETURN_MEMORY,
 
-    /* When an internal error is unrecognized */
-    MAP_RETURN_UNKNOWN_ERROR,
+	/* When an internal error is unrecognized */
+	MAP_RETURN_UNKNOWN_ERROR,
 }
 MapReturnID;
 
@@ -56,9 +56,9 @@ typedef struct Map Map;
 * MAP_RETURN_UNKNOWN_ERROR
 */
 MapReturnID mapCreate(Map **ppMap,
-    int (*compareKeys)(void *a, void *b),
-    void (*freeEntry)(void *key, void *value, void *arg),
-    void *arg);
+	int (*compareKeys)(void *a, void *b),
+	void (*freeEntry)(void *key, void *value, void *arg),
+	void *arg);
 
 /**
 * Put a new entry or overwrite an already existing one

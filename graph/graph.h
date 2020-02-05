@@ -21,39 +21,39 @@
 
 typedef enum
 {
-    // SEMANTIC RETURN VALUES
+	// SEMANTIC RETURN VALUES
 
-    /* Everything went as excepted */
-    GRAPH_RETURN_OK = 0,
+	/* Everything went as excepted */
+	GRAPH_RETURN_OK = 0,
 
-    /* Graph does not contain any vertices whatsoever */
-    GRAPH_RETURN_EMPTY,
+	/* Graph does not contain any vertices whatsoever */
+	GRAPH_RETURN_EMPTY,
 
-    /* Graph contains vertex */
-    GRAPH_RETURN_CONTAINS_VERTEX,
+	/* Graph contains vertex */
+	GRAPH_RETURN_CONTAINS_VERTEX,
 
-    /* Graph does not contain vertex */
-    GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX,
+	/* Graph does not contain vertex */
+	GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX,
 
-    /* Graph contains edge */
-    GRAPH_RETURN_CONTAINS_EDGE,
+	/* Graph contains edge */
+	GRAPH_RETURN_CONTAINS_EDGE,
 
-    /* Graph does not contain edge */
-    GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE,
-    
-    // ERROR RETURN VALUES
+	/* Graph does not contain edge */
+	GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE,
+	
+	// ERROR RETURN VALUES
 
-    /* Invalid parameter was provided */
-    GRAPH_RETURN_INVALID_PARAMETER,
+	/* Invalid parameter was provided */
+	GRAPH_RETURN_INVALID_PARAMETER,
 
-    /* Could not allocate memory space */
-    GRAPH_RETURN_MEMORY,
-    
-    /* When an internal error is unrecognized */
-    GRAPH_RETURN_UNKNOWN_ERROR,
+	/* Could not allocate memory space */
+	GRAPH_RETURN_MEMORY,
+	
+	/* When an internal error is unrecognized */
+	GRAPH_RETURN_UNKNOWN_ERROR,
 
-    /* The structure is corrupted and behaviour is unpredictable */
-    GRAPH_RETURN_FATAL_ERROR,
+	/* The structure is corrupted and behaviour is unpredictable */
+	GRAPH_RETURN_FATAL_ERROR,
 }
 GraphReturnID;
 
@@ -77,11 +77,11 @@ typedef struct Graph Graph;
 * GRAPH_RETURN_MEMORY
 */
 GraphReturnID graphCreate(Graph **ppGraph,
-    int isDirected,
-    int (*cmpVertices)(void *a, void *b),
-    void (*freeVertex)(void *v),
-    int (*cmpEdges)(void *a, void *b),
-    void (*freeEdge)(void *e));
+	int isDirected,
+	int (*cmpVertices)(void *a, void *b),
+	void (*freeVertex)(void *v),
+	int (*cmpEdges)(void *a, void *b),
+	void (*freeEdge)(void *e));
 
 /**
 * Check whether graph is directed or not
@@ -363,7 +363,7 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v);
 *   - "pCmpVertices" is NULL
 */
 GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
-    int (**pCmpVertices)(void *a, void *b));
+	int (**pCmpVertices)(void *a, void *b));
 
 /**
 * Free graph structure from memory

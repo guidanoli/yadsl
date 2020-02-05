@@ -10,17 +10,17 @@
 
 typedef enum
 {
-    // Ok
-    QUEUE_RETURN_OK = 0,
+	// Ok
+	QUEUE_RETURN_OK = 0,
 
-    // Queue is empty
-    QUEUE_RETURN_EMPTY,
+	// Queue is empty
+	QUEUE_RETURN_EMPTY,
 
-    // Unexpected parameter value
-    QUEUE_RETURN_INVALID_PARAMETER,
+	// Unexpected parameter value
+	QUEUE_RETURN_INVALID_PARAMETER,
 
-    // Could not allocate memory space
-    QUEUE_RETURN_MEMORY,
+	// Could not allocate memory space
+	QUEUE_RETURN_MEMORY,
 }
 QueueReturnID;
 
@@ -39,7 +39,7 @@ typedef struct Queue Queue;
 * QUEUE_RETURN_MEMORY
 */
 QueueReturnID queueCreate(Queue **ppQueue,
-    void (*freeItem)(void *item));
+	void (*freeItem)(void *item));
 
 /**
 * Queue item
@@ -51,12 +51,12 @@ QueueReturnID queueCreate(Queue **ppQueue,
 * QUEUE_RETURN_MEMORY
 */
 QueueReturnID queueQueue(Queue *pQueue,
-    void *item);
+	void *item);
 
 /**
 * Dequeue item
 * pQueue    pointer to queue
-* pItem     (return) item from top
+* pItem	    (return) item from top
 * Possible errors:
 * QUEUE_RETURN_INVALID_PARAMETER
 *   - "pQueue" is NULL
@@ -64,7 +64,7 @@ QueueReturnID queueQueue(Queue *pQueue,
 *   - no item to be dequeued
 */
 QueueReturnID queueDequeue(Queue *pQueue,
-    void **pItem);
+	void **pItem);
 
 /**
 * Checks whether queue is empty or not
@@ -76,7 +76,7 @@ QueueReturnID queueDequeue(Queue *pQueue,
 *   - "pIsEmpty" is NULL
 */
 QueueReturnID queueIsEmpty(Queue *pQueue,
-    int *pIsEmpty);
+	int *pIsEmpty);
 
 /**
 * Destroy queue and items left

@@ -11,20 +11,20 @@
 
 typedef enum
 {
-    /* All went ok */
-    VAR_RETURN_OK = 0,
+	/* All went ok */
+	VAR_RETURN_OK = 0,
 
-    /* Invalid parameter was provided */
-    VAR_RETURN_INVALID_PARAMETER,
-    
-    /* Serialized form is corrupted */
-    VAR_RETURN_FILE_FORMAT_ERROR,
+	/* Invalid parameter was provided */
+	VAR_RETURN_INVALID_PARAMETER,
+	
+	/* Serialized form is corrupted */
+	VAR_RETURN_FILE_FORMAT_ERROR,
 
-    /* Could not write to file stream */
-    VAR_RETURN_WRITING_ERROR,
+	/* Could not write to file stream */
+	VAR_RETURN_WRITING_ERROR,
 
-    /* Could not allocate memory space */
-    VAR_RETURN_MEMORY,
+	/* Could not allocate memory space */
+	VAR_RETURN_MEMORY,
 }
 VarReturnID;
 
@@ -32,8 +32,8 @@ typedef struct Variable Variable;
 
 /**
 * Create a variable from parsing a text
-* text          text to be parsed
-* ppVariable    (return) pointer to variable
+* text        text to be parsed
+* ppVariable  (return) pointer to variable
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
 *   - "text" is NULL
@@ -46,7 +46,7 @@ VarReturnID varCreate(const char *text, Variable **ppVariable);
 * Create many variables by passing many texts
 * text          text to be parsed
 * ppVariable    (return) pointer to variable
-* ...           follows the same pattern
+* ...		    follows the same pattern
 * NULL          ends the parameter list
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
@@ -72,8 +72,8 @@ VarReturnID varCompare(Variable *pVariableA, Variable *pVariableB,
 
 /**
 * Write to file stream the contents of the variable
-* pVariable     variable
-* fp            file pointer
+* pVariable	 variable
+* fp         file pointer
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
 *   - "pVariable" is NULL
@@ -85,8 +85,8 @@ VarReturnID varWrite(Variable *pVariable, FILE *fp);
 
 /**
 * Serializes variable to file
-* pVariable     variable
-* fp            file pointer
+* pVariable	 variable
+* fp         file pointer
 * Possible errors:
 * VAR_RETURN_INVALID_PARAMETER
 *   - "pVariable" is NULL
@@ -98,8 +98,8 @@ VarReturnID varSerialize(Variable *pVariable, FILE *fp);
 
 /**
 * Deserializes file and creates variable object from it
-* ppVariable    address of variable
-* fp            file pointer
+* ppVariable	address of variable
+* fp			file pointer
 * VAR_RETURN_INVALID_PARAMETER
 *   - "ppVariable" is NULL
 * VAR_RETURN_FILE_FORMAT_ERROR
@@ -114,7 +114,7 @@ int varGetRefCount();
 
 /**
 * Safely dispose of variable
-* pVariable     variable
+* pVariable	 variable
 */
 void varDestroy(Variable *pVariable);
 

@@ -9,24 +9,24 @@
 
 typedef enum
 {
-    // SEMANTIC RETURN VALUES
+	// SEMANTIC RETURN VALUES
 
-    /* Everything went as excepted */
-    GRAPH_SEARCH_RETURN_OK = 0,
+	/* Everything went as excepted */
+	GRAPH_SEARCH_RETURN_OK = 0,
 
-    /* Graph does not contain vertex */
-    GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX,
+	/* Graph does not contain vertex */
+	GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX,
 
-    // ERROR RETURN VALUES
+	// ERROR RETURN VALUES
 
-    /* Invalid parameter was provided */
-    GRAPH_SEARCH_RETURN_INVALID_PARAMETER,
+	/* Invalid parameter was provided */
+	GRAPH_SEARCH_RETURN_INVALID_PARAMETER,
 
-    /* Could not allocate memory space */
-    GRAPH_SEARCH_RETURN_MEMORY,
+	/* Could not allocate memory space */
+	GRAPH_SEARCH_RETURN_MEMORY,
 
-    /* When an internal error is unrecognized */
-    GRAPH_SEARCH_RETURN_UNKNOWN_ERROR,
+	/* When an internal error is unrecognized */
+	GRAPH_SEARCH_RETURN_UNKNOWN_ERROR,
 }
 GraphSearchReturnID;
 
@@ -39,8 +39,8 @@ GraphSearchReturnID;
 *                   non-visited vertex in the graph
 */
 GraphSearchReturnID graphDFS(Graph *pGraph,
-    void *initialVertex,
-    void (*visit_cb)(void *vertex));
+	void *initialVertex,
+	void (*visit_cb)(void *vertex));
 
 
 /**
@@ -52,7 +52,7 @@ GraphSearchReturnID graphDFS(Graph *pGraph,
 *                   non-visited vertex in the graph
 */
 GraphSearchReturnID graphBFS(Graph *pGraph,
-    void *initialVertex,
-    void (*visit_cb)(void *vertex));
+	void *initialVertex,
+	void (*visit_cb)(void *vertex));
 
 #endif

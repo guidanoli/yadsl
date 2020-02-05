@@ -12,42 +12,42 @@
 
 typedef enum
 {
-    // SEMANTIC RETURN VALUES
+	// SEMANTIC RETURN VALUES
 
-    /* Everything went as excepted */
-    GRAPH_IO_RETURN_OK = 0,
-    
-    // ERROR RETURN VALUES
+	/* Everything went as excepted */
+	GRAPH_IO_RETURN_OK = 0,
+	
+	// ERROR RETURN VALUES
 
-    /* Invalid parameter was provided */
-    GRAPH_IO_RETURN_INVALID_PARAMETER,
+	/* Invalid parameter was provided */
+	GRAPH_IO_RETURN_INVALID_PARAMETER,
 
-    /* Could not allocate memory space */
-    GRAPH_IO_RETURN_MEMORY,
+	/* Could not allocate memory space */
+	GRAPH_IO_RETURN_MEMORY,
 
-    /* Could not write vertex to file */
-    GRAPH_IO_RETURN_WRITING_FAILURE,
+	/* Could not write vertex to file */
+	GRAPH_IO_RETURN_WRITING_FAILURE,
 
-    /* Could not create specific vertex */
-    GRAPH_IO_RETURN_CREATION_FAILURE,
+	/* Could not create specific vertex */
+	GRAPH_IO_RETURN_CREATION_FAILURE,
 
-    /* The "readVertex" created vertex copies */
-    GRAPH_IO_RETURN_SAME_CREATION,
+	/* The "readVertex" created vertex copies */
+	GRAPH_IO_RETURN_SAME_CREATION,
 
-    /* Could not write to or read from file */
-    GRAPH_IO_RETURN_FILE_ERROR,
+	/* Could not write to or read from file */
+	GRAPH_IO_RETURN_FILE_ERROR,
 
-    /* File format is deprecated */
-    GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT,
+	/* File format is deprecated */
+	GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT,
 
-    /* File format corruption detected */
-    GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT,
+	/* File format corruption detected */
+	GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT,
 
-    /* When an internal error is unrecognized */
-    GRAPH_IO_RETURN_UNKNOWN_ERROR,
+	/* When an internal error is unrecognized */
+	GRAPH_IO_RETURN_UNKNOWN_ERROR,
 
-    /* The structure is corrupted and behaviour is unpredictable */
-    GRAPH_IO_RETURN_FATAL_ERROR,
+	/* The structure is corrupted and behaviour is unpredictable */
+	GRAPH_IO_RETURN_FATAL_ERROR,
 }
 GraphIoReturnID;
 
@@ -82,8 +82,8 @@ GraphIoReturnID;
 * and closed afterwards by the caller.
 */
 GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
-    int (*writeVertex)(FILE *fp, void *v),
-    int (*writeEdge)(FILE *fp, void *e));
+	int (*writeVertex)(FILE *fp, void *v),
+	int (*writeEdge)(FILE *fp, void *e));
 
 /**
 * Deserialize graph structure from file
@@ -126,11 +126,11 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 * and closed afterwards by the caller.
 */
 GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
-    int (*readVertex)(FILE *fp, void **ppVertex),
-    int (*readEdge)(FILE *fp, void **ppEdge),
-    int (*cmpVertices)(void *a, void *b),
-    void (*freeVertex)(void *v),
-    int (*cmpEdges)(void *a, void *b),
-    void (*freeEdge)(void *e));
+	int (*readVertex)(FILE *fp, void **ppVertex),
+	int (*readEdge)(FILE *fp, void **ppEdge),
+	int (*cmpVertices)(void *a, void *b),
+	void (*freeVertex)(void *v),
+	int (*cmpEdges)(void *a, void *b),
+	void (*freeEdge)(void *e));
 
 #endif

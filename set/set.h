@@ -21,26 +21,26 @@
 
 typedef enum
 {
-    /* All went ok */
-    SET_RETURN_OK = 0,
+	/* All went ok */
+	SET_RETURN_OK = 0,
 
-    /* Invalid parameter was provided */
-    SET_RETURN_INVALID_PARAMETER,
+	/* Invalid parameter was provided */
+	SET_RETURN_INVALID_PARAMETER,
 
-    /* Could not allocate memory space */
-    SET_RETURN_MEMORY,
+	/* Could not allocate memory space */
+	SET_RETURN_MEMORY,
 
-    /* Set contains item */
-    SET_RETURN_CONTAINS,
+	/* Set contains item */
+	SET_RETURN_CONTAINS,
 
-    /* Set does not contain item */
-    SET_RETURN_DOES_NOT_CONTAIN,
+	/* Set does not contain item */
+	SET_RETURN_DOES_NOT_CONTAIN,
 
-    /* Empty set */
-    SET_RETURN_EMPTY,
+	/* Empty set */
+	SET_RETURN_EMPTY,
 
-    /* Could not go backwards or forward in list */
-    SET_RETURN_OUT_OF_BOUNDS,
+	/* Could not go backwards or forward in list */
+	SET_RETURN_OUT_OF_BOUNDS,
 }
 SetReturnID;
 
@@ -48,7 +48,7 @@ typedef struct Set Set;
 
 /**
 * Create an empty set
-* ppSet     address of pointer to set
+* ppSet	 address of pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "ppSet" is NULL
@@ -58,8 +58,8 @@ SetReturnID setCreate(Set **ppSet);
 
 /**
 * Check whether set contains item or not
-* pSet      pointer to set
-* item      item to be consulted
+* pSet	  pointer to set
+* item	  item to be consulted
 * Possible return values:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -90,7 +90,7 @@ SetReturnID setContainsItem(Set *pSet, void *item);
 * deleting or freeing items), since it can corrupt the set
 */
 SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
-    void *arg, void **pItem);
+	void *arg, void **pItem);
 
 /**
 * Adds item to set
@@ -107,8 +107,8 @@ SetReturnID setAddItem(Set *pSet, void *item);
 
 /**
 * Remove item from set
-* pSet      pointer to set
-* item      item to be removed
+* pSet  pointer to set
+* item	item to be removed
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -132,7 +132,7 @@ SetReturnID setGetCurrentItem(Set *pSet, void **pItem);
 /**
 * Obtain number of items contained in the set
 * pSet      pointer to set
-* pItem     address of variable that will hold the value
+* pItem	    address of variable that will hold the value
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -142,7 +142,7 @@ SetReturnID setGetSize(Set *pSet, unsigned long *pValue);
 
 /**
 * Make cursor point to the previous item
-* pSet      pointer to set
+* pSet	  pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -154,7 +154,7 @@ SetReturnID setPreviousItem(Set *pSet);
 
 /**
 * Make cursor point to the next item
-* pSet      pointer to set
+* pSet     pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -166,7 +166,7 @@ SetReturnID setNextItem(Set *pSet);
 
 /**
 * Make cursor point to the first item
-* pSet      pointer to set
+* pSet	  pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -176,7 +176,7 @@ SetReturnID setFirstItem(Set *pSet);
 
 /**
 * Make cursor point to the last item
-* pSet      pointer to set
+* pSet  pointer to set
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 *   - "pSet" is NULL
@@ -186,7 +186,7 @@ SetReturnID setLastItem(Set *pSet);
 
 /**
 * Free set structure from memory
-* pSet      pointer to set
+* pSet  pointer to set
 */
 void setDestroy(Set *pSet);
 
