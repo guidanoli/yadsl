@@ -161,3 +161,59 @@
 /degree A 1
 /degree B 2
 /degree C 1
+
+### Flags
+
+## Directed
+
+/create DIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addedge A B AB
+/addedge B C BC
+/setvertexflag A 1
+/setvertexflag B 2
+/setvertexflag C 3
+
+# Serialize/Deserialize
+/write d-edges.graph
+/read d-edges.graph
+
+/vertexcount 3
+/getedge A B AB
+/getedge B C BC
+/degree A 1
+/degree B 2
+/degree C 1
+/getvertexflag A 1
+/getvertexflag B 2
+/getvertexflag C 3
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addedge A B AB
+/addedge B C BC
+/setvertexflag A 1
+/setvertexflag B 2
+/setvertexflag C 3
+
+# Serialize/Deserialize
+/write u-edges.graph
+/read u-edges.graph
+
+/vertexcount 3
+/getedge A B AB
+/getedge B A AB
+/getedge B C BC
+/getedge C B BC
+/degree A 1
+/degree B 2
+/degree C 1
+/getvertexflag A 1
+/getvertexflag B 2
+/getvertexflag C 3

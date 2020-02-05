@@ -5,27 +5,28 @@
 
 #include "map.h"
 
-#define WRITE(file, format, arg) do {	   \
-	if (fprintf(file, format, arg) < 0)	 \
-		return GRAPH_IO_RETURN_FILE_ERROR;  \
+#define WRITE(file, format, arg) do { \
+	if (fprintf(file, format, arg) < 0) \
+		return GRAPH_IO_RETURN_FILE_ERROR; \
 } while(0)
 
-#define READ(file, format, arg) do {				\
-	if (fscanf(fp, " " format " ", arg) != 1)	   \
-		return GRAPH_IO_RETURN_FILE_ERROR;		  \
+#define READ(file, format, arg) do { \
+	if (fscanf(fp, " " format " ", arg) != 1) \
+		return GRAPH_IO_RETURN_FILE_ERROR; \
 } while(0)
 
 #define WRITENL(file, format, arg) \
 	WRITE(file, format "\n", arg)
 
-#define FILE_FORMAT_VERSION 4
+#define FILE_FORMAT_VERSION 5
 
-#define VERSION_STR	 "VERSION %u"
-#define DIRECTED_STR	"IS_DIRECTED %d"
-#define VCOUNT_STR	  "%lu "
+#define VERSION_STR     "VERSION %u"
+#define DIRECTED_STR    "IS_DIRECTED %d"
+#define VCOUNT_STR      "%lu "
+#define VFLAG_STR       " %d "
 #define VERTEX_IDX_STR  "%lu "
-#define NBCOUNT_STR	 "%lu"
-#define NB_IDX_STR	  " %lu "
+#define NBCOUNT_STR	    "%lu"
+#define NB_IDX_STR      " %lu "
 
 /* Private functions prototypes */
 
@@ -124,6 +125,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 	WRITENL(fp, DIRECTED_STR, isDirected); // Type
 	WRITE(fp, VCOUNT_STR, vCount); // Vertex count
 	for (i = 0; i < vCount; ++i) {
+		int flag;
 		if (graphGetNextVertex(pGraph, &pVertex))
 			return GRAPH_IO_RETURN_UNKNOWN_ERROR;
 		if (mapId = mapPutEntry(addressMap, pVertex,
@@ -134,7 +136,9 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 		}
 		if (writeVertex(fp, pVertex)) // Vertex item
 			return GRAPH_IO_RETURN_WRITING_FAILURE;
-		WRITE(fp, "%c", ' ');
+		if (graphGetVertexFlag(pGraph, pVertex, &flag))
+			return GRAPH_IO_RETURN_UNKNOWN_ERROR;
+		WRITE(fp, VFLAG_STR, flag);
 	}
 	WRITE(fp, "%c", '\n');
 	for (i = vCount; i; --i) {
@@ -169,7 +173,7 @@ static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
 	void *pVertexItem, *pNeighbourItem, *pEdgeItem;
 	for (i = 0; i < vCount; ++i) {
 		void *pPreviousValue = NULL;
-		fscanf(fp, " "); // Ignore space characters
+		int flag;
 		if (readVertex(fp, &pVertexItem)) // Vertex item
 			return GRAPH_IO_RETURN_CREATION_FAILURE;
 		addressMap[i] = pVertexItem;
@@ -185,6 +189,9 @@ static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
 				return GRAPH_IO_RETURN_UNKNOWN_ERROR;
 			}
 		}
+		READ(fp, VFLAG_STR, &flag);
+		if (graphSetVertexFlag(pGraph, pVertexItem, flag))
+			return GRAPH_IO_RETURN_UNKNOWN_ERROR;
 	}
 	for (i = 0; i < vCount; ++i) {
 		pVertexItem = addressMap[i];

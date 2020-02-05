@@ -31,7 +31,9 @@ const char *TesterHelpStrings[] = {
 	"/containsedge <u> <v> [YES/NO]         check if graph contains edge",
 	"/addedge <u> <v> <edge>                add edge to graph",
 	"/getedge <u> <v> <edge>                get edge from graph",
-	"/removeedege <u> <v>",
+	"/removeedege <u> <v>                   remove edge uv",
+	"/setvertexflag <u> <flag>              set vertex flag",
+	"/getvertexflag <u> <expected>          get vertex flag",
 	"",
 	"Graph IO commands:",
 	"/write <filename>                      write graph to file",
@@ -305,6 +307,26 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		graphId = graphRemoveEdge(pGraph, pU, pV);
 		varDestroy(pU);
 		varDestroy(pV);
+	} else if matches(command, "setvertexflag") {
+		Variable *pU;
+		int flag;
+		if (TesterParseArguments("si", buffer, &flag) != 2)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreate(buffer, &pU))
+			return TESTER_RETURN_MALLOC;
+		graphId = graphSetVertexFlag(pGraph, pU, flag);
+		varDestroy(pU);
+	} else if matches(command, "getvertexflag") {
+		Variable *pU;
+		int actual, expected;
+		if (TesterParseArguments("si", buffer, &expected) != 2)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreate(buffer, &pU))
+			return TESTER_RETURN_MALLOC;
+		graphId = graphGetVertexFlag(pGraph, pU, &actual);
+		if (graphId == GRAPH_RETURN_OK && actual != expected)
+			return TESTER_RETURN_RETURN;
+		varDestroy(pU);
 	} else {
 		return TESTER_RETURN_COUNT;
 	}

@@ -356,3 +356,57 @@
 # Check if edge VU was removed too
 /containsedge V U NO
 /catch "does not contain vertex"
+
+#### Flags
+
+### Empty graph
+
+## Directed
+
+/create DIRECTED
+/setvertexflag V 10
+/catch "does not contain vertex"
+
+## Undirected
+
+/create UNDIRECTED
+/setvertexflag V 10
+/catch "does not contain vertex"
+
+### One vertex
+
+## Directed
+
+/create DIRECTED
+/addvertex V
+/setvertexflag V 10
+/getvertexflag V 10
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex V
+/setvertexflag V 10
+/getvertexflag V 10
+
+### Many vertices
+
+## Directed
+
+/create DIRECTED
+/addvertex U
+/addvertex V
+/setvertexflag V 10
+/setvertexflag U 20
+/getvertexflag V 10
+/getvertexflag U 20
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex U
+/addvertex V
+/setvertexflag V 10
+/setvertexflag U 20
+/getvertexflag V 10
+/getvertexflag U 20
