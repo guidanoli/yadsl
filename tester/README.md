@@ -4,40 +4,30 @@ Framework designed for testing C modules.
 
 ## Motivation
 
-Creating individual tester modules for each module is boring and prone to errors that can lead to extra time debugging, which slows down quite a lot the development process.
+Creating individual tester for each module can be a very boring process, which can also lead to wasting time on debugging the test module, but not on the module itself. Having a single tester framework makes the developing process so much easier, enjoyable and energetic.
+
+## Paradigm
+
+Instead of creating a test module entirely from scratch, which includes parsing, error detection, printing error and log information... You should only write code that is specific to the module you're testing, right? That is why you only need to implement three functions:
+
+* `TesterInitCallback`: called to initialize data structures or global variables
+* `TesterParseCallback`: called for every command parsed from the script file
+* `TesterExitCallback`: called after an error is caught or at the very end, if no errors are throw
+
+You may also want to display some helping information if no script file is passed to the tester, like what commands are available or how do the tester works. For that, you may also set the following variable:
+
+* `TesterHelpStrings`: array of strings that will be printed when no arguments are passed
+
+Following are some information about specific portions of the tester framework.
 
 ## Scripts
 
-The input is a script file which contains a list of lines. Lines can have many commands and an optional comment at the end. Commands can have arguments.
+A script file has a very simple grammar, with the following tokens: **commands**, **arguments** and **comments**. These tokens are separated by ` spaces` and `tabs`, with exceptions (1), and by `newlines`.
 
-### Lines
+* Commands are written as `/`  + `string`, preceding its arguments.
+* Arguments are parsed as `int`,  `float`, `long` or `char *`.
+* Comments are parsed as `#` + `any string`.
 
-Can have up to 1024 characters.
+(1) `char *` arguments can be parsed with quotation marks, allowing `spaces` and `tabs` to be ignored
 
-### Commands
-
-Start with `/`, followed by the command name, which cannot have spacing characters.
-
-#### Command arguments
-
-Can be of three types:
-
-* integers (signed or unsigned)
-* floats (decimal, exponential or scientific notation)
-* strings (quoted or unquoted)
-
-**Disclaimer:** only quoted strings can have spacing characters
-
-#### Command return values
-
-You can use either the native return values, or so called "external" return values, which are custom return values defined by your tester implementation.
-
-### Comments
-
-Start with `#`, followed by any string of characters.
-
-## Tester API
-
-In order to implement a tester module, you must compile the tester framework together with a C file that implements all the undefined extern functions denoted in `tester.h`. Read it for further details, but be sure to check the `testertest` example.
-
-If your project makes use of [cmake](https://cmake.org/), you can use the `add_tester_module` and `add_tester_scripts` functions available by running `add_subdirectory(tester)` on your parent `CMakeLists.txt`.
+(2) comments ignore everything that comes after `#`, until the end of the line

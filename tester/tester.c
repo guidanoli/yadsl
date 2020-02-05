@@ -1,5 +1,6 @@
 #include "tester.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -102,7 +103,7 @@ TesterReturnValue TesterExternalReturnValue(const char *info)
 	return TESTER_RETURN_EXTERNAL;
 }
 
-void TesterPrintHelpStrings(FILE *fp)
+void TesterPrintHelpStrings()
 {
 	const char **str = TesterHelpStrings;
 	for (; str && *str; ++str) puts(*str);
@@ -144,7 +145,7 @@ static TesterReturnValue _TesterMain(int argc, char **argv)
 	_TesterLoadReturnValueInfos();
 	// If no arguments were passed, then print help strings
 	if (argc == 1) {
-		TesterPrintHelpStrings(stdout);
+		TesterPrintHelpStrings();
 		return TESTER_RETURN_OK;
 	}
 	// Open file whose path was passed as argument

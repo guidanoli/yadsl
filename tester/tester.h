@@ -1,8 +1,6 @@
 #ifndef __TESTER_H__
 #define __TESTER_H__
 
-#include <stdio.h>
-
 ////////////////////////////////////////////////////////////////////////////////
 // TESTER FRAMEWORK
 // 
@@ -12,10 +10,14 @@
 //
 // SCRIPT GRAMMAR DEFINITION
 //
-// script: line | script line
-// line: command | command comment | sep
-// command: cmdname | command sep cmdarg
-// cmdarg: float | string | integer | long
+// script: line | script nl line
+// line: lsep lcmds lcomm | $
+// lsep: lsep sep | $
+// lcmds: lcmds cmd | $
+// lcomm: comm | $
+// cmd: cmdname | cmdname largs
+// largs: largs lsep sep arg
+// arg: float | string | integer | long
 // float: %f | %g | %e
 // string: string_qm | string_wo_qm
 // integer: %d | %u
@@ -23,10 +25,12 @@
 //
 // SCRIPT TOKENS DEFINITIONS
 //
-// sep = [ \t\n]+
-// comment = #.*
+// $ = 
+// nl = \n
+// sep = [ \t]
+// comment = #[^\n]*
 // cmdname = /[^ \t\n]+
-// string_qm = "[^"]*"
+// string_qm = "[^"\n]*"
 // string_wo_qm = [^ \t\n]+
 // % identifiers from C standard library
 //
@@ -140,9 +144,8 @@ void TesterLog(const char *message, ...);
 /**
 * Prints help strings provided in the same
 * way as if no arguments were provided.
-* HINT: stdout and stderr are FILE * too.
 */
-void TesterPrintHelpStrings(FILE *fp);
+void TesterPrintHelpStrings();
 
 /**
 * Get further information about return value

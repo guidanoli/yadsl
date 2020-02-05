@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 
 #include "tester.h"
 
@@ -22,7 +23,7 @@ TesterReturnValue TesterInitCallback()
 TesterReturnValue TesterParseCallback(const char *command)
 {
 	if matches(command, "help") {
-		TesterPrintHelpStrings(stdout);
+		TesterPrintHelpStrings();
 	} else if matches(command, "print") {
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_RETURN_ARGUMENT;
