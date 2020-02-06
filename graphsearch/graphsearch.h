@@ -35,11 +35,19 @@ GraphSearchReturnID;
 * the initial vertex, in a depth-first-search
 * pGraph            pointer to graph
 * initialVertex     initial vertex
+* visitedFlag       value that will be set to visited vertices
 * visit_cb          function that will be called for every
 *                   non-visited vertex in the graph
+* Possible error values:
+* GRAPH_SEARCH_RETURN_INVALID_PARAMETER
+*	- "pGraph" is NULL
+*	- "visit_cb" is NULL
+* GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* GRAPH_SEARCH_RETURN_UNKNOWN_ERROR
 */
 GraphSearchReturnID graphDFS(Graph *pGraph,
 	void *initialVertex,
+	int visitedFlag,
 	void (*visit_cb)(void *vertex));
 
 
@@ -48,11 +56,20 @@ GraphSearchReturnID graphDFS(Graph *pGraph,
 * the initial vertex, in a breadth-first-search
 * pGraph            pointer to graph
 * initialVertex     initial vertex
+* visitedFlag       value that will be set to visited vertices
 * visit_cb          function that will be called for every
 *                   non-visited vertex in the graph
+* Possible error values:
+* GRAPH_SEARCH_RETURN_INVALID_PARAMETER
+*	- "pGraph" is NULL
+*	- "visit_cb" is NULL
+* GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* GRAPH_SEARCH_RETURN_UNKNOWN_ERROR
+* GRAPH_SEARCH_RETURN_MEMORY
 */
 GraphSearchReturnID graphBFS(Graph *pGraph,
 	void *initialVertex,
+	int visitedFlag,
 	void (*visit_cb)(void *vertex));
 
 #endif
