@@ -33,6 +33,7 @@ const char *TesterHelpStrings[] = {
 	"/getedge <u> <v> <edge>                get edge from graph",
 	"/removeedege <u> <v>                   remove edge uv",
 	"/setvertexflag <u> <flag>              set vertex flag",
+	"/setallflags <flag>                    set flag of all vertices",
 	"/getvertexflag <u> <expected>          get vertex flag",
 	"",
 	"Graph IO commands:",
@@ -316,6 +317,11 @@ static TesterReturnValue parseGraphCommands(const char *command)
 			return TESTER_RETURN_MALLOC;
 		graphId = graphSetVertexFlag(pGraph, pU, flag);
 		varDestroy(pU);
+	} else if matches(command, "setallflags") {
+		int flag;
+		if (TesterParseArguments("i", &flag) != 1)
+			return TESTER_RETURN_ARGUMENT;
+		graphId = graphSetAllVerticesFlags(pGraph, flag);
 	} else if matches(command, "getvertexflag") {
 		Variable *pU;
 		int actual, expected;
@@ -362,7 +368,7 @@ static TesterReturnValue parseGraphIoCommands(const char *command)
 	} else {
 		return TESTER_RETURN_COUNT;
 	}
-	return convertIoRet(graphIoId); // TEMP
+	return convertIoRet(graphIoId);
 }
 
 static TesterReturnValue parseGraphSearchCommands(const char *command)

@@ -400,6 +400,12 @@
 /setvertexflag U 20
 /getvertexflag V 10
 /getvertexflag U 20
+/setallflags 50
+/getvertexflag U 50
+/getvertexflag V 50
+/setvertexflag V 100
+/getvertexflag V 100
+/getvertexflag U 50
 
 ## Undirected
 
@@ -410,3 +416,9 @@
 /setvertexflag U 20
 /getvertexflag V 10
 /getvertexflag U 20
+/setallflags 50
+/getvertexflag U 50
+/getvertexflag V 50
+/setvertexflag V 100
+/getvertexflag V 100
+/getvertexflag U 50

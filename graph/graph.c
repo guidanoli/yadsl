@@ -76,6 +76,7 @@ static int _cmpVertexItem(struct GraphVertex *pVertex,
 static void _freeVertex(struct GraphVertex *pVertex, struct Graph *pGraph);
 static void _freeInEdge(struct GraphEdge *pEdge, void (*freeEdge)(void *e));
 static void _freeOutEdge(struct GraphEdge *pEdge, void (*freeEdge)(void *e));
+static int _setVertexFlag(struct GraphVertex *pVertex, int *flag);
 
 ///////////////////////////////////////////////
 // Internal use
@@ -523,6 +524,18 @@ GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag)
 	return GRAPH_RETURN_OK;
 }
 
+GraphReturnID graphSetAllVerticesFlags(Graph *pGraph, int flag)
+{
+	void *temp;
+	if (pGraph == NULL)
+		return GRAPH_RETURN_INVALID_PARAMETER;
+	if (setFilterItem(pGraph->vertexSet, _setVertexFlag, &flag, &temp)
+		!= SET_RETURN_DOES_NOT_CONTAIN)
+		// not expected to find anything since _setVertexFlag returns 0
+		return GRAPH_RETURN_UNKNOWN_ERROR;
+	return GRAPH_RETURN_OK;
+}
+
 GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
 	int (**pCmpVertices)(void *a, void *b))
 {
@@ -679,4 +692,11 @@ static GraphReturnID __parseVertices(Graph *pGraph, void *item,
 	} while(1);
 	va_end(va);
 	return GRAPH_RETURN_OK;
+}
+
+// set vertex flag to *flag
+static int _setVertexFlag(struct GraphVertex *pVertex, int *flag)
+{
+	pVertex->flag = *flag;
+	return 0;
 }

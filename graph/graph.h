@@ -380,6 +380,17 @@ GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag);
 GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag);
 
 /**
+* Sets the same flag for all vertices
+* pGraph    pointer to graph
+* flag      flag to be set
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+*	- "pGraph" is NULL
+* GRAPH_RETURN_UNKNOWN_ERROR
+*/
+GraphReturnID graphSetAllVerticesFlags(Graph *pGraph, int flag);
+
+/**
 * Obtain graph vertex comparison function provided
 * TO BE DEPRECATED
 * on graphCreate as parameter
