@@ -17,6 +17,9 @@ typedef enum
 	/* Graph does not contain vertex */
 	GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX,
 
+	/* Started search on an already visited vertex */
+	GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED,
+
 	// ERROR RETURN VALUES
 
 	/* Invalid parameter was provided */
@@ -33,36 +36,42 @@ GraphSearchReturnID;
 /**
 * Visit every neighbour in the graph that can be accessed from
 * the initial vertex, in a depth-first-search
-* pGraph            pointer to graph
-* initialVertex     initial vertex
-* visitedFlag       value that will be set to visited vertices
-* visit_cb          function that will be called for every
-*                   non-visited vertex in the graph
+* pGraph                pointer to graph
+* initialVertex         initial vertex
+* visitedFlag           value that will be set to visited vertices
+* visitVertexCallback   function that will be called after the
+*                       vertex is visited first by the dfs
+* visitEdgeCallback     function that will be called after the
+*                       edge is visited first by the dfs
 * Possible error values:
 * GRAPH_SEARCH_RETURN_INVALID_PARAMETER
 *	- "pGraph" is NULL
-*	- "visit_cb" is NULL
+* GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED
 * GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * GRAPH_SEARCH_RETURN_UNKNOWN_ERROR
 */
 GraphSearchReturnID graphDFS(Graph *pGraph,
 	void *initialVertex,
 	int visitedFlag,
-	void (*visit_cb)(void *vertex));
+	void (*visitVertexCallback)(void *vertex),
+	void (*visitEdgeCallback)(void *source, void *edge, void *dest));
 
 
 /**
 * Visit every neighbour in the graph that can be accessed from
 * the initial vertex, in a breadth-first-search
-* pGraph            pointer to graph
-* initialVertex     initial vertex
-* visitedFlag       value that will be set to visited vertices
-* visit_cb          function that will be called for every
-*                   non-visited vertex in the graph
+* pGraph                pointer to graph
+* initialVertex         initial vertex
+* visitedFlag           value that will be set to visited vertices
+* visitVertexCallback   function that will be called after the
+*                       vertex is visited first by the bfs
+* visitEdgeCallback     function that will be called after the
+*                       edge is visited first by the bfs
+* Callbacks can be ommitted by NULL
 * Possible error values:
 * GRAPH_SEARCH_RETURN_INVALID_PARAMETER
 *	- "pGraph" is NULL
-*	- "visit_cb" is NULL
+* GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED
 * GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * GRAPH_SEARCH_RETURN_UNKNOWN_ERROR
 * GRAPH_SEARCH_RETURN_MEMORY
@@ -70,6 +79,12 @@ GraphSearchReturnID graphDFS(Graph *pGraph,
 GraphSearchReturnID graphBFS(Graph *pGraph,
 	void *initialVertex,
 	int visitedFlag,
-	void (*visit_cb)(void *vertex));
+	void (*visitVertexCallback)(void *vertex),
+	void (*visitEdgeCallback)(void *source, void *edge, void *dest));
+
+#ifdef _DEBUG
+// For memory leak detection
+int getGraphSearchNodeRefCount();
+#endif
 
 #endif

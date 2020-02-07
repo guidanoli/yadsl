@@ -1,0 +1,260 @@
+########################
+## Depth First Search ##
+########################
+
+### Empty graph
+
+## Directed
+
+/create DIRECTED
+/dfs V 0
+/catch "does not contain vertex"
+
+## Undirected
+
+/create UNDIRECTED
+/dfs V 0
+/catch "does not contain vertex"
+
+### One vertex
+
+## Directed
+
+/create DIRECTED
+/addvertex V
+/addedge V V VV
+/setvertexflag V 0
+/dfs V 1
+/getvertexflag V 1
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex V
+/addedge V V VV
+/setvertexflag V 0
+/dfs V 1
+/getvertexflag V 1
+
+### Two vertices
+
+## Directed
+
+/create DIRECTED
+/addvertex U
+/addvertex V
+/addedge U V UV
+
+# One way
+/setallflags 0
+/dfs U 1
+/getvertexflag U 1
+/getvertexflag V 1
+
+# The other way
+/setallflags 0
+/dfs V 1
+/getvertexflag U 0
+/getvertexflag V 1
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex U
+/addvertex V
+/addedge U V UV
+
+# One way
+/setallflags 0
+/dfs U 1
+/getvertexflag U 1
+/getvertexflag V 1
+
+# The "other" way
+/setallflags 0
+/dfs V 1
+/getvertexflag U 1
+/getvertexflag V 1
+
+### More than one neighbour
+
+## Directed
+
+/create DIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addvertex D
+/addvertex E
+/addvertex F # Disconnected
+/addedge A B AB
+/addedge A C AC
+/addedge B B BB # Loop
+/addedge B C BC # Cycle
+/addedge C D CD
+/addedge E D ED # Not reachable
+
+/setallflags 0
+/dfs A 1
+/getvertexflag A 1
+/getvertexflag B 1
+/getvertexflag C 1
+/getvertexflag D 1
+/getvertexflag E 0
+/getvertexflag F 0
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addvertex D
+/addvertex E
+/addvertex F # Disconnected
+/addedge A B AB
+/addedge A C AC
+/addedge B B BB # Loop
+/addedge B C BC # Cycle
+/addedge C D CD
+/addedge E D ED # Reachable
+
+/setallflags 0
+/dfs A 1
+/getvertexflag A 1
+/getvertexflag B 1
+/getvertexflag C 1
+/getvertexflag D 1
+/getvertexflag E 1
+/getvertexflag F 0
+
+##########################
+## Breadth First Search ##
+##########################
+
+### Empty graph
+
+## Directed
+
+/create DIRECTED
+/bfs V 0
+/catch "does not contain vertex"
+
+## Undirected
+
+/create UNDIRECTED
+/bfs V 0
+/catch "does not contain vertex"
+
+### One vertex
+
+## Directed
+
+/create DIRECTED
+/addvertex V
+/addedge V V VV
+/setvertexflag V 0
+/bfs V 1
+/getvertexflag V 1
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex V
+/addedge V V VV
+/setvertexflag V 0
+/bfs V 1
+/getvertexflag V 1
+
+### Two vertices
+
+## Directed
+
+/create DIRECTED
+/addvertex U
+/addvertex V
+/addedge U V UV
+
+# One way
+/setallflags 0
+/dfs U 1
+/getvertexflag U 1
+/getvertexflag V 1
+
+# The other way
+/setallflags 0
+/dfs V 1
+/getvertexflag U 0
+/getvertexflag V 1
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex U
+/addvertex V
+/addedge U V UV
+
+# One way
+/setallflags 0
+/dfs U 1
+/getvertexflag U 1
+/getvertexflag V 1
+
+# The "other" way
+/setallflags 0
+/dfs V 1
+/getvertexflag U 1
+/getvertexflag V 1
+
+### More than one neighbour
+
+## Directed
+
+/create DIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addvertex D
+/addvertex E
+/addvertex F # Disconnected
+/addedge A B AB
+/addedge A C AC
+/addedge B B BB # Loop
+/addedge B C BC # Cycle
+/addedge C D CD
+/addedge E D ED # Not reachable
+
+/setallflags 0
+/bfs A 1
+/getvertexflag A 1
+/getvertexflag B 1
+/getvertexflag C 1
+/getvertexflag D 1
+/getvertexflag E 0
+/getvertexflag F 0
+
+## Undirected
+
+/create UNDIRECTED
+/addvertex A
+/addvertex B
+/addvertex C
+/addvertex D
+/addvertex E
+/addvertex F # Disconnected
+/addedge A B AB
+/addedge A C AC
+/addedge B B BB # Loop
+/addedge B C BC # Cycle
+/addedge C D CD
+/addedge E D ED # Reachable
+
+/setallflags 0
+/bfs A 1
+/getvertexflag A 1
+/getvertexflag B 1
+/getvertexflag C 1
+/getvertexflag D 1
+/getvertexflag E 1
+/getvertexflag F 0
+

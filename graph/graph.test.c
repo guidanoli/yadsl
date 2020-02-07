@@ -39,6 +39,12 @@ const char *TesterHelpStrings[] = {
 	"Graph IO commands:",
 	"/write <filename>                      write graph to file",
 	"/read <filename>                       read from file to graph",
+	"",
+	"Graph Search commands:",
+	"/dfs <v> <flag>                        run dfs on graph starting from v"
+	"                                       v and marking visited with flag",
+	"/bfs <v> <flag>                        run bfs on graph starting from v"
+	"                                       v and marking visited with flag",
 	NULL,
 };
 
@@ -371,11 +377,53 @@ static TesterReturnValue parseGraphIoCommands(const char *command)
 	return convertIoRet(graphIoId);
 }
 
+static void visitVertexCallback(void *vertex)
+{
+	Variable *pVar = (Variable *) vertex;
+	varWrite(pVar, stdout);
+	fprintf(stdout, " was visited\n");
+}
+
+static void visitEdgeCallback(void *source, void *edge, void *dest)
+{
+	Variable *pSource = (Variable *) source;
+	Variable *pEdge = (Variable *) edge;
+	Variable *pDest = (Variable *) dest;
+	varWrite(pEdge, stdout);
+	fprintf(stdout, " was visited (");
+	varWrite(pSource, stdout);
+	fprintf(stdout, " -> ");
+	varWrite(pDest, stdout);
+	fprintf(stdout, ")\n");
+}
+
 static TesterReturnValue parseGraphSearchCommands(const char *command)
 {
 	GraphSearchReturnID graphSearchId = GRAPH_SEARCH_RETURN_OK;
-	if matches(command, " ") { // todo
-
+	Variable *pVertex;
+	int flag;
+	if matches(command, "dfs") {
+		if (TesterParseArguments("si", buffer, &flag) != 2)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreate(buffer, &pVertex))
+			return TESTER_RETURN_MALLOC;
+		graphSearchId = graphDFS(pGraph,
+			pVertex,
+			flag,
+			visitVertexCallback,
+			visitEdgeCallback);
+		varDestroy(pVertex);
+	} else if matches(command, "bfs") {
+		if (TesterParseArguments("si", buffer, &flag) != 2)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreate(buffer, &pVertex))
+			return TESTER_RETURN_MALLOC;
+		graphSearchId = graphBFS(pGraph,
+			pVertex,
+			flag,
+			visitVertexCallback,
+			visitEdgeCallback);
+		varDestroy(pVertex);
 	} else {
 		return TESTER_RETURN_COUNT;
 	}
@@ -405,6 +453,8 @@ TesterReturnValue TesterExitCallback()
 	if (pGraph) graphDestroy(pGraph);
 #ifdef _DEBUG
 	if (varGetRefCount())
+		return TESTER_RETURN_MEMLEAK;
+	if (getGraphSearchNodeRefCount())
 		return TESTER_RETURN_MEMLEAK;
 #endif
 	return TESTER_RETURN_OK;
@@ -489,6 +539,8 @@ static TesterReturnValue convertSearchRet(GraphSearchReturnID graphSearchId)
 		return TESTER_RETURN_OK;
 	case GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX:
 		return TesterExternalReturnValue("does not contain vertex");
+	case GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED:
+		return TesterExternalReturnValue("vertex already visited");
 	case GRAPH_SEARCH_RETURN_INVALID_PARAMETER:
 		return TesterExternalReturnValue("invalid parameter");
 	case GRAPH_SEARCH_RETURN_MEMORY:
