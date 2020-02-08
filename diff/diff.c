@@ -14,7 +14,7 @@ static char *loc[] = {
 	"\\|zxcvbnm,.<>;/:"
 };
 
-static int coord(char c, size_t *x, size_t *y)
+static int coord(char c, unsigned long *x, unsigned long *y)
 {
 	unsigned long i, j;
 	char coff = 'A' - 'a'; // Case offset
@@ -32,7 +32,7 @@ static int coord(char c, size_t *x, size_t *y)
 	return 1;
 }
 
-static unsigned long modsub(size_t a, size_t b)
+static unsigned long modsub(unsigned long a, unsigned long b)
 {
 	return (a > b) ? (a - b) : (b - a);
 }
@@ -48,13 +48,14 @@ static unsigned long alpha(char a, char b)
 
 unsigned long diff(const char *s1, const char *s2)
 {
-	unsigned long v[3], lv, cost, i, j, k, l1, l2, *M, *N;
+	size_t l1, l2;
+	unsigned long v[3], lv, cost, i, j, k, *M, *N;
 	if (!s1 || !s2) return -1;
 	l1 = strlen(s1);
 	l2 = strlen(s2);
-	M = malloc((l1 + 1)*sizeof(size_t));
+	M = malloc((l1 + 1)*sizeof(unsigned long));
 	if (!M) return DIFFERR;
-	N = malloc((l1 + 1)*sizeof(size_t));
+	N = malloc((l1 + 1)*sizeof(unsigned long));
 	if (!N) {
 		free(M);
 		return DIFFERR;

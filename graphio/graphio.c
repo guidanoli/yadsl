@@ -128,8 +128,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 		int flag;
 		if (graphGetNextVertex(pGraph, &pVertex))
 			return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-		if (mapId = mapPutEntry(addressMap, pVertex,
-			(void *) i, (void **) &index)) {
+		if (mapId = mapPutEntry(addressMap, pVertex, i, &index)) {
 			if (mapId == MAP_RETURN_MEMORY)
 				return GRAPH_IO_RETURN_MEMORY;
 			return GRAPH_IO_RETURN_UNKNOWN_ERROR;
@@ -150,7 +149,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 		for (j = nbCount; j; --j) {
 			if (graphGetNextOutNeighbour(pGraph, pVertex, &pNeighbour, &pEdge))
 				return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-			if (mapGetEntry(addressMap, pNeighbour, (void **) &index))
+			if (mapGetEntry(addressMap, pNeighbour, &index))
 				return GRAPH_IO_RETURN_UNKNOWN_ERROR;
 			WRITE(fp, NB_IDX_STR, index); // Neighbour index
 			if (writeEdge(fp, pEdge)) // Edge item

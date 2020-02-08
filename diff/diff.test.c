@@ -32,6 +32,8 @@ TesterReturnValue TesterParseCallback(const char *command)
 		if (TesterParseArguments("ss", X, Y) != 2)
 			return TESTER_RETURN_ARGUMENT;
 		eax = diff(X, Y);
+		if (eax == DIFFERR)
+			return TESTER_RETURN_MALLOC;
 		TesterLog("diff = %lu", eax);
 	} else if matches(command, "equ") {
 		if (TesterParseArguments("i", &val) != 1)

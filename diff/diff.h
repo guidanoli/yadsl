@@ -1,7 +1,7 @@
 #ifndef _DIFF_H_
 #define _DIFF_H_
 
-#define DIFFERR (((size_t) 0) - 1)
+#define DIFFERR (((unsigned long) 0) - 1)
 
 /*
 * Scores the difference between two strings
