@@ -1,4 +1,4 @@
-add_library(queue queue.c queue.h)
+add_library(queue SHARED queue.c queue.h)
 target_include_directories(queue PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(AA_BUILD_TESTS)

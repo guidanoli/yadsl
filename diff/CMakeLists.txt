@@ -1,4 +1,4 @@
-add_library(diff diff.c diff.h)
+add_library(diff SHARED diff.c diff.h)
 target_include_directories(diff PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(AA_BUILD_TESTS)

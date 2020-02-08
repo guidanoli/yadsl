@@ -1,4 +1,4 @@
-add_library(graph graph.c graph.h)
+add_library(graph SHARED graph.c graph.h)
 target_link_libraries(graph set)
 target_include_directories(graph PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

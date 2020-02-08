@@ -1,4 +1,4 @@
-add_library(var var.c var.h)
+add_library(var SHARED var.c var.h)
 target_include_directories(var PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(AA_BUILD_TESTS)
