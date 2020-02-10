@@ -30,9 +30,10 @@ matrix:
       env: GENERATOR="Unix Makefiles"
       script: *script-Makefiles
     - os: windows
-      env: GENERATOR="Visual Studio 15 2017"
       script: *script-VS15
       before_install:
         - choco install python --version 3.7.6
         - python --version
-      env: PATH=/c/Python37:$PATH
+      env:
+        - GENERATOR="Visual Studio 15 2017"
+        - PATH=/c/Python37:$PATH
