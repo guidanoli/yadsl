@@ -114,6 +114,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 {
 	int isDirected;
 	MapReturnID mapId;
+	void *previousValue;
 	unsigned long vCount, nbCount, i, j, index;
 	GraphIoReturnID id;
 	void *pVertex, *pNeighbour, *pEdge;
@@ -128,7 +129,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 		int flag;
 		if (graphGetNextVertex(pGraph, &pVertex))
 			return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-		if (mapId = mapPutEntry(addressMap, pVertex, i, &index)) {
+		if (mapId = mapPutEntry(addressMap, pVertex, i, &previousValue)) {
 			if (mapId == MAP_RETURN_MEMORY)
 				return GRAPH_IO_RETURN_MEMORY;
 			return GRAPH_IO_RETURN_UNKNOWN_ERROR;
@@ -149,8 +150,9 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 		for (j = nbCount; j; --j) {
 			if (graphGetNextOutNeighbour(pGraph, pVertex, &pNeighbour, &pEdge))
 				return GRAPH_IO_RETURN_UNKNOWN_ERROR;
-			if (mapGetEntry(addressMap, pNeighbour, &index))
+			if (mapGetEntry(addressMap, pNeighbour, &previousValue))
 				return GRAPH_IO_RETURN_UNKNOWN_ERROR;
+			index = (unsigned long) previousValue;
 			WRITE(fp, NB_IDX_STR, index); // Neighbour index
 			if (writeEdge(fp, pEdge)) // Edge item
 				return GRAPH_IO_RETURN_WRITING_FAILURE;
