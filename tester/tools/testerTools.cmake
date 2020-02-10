@@ -8,6 +8,7 @@ function(add_tester_module name)
 	cmake_parse_arguments(ARG "" "" "${multiValueArgs}" ${ARGN})
 	add_executable(${name} ${ARG_SOURCES})
 	target_link_libraries(${name} ${ARG_LINKS} tester)
+	set_target_properties(${name} PROPERTIES FOLDER tests)
 endfunction()
 
 # Add a tester script

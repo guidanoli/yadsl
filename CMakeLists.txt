@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(AA_BUILD_TESTS "Build unit tests" ON)
-option(AA_PYTHON_SUPPORT "Build Python C extension modules" OFF)
+option(AA_PYTHON_SUPPORT "Build Python C extension modules" ON)
 
 if(AA_BUILD_TESTS)
 	enable_testing()
@@ -33,6 +33,9 @@ if(AA_PYTHON_SUPPORT)
 	
 	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/python")
 endif()
+
+# Allow hierarchical solution
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Tester framework
 add_subdirectory(tester)

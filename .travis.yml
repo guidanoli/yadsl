@@ -1,4 +1,5 @@
 language: c
+os: linux
 branches:
   only:
     - master
@@ -24,10 +25,6 @@ script-anchors:
 matrix:
   include:
     - os: linux
-      env: GENERATOR="Unix Makefiles"
-      script: *script-Makefiles
-    - os: osx
-      osx_image: xcode7.3
       env: GENERATOR="Unix Makefiles"
       script: *script-Makefiles
     - os: windows

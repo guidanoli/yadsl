@@ -8,6 +8,7 @@ function(add_python_module target modulename)
 		${target}
 		PROPERTIES
 			PREFIX ""
+			DEBUG_POSTFIX "_d"
 			OUTPUT_NAME "${modulename}"
 			LINKER_LANGUAGE C
 	)
@@ -23,4 +24,5 @@ function(add_python_module target modulename)
 	if(WIN32)
 		target_link_libraries(${target} ${PYTHON_LIBRARIES})
 	endif()
+	set_target_properties(${target} PROPERTIES FOLDER python)
 endfunction()
