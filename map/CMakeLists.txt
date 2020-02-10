@@ -1,4 +1,4 @@
-add_library(map SHARED map.c map.h)
+add_library(map map.c map.h)
 target_link_libraries(map set)
 target_include_directories(map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 

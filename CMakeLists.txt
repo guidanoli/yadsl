@@ -5,10 +5,6 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-if(WIN32)
-	set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
-
 option(AA_BUILD_TESTS "Build unit tests" ON)
 option(AA_PYTHON_SUPPORT "Build Python C extension modules" OFF)
 

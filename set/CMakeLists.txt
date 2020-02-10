@@ -1,4 +1,4 @@
-add_library(set SHARED set.c set.h)
+add_library(set set.c set.h)
 target_include_directories(set PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(AA_BUILD_TESTS)
