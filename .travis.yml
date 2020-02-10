@@ -19,7 +19,7 @@ script-anchors:
   - &script-VS15
     - mkdir "${TRAVIS_BUILD_DIR}/build"
     - cd ${TRAVIS_BUILD_DIR}/build
-    - cmake .. -G"${GENERATOR}" -DAA_PYTHON_SUPPORT=OFF
+    - cmake .. -G"${GENERATOR}"
     - cmake --build . --config Release
     - ctest -V -C Release
     - cmake --build . --config Debug
@@ -29,8 +29,10 @@ matrix:
     - os: linux
       env: GENERATOR="Unix Makefiles"
       script: *script-Makefiles
-      python: 3.7
     - os: windows
       env: GENERATOR="Visual Studio 15 2017"
       script: *script-VS15
-      python: 3.7
+      before_install:
+        - choco install python --version 3.7.6
+        - python --version
+      env: PATH=/c/Python37:$PATH
