@@ -35,5 +35,5 @@ matrix:
         - choco install python --version 3.7.6
         - python --version
       env:
-        - GENERATOR="Visual Studio 15 2017"
+        - GENERATOR="Visual Studio 15 2017 Win64"
         - PATH=/c/Python37:$PATH
