@@ -6,7 +6,7 @@ branches:
 install:
   - cmake --version
 after_failure:
-  - cat C:/Users/travis/build/guidanoli/aa/build/CMakeFiles/CMakeOutput.log
+  - cat home/travis/build/guidanoli/aa/build/CMakeFiles/CMakeOutput.log
 script-anchors:
   - &script-Makefiles
     - mkdir "${TRAVIS_BUILD_DIR}/build"
@@ -29,6 +29,8 @@ matrix:
     - os: linux
       env: GENERATOR="Unix Makefiles"
       script: *script-Makefiles
+      python: 3.7
     - os: windows
       env: GENERATOR="Visual Studio 15 2017"
       script: *script-VS15
+      python: 3.7
