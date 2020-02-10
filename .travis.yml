@@ -19,7 +19,7 @@ script-anchors:
   - &script-VS15
     - mkdir "${TRAVIS_BUILD_DIR}/build"
     - cd ${TRAVIS_BUILD_DIR}/build
-    - cmake .. -G"${GENERATOR}"
+    - cmake .. -G"${GENERATOR}" -DAA_PYTHON_SUPPORT=OFF
     - cmake --build . --config Release
     - ctest -V -C Release
     - cmake --build . --config Debug
