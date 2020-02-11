@@ -16,6 +16,9 @@ script-anchors:
     - ctest -V -C Release
     - cmake --build . --config Debug
     - ctest -V -C Debug
+    - cd ..
+    - python setup.py
+    - pytest
   - &script-VS15
     - mkdir "${TRAVIS_BUILD_DIR}/build"
     - cd ${TRAVIS_BUILD_DIR}/build
@@ -25,6 +28,9 @@ script-anchors:
     - cmake .. -G"${GENERATOR}" -DAA_PYTHON_SUPPORT=OFF
     - cmake --build . --config Debug
     - ctest -V -C Debug
+    - cd ..
+    - python setup.py
+    - pytest
 matrix:
   include:
     - os: linux
@@ -35,6 +41,8 @@ matrix:
       before_install:
         - choco install python --version 3.7.6
         - python --version
+        - pip install -U pip
+        - pip install -U pytest
       env:
         - GENERATOR="Visual Studio 15 2017 Win64"
-        - PATH=/c/Python37:$PATH
+        - PATH=/c/Python37:/c/Python37/Scripts:$PATH
