@@ -17,8 +17,8 @@ script-anchors:
     - cmake --build . --config Debug
     - ctest -V -C Debug
     - cd ..
-    - python setup.py
-    - pytest
+    - python3 setup.py
+    - python3 -m pytest
   - &script-VS15
     - mkdir "${TRAVIS_BUILD_DIR}/build"
     - cd ${TRAVIS_BUILD_DIR}/build
@@ -30,7 +30,7 @@ script-anchors:
     - ctest -V -C Debug
     - cd ..
     - python setup.py
-    - pytest
+    - python -m pytest
 matrix:
   include:
     - os: linux
@@ -38,9 +38,9 @@ matrix:
       script: *script-Makefiles
       before_install:
         - python --version
-        - python3 -m pip install -U pip
-        - python3 -m pip install -U pytest
-        - python3 -m pip install pathlib
+        - pip3 install -U pip
+        - pip3 install -U pytest
+        - pip3 install pathlib
     - os: windows
       script: *script-VS15
       before_install:
