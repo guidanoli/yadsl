@@ -36,6 +36,11 @@ matrix:
     - os: linux
       env: GENERATOR="Unix Makefiles"
       script: *script-Makefiles
+      before_install:
+        - python --version
+        - pip install -U pip
+        - pip install -U pytest
+        - pip install pathlib
     - os: windows
       script: *script-VS15
       before_install:
@@ -43,6 +48,7 @@ matrix:
         - python --version
         - pip install -U pip
         - pip install -U pytest
+        - pip install pathlib
       env:
         - GENERATOR="Visual Studio 15 2017 Win64"
         - PATH=/c/Python37:/c/Python37/Scripts:$PATH

@@ -9,4 +9,4 @@ for pyd in Path('.').rglob('*.pyd'):
 
 # Write .paths file
 with open(".paths", "w") as f:
-	f.writelines([str(dir.resolve()) for dir in pyd_dirs])
+	f.writelines("\n".join([str(dir.resolve()) for dir in pyd_dirs]))
