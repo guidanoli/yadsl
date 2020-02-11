@@ -38,17 +38,17 @@ matrix:
       script: *script-Makefiles
       before_install:
         - python --version
-        - pip install -U pip
-        - pip install -U pytest
-        - pip install pathlib
+        - python3 -m pip install -U pip
+        - python3 -m pip install -U pytest
+        - python3 -m pip install pathlib
     - os: windows
       script: *script-VS15
       before_install:
         - choco install python --version 3.7.6
         - python --version
-        - pip install -U pip
-        - pip install -U pytest
-        - pip install pathlib
+        - pip install --user -U pip
+        - pip install --user -U pytest
+        - pip install --user pathlib
       env:
         - GENERATOR="Visual Studio 15 2017 Win64"
         - PATH=/c/Python37:/c/Python37/Scripts:$PATH
