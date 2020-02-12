@@ -9,6 +9,7 @@ install:
   - cmake --version
 after_failure:
   - cat home/travis/build/guidanoli/aa/build/CMakeFiles/CMakeOutput.log
+  - cat home/travis/build/guidanoli/aa/.paths
 script-anchors:
   - &script-Makefiles
     - mkdir "${TRAVIS_BUILD_DIR}/build"
@@ -18,9 +19,6 @@ script-anchors:
     - ctest -V -C Release
     - cmake --build . --config Debug
     - ctest -V -C Debug
-    - cd ..
-    - python3 setup.py
-    - python3 -m pytest
   - &script-VS15
     - mkdir "${TRAVIS_BUILD_DIR}/build"
     - cd ${TRAVIS_BUILD_DIR}/build
@@ -32,15 +30,12 @@ script-anchors:
     - ctest -V -C Debug
     - cd ..
     - python setup.py
-    - python -m pytest
+    - python -m pytest -s
 matrix:
   include:
     - os: linux
       env: GENERATOR="Unix Makefiles"
       script: *script-Makefiles
-      before_install:
-        - python --version
-        - pip install --user -r requirements.txt
     - os: windows
       script: *script-VS15
       before_install:
