@@ -1,5 +1,9 @@
 language: c
 os: linux
+branches:
+    only:
+        - master
+        - travis
 python:
     - "3.7"
 branches:
