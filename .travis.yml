@@ -9,44 +9,21 @@ install:
     - python --version
     - pip --version
     - pip install --user -r requirements.txt
+    - python setup.py install
+    - python -m pytest -s
+    - cd build/temp*/Release && ctest -V -C Release
 after_failure:
-  - cat "${TRAVIS_BUILD_DIR}/build/CMakeFiles/CMakeOutput.log"
-  - cat "${TRAVIS_BUILD_DIR}/.paths"
-script-anchors:
-  - &script-Makefiles
-    - mkdir "${TRAVIS_BUILD_DIR}/build"
-    - cd "${TRAVIS_BUILD_DIR}/build"
-    - cmake .. -G"${GENERATOR}"
-    - cmake --build . --config Release
-    - ctest -V -C Release
-    - cmake --build . --config Debug
-    - ctest -V -C Debug
-    - cd ..
-    - python setup.py
-    - python -m pytest -s
-  - &script-VS15
-    - mkdir "${TRAVIS_BUILD_DIR}/build"
-    - cd "${TRAVIS_BUILD_DIR}/build"
-    - cmake .. -G"${GENERATOR}"
-    - cmake --build . --config Release
-    - ctest -V -C Release
-    - cmake .. -G"${GENERATOR}" -DAA_PYTHON_SUPPORT=OFF
-    - cmake --build . --config Debug
-    - ctest -V -C Debug
-    - cd ..
-    - python setup.py
-    - python -m pytest -s
+  - cat "${TRAVIS_BUILD_DIR}/build/temp*/Release/CMakeFiles/CMakeOutput.log"
 matrix:
   include:
     - os: linux
-      env: GENERATOR="Unix Makefiles"
-      script: *script-Makefiles
+      env:
+        - AA_BUILD_TESTS=ON
       before_install:
         - pyenv global 3.6.7
     - os: windows
-      script: *script-VS15
       before_install:
         - choco install python --version 3.7.6
-      env:
-        - GENERATOR="Visual Studio 15 2017 Win64"
+      env: 
+        - AA_BUILD_TESTS=ON
         - PATH=/c/Python37:/c/Python37/Scripts:$PATH
