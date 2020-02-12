@@ -10,8 +10,8 @@ install:
     - pip --version
     - pip install --user -r requirements.txt
 after_failure:
-  - cat home/travis/build/guidanoli/aa/build/CMakeFiles/CMakeOutput.log
-  - cat home/travis/build/guidanoli/aa/.paths
+  - cat "${TRAVIS_BUILD_DIR}/build/CMakeFiles/CMakeOutput.log"
+  - cat "${TRAVIS_BUILD_DIR}/.paths"
 script-anchors:
   - &script-Makefiles
     - mkdir "${TRAVIS_BUILD_DIR}/build"
@@ -20,12 +20,13 @@ script-anchors:
     - cmake --build . --config Release
     - ctest -V -C Release
     - cmake --build . --config Debug
+    - ctest -V -C Debug
     - cd ..
     - python setup.py
     - python -m pytest -s
   - &script-VS15
     - mkdir "${TRAVIS_BUILD_DIR}/build"
-    - cd ${TRAVIS_BUILD_DIR}/build
+    - cd "${TRAVIS_BUILD_DIR}/build"
     - cmake .. -G"${GENERATOR}"
     - cmake --build . --config Release
     - ctest -V -C Release
