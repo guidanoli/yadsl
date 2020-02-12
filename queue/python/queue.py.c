@@ -54,8 +54,10 @@ Queue_dequeue(QueueObject* self, PyObject* args, PyObject* kwargs)
     int is_empty;
     if (queueIsEmpty(self->ob_queue, &is_empty))
         return NULL;
-    if (is_empty)
-        Py_RETURN_NONE;
+    if (is_empty) {
+        PyErr_SetString(PyExc_RuntimeError, "Empty queue");
+        return NULL; // Throw exception
+    }
     if (queueDequeue(self->ob_queue, &obj))
         return NULL;
     Py_DECREF(obj);
@@ -71,9 +73,23 @@ Queue_is_empty(QueueObject* self, PyObject* args, PyObject* kwargs)
     return PyBool_FromLong(is_empty);
 }
 
+static PyObject*
+Queue_next(QueueObject* self)
+{
+    PyObject* obj;
+    int is_empty;
+    if (queueIsEmpty(self->ob_queue, &is_empty))
+        return NULL;
+    if (is_empty)
+        return NULL; // Stop iteration
+    if (queueDequeue(self->ob_queue, &obj))
+        return NULL;
+    return obj; // Pass ownership to iterator
+}
+
 static PyMethodDef Queue_methods[] = {
     {"queue", (PyCFunction) Queue_queue, METH_VARARGS, "Queue object"},
-    {"dequeue", (PyCFunction) Queue_dequeue, METH_NOARGS, "Dequeue and return object (or None if empty)"},
+    {"dequeue", (PyCFunction) Queue_dequeue, METH_NOARGS, "Dequeue and return object"},
     {"is_empty", (PyCFunction) Queue_is_empty, METH_NOARGS, "Check if queue is empty"},
     {NULL}
 };
@@ -88,6 +104,8 @@ static PyTypeObject QueueType = {
     .tp_new = Queue_new,
     .tp_dealloc = (destructor) Queue_dealloc,
     .tp_methods = Queue_methods,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc) Queue_next,
 };
 
 PyModuleDef pyqueue_module = {
