@@ -4,9 +4,6 @@ branches:
     only:
         - master
         - /^travis.*$/
-branches:
-  only:
-    - master
 install:
   - cmake --version
 after_failure:
