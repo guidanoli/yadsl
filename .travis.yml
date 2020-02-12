@@ -3,9 +3,7 @@ os: linux
 branches:
     only:
         - master
-        - travis
-python:
-    - "3.7"
+        - /^travis.*$/
 branches:
   only:
     - master
