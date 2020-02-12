@@ -1,12 +1,11 @@
 from pathlib import Path
-from os import chdir
 
-# Collect all .pyd paths
-pyd_dirs = []
-for pyd in Path('.').rglob('*.pyd'):
-	if pyd.parent not in pyd_dirs:
-		pyd_dirs.append(pyd.parent)
+dirs = []
+exts = ["*.pyd", "*.so", "*.dylib"]
+for ext in exts:
+	for pyd in Path('.').rglob(ext):
+		if pyd.parent not in dirs:
+			dirs.append(pyd.parent)
 
-# Write .paths file
 with open(".paths", "w") as f:
-	f.writelines("\n".join([str(dir.resolve()) for dir in pyd_dirs]))
+	f.writelines("\n".join([str(dir.resolve()) for dir in dirs]))

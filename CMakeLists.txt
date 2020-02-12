@@ -14,7 +14,7 @@ endif()
 
 if(AA_PYTHON_SUPPORT)
 	set(Python_FIND_VIRTUALENV FIRST)
-	find_package(PythonInterp 3.5 REQUIRED)
+	find_package(PythonInterp 3.6 REQUIRED)
 
 	# Find Python headers
 	exec_program(${PYTHON_EXECUTABLE}
@@ -28,7 +28,7 @@ if(AA_PYTHON_SUPPORT)
 
 	# This goes after, since it uses PythonInterp as a hint
 	if(WIN32)
-		find_package(PythonLibs 3.5 REQUIRED)
+		find_package(PythonLibs 3.6 REQUIRED)
 	endif()
 	
 	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/python")
