@@ -9,16 +9,18 @@ install:
     - python --version
     - pip --version
     - pip install --user -r requirements.txt
+script:
     - python setup.py install
     - python -m pytest -s
-    - cd build/temp*/Release && ctest -V -C Release
+    - cd ${AA_CMAKE_DIR} && ctest -V -C Release
 after_failure:
-  - cat "${TRAVIS_BUILD_DIR}/build/temp*/Release/CMakeFiles/CMakeOutput.log"
+  - cat "${AA_CMAKE_DIR}/CMakeFiles/CMakeOutput.log"
 matrix:
   include:
     - os: linux
       env:
         - AA_BUILD_TESTS=ON
+        - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.linux-x86_64-3.6"
       before_install:
         - pyenv global 3.6.7
     - os: windows
@@ -26,4 +28,5 @@ matrix:
         - choco install python --version 3.7.6
       env: 
         - AA_BUILD_TESTS=ON
+        - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.win-amd64-3.7/Release"
         - PATH=/c/Python37:/c/Python37/Scripts:$PATH
