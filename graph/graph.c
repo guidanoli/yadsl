@@ -169,17 +169,19 @@ GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected)
 	return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphContainsVertex(Graph *pGraph, void *v)
+GraphReturnID graphContainsVertex(Graph *pGraph, void *v, int *pContains)
 {
 	void *p; // does nothing with p
 	struct _cmpVertexItemParam par = {v, pGraph->cmpVertices};
-	if (pGraph == NULL)
+	if (pGraph == NULL || pContains == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	switch (setFilterItem(pGraph->vertexSet, _cmpVertexItem, &par, &p)) {
 	case SET_RETURN_OK:
-		return GRAPH_RETURN_CONTAINS_VERTEX;
+		*pContains = 1;
+		return GRAPH_RETURN_OK;
 	case SET_RETURN_DOES_NOT_CONTAIN:
-		return GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX;
+		*pContains = 0;
+		return GRAPH_RETURN_OK;
 	default:
 		return GRAPH_RETURN_UNKNOWN_ERROR;
 	}
@@ -190,11 +192,13 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v)
 	struct GraphVertex *pVertex;
 	GraphReturnID graphId;
 	SetReturnID setId;
+	int containsVertex;
 	if (pGraph == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
-	graphId = graphContainsVertex(pGraph, v);
-	if (graphId != GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX)
+	if (graphId = graphContainsVertex(pGraph, v, &containsVertex))
 		return graphId;
+	if (containsVertex)
+		return GRAPH_RETURN_CONTAINS_VERTEX;
 	pVertex = malloc(sizeof(struct GraphVertex));
 	if (pVertex == NULL)
 		return GRAPH_RETURN_MEMORY;
@@ -247,13 +251,15 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 	struct GraphEdge *pEdgeUV;
 	GraphReturnID graphId;
 	SetReturnID setId;
+	int containsEdge;
 	if (pGraph == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
-	if ((graphId = graphContainsEdge(pGraph, u, v))
-		!= GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE)
+	if (graphId = graphContainsEdge(pGraph, u, v, &containsEdge))
 		return graphId;
+	if (containsEdge)
+		return GRAPH_RETURN_CONTAINS_EDGE;
 	pEdgeUV = malloc(sizeof(struct GraphEdge));
 	if (pEdgeUV == NULL)
 		return GRAPH_RETURN_MEMORY;
@@ -287,15 +293,24 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 	return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v)
+GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains)
 {
 	struct GraphVertex *pVertexU, *pVertexV;
 	GraphReturnID graphId;
-	if (pGraph == NULL)
+	if (pGraph == NULL || pContains == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
-	return _parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, NULL);
+	switch (_parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, NULL)) {
+	case GRAPH_RETURN_CONTAINS_EDGE:
+		*pContains = 1;
+		return GRAPH_RETURN_OK;
+	case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+		*pContains = 0;
+		return GRAPH_RETURN_OK;
+	default:
+		return GRAPH_RETURN_UNKNOWN_ERROR;
+	}
 }
 
 GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v)
@@ -596,9 +611,9 @@ static int _cmpEdgeDestination(struct GraphEdge *pEdge,
 static int _cmpVertexItem(struct GraphVertex *pVertex,
 	struct _cmpVertexItemParam *par)
 {
-	if (pVertex->item == par->item)
-		return 1;
-	return par->cmpVertices && par->cmpVertices(pVertex->item, par->item);
+	if (par->cmpVertices)
+		return par->cmpVertices(par->item, pVertex->item);
+	return pVertex->item == par->item;
 }
 
 // Called by setlib while removing pVertex from pGraph->vertexSet

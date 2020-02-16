@@ -116,7 +116,6 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 	MapReturnID mapId;
 	void *previousValue;
 	unsigned long vCount, nbCount, i, j, index;
-	GraphIoReturnID id;
 	void *pVertex, *pNeighbour, *pEdge;
 	if (graphIsDirected(pGraph, &isDirected))
 		return GRAPH_IO_RETURN_UNKNOWN_ERROR;

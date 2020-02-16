@@ -69,7 +69,7 @@ typedef struct Graph Graph;
 *                   (and if else, they are equal)
 *                   if NULL, does a shallow comparison
 * freeVertex,       function that frees a foreign data
-* cmpEdges          structure (vertex or edge) from memory
+* freeEdges         structure (vertex or edge) from memory
 *                   if NULL, does nothing to vertex
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
@@ -242,15 +242,13 @@ GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 * Check whether graph contains vertex or not
 * pGraph    pointer to graph
 * v         graph vertex
-* Possible return values:
+* pContains (return) whether graph contains vertex or not
+* Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
 * 	- "pGraph" is NULL
-* GRAPH_RETURN_CONTAINS_VERTEX
-* 	- vertex "v" exists in the graph
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "v" does not exist in the graph
+*   - "pContains" is NULL
 */
-GraphReturnID graphContainsVertex(Graph *pGraph, void *v);
+GraphReturnID graphContainsVertex(Graph *pGraph, void *v, int *pContains);
 
 /**
 * Add vertex to graph
@@ -283,18 +281,15 @@ GraphReturnID graphRemoveVertex(Graph *pGraph, void *v);
 * Check whether graph contains edge or not
 * pGraph    pointer to graph
 * u, v      graph vertices
+* pContains (return) whether graph contains edge
 * Possible return values:
 * GRAPH_RETURN_INVALID_PARAMETER
 * 	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * 	- vertex "u" or vertex "v" does not exist
-* GRAPH_RETURN_CONTAINS_EDGE
-* 	- Edge "uv" exists in the graph
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- Edge "uv" does not exist in the graph
 * GRAPH_RETURN_UNKNOWN_ERROR
 */
-GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v);
+GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains);
 
 /**
 * Add edge to graph

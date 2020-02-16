@@ -41,15 +41,13 @@ GraphSearchReturnID graphDFS(Graph *pGraph,
 	void (*visitEdgeCallback)(void *source, void *edge, void *dest))
 {
 	GraphReturnID graphId;
-	int flag;
+	int flag, containsVertex;
 	if (pGraph == NULL)
 		return GRAPH_SEARCH_RETURN_INVALID_PARAMETER;
-	if ((graphId = graphContainsVertex(pGraph, initialVertex)) !=
-		GRAPH_RETURN_CONTAINS_VERTEX) {
-		if (graphId != GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX)
-			return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	if (graphId = graphContainsVertex(pGraph, initialVertex, &containsVertex))
+		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	if (!containsVertex)
 		return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
-	}
 	if (graphGetVertexFlag(pGraph, initialVertex, &flag))
 		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
 	if (flag == visitedFlag)
@@ -71,15 +69,13 @@ GraphSearchReturnID graphBFS(Graph *pGraph,
 	QueueReturnID queueId;
 	GraphReturnID graphId;
 	GraphSearchReturnID id;
-	int flag;
+	int flag, containsVertex;
 	if (pGraph == NULL)
 		return GRAPH_SEARCH_RETURN_INVALID_PARAMETER;
-	if ((graphId = graphContainsVertex(pGraph, initialVertex)) !=
-		GRAPH_RETURN_CONTAINS_VERTEX) {
-		if (graphId != GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX)
-			return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	if (graphId = graphContainsVertex(pGraph, initialVertex, &containsVertex))
+		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	if (!containsVertex)
 		return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
-	}
 	if (graphGetVertexFlag(pGraph, initialVertex, &flag))
 		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
 	if (flag == visitedFlag)

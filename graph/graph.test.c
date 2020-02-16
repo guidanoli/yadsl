@@ -237,9 +237,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		if (varCreate(buffer, &pVar))
 			return TESTER_RETURN_MALLOC;
 		expected = matches(buffer2, "YES");
-		graphId = graphContainsVertex(pGraph, pVar);
+		graphId = graphContainsVertex(pGraph, pVar, &actual);
 		varDestroy(pVar);
-		actual = graphId == GRAPH_RETURN_CONTAINS_VERTEX;
 		return (actual == expected) ? TESTER_RETURN_OK : TESTER_RETURN_RETURN;
 	} else if matches(command, "addvertex") {
 		Variable *pVar;
@@ -265,16 +264,11 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		if (varCreateMultiple(buffer, &pU, buffer2, &pV, NULL))
 			return TESTER_RETURN_MALLOC;
 		expected = matches(buffer3, "YES");
-		graphId = graphContainsEdge(pGraph, pU, pV);
+		graphId = graphContainsEdge(pGraph, pU, pV, &actual);
 		varDestroy(pU);
 		varDestroy(pV);
-		if (graphId == GRAPH_RETURN_CONTAINS_EDGE ||
-			graphId == GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE) {
-			actual = (graphId == GRAPH_RETURN_CONTAINS_EDGE);
-			if (expected != actual)
-				return TESTER_RETURN_RETURN;
-			return TESTER_RETURN_OK;
-		}
+		if (graphId == GRAPH_RETURN_OK && expected != actual)
+			return TESTER_RETURN_RETURN;
 	} else if matches(command, "addedge") {
 		Variable *pU, *pV, *pEdge;
 		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)

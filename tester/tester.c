@@ -25,10 +25,10 @@ static char *cursor; // buffer cursor
 static TesterReturnValue _TesterMain(int argc, char **argv);
 static void _TesterLoadReturnValueInfos();
 static TesterReturnValue _TesterParse(FILE *fp);
-static void _TesterPrintCursorPosition(FILE *fp, int spacing);
+static void _TesterPrintCursorPosition(FILE *fp, size_t spacing);
 static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret);
-static int _TesterParseArg(const char *format, void *arg, int *inc);
-static int _TesterParseStr(char *arg, int *inc);
+static int _TesterParseArg(const char *format, void *arg, size_t *inc);
+static int _TesterParseStr(char *arg, size_t *inc);
 static void _TesterPrintReturnValueInfo(TesterReturnValue ret);
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 int TesterParseArguments(const char *format, ...)
 {
 	va_list va;
-	int inc = 0;
+	size_t inc = 0;
 	void *arg;
 	char *str;
 	int argc = 0;
@@ -124,7 +124,7 @@ const char *TesterGetReturnValueInfo(TesterReturnValue returnValue)
 void TesterLog(const char *message, ...)
 {
 	va_list va;
-	int spacing = 0;
+	size_t spacing = 0;
 	va_start(va, message);
 	spacing += fprintf(stdout, "LOG: \"");
 	spacing += vfprintf(stdout, message, va);
@@ -234,7 +234,7 @@ static void _TesterLoadReturnValueInfos()
 	}
 }
 
-static int _TesterParseArg(const char *format, void *arg, int *inc)
+static int _TesterParseArg(const char *format, void *arg, size_t *inc)
 {
 	if (arg == NULL) return -1;
 	if (sscanf(cursor + *inc, "%[ \t\n]%[^ \t\n]", sep, temp) != 2)
@@ -245,7 +245,7 @@ static int _TesterParseArg(const char *format, void *arg, int *inc)
 	return 0;
 }
 
-static int _TesterParseStr(char *arg, int *inc)
+static int _TesterParseStr(char *arg, size_t *inc)
 {
 	if (arg == NULL) return -1;
 	if (sscanf(cursor + *inc, "%[ \t\n]\"%[^\"]\"", sep, temp) == 2) {
@@ -262,7 +262,7 @@ static int _TesterParseStr(char *arg, int *inc)
 
 static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
 {
-	char arg[BUFSIZ];
+	char arg[BUFSIZ] = "";
 	if (TesterParseArguments("s", arg) == 1) {
 		if (ret == TESTER_RETURN_EXTERNAL) {
 			if (externalReturnValueInfo != NULL &&
@@ -281,7 +281,7 @@ static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
 static void _TesterPrintReturnValueInfo(TesterReturnValue ret)
 {
 	if (ret) {
-		int spacing = fprintf(stderr, "ERROR: \"%s\" ",
+		size_t spacing = fprintf(stderr, "ERROR: \"%s\" ",
 			TesterGetReturnValueInfo(ret));
 		_TesterPrintCursorPosition(stderr, spacing);
 	}
@@ -290,12 +290,12 @@ static void _TesterPrintReturnValueInfo(TesterReturnValue ret)
 // Prints the buffer and the cursor current position with an arrow (^)
 // spacing = how many characters have been printed out on the current line
 // HINT: printf-like functions return the number of characters printed out
-static void _TesterPrintCursorPosition(FILE *fp, int spacing)
+static void _TesterPrintCursorPosition(FILE *fp, size_t spacing)
 {
 	size_t col = cursor - buffer, bufflen = strlen(buffer);
 	if (bufflen == 0) return;
 	spacing += col;
-	spacing += fprintf(fp, "(line %lu, column %lu) ", line, col + 1);
+	spacing += fprintf(fp, "(line %lu, column %zu) ", line, col + 1);
 	fprintf(fp, "%s", buffer);
 	if (buffer[bufflen - 1] != '\n') fprintf(fp, "\n");
 	while (spacing--) fprintf(fp, " ");

@@ -41,6 +41,10 @@ typedef enum
 
 	/* Could not go backwards or forward in list */
 	SET_RETURN_OUT_OF_BOUNDS,
+
+	/* Numeric overflow */
+	SET_RETURN_OVERFLOW,
+
 }
 SetReturnID;
 
@@ -101,6 +105,8 @@ SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
 * 	- "pSet" is NULL
 * SET_RETURN_CONTAINS
 * 	- set already contains item
+* SET_RETURN_OVERFLOW
+*	- reached the size limit (ULONG_MAX)
 * SET_RETURN_MEMORY
 */
 SetReturnID setAddItem(Set *pSet, void *item);

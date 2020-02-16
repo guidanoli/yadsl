@@ -1,3 +1,4 @@
+#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "queue.h"
 
@@ -6,14 +7,14 @@ typedef struct {
     Queue* ob_queue;
 } QueueObject;
 
-void
+static void
 Queue_decRefCallback(void* item)
 {
     Py_DECREF((PyObject*) item);
 }
 
 static PyObject*
-Queue_new(PyTypeObject* type, PyObject* args, PyObject* kwargs)
+Queue_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 {
     QueueObject* self;
     self = (QueueObject*) type->tp_alloc(type, 0);
@@ -34,10 +35,10 @@ Queue_dealloc(QueueObject* self)
 }
 
 static PyObject*
-Queue_queue(QueueObject* self, PyObject* args, PyObject* kwargs)
+Queue_queue(QueueObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* obj;
-    if (!PyArg_ParseTuple(args, "O", &obj))
+    if (!PyArg_ParseTuple(args, "O:Queue.queue", &obj))
         return NULL;
     if (obj) {
         if (queueQueue(self->ob_queue, obj))
@@ -48,7 +49,7 @@ Queue_queue(QueueObject* self, PyObject* args, PyObject* kwargs)
 }
 
 static PyObject*
-Queue_dequeue(QueueObject* self, PyObject* args, PyObject* kwargs)
+Queue_dequeue(QueueObject* self, PyObject* args, PyObject* kw)
 {
     PyObject* obj;
     int is_empty;
@@ -65,7 +66,7 @@ Queue_dequeue(QueueObject* self, PyObject* args, PyObject* kwargs)
 }
 
 static PyObject*
-Queue_is_empty(QueueObject* self, PyObject* args, PyObject* kwargs)
+Queue_is_empty(QueueObject* self, PyObject* args, PyObject* kw)
 {
     int is_empty;
     if (queueIsEmpty(self->ob_queue, &is_empty))

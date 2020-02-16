@@ -21,7 +21,18 @@ struct Set
 	struct SetItem *first;
 	struct SetItem *last;
 	unsigned long size;
+	unsigned long modificationCount; /* Modification count */
+	unsigned long callbackDepth; /* Callback depth */
 };
+
+#define SetLogModification(pSet) do { \
+	if (pSet->callbackDepth) \
+		++pSet->modificationCount; \
+} while(0)
+
+#define SetGetModificationCount(pSet) pSet->modificationCount
+#define SetEnableLog(pSet) ++pSet->callbackDepth
+#define SetDisableLog(pSet) --pSet->callbackDepth
 
 // Private functions prototypes
 
@@ -45,6 +56,8 @@ SetReturnID setCreate(Set **ppSet)
 	pSet->first = NULL;
 	pSet->last = NULL;
 	pSet->size = 0;
+	pSet->callbackDepth = 0;
+	pSet->modificationCount = 0;
 	*ppSet = pSet;
 	return SET_RETURN_OK;
 }
@@ -58,15 +71,23 @@ SetReturnID setContainsItem(Set *pSet, void *item)
 SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
 	void *arg, void **pItem)
 {
+	int matches, mod_cnt;
 	struct SetItem *p;
 	unsigned long size;
 	if (pSet == NULL || func == NULL || pItem == NULL)
 		return SET_RETURN_INVALID_PARAMETER;
 	size = pSet->size;
-	for (p = pSet->current; size--; p = p->next ? p->next : pSet->first) {
-		if (func(p->item, arg)) {
+	for (p = pSet->current;
+		size-- && p;
+		p = p->next ? p->next : pSet->first) {
+		mod_cnt = SetGetModificationCount(pSet);
+		SetEnableLog(pSet);
+		matches = func(p->item, arg);
+		SetDisableLog(pSet);
+		if (mod_cnt != SetGetModificationCount(pSet))
+			return setFilterItem(pSet, func, arg, pItem);
+		if (matches) {
 			*pItem = p->item;
-			pSet->current = p;
 			return SET_RETURN_OK;
 		}
 	}
@@ -78,6 +99,8 @@ SetReturnID setAddItem(Set *pSet, void *item)
 	struct SetItem *pItem, *p;
 	if (pSet == NULL)
 		return SET_RETURN_INVALID_PARAMETER;
+	if (pSet->size == ULONG_MAX)
+		return SET_RETURN_OVERFLOW;
 	if (setContainsItem(pSet, item) == SET_RETURN_CONTAINS)
 		return SET_RETURN_CONTAINS;
 	pItem = malloc(sizeof(struct SetItem));
@@ -109,8 +132,7 @@ SetReturnID setAddItem(Set *pSet, void *item)
 				else
 					pSet->last = pItem;
 				p->next = pItem;
-				pSet->size = pSet->size + 1;
-				return SET_RETURN_OK;
+				goto exit;
 			}
 			if (current_direction == 1)
 				p = p->next;
@@ -128,7 +150,9 @@ SetReturnID setAddItem(Set *pSet, void *item)
 			pSet->last = pItem;
 		}
 	}
+exit:
 	pSet->size = pSet->size + 1;
+	SetLogModification(pSet);
 	return SET_RETURN_OK;
 }
 
@@ -159,6 +183,7 @@ SetReturnID setRemoveItem(Set *pSet, void *item)
 	}
 	free(p);
 	pSet->size = pSet->size - 1;
+	SetLogModification(pSet);
 	return SET_RETURN_OK;
 }
 
