@@ -37,6 +37,9 @@ endif()
 # Allow hierarchical solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Common headers
+add_subdirectory(common)
+
 # Tester framework
 add_subdirectory(tester)
 

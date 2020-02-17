@@ -100,7 +100,7 @@ SetReturnID setAddItem(Set *pSet, void *item)
 	if (pSet == NULL)
 		return SET_RETURN_INVALID_PARAMETER;
 	if (pSet->size == ULONG_MAX)
-		return SET_RETURN_OVERFLOW;
+		return SET_RETURN_MEMORY;
 	if (setContainsItem(pSet, item) == SET_RETURN_CONTAINS)
 		return SET_RETURN_CONTAINS;
 	pItem = malloc(sizeof(struct SetItem));

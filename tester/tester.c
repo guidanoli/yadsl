@@ -86,6 +86,8 @@ int TesterParseArguments(const char *format, ...)
 			str = va_arg(va, char *);
 			parsingError = _TesterParseStr(str, &inc);
 			break;
+		default:
+			fprintf(stderr, "Format character %c unknown", *format);
 		}
 		if (parsingError) {
 			va_end(va);
