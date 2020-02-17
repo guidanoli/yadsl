@@ -1,6 +1,7 @@
 #include "set.h"
 
 #include <stdlib.h>
+#include <limits.h>
 
 // A set is represented by an ordered double-linked list
 // in which each item is an opaque pointer.
