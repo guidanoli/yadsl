@@ -1,7 +1,9 @@
 #ifndef _DIFF_H_
 #define _DIFF_H_
 
-#define DIFFERR (((unsigned long) 0) - 1)
+#include <limits.h>
+
+#define DIFFERR ULONG_MAX
 
 /*
 * Scores the difference between two strings

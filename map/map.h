@@ -1,16 +1,23 @@
 #ifndef __MAP_H__
 #define __MAP_H__
 
-/**
-* A Map starts empty, with no entries.
-* It works as a function K -> V where
-* K is the key space and V is the value space.
-* It must be defined on construction the ways
-* to compare keys and to free entries from memory.
-* The Map takes ownership of the data structures
-* it is given indirectly when the proper freeEntry
-* function is delivered.
-*/
+//
+//      __  ___          
+//     /  |/  /___ _____ 
+//    / /|_/ / __ `/ __ \
+//   / /  / / /_/ / /_/ /
+//  /_/  /_/\__,_/ .___/ 
+//              /_/      
+//
+// A Map starts empty, with no entries.
+// It works as a function K -> V where
+// K is the key space and V is the value space.
+// It must be defined on construction the ways
+// to compare keys and to free entries from memory.
+// The Map takes ownership of the data structures
+// it is given indirectly when the proper freeEntry
+// function is delivered.
+//
 
 typedef enum
 {
@@ -31,8 +38,6 @@ typedef enum
 	/* Could not allocate memory space */
 	MAP_RETURN_MEMORY,
 
-	/* When an internal error is unrecognized */
-	MAP_RETURN_UNKNOWN_ERROR,
 }
 MapReturnID;
 
@@ -53,7 +58,6 @@ typedef struct Map Map;
 * MAP_RETURN_INVALID_PARAMETER
 * 	- "ppMap" is NULL
 * MAP_RETURN_MEMORY
-* MAP_RETURN_UNKNOWN_ERROR
 */
 MapReturnID mapCreate(Map **ppMap,
 	int (*compareKeys)(void *a, void *b),
@@ -74,7 +78,6 @@ MapReturnID mapCreate(Map **ppMap,
 * MAP_RETURN_OVERWROTE_ENTRY
 * 	- pointer of address "pPreviousValue" now points to previous value
 * MAP_RETURN_MEMORY
-* MAP_RETURN_UNKNOWN_ERROR
 * [!] In case of error (return isn't OK or OVERWROTE_ENTRY), the
 *   ownership of both entry key and value are kept to be the caller's
 * [!] In case of overwritting entry, the ownership of the previous
@@ -93,7 +96,6 @@ MapReturnID mapPutEntry(Map *pMap, void *key, void *value,
 * 	- "pMap" is NULL
 * 	- "pValue" is NULL
 * MAP_RETURN_ENTRY_NOT_FOUND
-* MAP_RETURN_UNKNOWN_ERROR
 * [!] At all circunstances, the map holds the ownership of
 *   the entry value, and the ownership of the entry key is
 *   the caller's.
@@ -112,7 +114,6 @@ MapReturnID mapGetEntry(Map *pMap, void *key, void **pValue);
 * 	- "pKey" is NULL
 * 	- "pValue" is NULL
 * MAP_RETURN_ENTRY_NOT_FOUND
-* MAP_RETURN_UNKNOWN_ERROR
 * [!] At all circunstances, the ownership of the entry keys
 *   (the one provided and the one returned) and of the entry
 *   value (if returned) are the caller's.
@@ -127,7 +128,6 @@ MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue);
 * MAP_RETURN_INVALID_PARAMETER
 * 	- "pMap" is NULL
 * 	- "pNum" is NULL
-* MAP_RETURN_UNKNOWN_ERROR
 */
 MapReturnID mapGetNumberOfEntries(Map *pMap, unsigned long *pNum);
 

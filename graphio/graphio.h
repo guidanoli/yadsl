@@ -5,10 +5,17 @@
 
 #include "graph.h"
 
-/**
-* Auxiliary module for Graph I/O utilities
-* such as serialization and deserialization
-*/
+//
+//     ______                 __    ________ 
+//    / ____/________ _____  / /_  /  _/ __ \
+//   / / __/ ___/ __ `/ __ \/ __ \ / // / / /
+//  / /_/ / /  / /_/ / /_/ / / / // // /_/ / 
+//  \____/_/   \__,_/ .___/_/ /_/___/\____/  
+//                 /_/                       
+//
+// Auxiliary module for Graph I/O utilities
+// such as serialization and deserialization
+//
 
 typedef enum
 {
@@ -42,12 +49,7 @@ typedef enum
 
 	/* File format corruption detected */
 	GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT,
-
-	/* When an internal error is unrecognized */
-	GRAPH_IO_RETURN_UNKNOWN_ERROR,
-
-	/* The structure is corrupted and behaviour is unpredictable */
-	GRAPH_IO_RETURN_FATAL_ERROR,
+	
 }
 GraphIoReturnID;
 
@@ -76,7 +78,6 @@ GraphIoReturnID;
 * 	- Could not write to file
 * GRAPH_IO_RETURN_WRITING_FAILURE
 * GRAPH_IO_RETURN_MEMORY
-* GRAPH_IO_RETURN_UNKNOWN_ERROR
 * [!] The module does not take ownership of the file
 * pointer. It must be previously opened in writing mode
 * and closed afterwards by the caller.
@@ -119,8 +120,6 @@ GraphIoReturnID graphWrite(Graph *pGraph, FILE *fp,
 * GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT
 * GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT
 * GRAPH_IO_RETURN_MEMORY
-* GRAPH_IO_RETURN_FATAL_ERROR
-* GRAPH_IO_RETURN_UNKNOWN_ERROR
 * [!] The module does not take ownership of the file
 * pointer. It must be previously opened in reading mode
 * and closed afterwards by the caller.

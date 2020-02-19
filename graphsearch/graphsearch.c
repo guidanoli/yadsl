@@ -1,6 +1,7 @@
 #include "graphsearch.h"
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include "queue.h"
 
@@ -41,15 +42,17 @@ GraphSearchReturnID graphDFS(Graph *pGraph,
 	void (*visitEdgeCallback)(void *source, void *edge, void *dest))
 {
 	GraphReturnID graphId;
-	int flag, containsVertex;
-	if (pGraph == NULL)
-		return GRAPH_SEARCH_RETURN_INVALID_PARAMETER;
-	if (graphId = graphContainsVertex(pGraph, initialVertex, &containsVertex))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
-	if (!containsVertex)
-		return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
-	if (graphGetVertexFlag(pGraph, initialVertex, &flag))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	int flag;
+	if (graphId = graphGetVertexFlag(pGraph, initialVertex, &flag)) {
+		switch (graphId) {
+		case GRAPH_RETURN_INVALID_PARAMETER:
+			return GRAPH_SEARCH_RETURN_INVALID_PARAMETER;
+		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+			return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
+		default:
+			assert(0);
+		}
+	}
 	if (flag == visitedFlag)
 		return GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED;
 	return dfs(pGraph,
@@ -69,20 +72,21 @@ GraphSearchReturnID graphBFS(Graph *pGraph,
 	QueueReturnID queueId;
 	GraphReturnID graphId;
 	GraphSearchReturnID id;
-	int flag, containsVertex;
-	if (pGraph == NULL)
-		return GRAPH_SEARCH_RETURN_INVALID_PARAMETER;
-	if (graphId = graphContainsVertex(pGraph, initialVertex, &containsVertex))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
-	if (!containsVertex)
-		return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
-	if (graphGetVertexFlag(pGraph, initialVertex, &flag))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	int flag;
+	if (graphId = graphGetVertexFlag(pGraph, initialVertex, &flag)) {
+		switch (graphId) {
+		case GRAPH_RETURN_INVALID_PARAMETER:
+			return GRAPH_SEARCH_RETURN_INVALID_PARAMETER;
+		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+			return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
+		default:
+			assert(0);
+		}
+	}
 	if (flag == visitedFlag)
 		return GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED;
 	if (queueId = queueCreate(&pBfsQueue, freeNode)) {
-		if (queueId != QUEUE_RETURN_MEMORY)
-			return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+		assert(queueId == QUEUE_RETURN_MEMORY);
 		return GRAPH_SEARCH_RETURN_MEMORY;
 	}
 	id = bfs(pGraph,
@@ -110,16 +114,13 @@ static GraphSearchReturnID dfs(Graph *pGraph,
 	int isDirected, flag;
 	if (visitVertexCallback)
 		visitVertexCallback(vertex);
-	if (graphSetVertexFlag(pGraph, vertex, visitedFlag))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
-	if (graphIsDirected(pGraph, &isDirected))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	assert(!graphSetVertexFlag(pGraph, vertex, visitedFlag));
+	assert(!graphIsDirected(pGraph, &isDirected));
 	if (isDirected) {
-		if (graphGetVertexOutDegree(pGraph, vertex, &degree))
-			return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+		assert(!graphGetVertexOutDegree(pGraph, vertex, &degree));
 		while (degree--) {
-			if (graphGetNextOutNeighbour(pGraph, vertex, &neighbour, &edge))
-				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+			assert(!graphGetNextOutNeighbour(pGraph, vertex, &neighbour,
+				&edge));
 			if (graphGetVertexFlag(pGraph, neighbour, &flag))
 				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
 			if (flag == visitedFlag)
