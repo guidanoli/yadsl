@@ -1,23 +1,34 @@
 #ifndef __GRAPH_H__
 #define __GRAPH_H__
 
-/**
-* A Graph starts with no vertices and, therefore, no edges.
-* It is possible to add and remove edges and check neighbourhoods.
-*
-* Observations:
-* - On the documentation of every function, it might be written
-* "Possible errors" (which disconsider GRAPH_RETURN_OK), or
-* "Possible return values" (which consider all values possible).
-* - Undirected graphs store edges differently than directed
-* graphs, but still, in such way that graphGetNextOutNeighbour
-* or graphGetNextInNeighbour will provide unique edges, for every
-* vertex on a graph. That's why it can be used for serialization.
-*
-* HINT: SET_RETURN_OK will always be 0, therefore it can be used
-* as a boolean value to check if a function went OK or not, eg:
-* if (setId = setFunction(pSet)) { ... }
-*/
+//
+//     ______                 __
+//    / ____/________ _____  / /_
+//   / / __/ ___/ __ `/ __ \/ __ \
+//  / /_/ / /  / /_/ / /_/ / / / /
+//  \____/_/   \__,_/ .___/_/ /_/
+//                 /_/
+//
+// A Graph starts with no vertices and, therefore, no edges.
+// You are able to add and remove vertices and edges, check
+// if vertices and edges are contained in graph, iterate through
+// vertices and vertex neighbours (in, out or all), obtain
+// vertex count, vertex degrees (in, out or total), and set/get
+// flags set to vertices (for searches in graph, coloring...)
+//
+// Observations:
+// - On the documentation of every function, it might be written
+// "Possible errors" (which disconsider GRAPH_RETURN_OK), or
+// "Possible return values" (which consider all values possible).
+// - Undirected graphs store edges differently than directed
+// graphs, but still, in such way that graphGetNextOutNeighbour
+// or graphGetNextInNeighbour will provide unique edges, for every
+// vertex on a graph. That's why it can be used for serialization.
+//
+// HINT: GRAPH_RETURN_OK will always be 0, therefore it can be used
+// as a boolean value to check if a function went OK or not, eg:
+// if (graphId = grpahFunction(pGraph)) { ... }
+//
 
 typedef enum
 {
@@ -49,11 +60,6 @@ typedef enum
 	/* Could not allocate memory space */
 	GRAPH_RETURN_MEMORY,
 	
-	/* When an internal error is unrecognized */
-	GRAPH_RETURN_UNKNOWN_ERROR,
-
-	/* The structure is corrupted and behaviour is unpredictable */
-	GRAPH_RETURN_FATAL_ERROR,
 }
 GraphReturnID;
 
@@ -102,7 +108,6 @@ GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected);
 * GRAPH_RETURN_INVALID_PARAMETER
 * 	- "pGraph" is NULL
 * 	- "pSize" is NULL
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize);
 
@@ -115,7 +120,6 @@ GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize);
 * 	- "pGraph" is NULL
 * 	- "pV" is NULL
 * GRAPH_RETURN_EMPTY
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV);
 
@@ -130,7 +134,6 @@ GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV);
 * 	- "pOut" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * 	- vertex "v" does not exist
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
 	unsigned long *pOut);
@@ -146,7 +149,6 @@ GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
 * 	- "pIn" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * 	- vertex "v" does not exist
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
 	unsigned long *pIn);
@@ -164,7 +166,6 @@ GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
 * 	- "pDegree" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * 	- vertex "v" does not exist
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
 	unsigned long *pDegree);
@@ -187,7 +188,6 @@ GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
 * 	- vertex "u" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
 * 	- "u" does not contain neighbours, that is, edges
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv);
@@ -210,7 +210,6 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 * 	- vertex "u" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
 * 	- "u" does not contain in-neighbours
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv);
@@ -233,7 +232,6 @@ GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 * 	- vertex "u" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
 * 	- "u" does not contain out-neighbours
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv);
@@ -259,7 +257,6 @@ GraphReturnID graphContainsVertex(Graph *pGraph, void *v, int *pContains);
 * 	- "pGraph" is NULL
 * GRAPH_RETURN_CONTAINS_VERTEX
 * 	- graph already contains vertex "v"
-* GRAPH_RETURN_UNKNOWN_ERROR
 * GRAPH_RETURN_MEMORY
 */
 GraphReturnID graphAddVertex(Graph *pGraph, void *v);
@@ -272,8 +269,6 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v);
 * GRAPH_RETURN_INVALID_PARAMETER
 * 	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* GRAPH_RETURN_UNKNOWN_ERROR
-* GRAPH_RETURN_FATAL_ERROR
 */
 GraphReturnID graphRemoveVertex(Graph *pGraph, void *v);
 
@@ -285,9 +280,9 @@ GraphReturnID graphRemoveVertex(Graph *pGraph, void *v);
 * Possible return values:
 * GRAPH_RETURN_INVALID_PARAMETER
 * 	- "pGraph" is NULL
+*	- "pContains" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
 * 	- vertex "u" or vertex "v" does not exist
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains);
 
@@ -303,9 +298,7 @@ GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains)
 * 	- vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_CONTAINS_EDGE
 * 	- Edge "uv" already exists in the graph
-* GRAPH_RETURN_UNKNOWN_ERROR
 * GRAPH_RETURN_MEMORY
-* GRAPH_RETURN_FATAL_ERROR
 * [!] Alters the state of the iterator provided by the
 * graphGetNext*Neighbour functions for the manipulated
 * vertices u and v, if the function is successful
@@ -324,7 +317,6 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv);
 * 	- vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
 * 	- Edge "uv" does not exist in the graph
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
 
@@ -339,8 +331,6 @@ GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
 * 	- vertex "u" or vertex "v" does not exist
 * GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
 * 	- Edge "uv" does not exist in the graph
-* GRAPH_RETURN_UNKNOWN_ERROR
-* GRAPH_RETURN_FATAL_ERROR
 * [!] Alters the state of the iterator provided by the
 * graphGetNext*Neighbour functions for the manipulated
 * vertices u and v, if the function is successful
@@ -357,7 +347,6 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v);
 *	- "pGraph" is NULL
 *	- "pFlag" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag);
 
@@ -370,7 +359,6 @@ GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag);
 * GRAPH_RETURN_INVALID_PARAMETER
 *	- "pGraph" is NULL
 * GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag);
 
@@ -381,7 +369,6 @@ GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag);
 * Possible errors:
 * GRAPH_RETURN_INVALID_PARAMETER
 *	- "pGraph" is NULL
-* GRAPH_RETURN_UNKNOWN_ERROR
 */
 GraphReturnID graphSetAllVerticesFlags(Graph *pGraph, int flag);
 

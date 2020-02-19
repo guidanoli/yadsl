@@ -26,6 +26,8 @@ struct Set
 	unsigned long callbackDepth; /* Callback depth */
 };
 
+// Modification logging
+
 #define SetLogModification(pSet) do { \
 	if (pSet->callbackDepth) \
 		++pSet->modificationCount; \
@@ -39,8 +41,6 @@ struct Set
 
 static SetReturnID _setContains(Set *pSet, void *item,
 	struct SetItem **pSetItem);
-static SetReturnID _setContainsCustom(Set *pSet, struct SetItem **pSetItem,
-	void *arg, int (*func) (void *item, void *arg));
 
 // Public functions
 
@@ -300,23 +300,6 @@ static SetReturnID _setContains(Set *pSet, void *item,
 		if (current_direction == -direction)
 			break;
 		direction = current_direction;
-	}
-	return SET_RETURN_DOES_NOT_CONTAIN;
-}
-
-// Checks if there is an item that satisfies func(item, arg) and if there is,
-// makes the pointer "pSetItem" point to it
-static SetReturnID _setContainsCustom(Set *pSet, struct SetItem **pSetItem,
-	void *arg, int (*func) (void *item, void *arg))
-{
-	struct SetItem *p;
-	if (pSet == NULL || pSetItem == NULL || func == NULL)
-		return SET_RETURN_INVALID_PARAMETER;
-	for (p = pSet->first; p; p = p->next) {
-		if (func(p->item, arg)) {
-			*pSetItem = p;
-			return SET_RETURN_CONTAINS;
-		}
 	}
 	return SET_RETURN_DOES_NOT_CONTAIN;
 }

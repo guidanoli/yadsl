@@ -71,7 +71,8 @@ setup(name='aa',
 	  long_description_content_type='text/markdown',
 	  ext_modules=[
 		  CMakeExtension('pydiff'),
-		  CMakeExtension('pyqueue')],
+		  CMakeExtension('pyqueue'),
+		  CMakeExtension('pygraph')],
 	  cmdclass={'build_ext': CMakeBuild},
 	  zip_safe=False,
 	  classifiers=[

@@ -519,8 +519,6 @@ static TesterReturnValue convertIoRet(GraphIoReturnID graphIoId)
 		return TesterExternalReturnValue("file error");
 	case GRAPH_IO_RETURN_DEPRECATED_FILE_FORMAT:
 		return TesterExternalReturnValue("deprecated file format");
-	case GRAPH_RETURN_FATAL_ERROR:
-		return TesterExternalReturnValue("fatal error");
 	default:
 		return TesterExternalReturnValue("unknown");
 	}

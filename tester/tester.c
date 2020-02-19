@@ -9,14 +9,14 @@
 // STATIC VARIABLES DECLARATIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-static unsigned long line; // line count
+static size_t line; // line count
 static const char *externalReturnValueInfo = NULL; // external return value
 static const char *nativeReturnValueInfos[TESTER_RETURN_COUNT]; // return value
-static char buffer[BUFSIZ], // file line
-			command[BUFSIZ], // command string
-			sep[BUFSIZ], // separation characters
-			temp[BUFSIZ]; // temp. variable
-static char *cursor; // buffer cursor
+static char buffer[BUFSIZ] = "", // file line
+			command[BUFSIZ] = "", // command string
+			sep[BUFSIZ] = "", // separation characters
+			temp[BUFSIZ] = ""; // temp. variable
+static char *cursor = buffer; // buffer cursor
 
 ////////////////////////////////////////////////////////////////////////////////
 // STATIC FUNCTIONS DECLARATIONS
@@ -64,30 +64,44 @@ int TesterParseArguments(const char *format, ...)
 		int parsingError = 0;
 		switch (*format) {
 		case 'f':
-			arg = va_arg(va, float *);
+			if (!(arg = va_arg(va, float*))) {
+				parsingError = 1;
+				break;
+			}
 			if ((parsingError = _TesterParseArg("%f", arg, &inc)) &&
 				(parsingError = _TesterParseArg("%g", arg, &inc)) &&
 				(parsingError = _TesterParseArg("%e", arg, &inc)))
 				break;
 			break;
 		case 'i':
-			arg = va_arg(va, int *);
+			if (!(arg = va_arg(va, int*))) {
+				parsingError = 1;
+				break;
+			}
 			if ((parsingError = _TesterParseArg("%d", arg, &inc)) &&
 				(parsingError = _TesterParseArg("%u", arg, &inc)))
 				break;
 			break;
 		case 'l':
-			arg = va_arg(va, long *);
+			if (!(arg = va_arg(va, long*))) {
+				parsingError = 1;
+				break;
+			}
 			if ((parsingError = _TesterParseArg("%ld", arg, &inc)) &&
 				(parsingError = _TesterParseArg("%lu", arg, &inc)))
 				break;
 			break;
 		case 's':
-			str = va_arg(va, char *);
+			if (!(str = va_arg(va, char*))) {
+				parsingError = 1;
+				break;
+			}
 			parsingError = _TesterParseStr(str, &inc);
 			break;
 		default:
-			fprintf(stderr, "Format character %c unknown", *format);
+			fprintf(stderr, "Format character %c unknown.\n", *format);
+			parsingError = 1;
+			break;
 		}
 		if (parsingError) {
 			va_end(va);
@@ -126,13 +140,12 @@ const char *TesterGetReturnValueInfo(TesterReturnValue returnValue)
 void TesterLog(const char *message, ...)
 {
 	va_list va;
-	size_t spacing = 0;
+	size_t spacing = 0, col = cursor - buffer;
 	va_start(va, message);
 	spacing += fprintf(stdout, "LOG: \"");
 	spacing += vfprintf(stdout, message, va);
-	spacing += fprintf(stdout, "\" ");
+	spacing += fprintf(stdout, "\" (line %zu, col %zu)\n", line, col);
 	va_end(va);
-	_TesterPrintCursorPosition(stdout, spacing);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -158,9 +171,7 @@ static TesterReturnValue _TesterMain(int argc, char **argv)
 	if (ret = TesterInitCallback())
 		return ret;
 	// Parse script
-	if (ret = _TesterParse(fp))
-		return ret;
-	return TESTER_RETURN_OK;
+	return _TesterParse(fp);
 }
 
 static TesterReturnValue _TesterParse(FILE *fp)
@@ -296,10 +307,19 @@ static void _TesterPrintCursorPosition(FILE *fp, size_t spacing)
 {
 	size_t col = cursor - buffer, bufflen = strlen(buffer);
 	if (bufflen == 0) return;
-	spacing += col;
-	spacing += fprintf(fp, "(line %lu, column %zu) ", line, col + 1);
-	fprintf(fp, "%s", buffer);
-	if (buffer[bufflen - 1] != '\n') fprintf(fp, "\n");
+	spacing += fprintf(fp, "(lin %zu, col %zu) ", line, col + 1);
+	spacing %= 80; /* Loop command length */
+	if (spacing + bufflen > 80) {
+		// trim buffer to fit 80 characters
+		fprintf(fp, "\n%.*s", 80, buffer);
+		spacing = col;
+		if (buffer[79] != '\n') fprintf(fp, "\n");
+	} else {
+		fprintf(fp, "%s", buffer);
+		spacing += col;
+		if (buffer[bufflen - 1] != '\n') fprintf(fp, "\n");
+	}
+	fprintf(fp, "\n");
 	while (spacing--) fprintf(fp, " ");
 	fprintf(fp, "^\n");
 }

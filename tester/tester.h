@@ -1,9 +1,12 @@
 #ifndef __TESTER_H__
 #define __TESTER_H__
 
-////////////////////////////////////////////////////////////////////////////////
-// TESTER FRAMEWORK
-// 
+//    ______          __           
+//   /_  __/__  _____/ /____  _____
+//    / / / _ \/ ___/ __/ _ \/ ___/
+//   / / /  __(__  ) /_/  __/ /    
+//  /_/  \___/____/\__/\___/_/                                 
+//
 // This incorporates the generic part of the
 // tester framework, which reads the script,
 // and parses commands and its arguments.
@@ -39,7 +42,7 @@
 // /catch <return>
 //   if <return> is equal to the last value
 //   returned, the error is ignored.
-////////////////////////////////////////////////////////////////////////////////
+//
 
 /**
 * Enumeration of tester return values.
@@ -64,11 +67,6 @@ TesterReturnValue;
 
 ////////////////////////////////////////////////////////////////////////////////
 // SYMBOLS YOU MUST DEFINE
-//
-// The specific functions that must be defined
-// can return TesterReturnValue. If a value other
-// than TESTER_RETURN_OK is returned, the test
-// is interrupted, returning that value.
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -80,28 +78,28 @@ TesterReturnValue;
 * NULL, necessarily. But, if you do not want
 * this feature, simply assign it to NULL.
 */
-extern const char *TesterHelpStrings[];
+extern const char *TesterHelpStrings [];
 
 /**
 * Callback Tester calls after opening the script
-* file successfully, in order to the caller to
+* file successfully, allowing the caller to
 * initialize its variables properly before parsing.
 */
-extern TesterReturnValue TesterInitCallback();
+extern TesterReturnValue TesterInitCallback ();
 
 /**
 * Callback called when Tester finds a command
 * call. It is your job to parse the command and
 * require aditional arguments, if needed.
 */
-extern TesterReturnValue TesterParseCallback(const char *command);
+extern TesterReturnValue TesterParseCallback (const char *command);
 
 /**
 * Callback called when TesterParseCallback returns
 * a value different from TESTER_RETURN_OK, or after
 * parsing the whole script, if no errors are thrown.
 */
-extern TesterReturnValue TesterExitCallback();
+extern TesterReturnValue TesterExitCallback ();
 
 ////////////////////////////////////////////////////////////////////////////////
 // SYMBOLS ALREADY DEFINED
@@ -109,49 +107,63 @@ extern TesterReturnValue TesterExitCallback();
 
 /**
 * Parse arguments following the current command,
-* much like in scanf, altough the string format
-* is different, and return the number of arguments
+* much like in scanf (altough the string format
+* is different). Returns the number of arguments
 * parsed successfully.
 * Each character in the format string corresponds
-* to an argument to be parsed, in that order:
-*   'f' .................... float
-*   'i' .................... integer
-*   'l' .................... long
-*   's' .................... string (*)
+* to an argument to be parsed, in the same order.
+* The avaiable argument types are:
+*
+* +--------+------------------+----------------+
+* | C type | Format character | Reference type |
+* +--------+------------------+----------------+
+* | float  | f                | float *        |
+* | int    | i                | int *          |
+* | long   | l                | long *         |
+* | char * | s                | char *         |
+* +--------+------------------+----------------+
+*
 * Following the format string, must be passed by
-* reference the argument variables.
+* reference the argument variables in the appropriate
+* reference type, as shown on the table above.
 * If it fails to parse one of the argument, -1 is
-* returned, but the state of the parser is then
+* returned, and the state of the parser is then
 * reversed to that of before the call.
-* (*) Must be of at least the size of BUFSIZ (stdio.h)
-* (*) Can parse strings within quotation marks too.
+* 
+* Observations about strings:
+* - Buffer must be of at least the size of BUFSIZ,
+*   defined in stdio.h.
+* - Can parse strings within quotation marks too,
+*   ignoring separation characters.
 */
-int TesterParseArguments(const char *format, ...);
+int TesterParseArguments (const char *format, ...);
 
 /**
 * Create an external value for an specific error.
-* Usage: "return TesterExternalReturnValue("myerror");"
-* HINT: The external value can be caught by '/catch' too.
+* Once called, its return value must be returned by the
+* callback from which it was called.
+* HINT: The external value can be caught by '/catch' too,
+* by providing the same string 'info' as its parameter.
 */
-TesterReturnValue TesterExternalReturnValue(const char *info);
+TesterReturnValue TesterExternalReturnValue (const char *info);
 
 /**
 * Log a message with additional information about current
 * parser state and cursor position, wrapping fprintf.
 */
-void TesterLog(const char *message, ...);
+void TesterLog (const char *message, ...);
 
 /**
 * Prints help strings provided in the same
 * way as if no arguments were provided.
 */
-void TesterPrintHelpStrings();
+void TesterPrintHelpStrings ();
 
 /**
 * Get further information about return value
 * HINT: If an invalid return value is given,
 * a proper error message is returned.
 */
-const char *TesterGetReturnValueInfo(TesterReturnValue returnValue);
+const char *TesterGetReturnValueInfo (TesterReturnValue returnValue);
 
 #endif

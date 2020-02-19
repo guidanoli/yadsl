@@ -9,5 +9,6 @@
 /print l 4294967295
 /print f 3.1415
 /print f 1e-2
-/throw
+/throw custom
 /catch custom
+/log "My long message is so long it must be trimmed"

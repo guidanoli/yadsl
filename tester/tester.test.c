@@ -51,8 +51,14 @@ TesterReturnValue TesterParseCallback(const char *command)
 		} else {
 			return TESTER_RETURN_ARGUMENT;
 		}
+	} else if matches(command, "log") {
+		if (TesterParseArguments("s", buffer) != 1)
+			return TESTER_RETURN_ARGUMENT;
+		TesterLog(buffer);
 	} else if matches(command, "throw") {
-		return TesterExternalReturnValue("custom");
+		if (TesterParseArguments("s", buffer) != 1)
+			return TESTER_RETURN_ARGUMENT;
+		return TesterExternalReturnValue(buffer);
 	} else {
 		return TESTER_RETURN_COMMAND;
 	}
