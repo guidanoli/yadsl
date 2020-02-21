@@ -1,5 +1,5 @@
 add_library(map map.c map.h)
-target_link_libraries(map set)
+target_link_libraries(map set common)
 target_include_directories(map PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(map PROPERTIES FOLDER libraries)
 

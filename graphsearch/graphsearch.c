@@ -1,7 +1,8 @@
 #include "graphsearch.h"
 
 #include <stdlib.h>
-#include <assert.h>
+
+#include <common/assert.h>
 
 #include "queue.h"
 
@@ -50,7 +51,7 @@ GraphSearchReturnID graphDFS(Graph *pGraph,
 		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
 			return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
 		default:
-			assert(0);
+			_assert(0);
 		}
 	}
 	if (flag == visitedFlag)
@@ -80,13 +81,13 @@ GraphSearchReturnID graphBFS(Graph *pGraph,
 		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
 			return GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX;
 		default:
-			assert(0);
+			_assert(0);
 		}
 	}
 	if (flag == visitedFlag)
 		return GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED;
 	if (queueId = queueCreate(&pBfsQueue, freeNode)) {
-		assert(queueId == QUEUE_RETURN_MEMORY);
+		_assert(queueId == QUEUE_RETURN_MEMORY);
 		return GRAPH_SEARCH_RETURN_MEMORY;
 	}
 	id = bfs(pGraph,
@@ -114,12 +115,12 @@ static GraphSearchReturnID dfs(Graph *pGraph,
 	int isDirected, flag;
 	if (visitVertexCallback)
 		visitVertexCallback(vertex);
-	assert(!graphSetVertexFlag(pGraph, vertex, visitedFlag));
-	assert(!graphIsDirected(pGraph, &isDirected));
+	_assert(!graphSetVertexFlag(pGraph, vertex, visitedFlag));
+	_assert(!graphIsDirected(pGraph, &isDirected));
 	if (isDirected) {
-		assert(!graphGetVertexOutDegree(pGraph, vertex, &degree));
+		_assert(!graphGetVertexOutDegree(pGraph, vertex, &degree));
 		while (degree--) {
-			assert(!graphGetNextOutNeighbour(pGraph, vertex, &neighbour,
+			_assert(!graphGetNextOutNeighbour(pGraph, vertex, &neighbour,
 				&edge));
 			if (graphGetVertexFlag(pGraph, neighbour, &flag))
 				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;

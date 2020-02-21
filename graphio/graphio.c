@@ -2,7 +2,8 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
+
+#include <common/assert.h>
 
 #include "map.h"
 
@@ -85,7 +86,7 @@ GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
 	/* Graph to be created */
 	if (graphId = graphCreate(&pGraph, isDirected, cmpVertices,
 		freeVertex, cmpEdges, freeEdge)) {
-		assert(graphId == GRAPH_RETURN_MEMORY);
+		_assert(graphId == GRAPH_RETURN_MEMORY);
 		return GRAPH_IO_RETURN_MEMORY;
 	}
 	/* Address map to store vertex items */
@@ -117,32 +118,32 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 	void *previousValue;
 	unsigned long vCount, nbCount, i, j, index;
 	void *pVertex, *pNeighbour, *pEdge;
-	assert(!graphIsDirected(pGraph, &isDirected));
-	assert(!graphGetNumberOfVertices(pGraph, &vCount));
+	_assert(!graphIsDirected(pGraph, &isDirected));
+	_assert(!graphGetNumberOfVertices(pGraph, &vCount));
 	WRITENL(fp, VERSION_STR, FILE_FORMAT_VERSION); // Version
 	WRITENL(fp, DIRECTED_STR, isDirected); // Type
 	WRITE(fp, VCOUNT_STR, vCount); // Vertex count
 	for (i = 0; i < vCount; ++i) {
 		int flag;
-		assert(!graphGetNextVertex(pGraph, &pVertex));
+		_assert(!graphGetNextVertex(pGraph, &pVertex));
 		if (mapId = mapPutEntry(addressMap, pVertex, i, &previousValue)) {
-			assert(mapId == MAP_RETURN_MEMORY);
+			_assert(mapId == MAP_RETURN_MEMORY);
 			return GRAPH_IO_RETURN_MEMORY;
 		}
 		if (writeVertex(fp, pVertex)) // Vertex item
 			return GRAPH_IO_RETURN_WRITING_FAILURE;
-		assert(!graphGetVertexFlag(pGraph, pVertex, &flag));
+		_assert(!graphGetVertexFlag(pGraph, pVertex, &flag));
 		WRITE(fp, VFLAG_STR, flag);
 	}
 	WRITE(fp, "%c", '\n');
 	for (i = vCount; i; --i) {
-		assert(!graphGetNextVertex(pGraph, &pVertex));
-		assert(!graphGetVertexOutDegree(pGraph, pVertex, &nbCount));
+		_assert(!graphGetNextVertex(pGraph, &pVertex));
+		_assert(!graphGetVertexOutDegree(pGraph, pVertex, &nbCount));
 		WRITE(fp, NBCOUNT_STR, nbCount); // Vertex degree
 		for (j = nbCount; j; --j) {
-			assert(!graphGetNextOutNeighbour(pGraph, pVertex, &pNeighbour,
+			_assert(!graphGetNextOutNeighbour(pGraph, pVertex, &pNeighbour,
 				&pEdge));
-			assert(!mapGetEntry(addressMap, pNeighbour, &previousValue));
+			_assert(!mapGetEntry(addressMap, pNeighbour, &previousValue));
 			index = (unsigned long) previousValue;
 			WRITE(fp, NB_IDX_STR, index); // Neighbour index
 			if (writeEdge(fp, pEdge)) // Edge item
@@ -178,11 +179,11 @@ static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
 			case GRAPH_RETURN_CONTAINS_VERTEX:
 				return GRAPH_IO_RETURN_SAME_CREATION;
 			default:
-				assert(0);
+				_assert(0);
 			}
 		}
 		READ(fp, VFLAG_STR, &flag);
-		assert(!graphSetVertexFlag(pGraph, pVertexItem, flag));
+		_assert(!graphSetVertexFlag(pGraph, pVertexItem, flag));
 	}
 	for (i = 0; i < vCount; ++i) {
 		pVertexItem = addressMap[i];
@@ -202,7 +203,7 @@ static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
 				case GRAPH_RETURN_CONTAINS_EDGE:
 					return GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT;
 				default:
-					assert(0);
+					_assert(0);
 				}
 			}
 		}

@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 #include <stdarg.h>
-#include <assert.h>
+
+#include <common/assert.h>
 
 #include "set.h"
 
@@ -128,7 +129,7 @@ GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize)
 	unsigned long temp;
 	if (pGraph == NULL || pSize == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
-	assert(!setGetSize(pGraph->vertexSet, &temp));
+	_assert(!setGetSize(pGraph->vertexSet, &temp));
 	*pSize = temp;
 	return GRAPH_RETURN_OK;
 }
@@ -147,12 +148,12 @@ GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV)
 	if (pGraph == NULL || pV == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (setId = setGetCurrentItem(pGraph->vertexSet, &pVertex)) {
-		assert(setId == SET_RETURN_EMPTY);
+		_assert(setId == SET_RETURN_EMPTY);
 		return GRAPH_RETURN_EMPTY;
 	}
 	if (setId = setNextItem(pGraph->vertexSet)) {
-		assert(setId == SET_RETURN_OUT_OF_BOUNDS);
-		assert(!setFirstItem(pGraph->vertexSet));
+		_assert(setId == SET_RETURN_OUT_OF_BOUNDS);
+		_assert(!setFirstItem(pGraph->vertexSet));
 	}
 	*pV = pVertex->item;
 	return GRAPH_RETURN_OK;
@@ -181,7 +182,7 @@ GraphReturnID graphContainsVertex(Graph *pGraph, void *v, int *pContains)
 		*pContains = 0;
 		break;
 	default:
-		assert(0);
+		_assert(0);
 	}
 	return GRAPH_RETURN_OK;
 }
@@ -216,7 +217,7 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v)
 		setDestroy(pVertex->inEdges);
 		setDestroy(pVertex->outEdges);
 		free(pVertex);
-		assert(setId == SET_RETURN_MEMORY);
+		_assert(setId == SET_RETURN_MEMORY);
 		return GRAPH_RETURN_MEMORY;
 	}
 	return GRAPH_RETURN_OK;
@@ -228,7 +229,7 @@ GraphReturnID graphRemoveVertex(Graph *pGraph, void *v)
 	GraphReturnID graphId;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
-	assert(!setRemoveItem(pGraph->vertexSet, pVertex));
+	_assert(!setRemoveItem(pGraph->vertexSet, pVertex));
 	_freeVertex(pVertex, pGraph);
 	return GRAPH_RETURN_OK;
 }
@@ -242,7 +243,7 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 	int containsEdge;
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
-	assert(!graphContainsEdge(pGraph, u, v, &containsEdge));
+	_assert(!graphContainsEdge(pGraph, u, v, &containsEdge));
 	if (containsEdge)
 		return GRAPH_RETURN_CONTAINS_EDGE;
 	pEdgeUV = malloc(sizeof(struct GraphEdge));
@@ -256,18 +257,18 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 		pEdgeUV->pSource = pVertexU < pVertexV ? pVertexU : pVertexV;
 		pEdgeUV->pDestination = pVertexU < pVertexV ? pVertexV : pVertexU;
 	}
-	assert(pEdgeUV->pSource);
+	_assert(pEdgeUV->pSource != NULL);
 	if (setId = setAddItem(pEdgeUV->pSource->outEdges, pEdgeUV)) {
 		free(pEdgeUV);
-		assert(setId == SET_RETURN_MEMORY);
+		_assert(setId == SET_RETURN_MEMORY);
 		return GRAPH_RETURN_MEMORY;
 	}
 	_resetAdjListCounters(pEdgeUV->pSource);
-	assert(pEdgeUV->pDestination);
+	_assert(pEdgeUV->pDestination != NULL);
 	if (setId = setAddItem(pEdgeUV->pDestination->inEdges, pEdgeUV)) {
-		assert(!setRemoveItem(pEdgeUV->pSource->outEdges, pEdgeUV));
+		_assert(!setRemoveItem(pEdgeUV->pSource->outEdges, pEdgeUV));
 		free(pEdgeUV);
-		assert(setId == SET_RETURN_MEMORY);
+		_assert(setId == SET_RETURN_MEMORY);
 		return GRAPH_RETURN_MEMORY;
 	}
 	_resetAdjListCounters(pEdgeUV->pDestination);
@@ -290,7 +291,7 @@ GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains)
 		*pContains = 0;
 		break;
 	default:
-		assert(0);
+		_assert(0);
 	}
 	return GRAPH_RETURN_OK;
 }
@@ -306,9 +307,9 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v)
 	if (graphId = _parseEdge(pGraph, pVertexU, pVertexV, &pSource,
 		&pDestination, &pEdgeUV))
 		return graphId;
-	assert(!setRemoveItem(pSource->outEdges, pEdgeUV));
+	_assert(!setRemoveItem(pSource->outEdges, pEdgeUV));
 	_resetAdjListCounters(pSource);
-	assert(!setRemoveItem(pDestination->inEdges, pEdgeUV));
+	_assert(!setRemoveItem(pDestination->inEdges, pEdgeUV));
 	_resetAdjListCounters(pDestination);
 	if (pGraph->freeEdge)
 		pGraph->freeEdge(pEdgeUV->item);
@@ -324,7 +325,7 @@ GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv)
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
 	if (graphId = _parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, &temp)) {
-		assert(graphId != GRAPH_RETURN_INVALID_PARAMETER);
+		_assert(graphId != GRAPH_RETURN_INVALID_PARAMETER);
 		return graphId;
 	}
 	*uv = temp->item;
@@ -341,7 +342,7 @@ GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
-	assert(!setGetSize(pVertex->outEdges, &temp));
+	_assert(!setGetSize(pVertex->outEdges, &temp));
 	*pOut = temp;
 	return GRAPH_RETURN_OK;
 }
@@ -356,7 +357,7 @@ GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
-	assert(!setGetSize(pVertex->inEdges, &temp));
+	_assert(!setGetSize(pVertex->inEdges, &temp));
 	*pIn = temp;
 	return GRAPH_RETURN_OK;
 }
@@ -371,8 +372,8 @@ GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
-	assert(!setGetSize(pVertex->inEdges, &in));
-	assert(!setGetSize(pVertex->outEdges, &out));
+	_assert(!setGetSize(pVertex->inEdges, &in));
+	_assert(!setGetSize(pVertex->outEdges, &out));
 	*pDegree = in + out;
 	return GRAPH_RETURN_OK;
 }
@@ -388,8 +389,8 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertex))
 		return graphId;
-	assert(!setGetSize(pVertex->inEdges, &inSize));
-	assert(!setGetSize(pVertex->outEdges, &outSize));
+	_assert(!setGetSize(pVertex->inEdges, &inSize));
+	_assert(!setGetSize(pVertex->outEdges, &outSize));
 	if (inSize == 0 && outSize == 0)
 		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
 	if (inSize == 0) {
@@ -446,7 +447,7 @@ GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertex))
 		return graphId;
-	assert(!setGetSize(pVertex->inEdges, &inSize));
+	_assert(!setGetSize(pVertex->inEdges, &inSize));
 	if (inSize == 0)
 		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
 	_cycleSetCursor(pVertex->inEdges, &temp);
@@ -466,7 +467,7 @@ GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertex))
 		return graphId;
-	assert(!setGetSize(pVertex->outEdges, &outSize));
+	_assert(!setGetSize(pVertex->outEdges, &outSize));
 	if (outSize == 0)
 		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
 	_cycleSetCursor(pVertex->outEdges, &temp);
@@ -502,7 +503,7 @@ GraphReturnID graphSetAllVerticesFlags(Graph *pGraph, int flag)
 	void *temp;
 	if (pGraph == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
-	assert(setFilterItem(pGraph->vertexSet, _setVertexFlag, &flag, &temp)
+	_assert(setFilterItem(pGraph->vertexSet, _setVertexFlag, &flag, &temp)
 		== SET_RETURN_DOES_NOT_CONTAIN); // _setVertexFlag only returns 0
 	return GRAPH_RETURN_OK;
 }
@@ -535,10 +536,10 @@ static void _cycleSetCursor(Set *pSet, void **pValue)
 {
 	SetReturnID setId;
 	void *temp;
-	assert(!setGetCurrentItem(pSet, &temp));
+	_assert(!setGetCurrentItem(pSet, &temp));
 	if (setId = setNextItem(pSet)) {
-		assert(setId == SET_RETURN_OUT_OF_BOUNDS);
-		assert(!setFirstItem(pSet));
+		_assert(setId == SET_RETURN_OUT_OF_BOUNDS);
+		_assert(!setFirstItem(pSet));
 	}
 	*pValue = temp;
 }
@@ -631,7 +632,7 @@ static GraphReturnID _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
 	case SET_RETURN_DOES_NOT_CONTAIN:
 		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
 	default:
-		assert(0);
+		_assert(0);
 	}
 	return GRAPH_RETURN_OK;;
 }
@@ -665,7 +666,7 @@ static GraphReturnID __parseVertices(Graph *pGraph, void *item,
 			&param,            /* arg */
 			ppVertex)) {       /* pItem */
 			va_end(va);
-			assert(setId == SET_RETURN_DOES_NOT_CONTAIN);
+			_assert(setId == SET_RETURN_DOES_NOT_CONTAIN);
 			return GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX;
 		}
 		param.item = va_arg(va, void *);

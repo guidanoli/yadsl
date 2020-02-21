@@ -1,7 +1,8 @@
 #include "map.h"
 
 #include <stdlib.h>
-#include <assert.h>
+
+#include <common/assert.h>
 
 #include "set.h"
 
@@ -56,7 +57,7 @@ MapReturnID mapCreate(Map **ppMap,
 		return MAP_RETURN_MEMORY;
 	if (setId = setCreate(&pMap->entrySet)) {
 		free(pMap);
-		assert(setId == SET_RETURN_MEMORY);
+		_assert(setId == SET_RETURN_MEMORY);
 		return MAP_RETURN_MEMORY;
 	}
 	pMap->compareKeys = compareKeys;
@@ -86,7 +87,7 @@ MapReturnID mapPutEntry(Map *pMap, void *key, void *value,
 		return mapId;
 	if (setId = setAddItem(pMap->entrySet, pEntry)) {
 		free(pEntry);
-		assert(setId == SET_RETURN_MEMORY);
+		_assert(setId == SET_RETURN_MEMORY);
 		return MAP_RETURN_MEMORY;
 	}
 	return MAP_RETURN_OK;
@@ -115,7 +116,7 @@ MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue)
 		return mapId;
 	tempKey = pEntry->key;
 	tempValue = pEntry->value;
-	assert(!setRemoveItem(pMap->entrySet, pEntry));
+	_assert(!setRemoveItem(pMap->entrySet, pEntry));
 	*pKey = tempKey;
 	*pValue = tempValue;
 	return MAP_RETURN_OK;
@@ -126,7 +127,7 @@ MapReturnID mapGetNumberOfEntries(Map *pMap, unsigned long *pNum)
 	unsigned long temp;
 	if (pMap == NULL || pNum == NULL)
 		return MAP_RETURN_INVALID_PARAMETER;
-	assert(!setGetSize(pMap->entrySet, &temp));
+	_assert(!setGetSize(pMap->entrySet, &temp));
 	*pNum = temp;
 	return MAP_RETURN_OK;
 }
@@ -165,7 +166,7 @@ static MapReturnID _getEntry(Map *pMap, void *key, struct Entry **ppEntry)
 	SetReturnID setId;
 	struct _cmpEntryKeyParameter arg = {key, pMap->compareKeys};
 	if (setId = setFilterItem(pMap->entrySet, _cmpEntryKey, &arg, ppEntry)) {
-		assert(setId == SET_RETURN_DOES_NOT_CONTAIN);
+		_assert(setId == SET_RETURN_DOES_NOT_CONTAIN);
 		return MAP_RETURN_ENTRY_NOT_FOUND;
 	}
 	return MAP_RETURN_OK;

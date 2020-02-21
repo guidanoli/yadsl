@@ -1,5 +1,5 @@
 add_library(graph graph.c graph.h)
-target_link_libraries(graph set)
+target_link_libraries(graph set common)
 target_include_directories(graph PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(graph PROPERTIES
 	FOLDER libraries
