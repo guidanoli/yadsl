@@ -10,19 +10,19 @@
 /******************************************************************************
 * Graph data structure invariants
 *******************************************************************************
-* 
+*
 * I) Given (GraphEdge *) e and (GraphVertex *) u
 * e->pSource points to u, iff u->outEdges contain e
 * e->pDestination points to u, iff u->inEdges contain e
 *
 * II) If the graph is undirected, an edge always comes from the GraphVertex of
 * smallest address to the one with largest address.
-* 
+*
 * III) The ownership of the set cursors are given to specific functions:
 * 	- Graph::vertexSet -> graphGetNextVertex
 * 	- GraphVertex::outEdges -> graphGetNextNeighbour/graphGetNextOutNeighbour
 * 	- GraphVertex::inEdge -> graphGetNextNeighbour/graphGetNextInNeighbour
-* 
+*
 ******************************************************************************/
 
 struct Graph
@@ -30,7 +30,7 @@ struct Graph
 	int isDirected; /* whether graph is directed or not */
 	Set *vertexSet; /* set of struct GraphVertex */
 	int (*cmpVertices)(void *a, void *b); /* compares GraphVertex::item */
-	int (*cmpEdges)(void* a, void* b); /* compares GraphEdge::item */
+	int (*cmpEdges)(void *a, void *b); /* compares GraphEdge::item */
 	void (*freeVertex)(void *v); /* frees GraphVertex::item */
 	void (*freeEdge)(void *e); /* frees GraphEdge::item */
 };
@@ -50,7 +50,7 @@ struct GraphEdge
 	void *item; /* generic portion of edge */
 	struct GraphVertex *pSource; /* vertex from which the edge comes from */
 	struct GraphVertex *pDestination; /* vertex to with the edge goes to */
-}; 
+};
 
   /**********************************/
  /*  Private functions prototypes  */
@@ -171,7 +171,7 @@ GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected)
 GraphReturnID graphContainsVertex(Graph *pGraph, void *v, int *pContains)
 {
 	void *p; // does nothing with p
-	struct _cmpVertexItemParam par = {v, pGraph->cmpVertices};
+	struct _cmpVertexItemParam par = { v, pGraph->cmpVertices };
 	if (pGraph == NULL || pContains == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	switch (setFilterItem(pGraph->vertexSet, _cmpVertexItem, &par, &p)) {
@@ -429,7 +429,7 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 				--pVertex->inEdgesIterated;
 			}
 		}
-	} 
+	}
 	*pV = temp->pDestination == pVertex ?
 		temp->pSource->item : temp->pDestination->item;
 	*uv = temp->item;
@@ -672,7 +672,7 @@ static GraphReturnID __parseVertices(Graph *pGraph, void *item,
 		param.item = va_arg(va, void *);
 		if (!(ppVertex = va_arg(va, struct GraphVertex **)))
 			break; /* sentinel */
-	} while(1);
+	} while (1);
 	va_end(va);
 	return GRAPH_RETURN_OK;
 }

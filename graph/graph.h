@@ -51,7 +51,7 @@ typedef enum
 
 	/* Graph does not contain edge */
 	GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE,
-	
+
 	// ERROR RETURN VALUES
 
 	/* Invalid parameter was provided */
@@ -59,7 +59,7 @@ typedef enum
 
 	/* Could not allocate memory space */
 	GRAPH_RETURN_MEMORY,
-	
+
 }
 GraphReturnID;
 

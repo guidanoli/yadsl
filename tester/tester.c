@@ -13,9 +13,9 @@ static size_t line; // line count
 static const char *externalReturnValueInfo = NULL; // external return value
 static const char *nativeReturnValueInfos[TESTER_RETURN_COUNT]; // return value
 static char buffer[BUFSIZ] = "", // file line
-			command[BUFSIZ] = "", // command string
-			sep[BUFSIZ] = "", // separation characters
-			temp[BUFSIZ] = ""; // temp. variable
+command[BUFSIZ] = "", // command string
+sep[BUFSIZ] = "", // separation characters
+temp[BUFSIZ] = ""; // temp. variable
 static char *cursor = buffer; // buffer cursor
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,7 +64,7 @@ int TesterParseArguments(const char *format, ...)
 		int parsingError = 0;
 		switch (*format) {
 		case 'f':
-			if (!(arg = va_arg(va, float*))) {
+			if (!(arg = va_arg(va, float *))) {
 				parsingError = 1;
 				break;
 			}
@@ -74,7 +74,7 @@ int TesterParseArguments(const char *format, ...)
 				break;
 			break;
 		case 'i':
-			if (!(arg = va_arg(va, int*))) {
+			if (!(arg = va_arg(va, int *))) {
 				parsingError = 1;
 				break;
 			}
@@ -83,7 +83,7 @@ int TesterParseArguments(const char *format, ...)
 				break;
 			break;
 		case 'l':
-			if (!(arg = va_arg(va, long*))) {
+			if (!(arg = va_arg(va, long *))) {
 				parsingError = 1;
 				break;
 			}
@@ -92,7 +92,7 @@ int TesterParseArguments(const char *format, ...)
 				break;
 			break;
 		case 's':
-			if (!(str = va_arg(va, char*))) {
+			if (!(str = va_arg(va, char *))) {
 				parsingError = 1;
 				break;
 			}
@@ -225,7 +225,8 @@ static TesterReturnValue _TesterParse(FILE *fp)
 }
 static void _TesterLoadReturnValueInfos()
 {
-	struct returnValue {
+	struct returnValue
+	{
 		TesterReturnValue value;
 		const char *info;
 	};
@@ -241,7 +242,7 @@ static void _TesterLoadReturnValueInfos()
 		{TESTER_RETURN_RETURN, "return"},
 		{TESTER_RETURN_EXTERNAL, "external"},
 	};
-	for (i = 0; i < sizeof(nativeValues)/sizeof(nativeValues[0]); ++i) {
+	for (i = 0; i < sizeof(nativeValues) / sizeof(nativeValues[0]); ++i) {
 		struct returnValue retVal = nativeValues[i];
 		nativeReturnValueInfos[retVal.value] = retVal.info;
 	}

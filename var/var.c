@@ -8,7 +8,8 @@
 static int refCount = 0;
 #endif
 
-struct VariableType {
+struct VariableType
+{
 	const char *typeId;
 	int (*compare)(void *var1, void *var2); // 0 = not equal, else, equal
 	int (*write)(FILE *fp, void *var); // 0 = success, else, failure
@@ -16,7 +17,8 @@ struct VariableType {
 	int (*read)(const char *text, void **pVar); // 0 = success, else, failure
 };
 
-struct Variable {
+struct Variable
+{
 	void *value;
 	struct VariableType *type;
 };
@@ -178,7 +180,7 @@ VarReturnID varDeserialize(Variable **ppVariable, FILE *fp)
 			buffer[index] = c;
 			++index;
 			if (index >= bufferSize) {
-				temp = realloc(buffer, bufferSize*2);
+				temp = realloc(buffer, bufferSize * 2);
 				if (temp == NULL) {
 					free(buffer);
 					return VAR_RETURN_MEMORY;
@@ -196,7 +198,8 @@ VarReturnID varDeserialize(Variable **ppVariable, FILE *fp)
 
 
 #ifdef _DEBUG
-int varGetRefCount() {
+int varGetRefCount()
+{
 	return refCount;
 }
 #endif
@@ -233,7 +236,7 @@ static int _cmpDecimal(double *a, double *b)
 
 static int _cmpString(char *a, char *b)
 {
-	return strcmp(a,b) == 0;
+	return strcmp(a, b) == 0;
 }
 
 // Print
@@ -287,21 +290,21 @@ static int _swriteString(FILE *fp, _STR a)
 	for (i = 0; i < strSize; ++i)
 		if (a[i] == '"' || a[i] == '\\')
 			++escapeCount;
-	b = malloc(sizeof(char)*(escapeCount+strSize+3));
+	b = malloc(sizeof(char) * (escapeCount + strSize + 3));
 	if (b == NULL)
 		return 1;
 	b[0] = '"';
 	for (i = 0; i < strSize; ++i) {
 		if (a[i] == '"' || a[i] == '\\') {
-			b[i+j+1] = '\\';
-			b[i+j+2] = a[i];
+			b[i + j + 1] = '\\';
+			b[i + j + 2] = a[i];
 			++j;
 		} else {
-			b[i+j+1] = a[i];
+			b[i + j + 1] = a[i];
 		}
 	}
-	b[strSize+escapeCount+1] = '"';
-	b[strSize+escapeCount+2] = '\0';
+	b[strSize + escapeCount + 1] = '"';
+	b[strSize + escapeCount + 2] = '\0';
 	ret = _printString(fp, b);
 	free(b);
 	return ret;

@@ -27,7 +27,8 @@ const char *TesterHelpStrings[] = {
 	NULL, /* Sentinel */
 };
 
-TesterReturnValue convertReturn(SetReturnID setId) {
+TesterReturnValue convertReturn(SetReturnID setId)
+{
 	switch (setId) {
 	case SET_RETURN_OK:
 		return TESTER_RETURN_OK;
@@ -180,7 +181,8 @@ TesterReturnValue TesterParseCallback(const char *command)
 	return convertReturn(setId);
 }
 
-void freeItem(void *item, void *arg) {
+void freeItem(void *item, void *arg)
+{
 	Variable *var = (Variable *) item;
 	if (var == pVariable)
 		pVariable = NULL;

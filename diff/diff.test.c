@@ -28,7 +28,7 @@ TesterReturnValue TesterInitCallback()
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-	if matches(command, "diff") {
+	if matches(command, "diff"){
 		if (TesterParseArguments("ss", X, Y) != 2)
 			return TESTER_RETURN_ARGUMENT;
 		eax = diff(X, Y);

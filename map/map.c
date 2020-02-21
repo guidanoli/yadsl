@@ -164,7 +164,7 @@ static int _cmpEntryKey(struct Entry *pEntry,
 static MapReturnID _getEntry(Map *pMap, void *key, struct Entry **ppEntry)
 {
 	SetReturnID setId;
-	struct _cmpEntryKeyParameter arg = {key, pMap->compareKeys};
+	struct _cmpEntryKeyParameter arg = { key, pMap->compareKeys };
 	if (setId = setFilterItem(pMap->entrySet, _cmpEntryKey, &arg, ppEntry)) {
 		_assert(setId == SET_RETURN_DOES_NOT_CONTAIN);
 		return MAP_RETURN_ENTRY_NOT_FOUND;

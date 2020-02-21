@@ -16,7 +16,7 @@ typedef enum
 
 	/* Invalid parameter was provided */
 	VAR_RETURN_INVALID_PARAMETER,
-	
+
 	/* Serialized form is corrupted */
 	VAR_RETURN_FILE_FORMAT_ERROR,
 

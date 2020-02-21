@@ -38,8 +38,6 @@ typedef enum
 	/* Could not allocate memory space */
 	GRAPH_SEARCH_RETURN_MEMORY,
 
-	/* When an internal error is unrecognized */
-	GRAPH_SEARCH_RETURN_UNKNOWN_ERROR,
 }
 GraphSearchReturnID;
 
@@ -58,7 +56,6 @@ GraphSearchReturnID;
 *	- "pGraph" is NULL
 * GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED
 * GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* GRAPH_SEARCH_RETURN_UNKNOWN_ERROR
 */
 GraphSearchReturnID graphDFS(Graph *pGraph,
 	void *initialVertex,
@@ -83,7 +80,6 @@ GraphSearchReturnID graphDFS(Graph *pGraph,
 *	- "pGraph" is NULL
 * GRAPH_SEARCH_RETURN_VERTEX_ALREADY_VISITED
 * GRAPH_SEARCH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* GRAPH_SEARCH_RETURN_UNKNOWN_ERROR
 * GRAPH_SEARCH_RETURN_MEMORY
 */
 GraphSearchReturnID graphBFS(Graph *pGraph,

@@ -18,7 +18,7 @@ static int coord(char c, unsigned long *x, unsigned long *y)
 {
 	unsigned long i, j;
 	char coff = 'A' - 'a'; // Case offset
-	for (i = 0; i < sizeof(loc)/sizeof(*loc); i++) {
+	for (i = 0; i < sizeof(loc) / sizeof(*loc); i++) {
 		char *line = loc[i];
 		for (j = 0; j < strlen(line); j++) {
 			char ch = line[j];
@@ -53,22 +53,22 @@ unsigned long diff(const char *s1, const char *s2)
 	if (!s1 || !s2) return -1;
 	l1 = strlen(s1);
 	l2 = strlen(s2);
-	M = malloc((l1 + 1)*sizeof(unsigned long));
+	M = malloc((l1 + 1) * sizeof(unsigned long));
 	if (!M) return DIFFERR;
-	N = malloc((l1 + 1)*sizeof(unsigned long));
+	N = malloc((l1 + 1) * sizeof(unsigned long));
 	if (!N) {
 		free(M);
 		return DIFFERR;
 	}
 	for (i = 0; i <= l1; i++)
-		M[i] = i*DELTA;
+		M[i] = i * DELTA;
 	for (j = 1; j <= l2; j++) {
 		for (i = 0; i <= l1; i++)
 			N[i] = M[i];
-		M[0] = j*DELTA;
+		M[0] = j * DELTA;
 		for (i = 1; i <= l1; i++) {
-			v[0] = alpha(s1[j-1], s2[i-1]) + N[i-1];
-			v[1] = DELTA + M[i-1];
+			v[0] = alpha(s1[j - 1], s2[i - 1]) + N[i - 1];
+			v[1] = DELTA + M[i - 1];
 			v[2] = DELTA + N[i];
 			lv = v[0];
 			for (k = 1; k < 3; k++)

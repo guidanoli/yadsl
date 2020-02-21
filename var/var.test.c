@@ -23,7 +23,7 @@ static TesterReturnValue convertReturnValue(VarReturnID varId);
 TesterReturnValue TesterInitCallback()
 {
 	static Variable **pVars = vars;
-	size_t i, size = sizeof(vars)/sizeof(*vars);
+	size_t i, size = sizeof(vars) / sizeof(*vars);
 	for (i = 0; i < size; ++i) *(pVars++) = NULL;
 	return TESTER_RETURN_OK;
 }

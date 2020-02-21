@@ -1,5 +1,7 @@
 from pygraph import Graph
 
+dtypes = [42, True, 'str', None]
+
 def test_directed():
     g = Graph(directed=True)
     assert g.is_directed()
@@ -15,11 +17,8 @@ def test_add_remove_vertex():
         g.remove_vertex(o)
         assert o not in g
     g = Graph()
-    _test(g, 42)
-    _test(g, True)
-    _test(g, 'string')
-    _test(g, None)
-    _test(g, g)
+    for dtype in dtypes:
+        _test(g, dtype)
 
 def test_recursion():
     g = Graph()
@@ -32,3 +31,15 @@ def test_recursion():
     except RecursionError as e:
         return
     assert False
+
+def test_add_remove_edge():
+    def _test(g, u, v, e):
+        g.add_edge(u,v,e)
+        assert g.get_edge(u,v) == e
+        g.remove_edge(u,v)
+    g = Graph()
+    for dtype in dtypes:
+        g.add_vertex(dtype)
+    for d1 in dtypes:
+        for d2 in dtypes:
+            _test(g, d1, d2, (d1, d2))

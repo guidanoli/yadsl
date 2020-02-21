@@ -78,28 +78,28 @@ TesterReturnValue;
 * NULL, necessarily. But, if you do not want
 * this feature, simply assign it to NULL.
 */
-extern const char *TesterHelpStrings [];
+extern const char *TesterHelpStrings[];
 
 /**
 * Callback Tester calls after opening the script
 * file successfully, allowing the caller to
 * initialize its variables properly before parsing.
 */
-extern TesterReturnValue TesterInitCallback ();
+extern TesterReturnValue TesterInitCallback();
 
 /**
 * Callback called when Tester finds a command
 * call. It is your job to parse the command and
 * require aditional arguments, if needed.
 */
-extern TesterReturnValue TesterParseCallback (const char *command);
+extern TesterReturnValue TesterParseCallback(const char *command);
 
 /**
 * Callback called when TesterParseCallback returns
 * a value different from TESTER_RETURN_OK, or after
 * parsing the whole script, if no errors are thrown.
 */
-extern TesterReturnValue TesterExitCallback ();
+extern TesterReturnValue TesterExitCallback();
 
 ////////////////////////////////////////////////////////////////////////////////
 // SYMBOLS ALREADY DEFINED
@@ -129,14 +129,14 @@ extern TesterReturnValue TesterExitCallback ();
 * If it fails to parse one of the argument, -1 is
 * returned, and the state of the parser is then
 * reversed to that of before the call.
-* 
+*
 * Observations about strings:
 * - Buffer must be of at least the size of BUFSIZ,
 *   defined in stdio.h.
 * - Can parse strings within quotation marks too,
 *   ignoring separation characters.
 */
-int TesterParseArguments (const char *format, ...);
+int TesterParseArguments(const char *format, ...);
 
 /**
 * Create an external value for an specific error.
@@ -145,25 +145,25 @@ int TesterParseArguments (const char *format, ...);
 * HINT: The external value can be caught by '/catch' too,
 * by providing the same string 'info' as its parameter.
 */
-TesterReturnValue TesterExternalReturnValue (const char *info);
+TesterReturnValue TesterExternalReturnValue(const char *info);
 
 /**
 * Log a message with additional information about current
 * parser state and cursor position, wrapping fprintf.
 */
-void TesterLog (const char *message, ...);
+void TesterLog(const char *message, ...);
 
 /**
 * Prints help strings provided in the same
 * way as if no arguments were provided.
 */
-void TesterPrintHelpStrings ();
+void TesterPrintHelpStrings();
 
 /**
 * Get further information about return value
 * HINT: If an invalid return value is given,
 * a proper error message is returned.
 */
-const char *TesterGetReturnValueInfo (TesterReturnValue returnValue);
+const char *TesterGetReturnValueInfo(TesterReturnValue returnValue);
 
 #endif

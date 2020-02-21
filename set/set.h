@@ -41,7 +41,7 @@ typedef enum
 
 	/* Could not go backwards or forward in list */
 	SET_RETURN_OUT_OF_BOUNDS,
-	
+
 }
 SetReturnID;
 

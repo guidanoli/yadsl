@@ -28,7 +28,7 @@ typedef enum
 	* [!] This means that the ownership of the given
 	* key pointer is the caller's */
 	MAP_RETURN_OVERWROTE_ENTRY,
-	
+
 	/* Entry could not be found */
 	MAP_RETURN_ENTRY_NOT_FOUND,
 

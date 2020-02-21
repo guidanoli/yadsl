@@ -122,8 +122,7 @@ static GraphSearchReturnID dfs(Graph *pGraph,
 		while (degree--) {
 			_assert(!graphGetNextOutNeighbour(pGraph, vertex, &neighbour,
 				&edge));
-			if (graphGetVertexFlag(pGraph, neighbour, &flag))
-				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+			_assert(!graphGetVertexFlag(pGraph, neighbour, &flag));
 			if (flag == visitedFlag)
 				continue;
 			if (visitEdgeCallback)
@@ -136,13 +135,10 @@ static GraphSearchReturnID dfs(Graph *pGraph,
 				return id;
 		}
 	} else {
-		if (graphGetVertexDegree(pGraph, vertex, &degree))
-			return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+		_assert(!graphGetVertexDegree(pGraph, vertex, &degree));
 		while (degree--) {
-			if (graphGetNextNeighbour(pGraph, vertex, &neighbour, &edge))
-				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
-			if (graphGetVertexFlag(pGraph, neighbour, &flag))
-				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+			_assert(!graphGetNextNeighbour(pGraph, vertex, &neighbour, &edge));
+			_assert(!graphGetVertexFlag(pGraph, neighbour, &flag));
 			if (flag == visitedFlag)
 				continue;
 			if (visitEdgeCallback)
@@ -162,32 +158,27 @@ static GraphSearchReturnID addNeighboursToQueue(Graph *pGraph,
 	Queue *pBfsQueue,
 	int visitedFlag,
 	void *vertex,
-	GraphReturnID (*getVertexDegree)(Graph *, void *, unsigned long *),
-	GraphReturnID (*getVertexNeighbour)(Graph *, void *, void **, void **))
+	GraphReturnID(*getVertexDegree)(Graph *, void *, unsigned long *),
+	GraphReturnID(*getVertexNeighbour)(Graph *, void *, void **, void **))
 {
 	struct bfsTreeNode *node = NULL;
 	QueueReturnID queueId;
 	void *neighbour, *edge;
 	unsigned long degree;
 	int flag;
-	if (getVertexDegree(pGraph, vertex, &degree))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	_assert(!getVertexDegree(pGraph, vertex, &degree));
 	while (degree--) {
-		if (getVertexNeighbour(pGraph, vertex, &neighbour, &edge))
-			return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
-		if (graphGetVertexFlag(pGraph, neighbour, &flag))
-				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+		_assert(!getVertexNeighbour(pGraph, vertex, &neighbour, &edge));
+		_assert(!graphGetVertexFlag(pGraph, neighbour, &flag));
 		if (flag == visitedFlag)
 			continue;
-		if (graphSetVertexFlag(pGraph, neighbour, visitedFlag))
-			return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+		_assert(!graphSetVertexFlag(pGraph, neighbour, visitedFlag));
 		node = allocNode(vertex, edge, neighbour);
 		if (node == NULL)
 			return GRAPH_SEARCH_RETURN_MEMORY;
 		if (queueId = queueQueue(pBfsQueue, node)) {
 			freeNode(node);
-			if (queueId != QUEUE_RETURN_MEMORY)
-				return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+			_assert(queueId == QUEUE_RETURN_MEMORY);
 			return GRAPH_SEARCH_RETURN_MEMORY;
 		}
 	}
@@ -205,10 +196,9 @@ static GraphSearchReturnID bfs(Graph *pGraph,
 	int isDirected;
 	struct bfsTreeNode *node = NULL;
 	GraphSearchReturnID id;
-	GraphReturnID (*getVertexDegree)(Graph *, void *, unsigned long *);
-	GraphReturnID (*getVertexNeighbour)(Graph *, void *, void **, void **);
-	if (graphIsDirected(pGraph, &isDirected))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	GraphReturnID(*getVertexDegree)(Graph *, void *, unsigned long *);
+	GraphReturnID(*getVertexNeighbour)(Graph *, void *, void **, void **);
+	_assert(!graphIsDirected(pGraph, &isDirected));
 	if (isDirected) {
 		getVertexDegree = graphGetVertexOutDegree;
 		getVertexNeighbour = graphGetNextOutNeighbour;
@@ -216,8 +206,7 @@ static GraphSearchReturnID bfs(Graph *pGraph,
 		getVertexDegree = graphGetVertexDegree;
 		getVertexNeighbour = graphGetNextNeighbour;
 	}
-	if (graphSetVertexFlag(pGraph, vertex, visitedFlag))
-		return GRAPH_SEARCH_RETURN_UNKNOWN_ERROR;
+	_assert(!graphSetVertexFlag(pGraph, vertex, visitedFlag));
 	if (visitVertexCallback)
 		visitVertexCallback(vertex);
 	if (id = addNeighboursToQueue(pGraph, pBfsQueue, visitedFlag,

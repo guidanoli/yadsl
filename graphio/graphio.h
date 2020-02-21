@@ -23,7 +23,7 @@ typedef enum
 
 	/* Everything went as excepted */
 	GRAPH_IO_RETURN_OK = 0,
-	
+
 	// ERROR RETURN VALUES
 
 	/* Invalid parameter was provided */
@@ -49,7 +49,7 @@ typedef enum
 
 	/* File format corruption detected */
 	GRAPH_IO_RETURN_CORRUPTED_FILE_FORMAT,
-	
+
 }
 GraphIoReturnID;
 
