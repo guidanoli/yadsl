@@ -109,7 +109,7 @@ GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected);
 * 	- "pGraph" is NULL
 * 	- "pSize" is NULL
 */
-GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize);
+GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize);
 
 /**
 * Get next vertex in graph (loops)
@@ -136,7 +136,7 @@ GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV);
 * 	- vertex "v" does not exist
 */
 GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
-	unsigned long *pOut);
+	size_t *pOut);
 
 /**
 * Get in degree of a given vertex, that is, how many edges go to it
@@ -151,7 +151,7 @@ GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
 * 	- vertex "v" does not exist
 */
 GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
-	unsigned long *pIn);
+	size_t *pIn);
 
 /**
 * Get degree of a given vertex, that is, how many edges are incident to it
@@ -168,7 +168,7 @@ GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
 * 	- vertex "v" does not exist
 */
 GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
-	unsigned long *pDegree);
+	size_t *pDegree);
 
 /**
 * Get next neighbour of given vertex

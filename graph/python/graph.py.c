@@ -13,7 +13,7 @@ typedef struct {
 typedef struct {
 	PyObject_HEAD
 	GraphObject *go;
-	unsigned long index;
+	size_t index;
 } GraphVertexIteratorObject;
 
 static PyTypeObject GraphType;
@@ -161,6 +161,21 @@ exit:
 	return NULL;
 }
 
+PyDoc_STRVAR(_Graph_get_vertex_count__doc__,
+"get_vertex_count(/) -> int\n"
+"--\n"
+"\n"
+"Get number of vertices in graph");
+
+static PyObject *
+Graph_get_vertex_count(GraphObject *self, PyObject *Py_UNUSED(ignored))
+{
+	size_t size;
+	if (graphGetNumberOfVertices(self->ob_graph, &size))
+		PyErr_BadInternalCall();
+	return PyLong_FromSize_t(size);
+}
+
 PyDoc_STRVAR(_Graph_add_edge__doc__,
 "add_edge(self, u : Object, v : Object, uv : Object, /) -> None\n"
 "--\n"
@@ -284,6 +299,12 @@ PyMethodDef Graph_methods[] = {
 		_Graph_add_vertex__doc__
 	},
 	{
+		"get_vertex_count",
+		(PyCFunction) Graph_get_vertex_count,
+		METH_NOARGS,
+		_Graph_get_vertex_count__doc__
+	},
+	{
 		"remove_vertex",
 		(PyCFunction) Graph_remove_vertex,
 		METH_O,
@@ -323,19 +344,6 @@ Graph_as_sequence_contains(GraphObject *self, PyObject *value)
 	return contains;
 }
 
-static Py_ssize_t
-Graph_as_sequence_length(GraphObject *self)
-{
-	GraphReturnID returnId;
-	unsigned long size;
-	returnId = graphGetNumberOfVertices(self->ob_graph, &size);
-	if (PyErr_Occurred())
-		return -1;
-	if (returnId)
-		PyErr_BadInternalCall();
-	return (Py_ssize_t) size;
-}
-
 static PyObject *
 Graph_iter(GraphObject *self)
 {
@@ -355,7 +363,7 @@ GraphIterator_next(GraphVertexIteratorObject *it)
 {
 	GraphObject *go;
 	Graph *pGraph;
-	unsigned long size;
+	size_t size;
 	assert(it != NULL);
 	go = it->go;
 	if (go == NULL) {
@@ -386,7 +394,6 @@ GraphIterator_dealloc(GraphVertexIteratorObject *it)
 
 static PySequenceMethods Graph_as_sequence = {
 	.sq_contains = (objobjproc) Graph_as_sequence_contains,
-	.sq_length = (lenfunc) Graph_as_sequence_length,
 };
 
 static PyTypeObject GraphType = {

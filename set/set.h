@@ -133,13 +133,13 @@ SetReturnID setGetCurrentItem(Set *pSet, void **pItem);
 /**
 * Obtain number of items contained in the set
 * pSet      pointer to set
-* pItem	    address of variable that will hold the value
+* pSize	    address of variable that will hold the value
 * Possible errors:
 * SET_RETURN_INVALID_PARAMETER
 * 	- "pSet" is NULL
-* 	- "pValue" is NULL
+* 	- "pSize" is NULL
 */
-SetReturnID setGetSize(Set *pSet, unsigned long *pValue);
+SetReturnID setGetSize(Set *pSet, size_t *pSize);
 
 /**
 * Make cursor point to the previous item

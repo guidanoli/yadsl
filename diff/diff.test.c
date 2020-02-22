@@ -18,8 +18,7 @@ const char *TesterHelpStrings[] = {
 #define matches(a, b) (strcmp(a, b) == 0)
 
 char X[BUFSIZ], Y[BUFSIZ];
-unsigned int val;
-unsigned long eax = -1; /* Last computed value */
+double val, eax = -1.0; /* Last computed value */
 
 TesterReturnValue TesterInitCallback()
 {
@@ -32,36 +31,36 @@ TesterReturnValue TesterParseCallback(const char *command)
 		if (TesterParseArguments("ss", X, Y) != 2)
 			return TESTER_RETURN_ARGUMENT;
 		eax = diff(X, Y);
-		if (eax == DIFFERR)
+		if (eax == -1.0)
 			return TESTER_RETURN_MALLOC;
-		TesterLog("diff = %lu", eax);
+		TesterLog("diff = %lf", eax);
 	} else if matches(command, "equ") {
-		if (TesterParseArguments("i", &val) != 1)
+		if (TesterParseArguments("f", &val) != 1)
 			return TESTER_RETURN_ARGUMENT;
 		if (!(eax == val))
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "neq") {
-		if (TesterParseArguments("i", &val) != 1)
+		if (TesterParseArguments("f", &val) != 1)
 			return TESTER_RETURN_ARGUMENT;
 		if (!(eax != val))
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "gtr") {
-		if (TesterParseArguments("i", &val) != 1)
+		if (TesterParseArguments("f", &val) != 1)
 			return TESTER_RETURN_ARGUMENT;
 		if (!(eax > val))
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "lwr") {
-		if (TesterParseArguments("i", &val) != 1)
+		if (TesterParseArguments("f", &val) != 1)
 			return TESTER_RETURN_ARGUMENT;
 		if (!(eax < val))
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "geq") {
-		if (TesterParseArguments("i", &val) != 1)
+		if (TesterParseArguments("f", &val) != 1)
 			return TESTER_RETURN_ARGUMENT;
 		if (!(eax >= val))
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "leq") {
-		if (TesterParseArguments("i", &val) != 1)
+		if (TesterParseArguments("f", &val) != 1)
 			return TESTER_RETURN_ARGUMENT;
 		if (!(eax <= val))
 			return TESTER_RETURN_RETURN;

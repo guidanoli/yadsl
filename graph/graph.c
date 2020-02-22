@@ -41,8 +41,8 @@ struct GraphVertex
 	int flag; /* flag (for dfs, bfs, coloring...) */
 	Set *outEdges; /* edges from which the vertex is SOURCE */
 	Set *inEdges; /* edges from which the vertex is DESTINATION */
-	unsigned long outEdgesIterated; /* counter for graphGetNext*Neighbour */
-	unsigned long inEdgesIterated; /* counter for graphGetNext*Neighbour */
+	size_t outEdgesIterated; /* counter for graphGetNext*Neighbour */
+	size_t inEdgesIterated; /* counter for graphGetNext*Neighbour */
 };
 
 struct GraphEdge
@@ -124,9 +124,9 @@ GraphReturnID graphCreate(Graph **ppGraph,
 	return GRAPH_RETURN_OK;
 }
 
-GraphReturnID graphGetNumberOfVertices(Graph *pGraph, unsigned long *pSize)
+GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize)
 {
-	unsigned long temp;
+	size_t temp;
 	if (pGraph == NULL || pSize == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	_assert(!setGetSize(pGraph->vertexSet, &temp));
@@ -333,11 +333,11 @@ GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv)
 }
 
 GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
-	unsigned long *pOut)
+	size_t *pOut)
 {
 	struct GraphVertex *pVertex;
 	GraphReturnID graphId;
-	unsigned long temp;
+	size_t temp;
 	if (pOut == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
@@ -348,11 +348,11 @@ GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
 }
 
 GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
-	unsigned long *pIn)
+	size_t *pIn)
 {
 	struct GraphVertex *pVertex;
 	GraphReturnID graphId;
-	unsigned long temp;
+	size_t temp;
 	if (pIn == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
@@ -363,11 +363,11 @@ GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
 }
 
 GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
-	unsigned long *pDegree)
+	size_t *pDegree)
 {
 	struct GraphVertex *pVertex;
 	GraphReturnID graphId;
-	unsigned long in, out;
+	size_t in, out;
 	if (pDegree == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
@@ -383,7 +383,7 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 {
 	struct GraphVertex *pVertex;
 	GraphReturnID graphId;
-	unsigned long inSize, outSize;
+	size_t inSize, outSize;
 	struct GraphEdge *temp;
 	if (pGraph == NULL || pV == NULL || uv == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
@@ -441,7 +441,7 @@ GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 {
 	struct GraphVertex *pVertex;
 	GraphReturnID graphId;
-	unsigned long inSize;
+	size_t inSize;
 	struct GraphEdge *temp;
 	if (pV == NULL || uv == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
@@ -461,7 +461,7 @@ GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 {
 	struct GraphVertex *pVertex;
 	GraphReturnID graphId;
-	unsigned long outSize;
+	size_t outSize;
 	struct GraphEdge *temp;
 	if (pV == NULL || uv == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;

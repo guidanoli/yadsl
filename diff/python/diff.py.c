@@ -1,30 +1,40 @@
 #include <Python.h>
 #include "diff.h"
 
-static PyObject *pydiff(PyObject *self, PyObject *args)
+PyDoc_STRVAR(_diff__doc__,
+"diff(s1 : str, s2 : str, /) -> float\n"
+"--\n"
+"\n"
+"Calculates the difference between two strings");
+
+static PyObject *pydiff_diff(PyObject *self, PyObject *args)
 {
 	char *s1, *s2;
-	unsigned long result;
+	double result;
 	if (!PyArg_ParseTuple(args, "ss", &s1, &s2))
 		return NULL;
 	result = diff(s1, s2);
-	return PyLong_FromUnsignedLong(result);
+	return PyFloat_FromDouble(result);
 }
 
 PyMethodDef method_table[] = {
-	{"diff", (PyCFunction) pydiff, METH_VARARGS, "Calculate diff between two string"},
-	{NULL, NULL, 0, NULL} // Sentinel value ending the table
+	{
+		"diff",
+		(PyCFunction) pydiff_diff,
+		METH_VARARGS,
+		_diff__doc__
+	},
+	{NULL, NULL, 0, NULL}
 };
 
 PyModuleDef pydiff_module = {
 	PyModuleDef_HEAD_INIT,
-	"pydiff", // Module name
+	"pydiff",
 	"Python binding of the diff module",
-	-1,   // Optional size of the module state memory
+	-1,
 	method_table
 };
 
-// The module init function
 PyMODINIT_FUNC PyInit_pydiff(void)
 {
 	Py_Initialize();

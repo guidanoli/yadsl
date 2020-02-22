@@ -8,6 +8,13 @@
 static int refCount = 0;
 #endif
 
+#pragma once
+#if defined(_MSC_VER)
+# pragma warning(disable : 4996)
+# pragma warning(disable : 4028)
+# pragma warning(disable : 6386)
+#endif
+
 struct VariableType
 {
 	const char *typeId;
@@ -142,7 +149,7 @@ VarReturnID varWrite(Variable *pVariable, FILE *fp)
 	if (pVariable->type->write(fp, pVariable->value))
 		return VAR_RETURN_WRITING_ERROR;
 #ifdef _DEBUG
-	printf(" (\"%s\" @ %#x)", pVariable->type->typeId, pVariable);
+	printf(" (\"%s\" @ %p)", pVariable->type->typeId, pVariable);
 #endif
 	return VAR_RETURN_OK;
 }

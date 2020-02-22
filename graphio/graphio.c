@@ -7,6 +7,12 @@
 
 #include "map.h"
 
+#pragma once
+#if defined(_MSC_VER)
+# pragma warning(disable : 4996)
+# pragma warning(disable : 4022)
+#endif
+
 #define WRITE(file, format, arg) do { \
 	if (fprintf(file, format, arg) < 0) \
 		return GRAPH_IO_RETURN_FILE_ERROR; \
@@ -24,11 +30,11 @@
 
 #define VERSION_STR     "VERSION %u"
 #define DIRECTED_STR    "IS_DIRECTED %d"
-#define VCOUNT_STR      "%lu "
+#define VCOUNT_STR      "%zu "
 #define VFLAG_STR       " %d "
-#define VERTEX_IDX_STR  "%lu "
-#define NBCOUNT_STR	    "%lu"
-#define NB_IDX_STR      " %lu "
+#define VERTEX_IDX_STR  "%zu "
+#define NBCOUNT_STR	    "%zu"
+#define NB_IDX_STR      " %zu "
 
 /* Private functions prototypes */
 
@@ -38,7 +44,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 	Map *addressMap);
 
 static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
-	FILE *fp, unsigned long vCount, int isDirected,
+	FILE *fp, size_t vCount, int isDirected,
 	int (*readVertex)(FILE *fp, void **ppVertex),
 	int (*readEdge)(FILE *fp, void **ppEdge),
 	void (*freeVertex)(void *v),
@@ -70,7 +76,7 @@ GraphIoReturnID graphRead(Graph **ppGraph, FILE *fp,
 	void (*freeEdge)(void *e))
 {
 	unsigned int version;
-	unsigned long vCount;
+	size_t vCount;
 	GraphReturnID graphId;
 	GraphIoReturnID id;
 	int isDirected;
@@ -116,7 +122,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 	int isDirected;
 	MapReturnID mapId;
 	void *previousValue;
-	unsigned long vCount, nbCount, i, j, index;
+	size_t vCount, nbCount, i, j, index;
 	void *pVertex, *pNeighbour, *pEdge;
 	_assert(!graphIsDirected(pGraph, &isDirected));
 	_assert(!graphGetNumberOfVertices(pGraph, &vCount));
@@ -144,7 +150,7 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 			_assert(!graphGetNextOutNeighbour(pGraph, pVertex, &pNeighbour,
 				&pEdge));
 			_assert(!mapGetEntry(addressMap, pNeighbour, &previousValue));
-			index = (unsigned long) previousValue;
+			index = (size_t) previousValue;
 			WRITE(fp, NB_IDX_STR, index); // Neighbour index
 			if (writeEdge(fp, pEdge)) // Edge item
 				return GRAPH_IO_RETURN_WRITING_FAILURE;
@@ -155,13 +161,13 @@ static GraphIoReturnID _graphWrite(Graph *pGraph, FILE *fp,
 }
 
 static GraphIoReturnID _graphRead(Graph *pGraph, void **addressMap,
-	FILE *fp, unsigned long vCount, int isDirected,
+	FILE *fp, size_t vCount, int isDirected,
 	int (*readVertex)(FILE *fp, void **ppVertex),
 	int (*readEdge)(FILE *fp, void **ppEdge),
 	void (*freeVertex)(void *v),
 	void (*freeEdge)(void *e))
 {
-	unsigned long nbCount, i, j, index;
+	size_t nbCount, i, j, index;
 	GraphReturnID graphId;
 	void *pVertexItem, *pNeighbourItem, *pEdgeItem;
 	for (i = 0; i < vCount; ++i) {

@@ -5,9 +5,19 @@
 #include <string.h>
 #include <stdarg.h>
 
+#pragma once
+#if defined(_MSC_VER)
+# pragma warning(disable : 4996)
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // STATIC VARIABLES DECLARATIONS
 ////////////////////////////////////////////////////////////////////////////////
+
+static const char *float_f[] =  { "%f", "%g", "%e", NULL };
+static const char *int_f[] =    { "%d", "%u", NULL };
+static const char *long_f[] =   { "%l", "%lu", NULL };
+static const char *size_t_f[] = { "%zu", NULL };
 
 static size_t line; // line count
 static const char *externalReturnValueInfo = NULL; // external return value
@@ -30,6 +40,7 @@ static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret);
 static int _TesterParseArg(const char *format, void *arg, size_t *inc);
 static int _TesterParseStr(char *arg, size_t *inc);
 static void _TesterPrintReturnValueInfo(TesterReturnValue ret);
+static int _TesterParseArgFormat(const char **format_t, void *arg, size_t *inc);
 
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERN FUNCTIONS DEFINITIONS
@@ -68,28 +79,21 @@ int TesterParseArguments(const char *format, ...)
 				parsingError = 1;
 				break;
 			}
-			if ((parsingError = _TesterParseArg("%f", arg, &inc)) &&
-				(parsingError = _TesterParseArg("%g", arg, &inc)) &&
-				(parsingError = _TesterParseArg("%e", arg, &inc)))
-				break;
+			parsingError = _TesterParseArgFormat(float_f, arg, &inc);
 			break;
 		case 'i':
 			if (!(arg = va_arg(va, int *))) {
 				parsingError = 1;
 				break;
 			}
-			if ((parsingError = _TesterParseArg("%d", arg, &inc)) &&
-				(parsingError = _TesterParseArg("%u", arg, &inc)))
-				break;
+			parsingError = _TesterParseArgFormat(int_f, arg, &inc);
 			break;
 		case 'l':
 			if (!(arg = va_arg(va, long *))) {
 				parsingError = 1;
 				break;
 			}
-			if ((parsingError = _TesterParseArg("%ld", arg, &inc)) &&
-				(parsingError = _TesterParseArg("%lu", arg, &inc)))
-				break;
+			parsingError = _TesterParseArgFormat(long_f, arg, &inc);
 			break;
 		case 's':
 			if (!(str = va_arg(va, char *))) {
@@ -97,6 +101,13 @@ int TesterParseArguments(const char *format, ...)
 				break;
 			}
 			parsingError = _TesterParseStr(str, &inc);
+			break;
+		case 'z':
+			if (!(arg = va_arg(va, size_t *))) {
+				parsingError = 1;
+				break;
+			}
+			parsingError = _TesterParseArgFormat(size_t_f, arg, &inc);
 			break;
 		default:
 			fprintf(stderr, "Format character %c unknown.\n", *format);
@@ -323,4 +334,14 @@ static void _TesterPrintCursorPosition(FILE *fp, size_t spacing)
 	fprintf(fp, "\n");
 	while (spacing--) fprintf(fp, " ");
 	fprintf(fp, "^\n");
+}
+
+static int _TesterParseArgFormat(const char **format_t, void *arg, size_t *inc)
+{
+	const char *format;
+	while (format = *(format_t++)) {
+		if (!_TesterParseArg(format, arg, inc))
+			return 0;
+	}
+	return 1;
 }

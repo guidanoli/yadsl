@@ -129,7 +129,7 @@ MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue);
 * 	- "pMap" is NULL
 * 	- "pNum" is NULL
 */
-MapReturnID mapGetNumberOfEntries(Map *pMap, unsigned long *pNum);
+MapReturnID mapGetNumberOfEntries(Map *pMap, size_t *pNum);
 
 /**
 * Destroys map and dependencies

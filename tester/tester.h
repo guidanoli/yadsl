@@ -20,11 +20,12 @@
 // lcomm: comm | $
 // cmd: cmdname | cmdname largs
 // largs: largs lsep sep arg
-// arg: float | string | integer | long
+// arg: float | string | integer | long | size
 // float: %f | %g | %e
 // string: string_qm | string_wo_qm
 // integer: %d | %u
 // long: %ld | %lu
+// size: %zu
 //
 // SCRIPT TOKENS DEFINITIONS
 //
@@ -121,6 +122,7 @@ extern TesterReturnValue TesterExitCallback();
 * | int    | i                | int *          |
 * | long   | l                | long *         |
 * | char * | s                | char *         |
+* | size_t | z                | size_t *       |
 * +--------+------------------+----------------+
 *
 * Following the format string, must be passed by

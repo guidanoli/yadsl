@@ -122,9 +122,9 @@ MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue)
 	return MAP_RETURN_OK;
 }
 
-MapReturnID mapGetNumberOfEntries(Map *pMap, unsigned long *pNum)
+MapReturnID mapGetNumberOfEntries(Map *pMap, size_t *pNum)
 {
-	unsigned long temp;
+	size_t temp;
 	if (pMap == NULL || pNum == NULL)
 		return MAP_RETURN_INVALID_PARAMETER;
 	_assert(!setGetSize(pMap->entrySet, &temp));

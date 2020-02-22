@@ -1,7 +1,6 @@
 #include "set.h"
 
 #include <stdlib.h>
-#include <limits.h>
 
 // A set is represented by an ordered double-linked list
 // in which each item is an opaque pointer.
@@ -21,9 +20,9 @@ struct Set
 	struct SetItem *current; /* For internal use */
 	struct SetItem *first;
 	struct SetItem *last;
-	unsigned long size;
-	unsigned long modificationCount; /* Modification count */
-	unsigned long callbackDepth; /* Callback depth */
+	size_t size;
+	size_t modificationCount; /* Modification count */
+	size_t callbackDepth; /* Callback depth */
 };
 
 // Modification logging
@@ -72,9 +71,8 @@ SetReturnID setContainsItem(Set *pSet, void *item)
 SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
 	void *arg, void **pItem)
 {
-	int matches, mod_cnt;
 	struct SetItem *p;
-	unsigned long size;
+	size_t size, matches, mod_cnt;
 	if (pSet == NULL || func == NULL || pItem == NULL)
 		return SET_RETURN_INVALID_PARAMETER;
 	size = pSet->size;
@@ -100,8 +98,6 @@ SetReturnID setAddItem(Set *pSet, void *item)
 	struct SetItem *pItem, *p;
 	if (pSet == NULL)
 		return SET_RETURN_INVALID_PARAMETER;
-	if (pSet->size == ULONG_MAX)
-		return SET_RETURN_MEMORY;
 	if (setContainsItem(pSet, item) == SET_RETURN_CONTAINS)
 		return SET_RETURN_CONTAINS;
 	pItem = malloc(sizeof(struct SetItem));
@@ -198,11 +194,11 @@ SetReturnID setGetCurrentItem(Set *pSet, void **pItem)
 	return SET_RETURN_OK;
 }
 
-SetReturnID setGetSize(Set *pSet, unsigned long *pValue)
+SetReturnID setGetSize(Set *pSet, size_t *pSize)
 {
-	if (pSet == NULL || pValue == NULL)
+	if (pSet == NULL || pSize == NULL)
 		return SET_RETURN_INVALID_PARAMETER;
-	*pValue = pSet->size;
+	*pSize = pSet->size;
 	return SET_RETURN_OK;
 }
 

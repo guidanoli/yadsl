@@ -6,6 +6,11 @@
 #include "tester.h"
 #include "var.h"
 
+#pragma once
+#if defined(_MSC_VER)
+# pragma warning(disable : 4996)
+#endif
+
 /* Help */
 
 const char *TesterHelpStrings[] = {
@@ -96,8 +101,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		if (graphId == GRAPH_RETURN_OK && expected != actual)
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "vertexcount") {
-		unsigned long actual, expected;
-		if (TesterParseArguments("l", &expected) != 1)
+		size_t actual, expected;
+		if (TesterParseArguments("z", &expected) != 1)
 			return TESTER_RETURN_ARGUMENT;
 		graphId = graphGetNumberOfVertices(pGraph, &actual);
 		if (graphId == GRAPH_RETURN_OK && expected != actual)
@@ -120,8 +125,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		}
 	} else if matches(command, "outdegree") {
 		Variable *pVar;
-		unsigned long actual, expected;
-		if (TesterParseArguments("sl", buffer, &expected) != 2)
+		size_t actual, expected;
+		if (TesterParseArguments("sz", buffer, &expected) != 2)
 			return TESTER_RETURN_ARGUMENT;
 		if (varCreate(buffer, &pVar))
 			return TESTER_RETURN_MALLOC;
@@ -131,8 +136,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "indegree") {
 		Variable *pVar;
-		unsigned long actual, expected;
-		if (TesterParseArguments("sl", buffer, &expected) != 2)
+		size_t actual, expected;
+		if (TesterParseArguments("sz", buffer, &expected) != 2)
 			return TESTER_RETURN_ARGUMENT;
 		if (varCreate(buffer, &pVar))
 			return TESTER_RETURN_MALLOC;
@@ -142,8 +147,8 @@ static TesterReturnValue parseGraphCommands(const char *command)
 			return TESTER_RETURN_RETURN;
 	} else if matches(command, "degree") {
 		Variable *pVar;
-		unsigned long actual, expected;
-		if (TesterParseArguments("sl", buffer, &expected) != 2)
+		size_t actual, expected;
+		if (TesterParseArguments("sz", buffer, &expected) != 2)
 			return TESTER_RETURN_ARGUMENT;
 		if (varCreate(buffer, &pVar))
 			return TESTER_RETURN_MALLOC;

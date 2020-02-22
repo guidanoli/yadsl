@@ -48,6 +48,11 @@ TesterReturnValue TesterParseCallback(const char *command)
 			if (TesterParseArguments("f", &f) != 1)
 				return TESTER_RETURN_ARGUMENT;
 			printf("Float: '%f'\n", f);
+		} else if matches(buffer, "z") {
+			size_t z;
+			if (TesterParseArguments("z", &z) != 1)
+				return TESTER_RETURN_ARGUMENT;
+			printf("Size Type: '%zu'\n", z);
 		} else {
 			return TESTER_RETURN_ARGUMENT;
 		}

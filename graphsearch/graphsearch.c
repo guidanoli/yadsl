@@ -111,7 +111,7 @@ static GraphSearchReturnID dfs(Graph *pGraph,
 {
 	GraphSearchReturnID id;
 	void *neighbour, *edge;
-	unsigned long degree;
+	size_t degree;
 	int isDirected, flag;
 	if (visitVertexCallback)
 		visitVertexCallback(vertex);
@@ -158,13 +158,13 @@ static GraphSearchReturnID addNeighboursToQueue(Graph *pGraph,
 	Queue *pBfsQueue,
 	int visitedFlag,
 	void *vertex,
-	GraphReturnID(*getVertexDegree)(Graph *, void *, unsigned long *),
+	GraphReturnID(*getVertexDegree)(Graph *, void *, size_t *),
 	GraphReturnID(*getVertexNeighbour)(Graph *, void *, void **, void **))
 {
 	struct bfsTreeNode *node = NULL;
 	QueueReturnID queueId;
 	void *neighbour, *edge;
-	unsigned long degree;
+	size_t degree;
 	int flag;
 	_assert(!getVertexDegree(pGraph, vertex, &degree));
 	while (degree--) {
@@ -196,7 +196,7 @@ static GraphSearchReturnID bfs(Graph *pGraph,
 	int isDirected;
 	struct bfsTreeNode *node = NULL;
 	GraphSearchReturnID id;
-	GraphReturnID(*getVertexDegree)(Graph *, void *, unsigned long *);
+	GraphReturnID(*getVertexDegree)(Graph *, void *, size_t *);
 	GraphReturnID(*getVertexNeighbour)(Graph *, void *, void **, void **);
 	_assert(!graphIsDirected(pGraph, &isDirected));
 	if (isDirected) {
