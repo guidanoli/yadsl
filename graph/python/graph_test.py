@@ -46,3 +46,24 @@ def test_add_remove_edge():
     for d1 in dtypes:
         for d2 in dtypes:
             _test(g, d1, d2, (d1, d2))
+
+def test_nested_iterators():
+    g = Graph()
+    for i in range(10):
+        g.add_vertex(i)
+    middle_v = None
+    for i, v in enumerate(g):
+        if i == 4:
+            middle_v = v
+            break
+    assert middle_v is not None
+    outer_loops = 0
+    for v in g:
+        inner_loops = 0
+        for w in g:
+            if w == middle_v:
+                break
+            inner_loops += 1
+        assert inner_loops == 4
+        outer_loops += 1
+    assert outer_loops == 10

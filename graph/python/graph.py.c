@@ -10,12 +10,13 @@
 typedef struct {
     PyObject_HEAD
     Graph *ob_graph;
+	size_t global_offset;
 } GraphObject;
 
 typedef struct {
 	PyObject_HEAD
 	GraphObject *go;
-	size_t index;
+	size_t local_index;
 } GraphVertexIteratorObject;
 
 static PyTypeObject GraphType;
@@ -49,8 +50,10 @@ Graph_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	GraphObject *self;
 	self = (GraphObject *) type->tp_alloc(type, 0);
-	if (self != NULL)
+	if (self != NULL) {
 		self->ob_graph = NULL;
+		self->global_offset = 0;
+	}
 	return (PyObject *) self;
 }
 
@@ -355,7 +358,7 @@ Graph_iter(GraphObject *self)
 		return NULL;
 	Py_INCREF(self);
 	it->go = self;
-	it->index = 0;
+	it->local_index = 0;
 	PyObject_GC_Track(it);
 	return (PyObject *) it;
 }
@@ -374,13 +377,28 @@ GraphIterator_next(GraphVertexIteratorObject *it)
 	pGraph = go->ob_graph;
 	if (graphGetNumberOfVertices(pGraph, &size))
 		PyErr_BadInternalCall();
-	if (it->index++ < size) {
+	if (it->local_index < size) {
 		PyObject *obj;
+		while (1) {
+			if (go->global_offset < it->local_index) {
+				if (graphGetNextVertex(pGraph, &obj))
+					PyErr_BadInternalCall();
+				++go->global_offset;
+			} else if (go->global_offset > it->local_index) {
+				if (graphGetPreviousVertex(pGraph, &obj))
+					PyErr_BadInternalCall();
+				--go->global_offset;
+			} else {
+				break; // synced offsets
+			}
+		}
+		go->global_offset = ++it->local_index;
 		if (graphGetNextVertex(pGraph, &obj))
 			PyErr_BadInternalCall();
 		Py_INCREF(obj);
 		return obj;
 	}
+	go->global_offset = 0;
 	it->go = NULL;
 	Py_DECREF(go);
 	return NULL;
