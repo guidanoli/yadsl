@@ -7,9 +7,9 @@
 
 #include "set.h"
 
-/******************************************************************************
+/*******************************************************************************
 * Graph data structure invariants
-*******************************************************************************
+********************************************************************************
 *
 * I) Given (GraphEdge *) e and (GraphVertex *) u
 * e->pSource points to u, iff u->outEdges contain e
@@ -19,11 +19,21 @@
 * smallest address to the one with largest address.
 *
 * III) The ownership of the set cursors are given to specific functions:
-* 	- Graph::vertexSet -> graphGetNextVertex
-* 	- GraphVertex::outEdges -> graphGetNextNeighbour/graphGetNextOutNeighbour
-* 	- GraphVertex::inEdge -> graphGetNextNeighbour/graphGetNextInNeighbour
+* 	- Graph::vertexSet -> graphGet*Vertex
+* 	- GraphVertex::outEdges -> graphGet*Neighbour / graphGet*OutNeighbour
+* 	- GraphVertex::inEdge -> graphGet*Neighbour / graphGet*InNeighbour
+*   Where * stands for either 'Next' or 'Previous'
 *
-******************************************************************************/
+* IV) GraphVertex::inEdgesToIterate must always be in between 0 and the
+* number of edges from which the vertex is DESTINATION
+*
+* V) GraphVertex::outEdgesToIterate must always be in between 0 and the
+* number of edges from which the vertex is SOURCE
+*
+* VI) GraphVertex::outEdgesToIterate must never be lower than
+* GraphVertex::inEdgesToIterate.
+*
+*******************************************************************************/
 
 struct Graph
 {
@@ -41,8 +51,8 @@ struct GraphVertex
 	int flag; /* flag (for dfs, bfs, coloring...) */
 	Set *outEdges; /* edges from which the vertex is SOURCE */
 	Set *inEdges; /* edges from which the vertex is DESTINATION */
-	size_t outEdgesIterated; /* counter for graphGetNext*Neighbour */
-	size_t inEdgesIterated; /* counter for graphGetNext*Neighbour */
+	size_t outEdgesToIterate; /* counter for graphGet*Neighbour */
+	size_t inEdgesToIterate; /* counter for graphGet*Neighbour */
 };
 
 struct GraphEdge
@@ -83,8 +93,11 @@ static int _setVertexFlag(struct GraphVertex *pVertex, int *flag);
 ///////////////////////////////////////////////
 // Internal use
 ///////////////////////////////////////////////
-static void _resetAdjListCounters(struct GraphVertex *pVertex);
-static void _cycleSetCursor(Set *pSet, void **pValue);
+static void _resetAdjListCounters(struct GraphVertex *pVertex, int orientation);
+static void _cycleSetCursor(Set *pSet, void **pValue, int orientation);
+
+GraphReturnID _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv, int direction, int orientation);
 
 static GraphReturnID _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
 	struct GraphVertex *pVertexV, struct GraphVertex **ppSource,
@@ -134,13 +147,6 @@ GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize)
 	return GRAPH_RETURN_OK;
 }
 
-// Has the monopoly over the vertexSet cursor!!
-// It cannot be manipulated by any other function,
-// because the user must be in control of which vertex
-// he thinks the cursor is pointing to!
-// Other internal functions can use the cursor too but
-// must not alter its state after the call (or can
-// alter it coherently)
 GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV)
 {
 	SetReturnID setId;
@@ -154,6 +160,25 @@ GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV)
 	if (setId = setNextItem(pGraph->vertexSet)) {
 		_assert(setId == SET_RETURN_OUT_OF_BOUNDS);
 		_assert(!setFirstItem(pGraph->vertexSet));
+	}
+	*pV = pVertex->item;
+	return GRAPH_RETURN_OK;
+
+}
+
+GraphReturnID graphGetPreviousVertex(Graph *pGraph, void **pV)
+{
+	SetReturnID setId;
+	struct GraphVertex *pVertex = NULL;
+	if (pGraph == NULL || pV == NULL)
+		return GRAPH_RETURN_INVALID_PARAMETER;
+	if (setId = setGetCurrentItem(pGraph->vertexSet, &pVertex)) {
+		_assert(setId == SET_RETURN_EMPTY);
+		return GRAPH_RETURN_EMPTY;
+	}
+	if (setId = setPreviousItem(pGraph->vertexSet)) {
+		_assert(setId == SET_RETURN_OUT_OF_BOUNDS);
+		_assert(!setLastItem(pGraph->vertexSet));
 	}
 	*pV = pVertex->item;
 	return GRAPH_RETURN_OK;
@@ -202,8 +227,8 @@ GraphReturnID graphAddVertex(Graph *pGraph, void *v)
 		return GRAPH_RETURN_MEMORY;
 	pVertex->item = v;
 	pVertex->flag = 0;
-	pVertex->inEdgesIterated = 0;
-	pVertex->outEdgesIterated = 0;
+	pVertex->inEdgesToIterate = 0;
+	pVertex->outEdgesToIterate = 0;
 	if (setCreate(&pVertex->inEdges)) {
 		free(pVertex);
 		return GRAPH_RETURN_MEMORY;
@@ -263,7 +288,7 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 		_assert(setId == SET_RETURN_MEMORY);
 		return GRAPH_RETURN_MEMORY;
 	}
-	_resetAdjListCounters(pEdgeUV->pSource);
+	_resetAdjListCounters(pEdgeUV->pSource, 1);
 	_assert(pEdgeUV->pDestination != NULL);
 	if (setId = setAddItem(pEdgeUV->pDestination->inEdges, pEdgeUV)) {
 		_assert(!setRemoveItem(pEdgeUV->pSource->outEdges, pEdgeUV));
@@ -271,7 +296,7 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 		_assert(setId == SET_RETURN_MEMORY);
 		return GRAPH_RETURN_MEMORY;
 	}
-	_resetAdjListCounters(pEdgeUV->pDestination);
+	_resetAdjListCounters(pEdgeUV->pDestination, 1);
 	return GRAPH_RETURN_OK;
 }
 
@@ -308,9 +333,9 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v)
 		&pDestination, &pEdgeUV))
 		return graphId;
 	_assert(!setRemoveItem(pSource->outEdges, pEdgeUV));
-	_resetAdjListCounters(pSource);
+	_resetAdjListCounters(pSource, 1);
 	_assert(!setRemoveItem(pDestination->inEdges, pEdgeUV));
-	_resetAdjListCounters(pDestination);
+	_resetAdjListCounters(pDestination, 1);
 	if (pGraph->freeEdge)
 		pGraph->freeEdge(pEdgeUV->item);
 	free(pEdgeUV);
@@ -395,39 +420,68 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
 	if (inSize == 0) {
 		// thus, outSize > 0
-		_cycleSetCursor(pVertex->outEdges, &temp);
-		--pVertex->outEdgesIterated;
+		_cycleSetCursor(pVertex->outEdges, &temp, 1);
 	} else if (outSize == 0) {
 		// thus, inSize > 0
-		_cycleSetCursor(pVertex->inEdges, &temp);
-		--pVertex->inEdgesIterated;
+		_cycleSetCursor(pVertex->inEdges, &temp, 1);
 	} else {
 		// thus, both are > 0
-		if (pVertex->inEdgesIterated == 0 &&
-			pVertex->outEdgesIterated == 0) {
-			_resetAdjListCounters(pVertex);
-			_cycleSetCursor(pVertex->outEdges, &temp);
-			--pVertex->outEdgesIterated;
-		} else if (pVertex->inEdgesIterated == 0) {
+		if (pVertex->inEdgesToIterate == 0 &&
+			pVertex->outEdgesToIterate == 0) {
+			_resetAdjListCounters(pVertex, 1);
+			goto flag;
+		} else if (pVertex->inEdgesToIterate == 0) {
 			// thus, outEdgesIterated > 0
-			_cycleSetCursor(pVertex->outEdges, &temp);
-			--pVertex->outEdgesIterated;
-		} else if (pVertex->outEdgesIterated == 0) {
-			// thus, inEdgesIterated > 0
-			_cycleSetCursor(pVertex->inEdges, &temp);
-			--pVertex->inEdgesIterated;
+			_cycleSetCursor(pVertex->outEdges, &temp, 1);
+			--pVertex->outEdgesToIterate;
 		} else {
-			// thus, both are > 0
-			if (pVertex->inEdgesIterated >
-				pVertex->outEdgesIterated) {
-				// more edges out than in
-				_cycleSetCursor(pVertex->outEdges, &temp);
-				--pVertex->outEdgesIterated;
-			} else {
-				// more (or same # of) edges in than out
-				_cycleSetCursor(pVertex->inEdges, &temp);
-				--pVertex->inEdgesIterated;
-			}
+		flag:
+			// thus, inEdgesToIterate > 0
+			_cycleSetCursor(pVertex->inEdges, &temp, 1);
+			--pVertex->inEdgesToIterate;
+		}
+	}
+	*pV = temp->pDestination == pVertex ?
+		temp->pSource->item : temp->pDestination->item;
+	*uv = temp->item;
+	return GRAPH_RETURN_OK;
+}
+
+GraphReturnID graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv)
+{
+	struct GraphVertex *pVertex;
+	GraphReturnID graphId;
+	size_t inSize, outSize;
+	struct GraphEdge *temp;
+	if (pGraph == NULL || pV == NULL || uv == NULL)
+		return GRAPH_RETURN_INVALID_PARAMETER;
+	if (graphId = _parseVertices(pGraph, u, &pVertex))
+		return graphId;
+	_assert(!setGetSize(pVertex->inEdges, &inSize));
+	_assert(!setGetSize(pVertex->outEdges, &outSize));
+	if (inSize == 0 && outSize == 0)
+		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
+	if (inSize == 0) {
+		// thus, outSize > 0
+		_cycleSetCursor(pVertex->outEdges, &temp, -1);
+	} else if (outSize == 0) {
+		// thus, inSize > 0
+		_cycleSetCursor(pVertex->inEdges, &temp, -1);
+	} else {
+		// thus, both are > 0
+		if (pVertex->inEdgesToIterate == inSize) {
+			_resetAdjListCounters(pVertex, -1);
+			goto flag;
+		} else if (pVertex->outEdgesToIterate == outSize) {
+			// thus, inEdgesToIterate < inSize
+			_cycleSetCursor(pVertex->inEdges, &temp, -1);
+			++pVertex->inEdgesToIterate;
+		} else {
+		flag:
+			// thus, inEdgesToIterate > 0
+			_cycleSetCursor(pVertex->inEdges, &temp, -1);
+			++pVertex->inEdgesToIterate;
 		}
 	}
 	*pV = temp->pDestination == pVertex ?
@@ -439,41 +493,25 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
-	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
-	size_t inSize;
-	struct GraphEdge *temp;
-	if (pV == NULL || uv == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
-	if (graphId = _parseVertices(pGraph, u, &pVertex))
-		return graphId;
-	_assert(!setGetSize(pVertex->inEdges, &inSize));
-	if (inSize == 0)
-		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
-	_cycleSetCursor(pVertex->inEdges, &temp);
-	*pV = temp->pSource->item;
-	*uv = temp->item;
-	return GRAPH_RETURN_OK;
+	return _graphGetNeighbour(pGraph, u, pV, uv, 1, 1);
+}
+
+GraphReturnID graphGetPreviousInNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv)
+{
+	return _graphGetNeighbour(pGraph, u, pV, uv, 1, -1);
 }
 
 GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
-	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
-	size_t outSize;
-	struct GraphEdge *temp;
-	if (pV == NULL || uv == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
-	if (graphId = _parseVertices(pGraph, u, &pVertex))
-		return graphId;
-	_assert(!setGetSize(pVertex->outEdges, &outSize));
-	if (outSize == 0)
-		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
-	_cycleSetCursor(pVertex->outEdges, &temp);
-	*pV = temp->pDestination->item;
-	*uv = temp->item;
-	return GRAPH_RETURN_OK;
+	return _graphGetNeighbour(pGraph, u, pV, uv, -1, 1);
+}
+
+GraphReturnID graphGetPreviousOutNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv)
+{
+	return _graphGetNeighbour(pGraph, u, pV, uv, -1, -1);
 }
 
 GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag)
@@ -530,27 +568,41 @@ void graphDestroy(Graph *pGraph)
 /**************************************/
 
 // Cycle set cursor (when reaches end, go to first)
+// orientation = 1 (next) or -1 (previous)
 // If an error occurs, returns 1, else 0.
 // [!] Assumes set is not empty!
-static void _cycleSetCursor(Set *pSet, void **pValue)
+static void _cycleSetCursor(Set *pSet, void **pValue, int orientation)
 {
 	SetReturnID setId;
+	SetReturnID (*cycleFunc)(Set *);
+	SetReturnID (*resetFunc)(Set *);
 	void *temp;
+	_assert(orientation == 1 || orientation == -1);
+	cycleFunc = orientation == 1 ? setNextItem : setPreviousItem;
+	resetFunc = orientation == 1 ? setFirstItem : setLastItem;
 	_assert(!setGetCurrentItem(pSet, &temp));
-	if (setId = setNextItem(pSet)) {
+	if (setId = cycleFunc(pSet)) {
 		_assert(setId == SET_RETURN_OUT_OF_BOUNDS);
-		_assert(!setFirstItem(pSet));
+		_assert(!resetFunc(pSet));
 	}
 	*pValue = temp;
 }
 
 // Reset set cursors (due to getNeighbour contract)
-static void _resetAdjListCounters(struct GraphVertex *pVertex)
+static void _resetAdjListCounters(struct GraphVertex *pVertex, int orientation)
 {
-	setFirstItem(pVertex->inEdges);
-	setFirstItem(pVertex->outEdges);
-	setGetSize(pVertex->inEdges, &pVertex->inEdgesIterated);
-	setGetSize(pVertex->outEdges, &pVertex->outEdgesIterated);
+	_assert(orientation == 1 || orientation == -1);
+	if (orientation == 1) {
+		setFirstItem(pVertex->inEdges);
+		setFirstItem(pVertex->outEdges);
+		setGetSize(pVertex->inEdges, &pVertex->inEdgesToIterate);
+		setGetSize(pVertex->outEdges, &pVertex->outEdgesToIterate);
+	} else {
+		setLastItem(pVertex->inEdges);
+		setLastItem(pVertex->outEdges);
+		pVertex->inEdgesToIterate = 0;
+		pVertex->outEdgesToIterate = 0;
+	}
 }
 
 // Compares destination from edge and the one provided
@@ -682,4 +734,32 @@ static int _setVertexFlag(struct GraphVertex *pVertex, int *flag)
 {
 	pVertex->flag = *flag;
 	return 0;
+}
+
+// Generic function for obtaining neighbour of a defined edge set
+// direction = 1 for inEdges, -1 for outEdges
+// orientatino = 1 for Next, -1 for Previous
+// The other parameters are the same of graphGet(1)(2)Neighbour,
+// where (1) is in {'Next', 'Previous'} and (2) is in {'In', 'Out'}.
+GraphReturnID _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv, int direction, int orientation)
+{
+	struct GraphVertex *pVertex;
+	Set *pSet;
+	GraphReturnID graphId;
+	size_t setSize;
+	struct GraphEdge *temp;
+	if (pV == NULL || uv == NULL)
+		return GRAPH_RETURN_INVALID_PARAMETER;
+	if (graphId = _parseVertices(pGraph, u, &pVertex))
+		return graphId;
+	_assert(direction == 1 || direction == -1);
+	pSet = direction == 1 ? pVertex->inEdges : pVertex->outEdges;
+	_assert(!setGetSize(pSet, &setSize));
+	if (setSize == 0)
+		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
+	_cycleSetCursor(pSet, &temp, orientation);
+	*pV = direction == 1 ? temp->pSource->item : temp->pDestination->item;
+	*uv = temp->item;
+	return GRAPH_RETURN_OK;
 }

@@ -124,6 +124,18 @@ GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize);
 GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV);
 
 /**
+* Get previous vertex in graph (loops)
+* pGraph    pointer to graph
+* pV        address of variable that will hold the vertex
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
+* GRAPH_RETURN_EMPTY
+*/
+GraphReturnID graphGetPreviousVertex(Graph *pGraph, void **pV);
+
+/**
 * Get out degree of a given vertex, that is, how many edges come from it
 * pGraph    pointer to graph
 * v         graph vertex
@@ -193,6 +205,28 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv);
 
 /**
+* Get previous neighbour of given vertex
+* The function will loop through the same vertices until some
+* modification is made in relation to this vertex, such as
+* adding or removing edges connected to it
+* pGraph    pointer to graph
+* u         graph vertex
+* pV        (return) neighbour of u
+* uv        (return) edge between u and v
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
+* 	- "uv" is NULL
+* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* 	- vertex "u" does not exist
+* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
+* 	- "u" does not contain neighbours, that is, edges
+*/
+GraphReturnID graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv);
+
+/**
 * Get next neighbour that has an edge that incides in a given vertex
 * The function will loop through the same vertices until some
 * modification is made in relation to this vertex, such as
@@ -215,6 +249,28 @@ GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv);
 
 /**
+* Get previous neighbour that has an edge that incides in a given vertex
+* The function will loop through the same vertices until some
+* modification is made in relation to this vertex, such as
+* adding or removing edges connected to it
+* pGraph    pointer to graph
+* u         graph vertex
+* pV        (return) neighbour of u, through edge "vu"
+* uv        (return) edge between u and v
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
+* 	- "uv" is NULL
+* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* 	- vertex "u" does not exist
+* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
+* 	- "u" does not contain in-neighbours
+*/
+GraphReturnID graphGetPreviousInNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv);
+
+/**
 * Get next neighbour that has an edge that comes from a given vertex
 * The function will loop through the same vertices until some
 * modification is made in relation to this vertex, such as
@@ -234,6 +290,28 @@ GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 * 	- "u" does not contain out-neighbours
 */
 GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
+	void **uv);
+
+/**
+* Get previous neighbour that has an edge that comes from a given vertex
+* The function will loop through the same vertices until some
+* modification is made in relation to this vertex, such as
+* adding or removing edges connected to it
+* pGraph    pointer to graph
+* u         graph vertex
+* pV        (return) neighbour of u, through edge "uv"
+* uv        (return) edge between u and v
+* Possible errors:
+* GRAPH_RETURN_INVALID_PARAMETER
+* 	- "pGraph" is NULL
+* 	- "pV" is NULL
+* 	- "uv" is NULL
+* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
+* 	- vertex "u" does not exist
+* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
+* 	- "u" does not contain out-neighbours
+*/
+GraphReturnID graphGetPreviousOutNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv);
 
 /**

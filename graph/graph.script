@@ -15,6 +15,9 @@
 /nextvertex X
 /catch empty
 
+/prevvertex X
+/catch empty
+
 /outdegree X 0
 /catch "does not contain vertex"
 
@@ -31,6 +34,15 @@
 /catch "does not contain vertex"
 
 /nextneighbour V N E
+/catch "does not contain vertex"
+
+/previnneighbour V N E
+/catch "does not contain vertex"
+
+/prevoutneighbour V N E
+/catch "does not contain vertex"
+
+/prevneighbour V N E
 /catch "does not contain vertex"
 
 /containsvertex V NO
@@ -64,6 +76,9 @@
 /nextvertex X
 /catch empty
 
+/prevvertex X
+/catch empty
+
 /outdegree X 0
 /catch "does not contain vertex"
 
@@ -80,6 +95,15 @@
 /catch "does not contain vertex"
 
 /nextneighbour V N E
+/catch "does not contain vertex"
+
+/previnneighbour V N E
+/catch "does not contain vertex"
+
+/prevoutneighbour V N E
+/catch "does not contain vertex"
+
+/prevneighbour V N E
 /catch "does not contain vertex"
 
 /containsvertex V NO
@@ -109,6 +133,7 @@
 /vertexcount 1
 /containsvertex V YES
 /nextvertex V
+/prevvertex V
 
 # Checking vertex degrees
 /indegree V 0
@@ -121,6 +146,12 @@
 /nextoutneighbour V N E
 /catch "does not contain edge"
 /nextneighbour V N E
+/catch "does not contain edge"
+/previnneighbour V N E
+/catch "does not contain edge"
+/prevoutneighbour V N E
+/catch "does not contain edge"
+/prevneighbour V N E
 /catch "does not contain edge"
 
 # Try removing edge VV
@@ -146,6 +177,16 @@
 # Checking if edge was added
 /containsedge V V YES
 /getedge V V E
+
+# Checking neighbourhood
+/nextinneighbour V V E
+/nextoutneighbour V V E
+/nextneighbour V V E
+/nextneighbour V V E
+/previnneighbour V V E
+/prevoutneighbour V V E
+/prevneighbour V V E
+/prevneighbour V V E
 
 # Try adding same vertex
 /addvertex V
@@ -174,6 +215,7 @@
 /vertexcount 1
 /containsvertex V YES
 /nextvertex V
+/prevvertex V
 
 # Checking vertex degrees
 /indegree V 0
@@ -186,6 +228,12 @@
 /nextoutneighbour V N E
 /catch "does not contain edge"
 /nextneighbour V N E
+/catch "does not contain edge"
+/previnneighbour V N E
+/catch "does not contain edge"
+/prevoutneighbour V N E
+/catch "does not contain edge"
+/prevneighbour V N E
 /catch "does not contain edge"
 
 # Try removing edge VV
@@ -211,6 +259,16 @@
 # Checking if edge was added
 /containsedge V V YES
 /getedge V V E
+
+# Checking neighbourhood
+/nextinneighbour V V E
+/nextoutneighbour V V E
+/nextneighbour V V E
+/nextneighbour V V E
+/previnneighbour V V E
+/prevoutneighbour V V E
+/prevneighbour V V E
+/prevneighbour V V E
 
 # Try adding same vertex
 /addvertex V

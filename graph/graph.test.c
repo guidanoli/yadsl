@@ -24,12 +24,16 @@ const char *TesterHelpStrings[] = {
 	"/isdirected [YES/NO]                   check if graph is directed",
 	"/vertexcount <expected>                get graph vertex count",
 	"/nextvertex <expected vertex>          get next vertex in graph",
+	"/prevvertex <expected vertex>          get previous vertex in graph",
 	"/outdegree <vertex> <expected>         get vertex out degree",
 	"/indegree <vertex> <expected>          get vertex in degree",
 	"/degree <vertex> <expected>            get vertex (total) degree",
 	"/nextinneighbour <vertex> <nb> <edge>  get next vertex in-neighbour",
 	"/nextoutneighbour <vertex> <nb> <edge> get next vertex out-neighbour",
 	"/nextneighbour <vertex> <nb> <edge>    get next vertex neighbour",
+	"/previnneighbour <vertex> <nb> <edge>  get previous vertex in-neighbour",
+	"/prevoutneighbour <vertex> <nb> <edge> get previous vertex out-neighbour",
+	"/prevneighbour <vertex> <nb> <edge>    get previous vertex neighbour",
 	"/containsvertex <vertex> [YES/NO]      check if graph contains vertex",
 	"/addvertex <vertex>                    add vertex to graph",
 	"/removevertex <vertex>                 remove vertex from graph",
@@ -114,6 +118,22 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		if (varCreate(buffer, &pVar))
 			return TESTER_RETURN_MALLOC;
 		graphId = graphGetNextVertex(pGraph, &temp);
+		if (graphId == GRAPH_RETURN_OK) {
+			int areEqual;
+			varCompare(pVar, temp, &areEqual);
+			varDestroy(pVar);
+			if (!areEqual)
+				return TESTER_RETURN_RETURN;
+		} else {
+			varDestroy(pVar);
+		}
+	} else if matches(command, "prevvertex") {
+		Variable *pVar, *temp;
+		if (TesterParseArguments("s", buffer) != 1)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreate(buffer, &pVar))
+			return TESTER_RETURN_MALLOC;
+		graphId = graphGetPreviousVertex(pGraph, &temp);
 		if (graphId == GRAPH_RETURN_OK) {
 			int areEqual;
 			varCompare(pVar, temp, &areEqual);
@@ -219,6 +239,84 @@ static TesterReturnValue parseGraphCommands(const char *command)
 			buffer3, &pExpectedEdgeVar, NULL))
 			return TESTER_RETURN_MALLOC;
 		graphId = graphGetNextOutNeighbour(pGraph, pVertexVar,
+			&pActualNeighbourVar, &pActualEdgeVar);
+		varDestroy(pVertexVar);
+		if (graphId == GRAPH_RETURN_OK) {
+			int neighbourEqual, edgeEqual;
+			varCompare(pExpectedNeighbourVar, pActualNeighbourVar,
+				&neighbourEqual);
+			varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
+			varDestroy(pExpectedEdgeVar);
+			varDestroy(pExpectedNeighbourVar);
+			if (!neighbourEqual || !edgeEqual)
+				return TESTER_RETURN_RETURN;
+		} else {
+			varDestroy(pExpectedEdgeVar);
+			varDestroy(pExpectedNeighbourVar);
+		}
+	} else if matches(command, "prevneighbour") {
+		Variable *pVertexVar, *pActualNeighbourVar, *pExpectedNeighbourVar,
+			*pActualEdgeVar, *pExpectedEdgeVar;
+		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreateMultiple(
+			buffer, &pVertexVar,
+			buffer2, &pExpectedNeighbourVar,
+			buffer3, &pExpectedEdgeVar, NULL))
+			return TESTER_RETURN_MALLOC;
+		graphId = graphGetPreviousNeighbour(pGraph, pVertexVar,
+			&pActualNeighbourVar, &pActualEdgeVar);
+		varDestroy(pVertexVar);
+		if (graphId == GRAPH_RETURN_OK) {
+			int neighbourEqual, edgeEqual;
+			varCompare(pExpectedNeighbourVar, pActualNeighbourVar,
+				&neighbourEqual);
+			varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
+			varDestroy(pExpectedEdgeVar);
+			varDestroy(pExpectedNeighbourVar);
+			if (!neighbourEqual || !edgeEqual)
+				return TESTER_RETURN_RETURN;
+		} else {
+			varDestroy(pExpectedEdgeVar);
+			varDestroy(pExpectedNeighbourVar);
+		}
+	} else if matches(command, "previnneighbour") {
+		Variable *pVertexVar, *pActualNeighbourVar, *pExpectedNeighbourVar,
+			*pActualEdgeVar, *pExpectedEdgeVar;
+		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreateMultiple(
+			buffer, &pVertexVar,
+			buffer2, &pExpectedNeighbourVar,
+			buffer3, &pExpectedEdgeVar, NULL))
+			return TESTER_RETURN_MALLOC;
+		graphId = graphGetPreviousInNeighbour(pGraph, pVertexVar,
+			&pActualNeighbourVar, &pActualEdgeVar);
+		varDestroy(pVertexVar);
+		if (graphId == GRAPH_RETURN_OK) {
+			int neighbourEqual, edgeEqual;
+			varCompare(pExpectedNeighbourVar, pActualNeighbourVar,
+				&neighbourEqual);
+			varCompare(pExpectedEdgeVar, pActualEdgeVar, &edgeEqual);
+			varDestroy(pExpectedEdgeVar);
+			varDestroy(pExpectedNeighbourVar);
+			if (!neighbourEqual || !edgeEqual)
+				return TESTER_RETURN_RETURN;
+		} else {
+			varDestroy(pExpectedEdgeVar);
+			varDestroy(pExpectedNeighbourVar);
+		}
+	} else if matches(command, "prevoutneighbour") {
+		Variable *pVertexVar, *pActualNeighbourVar, *pExpectedNeighbourVar,
+			*pActualEdgeVar, *pExpectedEdgeVar;
+		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+			return TESTER_RETURN_ARGUMENT;
+		if (varCreateMultiple(
+			buffer, &pVertexVar,
+			buffer2, &pExpectedNeighbourVar,
+			buffer3, &pExpectedEdgeVar, NULL))
+			return TESTER_RETURN_MALLOC;
+		graphId = graphGetPreviousOutNeighbour(pGraph, pVertexVar,
 			&pActualNeighbourVar, &pActualEdgeVar);
 		varDestroy(pVertexVar);
 		if (graphId == GRAPH_RETURN_OK) {
