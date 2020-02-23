@@ -14,10 +14,10 @@ def test_add_remove_vertex():
     def _test(g, o):
         c = g.get_vertex_count()
         g.add_vertex(o)
-        assert o in g
+        assert g.contains_vertex(o)
         assert g.get_vertex_count() == c + 1
         g.remove_vertex(o)
-        assert o not in g
+        assert not g.contains_vertex(o)
         assert g.get_vertex_count() == c
     g = Graph()
     for dtype in dtypes:
