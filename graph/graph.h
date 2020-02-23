@@ -65,6 +65,8 @@ GraphReturnID;
 
 typedef struct Graph Graph;
 
+#include <stddef.h>
+
 /**
 * Create an empty graph
 * ppGraph           address of pointer to graph

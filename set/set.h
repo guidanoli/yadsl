@@ -1,23 +1,30 @@
 #ifndef __SET_H__
 #define __SET_H__
 
-/**
-* A Set starts empty.
-* You are able to add and remove items (opaque pointers),
-* check if items are contained within a set or not,
-* and iterate through them.
-* It does not acquire the ownership of the items it
-* stores and, therefore, does not deallocates them
-* when destroyed.
-* HINT: SET_RETURN_OK will always be 0, therefore
-* it can be used as a boolean value to check if a
-* function went OK or not, eg:
-* if (setId = setFunction(pSet)) { ... }
-* HINT: The set stores items according to their
-* address, thus, totally arbitrarily. The list
-* does not give any information about the value
-* stored at all.
-*/
+//
+//     _____      __ 
+//    / ___/___  / /_
+//    \__ \/ _ \/ __/
+//   ___/ /  __/ /_  
+//  /____/\___/\__/  
+//  
+//
+// A Set starts empty.
+// You are able to add and remove items (opaque pointers),
+// check if items are contained within a set or not,
+// and iterate through them.
+// It does not acquire the ownership of the items it
+// stores and, therefore, does not deallocates them
+// when destroyed.
+// HINT: SET_RETURN_OK will always be 0, therefore
+// it can be used as a boolean value to check if a
+// function went OK or not, eg:
+// if (setId = setFunction(pSet)) { ... }
+// HINT: The set stores items according to their
+// address, thus, totally arbitrarily. The list
+// does not give any information about the value
+// stored at all.
+//
 
 typedef enum
 {
@@ -46,6 +53,8 @@ typedef enum
 SetReturnID;
 
 typedef struct Set Set;
+
+#include <stddef.h>
 
 /**
 * Create an empty set

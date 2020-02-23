@@ -43,6 +43,8 @@ MapReturnID;
 
 typedef struct Map Map;
 
+#include <stddef.h>
+
 /**
 * Create an empty map
 * ppMap         address of pointer to map
