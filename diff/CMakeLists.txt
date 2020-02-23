@@ -1,4 +1,5 @@
 add_library(diff diff.c diff.h)
+target_link_libraries(diff ${LIBM_LIBRARIES})
 target_include_directories(diff PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(diff PROPERTIES
 	FOLDER libraries

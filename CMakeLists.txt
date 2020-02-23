@@ -34,6 +34,23 @@ if(AA_PYTHON_SUPPORT)
 	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/python")
 endif()
 
+# Search for math library
+include(CheckCSourceCompiles)
+set(LIBM_TEST_SOURCE "#include<math.h>\nfloat f; int main(){sqrt(f);return
+0;}")
+check_c_source_compiles("${LIBM_TEST_SOURCE}" HAVE_MATH)
+if(HAVE_MATH)
+  set(LIBM_LIBRARIES)
+else()
+  set(CMAKE_REQUIRED_LIBRARIES m)
+  check_c_source_compiles("${LIBM_TEST_SOURCE}" HAVE_LIBM_MATH)
+  unset(CMAKE_REQUIRED_LIBRARIES)
+  if(NOT HAVE_LIBM_MATH)
+    message(FATAL_ERROR "Unable to use C math library functions")
+  endif()
+  set(LIBM_LIBRARIES m)
+endif()
+
 # Allow hierarchical solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
