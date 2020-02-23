@@ -1,14 +1,9 @@
-#include <assert.h>
-
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <pymacro.h>
 
-#ifndef Py_UNREACHABLE
-#pragma message("Py_UNREACHABLE was not found, maybe you're using a Python " \
-"of version previous to v3.7. It will be then defined as a macro for abort().")
-#define Py_UNREACHABLE() abort()
-#endif
+#include <common/pydefines.h>
+#include <common/assert.h>
 
 #include "graph.h"
 
@@ -371,7 +366,7 @@ GraphIterator_next(GraphVertexIteratorObject *it)
 	GraphObject *go;
 	Graph *pGraph;
 	size_t size;
-	assert(it != NULL);
+	_assert(it != NULL);
 	go = it->go;
 	if (go == NULL) {
 		return NULL;
