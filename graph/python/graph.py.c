@@ -114,7 +114,7 @@ Graph_add_vertex(GraphObject *self, PyObject *obj)
 	GraphReturnID returnId;
 	returnId = graphAddVertex(self->ob_graph, obj);
 	if (!returnId)
-		Py_XINCREF(obj);
+		Py_INCREF(obj);
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
@@ -414,8 +414,7 @@ Graph_neighbours(GraphObject *self, PyObject *args, PyObject *kw)
 badinternalcall_exit:
 	PyErr_BadInternalCall();
 exit:
-	if (tuple)
-		Py_DECREF(tuple);
+	Py_XDECREF(tuple);
 	return NULL;
 }
 
@@ -450,25 +449,104 @@ Graph_degree(GraphObject *self, PyObject *args, PyObject *kw)
 	} else {
 		PyErr_SetString(PyExc_KeyError,
 			"Keys ingoing and outgoing cannot be both False");
-		goto normal_exit;
+		goto exit;
 	}
 	if (returnId = getDegree(self->ob_graph, vertex, &size)) {
 		switch (returnId) {
 		case GRAPH_RETURN_INVALID_PARAMETER:
-			goto exit;
+			goto badinternalcall_exit;
 		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
 			PyErr_SetString(PyExc_RuntimeError,
 				"Vertex not found in graph");
-			goto normal_exit;
+			goto exit;
 		default:
 			Py_UNREACHABLE();
 		}
 	}
 	return PyLong_FromSize_t(size);
-exit:
+badinternalcall_exit:
 	PyErr_BadInternalCall();
-normal_exit:
+exit:
 	return NULL;
+}
+
+PyDoc_STRVAR(_Graph_get_flag__doc__,
+"get_flag(self, v : Object, /) -> int\n"
+"--\n"
+"\n"
+"Get flag assigned to vertex");
+
+static PyObject *
+Graph_get_flag(GraphObject *self, PyObject *obj)
+{
+	int flag;
+	switch (graphGetVertexFlag(self->ob_graph, obj, &flag)) {
+	case GRAPH_RETURN_OK:
+		return PyLong_FromLong(flag);
+	case GRAPH_RETURN_INVALID_PARAMETER:
+		PyErr_BadInternalCall();
+		break;
+	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+		PyErr_SetString(PyExc_RuntimeError,
+			"Vertex not found in graph");
+		break;
+	default:
+		Py_UNREACHABLE();
+	}
+	return NULL;
+}
+
+PyDoc_STRVAR(_Graph_set_flag__doc__,
+"set_flag(self, v : Object, f : int, /) -> None\n"
+"--\n"
+"\n"
+"Assign flag to vertex");
+
+static PyObject *
+Graph_set_flag(GraphObject *self, PyObject *args)
+{
+	int flag;
+	PyObject *vertex;
+	if (!PyArg_ParseTuple(args, "Oi:pygraph.Graph.set_flag", &vertex, &flag))
+		return NULL;
+	switch (graphSetVertexFlag(self->ob_graph, vertex, flag)) {
+	case GRAPH_RETURN_OK:
+		Py_RETURN_NONE;
+	case GRAPH_RETURN_INVALID_PARAMETER:
+		PyErr_BadInternalCall();
+		break;
+	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+		PyErr_SetString(PyExc_RuntimeError,
+			"Vertex not found in graph");
+		break;
+	default:
+		Py_UNREACHABLE();
+	}
+	return NULL;
+}
+
+PyDoc_STRVAR(_Graph_set_all_flags__doc__,
+"set_all_flags(self, f : int, /) -> None\n"
+"--\n"
+"\n"
+"Assign flag to all vertices");
+
+static PyObject *
+Graph_set_all_flags(GraphObject *self, PyObject *obj)
+{
+	int flag;
+	if (PyLong_Check(obj)) {
+		flag = PyLong_AsLong(obj);
+		if (flag == -1 && PyErr_Occurred())
+			return NULL;
+		if (graphSetAllVerticesFlags(self->ob_graph, flag))
+			PyErr_BadInternalCall();
+		Py_RETURN_NONE;
+	} else {
+		PyErr_SetString(PyExc_TypeError, "Expected an int as first argument "
+			"to set_all_flags");
+		return NULL;
+	}
 }
 
 PyMethodDef Graph_methods[] = {
@@ -555,6 +633,27 @@ PyMethodDef Graph_methods[] = {
 		(PyCFunction) Graph_degree,
 		METH_VARARGS | METH_KEYWORDS,
 		_Graph_degree__doc__
+	},
+	//
+	// Flags
+	//
+	{
+		"get_flag",
+		(PyCFunction) Graph_get_flag,
+		METH_O,
+		_Graph_get_flag__doc__
+	},
+	{
+		"set_flag",
+		(PyCFunction) Graph_set_flag,
+		METH_VARARGS,
+		_Graph_set_flag__doc__
+	},
+	{
+		"set_all_flags",
+		(PyCFunction) Graph_set_all_flags,
+		METH_O,
+		_Graph_set_all_flags__doc__
 	},
 	//
 	// Sentinel

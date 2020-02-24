@@ -77,4 +77,19 @@ def test_neighbours():
             assert (v,v-w) in g.neighbours(w, outgoing = False)
             assert (w,v-w) not in g.neighbours(v, outgoing = False)
             assert (v,v-w) not in g.neighbours(w, ingoing = False)
-    
+
+def test_flags():
+    g = Graph()
+    g.add_vertex(0)
+    g.set_flag(0,0)
+    assert g.get_flag(0) == 0
+    g.add_vertex(1)
+    g.set_flag(1,1)
+    assert g.get_flag(0) == 0
+    assert g.get_flag(1) == 1
+    g.set_all_flags(2)
+    assert g.get_flag(0) == 2
+    assert g.get_flag(1) == 2
+    g.set_flag(0,3)
+    assert g.get_flag(0) == 3
+    assert g.get_flag(1) == 2

@@ -738,7 +738,7 @@ static int _setVertexFlag(struct GraphVertex *pVertex, int *flag)
 
 // Generic function for obtaining neighbour of a defined edge set
 // direction = 1 for inEdges, -1 for outEdges
-// orientatino = 1 for Next, -1 for Previous
+// orientation = 1 for Next, -1 for Previous
 // The other parameters are the same of graphGet(1)(2)Neighbour,
 // where (1) is in {'Next', 'Previous'} and (2) is in {'In', 'Out'}.
 GraphReturnID _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
