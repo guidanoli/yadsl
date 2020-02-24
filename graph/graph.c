@@ -479,9 +479,9 @@ GraphReturnID graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
 			++pVertex->inEdgesToIterate;
 		} else {
 		flag:
-			// thus, inEdgesToIterate > 0
-			_cycleSetCursor(pVertex->inEdges, &temp, -1);
-			++pVertex->inEdgesToIterate;
+			// thus, outEdgesToIterate < outSize
+			_cycleSetCursor(pVertex->outEdges, &temp, -1);
+			++pVertex->outEdgesToIterate;
 		}
 	}
 	*pV = temp->pDestination == pVertex ?

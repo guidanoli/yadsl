@@ -2,24 +2,13 @@
 #include <Python.h>
 
 #include <common/pydefines.h>
-#include <common/assert.h>
 
 #include "graph.h"
 
 typedef struct {
     PyObject_HEAD
     Graph *ob_graph;
-	size_t global_offset;
 } GraphObject;
-
-typedef struct {
-	PyObject_HEAD
-	GraphObject *go;
-	size_t local_index;
-} GraphVertexIteratorObject;
-
-static PyTypeObject GraphType;
-static PyTypeObject GraphIterType;
 
 static void
 decRefCallback(void *item)
@@ -31,12 +20,14 @@ static int
 cmpCallback(void *a, void *b)
 {
 	int cmp;
-	Py_INCREF(a);
+	Py_XINCREF(a);
+	Py_XINCREF(b);
 	cmp = PyObject_RichCompareBool(
 		(PyObject *) a,
 		(PyObject *) b,
 		Py_EQ);
-	Py_DECREF(a);
+	Py_XDECREF(a);
+	Py_XDECREF(b);
 	return cmp == -1 ? 0 : cmp;
 }
 
@@ -45,10 +36,8 @@ Graph_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	GraphObject *self;
 	self = (GraphObject *) type->tp_alloc(type, 0);
-	if (self != NULL) {
+	if (self != NULL)
 		self->ob_graph = NULL;
-		self->global_offset = 0;
-	}
 	return (PyObject *) self;
 }
 
@@ -88,7 +77,7 @@ PyDoc_STRVAR(_Graph_is_directed__doc__,
 "Check whether graph is directed or not");
 
 static PyObject *
-Graph_is_directed(GraphObject *self, PyObject *args, PyObject *kw)
+Graph_is_directed(GraphObject *self, PyObject *Py_UNUSED(ignored))
 {
 	int isDirected;
 	if (graphIsDirected(self->ob_graph, &isDirected))
@@ -193,7 +182,7 @@ PyDoc_STRVAR(_Graph_contains_edge__doc__,
 "Check whether there is an edge from u to v in graph");
 
 static PyObject *
-Graph_contains_edge(GraphObject *self, PyObject *args, PyObject *kw)
+Graph_contains_edge(GraphObject *self, PyObject *args)
 {
 	GraphReturnID returnId;
 	PyObject *u, *v;
@@ -227,7 +216,7 @@ PyDoc_STRVAR(_Graph_add_edge__doc__,
 "Add edge uv (from u to v) to graph");
 
 static PyObject *
-Graph_add_edge(GraphObject *self, PyObject *args, PyObject *kw)
+Graph_add_edge(GraphObject *self, PyObject *args)
 {
 	GraphReturnID returnId;
 	PyObject *u, *v, *uv;
@@ -237,7 +226,7 @@ Graph_add_edge(GraphObject *self, PyObject *args, PyObject *kw)
 		goto exit;
 	returnId = graphAddEdge(self->ob_graph, u, v, uv);
 	if (!returnId)
-		Py_XINCREF(uv);
+		Py_INCREF(uv);
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
@@ -267,7 +256,7 @@ PyDoc_STRVAR(_Graph_remove_edge__doc__,
 "Remove edge from u to v from graph");
 
 static PyObject*
-Graph_remove_edge(GraphObject* self, PyObject* args, PyObject* kw)
+Graph_remove_edge(GraphObject* self, PyObject* args)
 {
 	GraphReturnID returnId;
 	PyObject *u, *v;
@@ -301,7 +290,7 @@ PyDoc_STRVAR(_Graph_get_edge__doc__,
 "Get edge that goes from u to v in graph");
 
 static PyObject*
-Graph_get_edge(GraphObject* self, PyObject* args, PyObject* kw)
+Graph_get_edge(GraphObject* self, PyObject* args)
 {
 	GraphReturnID returnId;
 	PyObject *u, *v, *uv;
@@ -329,18 +318,157 @@ exit:
 	return NULL;
 }
 
+PyDoc_STRVAR(_Graph_vertices__doc__,
+"vertices(self, /) -> tuple of Objects\n"
+"--\n"
+"\n"
+"Get tuple of vertices in graph");
+
 static PyObject *
-Graph_iter(GraphObject *self)
+Graph_vertices(GraphObject *self, PyObject *Py_UNUSED(ignored))
 {
-	GraphVertexIteratorObject *it;
-	it = PyObject_GC_New(GraphVertexIteratorObject, &GraphIterType);
-	if (it == NULL)
+	size_t size;
+	PyObject *tuple = NULL, *vertex;
+	if (graphGetNumberOfVertices(self->ob_graph, &size))
+		goto exit;
+	tuple = PyTuple_New(size);
+	if (tuple == NULL)
 		return NULL;
-	Py_INCREF(self);
-	it->go = self;
-	it->local_index = 0;
-	PyObject_GC_Track(it);
-	return (PyObject *) it;
+	while (size--) {
+		if (graphGetPreviousVertex(self->ob_graph, &vertex)) {
+			Py_DECREF(tuple);
+			goto exit;
+		}
+		Py_INCREF(vertex);
+		PyTuple_SET_ITEM(tuple, size, vertex);
+	}
+	return tuple;
+exit:
+	PyErr_BadInternalCall();
+	return NULL;
+}
+
+PyDoc_STRVAR(_Graph_neighbours__doc__,
+"neighbours(self, v : Object, /, ingoing = True, outgoing = True)"
+" -> tuple of tuples (neighbour, edge)\n"
+"--\n"
+"\n"
+"Get tuple for neighbours and edges of vertex v in graph\n"
+"You can filter the neighbours by the edges connecting to v\n"
+"  - ingoing stands for neighbours that have edges pointing to v\n"
+"  - outgoing stands for neighbours that have edges coming from v\n");
+
+static PyObject *
+Graph_neighbours(GraphObject *self, PyObject *args, PyObject *kw)
+{
+	int in = 1, out = 1;
+	size_t size;
+	GraphReturnID returnId;
+	PyObject *vertex, *tuple = NULL, *subtuple, *neighbour, *edge;
+	GraphReturnID (*getDegree)(Graph *, void *, size_t *);
+	GraphReturnID (*getPrevious)(Graph *, void *, void **, void **);
+	static char *keywords[] = { "vertex", "ingoing", "outgoing", NULL };
+	if (!PyArg_ParseTupleAndKeywords(args, kw,
+		"O|pp:pygraph.Graph.neighbours", keywords, &vertex, &in, &out))
+		return NULL;
+	if (in && out) {
+		getDegree = graphGetVertexDegree;
+		getPrevious = graphGetPreviousNeighbour;
+	} else if (in) {
+		getDegree = graphGetVertexInDegree;
+		getPrevious = graphGetPreviousInNeighbour;
+	} else if (out) {
+		getDegree = graphGetVertexOutDegree;
+		getPrevious = graphGetPreviousOutNeighbour;
+	} else {
+		PyErr_SetString(PyExc_KeyError,
+			"Keys ingoing and outgoing cannot be both False");
+		goto exit;
+	}
+	if (returnId = getDegree(self->ob_graph, vertex, &size)) {
+		switch (returnId) {
+		case GRAPH_RETURN_INVALID_PARAMETER:
+			goto badinternalcall_exit;
+		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+			PyErr_SetString(PyExc_RuntimeError,
+				"Vertex not found in graph");
+			goto exit;
+		default:
+			Py_UNREACHABLE();
+		}
+	}
+	if (PyErr_Occurred())
+		goto exit;
+	if ((tuple = PyTuple_New(size)) == NULL)
+		goto exit;
+	while (size--) {
+		if (getPrevious(self->ob_graph, vertex, &neighbour, &edge))
+			goto badinternalcall_exit;
+		if (PyErr_Occurred())
+			goto exit;
+		if ((subtuple = PyTuple_Pack(2, neighbour, edge)) == NULL)
+			goto exit;
+		PyTuple_SET_ITEM(tuple, size, subtuple);
+	}
+	return tuple;
+badinternalcall_exit:
+	PyErr_BadInternalCall();
+exit:
+	if (tuple)
+		Py_DECREF(tuple);
+	return NULL;
+}
+
+PyDoc_STRVAR(_Graph_degree__doc__,
+"degree(self, v : Object, /, ingoing = True, outgoing = True)"
+" -> degree of vertex\n"
+"--\n"
+"\n"
+"Get degree (number of edges) of vertex v in graph\n"
+"You can filter the degree by the edges connecting to v\n"
+"  - ingoing stands for neighbours that have edges pointing to v\n"
+"  - outgoing stands for neighbours that have edges coming from v\n");
+
+static PyObject *
+Graph_degree(GraphObject *self, PyObject *args, PyObject *kw)
+{
+	int in = 1, out = 1;
+	size_t size;
+	PyObject *vertex;
+	GraphReturnID returnId;
+	GraphReturnID(*getDegree)(Graph *, void *, size_t *);
+	static char *keywords[] = { "vertex", "ingoing", "outgoing", NULL };
+	if (!PyArg_ParseTupleAndKeywords(args, kw,
+		"O|pp:pygraph.Graph.degree", keywords, &vertex, &in, &out))
+		return NULL;
+	if (in && out) {
+		getDegree = graphGetVertexDegree;
+	} else if (in) {
+		getDegree = graphGetVertexInDegree;
+	} else if (out) {
+		getDegree = graphGetVertexOutDegree;
+	} else {
+		PyErr_SetString(PyExc_KeyError,
+			"Keys ingoing and outgoing cannot be both False");
+		goto normal_exit;
+	}
+	if (returnId = getDegree(self->ob_graph, vertex, &size)) {
+		switch (returnId) {
+		case GRAPH_RETURN_INVALID_PARAMETER:
+			goto exit;
+		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+			PyErr_SetString(PyExc_RuntimeError,
+				"Vertex not found in graph");
+			goto normal_exit;
+		default:
+			Py_UNREACHABLE();
+		}
+	}
+	return PyLong_FromSize_t(size);
+exit:
+	PyErr_BadInternalCall();
+normal_exit:
+	return NULL;
 }
 
 PyMethodDef Graph_methods[] = {
@@ -356,6 +484,12 @@ PyMethodDef Graph_methods[] = {
 	//
 	// Vertex data
 	//
+	{
+		"vertices",
+		(PyCFunction) Graph_vertices,
+		METH_NOARGS,
+		_Graph_vertices__doc__
+	},
 	{
 		"contains_vertex",
 		(PyCFunction) Graph_contains_vertex,
@@ -407,6 +541,24 @@ PyMethodDef Graph_methods[] = {
 		METH_VARARGS,
 		_Graph_get_edge__doc__
 	},
+	//
+	// Neighbour data
+	//
+	{
+		"neighbours",
+		(PyCFunction) Graph_neighbours,
+		METH_VARARGS | METH_KEYWORDS,
+		_Graph_neighbours__doc__
+	},
+	{
+		"degree",
+		(PyCFunction) Graph_degree,
+		METH_VARARGS | METH_KEYWORDS,
+		_Graph_degree__doc__
+	},
+	//
+	// Sentinel
+	//
 	{
 		NULL,
 		NULL,
@@ -414,55 +566,6 @@ PyMethodDef Graph_methods[] = {
 		NULL
 	}
 };
-
-static PyObject *
-GraphIterator_next(GraphVertexIteratorObject *it)
-{
-	GraphObject *go;
-	Graph *pGraph;
-	size_t size;
-	_assert(it != NULL);
-	go = it->go;
-	if (go == NULL) {
-		return NULL;
-	}
-	pGraph = go->ob_graph;
-	if (graphGetNumberOfVertices(pGraph, &size))
-		PyErr_BadInternalCall();
-	if (it->local_index < size) {
-		PyObject *obj;
-		while (1) {
-			if (go->global_offset < it->local_index) {
-				if (graphGetNextVertex(pGraph, &obj))
-					PyErr_BadInternalCall();
-				++go->global_offset;
-			} else if (go->global_offset > it->local_index) {
-				if (graphGetPreviousVertex(pGraph, &obj))
-					PyErr_BadInternalCall();
-				--go->global_offset;
-			} else {
-				break;
-			}
-		}
-		go->global_offset = ++it->local_index;
-		if (graphGetNextVertex(pGraph, &obj))
-			PyErr_BadInternalCall();
-		Py_INCREF(obj);
-		return obj;
-	}
-	go->global_offset = 0;
-	it->go = NULL;
-	Py_DECREF(go);
-	return NULL;
-}
-
-static void
-GraphIterator_dealloc(GraphVertexIteratorObject *it)
-{
-	PyObject_GC_UnTrack(it);
-	Py_XDECREF(it->go);
-	PyObject_GC_Del(it);
-}
 
 static PyTypeObject GraphType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
@@ -472,20 +575,9 @@ static PyTypeObject GraphType = {
 	.tp_dealloc = (destructor) Graph_dealloc,
 	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
 	.tp_doc = _Graph_init__doc__,
-	.tp_iter = (getiterfunc) Graph_iter,
 	.tp_methods = Graph_methods,
 	.tp_init = (initproc) Graph_init,
 	.tp_new = (newfunc) Graph_new,
-};
-
-static PyTypeObject GraphIterType = {
-	PyVarObject_HEAD_INIT(NULL, 0)
-	.tp_name = "pygraph.GraphIterator",
-	.tp_basicsize = sizeof(GraphVertexIteratorObject),
-	.tp_dealloc = (destructor) GraphIterator_dealloc,
-	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-	.tp_iter = PyObject_SelfIter,
-	.tp_iternext = (iternextfunc) GraphIterator_next,
 };
 
 PyModuleDef pygraph_module = {

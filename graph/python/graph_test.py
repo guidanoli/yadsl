@@ -28,8 +28,8 @@ def test_recursion():
     class X:
         def __eq__(self, o):
             g.add_vertex(self)
+    g.add_vertex(0)
     try:
-        g.add_vertex(0)
         g.add_vertex(X())
     except RecursionError as e:
         return
@@ -38,8 +38,10 @@ def test_recursion():
 def test_add_remove_edge():
     def _test(g, u, v, e):
         g.add_edge(u,v,e)
+        assert g.contains_edge(u,v)
         assert g.get_edge(u,v) == e
         g.remove_edge(u,v)
+        assert not g.contains_edge(u,v)
     g = Graph()
     for dtype in dtypes:
         g.add_vertex(dtype)
@@ -47,23 +49,32 @@ def test_add_remove_edge():
         for d2 in dtypes:
             _test(g, d1, d2, (d1, d2))
 
-def test_nested_iterators():
+def test_vertices():
+    g = Graph()
+    for i in range(10):
+        assert len(g.vertices()) == g.get_vertex_count()
+        g.add_vertex(i)
+        assert i in g.vertices()
+    for i in range(10):
+        g.remove_vertex(i)
+        assert len(g.vertices()) == g.get_vertex_count()
+        assert i not in g.vertices()
+
+def test_neighbours():
     g = Graph()
     for i in range(10):
         g.add_vertex(i)
-    middle_v = None
-    for i, v in enumerate(g):
-        if i == 4:
-            middle_v = v
-            break
-    assert middle_v is not None
-    outer_loops = 0
-    for v in g:
-        inner_loops = 0
-        for w in g:
-            if w == middle_v:
-                break
-            inner_loops += 1
-        assert inner_loops == 4
-        outer_loops += 1
-    assert outer_loops == 10
+    for v in g.vertices():
+        for w in range(v):
+            assert len(g.neighbours(v)) == g.degree(v)
+            assert len(g.neighbours(v, outgoing = False)) == g.degree(v, outgoing = False)
+            assert len(g.neighbours(v, ingoing = False)) == g.degree(v, ingoing = False)
+            assert g.degree(v) == g.degree(v, outgoing = False) + g.degree(v, ingoing = False)
+            g.add_edge(v,w,v-w)
+            assert (w,v-w) in g.neighbours(v)
+            assert (v,v-w) in g.neighbours(w)
+            assert (w,v-w) in g.neighbours(v, ingoing = False)
+            assert (v,v-w) in g.neighbours(w, outgoing = False)
+            assert (w,v-w) not in g.neighbours(v, outgoing = False)
+            assert (v,v-w) not in g.neighbours(w, ingoing = False)
+    
