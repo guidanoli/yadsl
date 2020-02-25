@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#define TESTER_DYNMEMTK
+#include "memdb.h"
 #include "tester.h"
 
 #define matches(a, b) (!strcmp(a,b))

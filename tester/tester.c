@@ -1,45 +1,15 @@
 #include "tester.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+
+#include "memdb.h"
 
 #pragma once
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
 #endif
-
-////////////////////////////////////////////////////////////////////////////////
-// DYNAMIC MEMORY TOOLKIT
-////////////////////////////////////////////////////////////////////////////////
-
-typedef enum
-{
-	MEM_RETURN_OK = 0,
-	MEM_RETURN_COPY,
-	MEM_RETURN_NOT_FOUND,
-	MEM_RETURN_MEMORY,
-}
-MemReturnId;
-
-struct MemNode
-{
-	void *mem;
-	size_t size;
-	struct MemNode *next;
-	const char *file;
-	int line;
-};
-
-typedef struct MemNode MemNode;
-
-static MemNode *memList = NULL;
-static size_t memListSize = 0;
-static MemReturnId addNodeToMemList(void *mem, size_t size, const char *file,
-	const line, MemNode **pCopy);
-static MemReturnId removeNodeFromMemList(void *mem);
-static void destroyMemList();
 
 ////////////////////////////////////////////////////////////////////////////////
 // STATIC VARIABLES DECLARATIONS
@@ -89,10 +59,10 @@ int main(int argc, char **argv)
 	exitReturn = TesterExitCallback();
 	if (ret == TESTER_RETURN_OK)
 		ret = exitReturn;
-	if (ret == TESTER_RETURN_OK && memListSize)
+	if (ret == TESTER_RETURN_OK && _memdb_list_size())
 		ret = TESTER_RETURN_MEMLEAK;
 	_TesterPrintReturnValueInfo(ret);
-	destroyMemList();
+	_memdb_clear_list();
 	return ret;
 }
 
@@ -191,75 +161,6 @@ void TesterLog(const char *message, ...)
 	spacing += vfprintf(stdout, message, va);
 	spacing += fprintf(stdout, "\" (line %zu, col %zu)\n", line, col);
 	va_end(va);
-}
-
-void TesterFree(void *_mem)
-{
-	removeNodeFromMemList(_mem);
-	free(_mem);
-}
-
-void *_TesterMalloc(size_t _size, const char *file, const line)
-{
-	void *_mem = malloc(_size);
-	if (_mem) {
-		MemNode *copy;
-		switch (addNodeToMemList(_mem, _size, file, line, &copy)) {
-		case MEM_RETURN_OK:
-			break;
-		case MEM_RETURN_COPY:
-			fprintf(stderr, "Unexpected copy of memory space found in list.\n");
-			removeNodeFromMemList(copy->mem);
-			break;
-		case MEM_RETURN_MEMORY:
-			free(_mem);
-			return NULL;
-		}
-	}
-	return _mem;
-}
-
-void *_TesterRealloc(void *_mem, size_t _size, const char *file, const line)
-{
-	void *_new_mem = realloc(_mem, _size);
-	if (_new_mem) {
-		MemNode *copy;
-		MemReturnId returnId;
-		returnId = addNodeToMemList(_new_mem, _size, file, line, &copy);
-		switch (returnId) {
-		case MEM_RETURN_OK:
-			break;
-		case MEM_RETURN_COPY:
-			fprintf(stdout, "Inplace reallocation (%zu -> %zu bytes)\n",
-				copy->size, _size);
-			removeNodeFromMemList(copy->mem);
-			break;
-		case MEM_RETURN_MEMORY:
-			free(_new_mem);
-			return NULL;
-		}
-	}
-	return _new_mem;
-}
-
-void *_TesterCalloc(size_t _cnt, size_t _size, const char *file, const line)
-{
-	void *_mem = calloc(_cnt, _size);
-	if (_mem) {
-		MemNode *copy;
-		switch (addNodeToMemList(_mem, _cnt * _size, file, line, &copy)) {
-		case MEM_RETURN_OK:
-			break;
-		case MEM_RETURN_COPY:
-			fprintf(stderr, "Unexpected copy of memory space found in list.\n");
-			removeNodeFromMemList(copy->mem);
-			break;
-		case MEM_RETURN_MEMORY:
-			free(_mem);
-			return NULL;
-		}
-	}
-	return _mem;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -447,63 +348,4 @@ static int _TesterParseArgFormat(const char **format_t, void *arg, size_t *inc)
 			return 0;
 	}
 	return 1;
-}
-
-static MemReturnId addNodeToMemList(void *mem, size_t size, const char *file,
-	const line, MemNode **pCopy)
-{
-	MemNode *node = memList;
-	for (; node; node = node->next) {
-		if (node->mem == mem) {
-			*pCopy = node;
-			return MEM_RETURN_COPY;
-		}
-	}
-	node = malloc(sizeof(MemNode));
-	if (node == NULL)
-		return MEM_RETURN_MEMORY;
-	node->mem = mem;
-	node->size = size;
-	node->file = file;
-	node->line = line;
-	node->next = memList;
-	memList = node;
-	++memListSize;
-	return MEM_RETURN_OK;
-}
-
-static MemReturnId removeNodeFromMemList(void *mem)
-{
-	MemNode *node = memList, *prev = NULL;
-	for (; node; node = node->next) {
-		if (node->mem == mem) {
-			if (prev == NULL)
-				memList = node->next;
-			else
-				prev->next = node->next;
-			free(node);
-			--memListSize;
-			return MEM_RETURN_OK;
-		}
-		prev = node;
-	}
-	fprintf(stderr, "Memory space %p was not allocated by the Tester"
-		" Framework or was already deallocated.\n", mem);
-	return MEM_RETURN_NOT_FOUND;
-}
-
-static void destroyMemList()
-{
-	MemNode *node = memList, *next = NULL;
-	if (memListSize)
-		fprintf(stderr, "%zu leak(s) in total:\n", memListSize);
-	for (; node; node = next) {
-		next = node->next;
-		fprintf(stderr, "Leaked %p (%zuB), allocated in %s:%d\n",
-			node->mem, node->size, node->file, node->line);
-		free(node->mem);
-		free(node);
-	}
-	memList = NULL;
-	memListSize = 0;
 }

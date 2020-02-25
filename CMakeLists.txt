@@ -57,10 +57,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Tester framework
 add_subdirectory(tester)
 
-# Common headers
-add_subdirectory(common)
-
 # Modules
+add_subdirectory(common)
 add_subdirectory(diff)
 add_subdirectory(graph)
 add_subdirectory(graphio)
@@ -70,3 +68,4 @@ add_subdirectory(set)
 add_subdirectory(queue)
 add_subdirectory(var)
 add_subdirectory(heap)
+add_subdirectory(memdb)

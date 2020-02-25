@@ -1,0 +1,143 @@
+## Test with empty list
+
+/contains 0 NO
+/size 0
+
+## Add 1 byte to 0
+
+/malloc 0 1
+/contains 0 YES
+/size 1
+/free 0
+/contains 0 NO
+
+## Add 1 byte to 0
+
+/malloc 0 1
+/size 1
+/contains 0 YES
+
+# Realloc to 2 bytes
+/realloc 0 2
+/size 1
+
+/contains 0 YES
+/free 0
+/contains 0 NO
+/contains 0 NO
+/size 0
+
+## Add multiple bytes
+
+/malloc 0 1
+/size 1
+/contains 0 YES
+
+/malloc 1 2
+/size 2
+/contains 1 YES
+
+/malloc 2 4
+/size 3
+/contains 2 YES
+
+/malloc 3 8
+/size 4
+/contains 3 YES
+
+/malloc 4 16
+/size 5
+/contains 4 YES
+
+/malloc 5 32
+/size 6
+/contains 5 YES
+
+/malloc 6 64
+/size 7
+/contains 6 YES
+
+/malloc 7 128
+/size 8
+/contains 7 YES
+
+/malloc 8 256
+/size 9
+/contains 8 YES
+
+/malloc 9 512
+/size 10
+/contains 9 YES
+
+/contains 0 YES
+/free 0
+/contains 0 NO
+/size 9
+
+/contains 1 YES
+/free 1
+/contains 1 NO
+/size 8
+
+/contains 2 YES
+/free 2
+/contains 2 NO
+/size 7
+
+/contains 3 YES
+/free 3
+/contains 3 NO
+/size 6
+
+/contains 4 YES
+/free 4
+/contains 4 NO
+/size 5
+
+/contains 5 YES
+/free 5
+/contains 5 NO
+/size 4
+
+/contains 6 YES
+/free 6
+/contains 6 NO
+/size 3
+
+/contains 7 YES
+/free 7
+/contains 7 NO
+/size 2
+
+/contains 8 YES
+/free 8
+/contains 8 NO
+/size 1
+
+/contains 9 YES
+/free 9
+/contains 9 NO
+/size 0
+
+## Add and clear
+
+/malloc 0 1
+/malloc 1 2
+/malloc 2 4
+/size 3
+/supress YES
+/clear
+/supress NO
+/size 0
+/contains 0 NO
+/contains 1 NO
+/contains 2 NO
+
+## Calloc
+
+/calloc 0 4 4
+/contains 0 YES
+/size 1
+/free 0
+/contains 0 NO
+/size 0
