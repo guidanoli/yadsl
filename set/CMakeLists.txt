@@ -1,4 +1,5 @@
 add_library(set set.c set.h)
+target_link_libraries(set memdb)
 target_include_directories(set PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(set PROPERTIES
 	FOLDER libraries

@@ -6,6 +6,10 @@
 
 #include "set.h"
 
+#ifdef _DEBUG
+#include "memdb.h"
+#endif
+
 struct Entry
 {
 	void *key;
@@ -117,6 +121,7 @@ MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue)
 	tempKey = pEntry->key;
 	tempValue = pEntry->value;
 	_assert(!setRemoveItem(pMap->entrySet, pEntry));
+	free(pEntry);
 	*pKey = tempKey;
 	*pValue = tempValue;
 	return MAP_RETURN_OK;

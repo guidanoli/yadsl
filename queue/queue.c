@@ -2,6 +2,10 @@
 
 #include <stdlib.h>
 
+#ifdef _DEBUG
+#include "memdb.h"
+#endif
+
 struct QueueItem
 {
 	struct QueueItem *previous;

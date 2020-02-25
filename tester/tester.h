@@ -47,6 +47,8 @@
 
 #include <stddef.h>
 
+#include "memdb.h"
+
 /**
 * Enumeration of tester return values.
 * OBS: TESTER_RETURN_COUNT and TESTER_RETURN_EXTERNAL are

@@ -72,6 +72,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 		}
 		mapId = mapPutEntry(pMap, pVarKey, pVarValue, &temp);
 		if (mapId == MAP_RETURN_OVERWROTE_ENTRY) {
+			varDestroy(pVarKey);
 			varDestroy(temp);
 		} else if (mapId != MAP_RETURN_OK) {
 			varDestroy(pVarKey);

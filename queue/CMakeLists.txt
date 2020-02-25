@@ -1,4 +1,5 @@
 add_library(queue queue.c queue.h)
+target_link_libraries(queue memdb)
 target_include_directories(queue PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(queue PROPERTIES
 	FOLDER libraries

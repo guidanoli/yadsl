@@ -4,8 +4,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "memdb.h"
-
 #pragma once
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
@@ -221,6 +219,9 @@ static TesterReturnValue _TesterParse(FILE *fp)
 							return ret;
 						}
 						// Call the command parser (can move cursor)
+#ifdef _VERBOSE
+						printf("Parsing '%s' at line %zu\n", command, line);
+#endif
 						externalReturnValueInfo = NULL;
 						ret = TesterParseCallback(command);
 					}

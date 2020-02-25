@@ -2,6 +2,10 @@
 
 #include <stdlib.h>
 
+#ifdef _DEBUG
+#include "memdb.h"
+#endif
+
 // A set is represented by an ordered double-linked list
 // in which each item is an opaque pointer.
 // It keeps track of the number of items in the set and

@@ -5,6 +5,10 @@
 #include <math.h>
 #include <string.h>
 
+#ifdef _DEBUG
+#include "memdb.h"
+#endif
+
 #pragma once
 #if defined(_MSC_VER)
 # pragma warning(disable : 6386)

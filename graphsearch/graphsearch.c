@@ -7,6 +7,10 @@
 #include "queue.h"
 
 #ifdef _DEBUG
+#include "memdb.h"
+#endif
+
+#ifdef _DEBUG
 #include <stdio.h>
 int nodeRefCount = 0;
 #endif

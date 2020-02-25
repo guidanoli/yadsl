@@ -2,7 +2,6 @@
 
 #include <string.h>
 
-#include "memdb.h"
 #include "tester.h"
 
 #define matches(a, b) (!strcmp(a,b))

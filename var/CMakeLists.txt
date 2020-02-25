@@ -1,4 +1,5 @@
 add_library(var var.c var.h)
+target_link_libraries(var memdb)
 target_include_directories(var PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(var PROPERTIES FOLDER libraries)
 

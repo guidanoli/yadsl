@@ -1,4 +1,5 @@
 add_library(heap heap.c heap.h)
+target_link_libraries(heap memdb)
 target_include_directories(heap PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(heap PROPERTIES FOLDER libraries)
 

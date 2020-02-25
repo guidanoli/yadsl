@@ -142,14 +142,13 @@ void *_memdb_realloc(void *_mem, size_t _size, const char *file, const line)
 	if (_new_mem) {
 		struct _memdb_node *copy;
 		_memdb_enum returnId;
+		assert(!_memdb_remove(_mem));
 		returnId = _memdb_add(_new_mem, _size, file, line, &copy);
 		switch (returnId) {
 		case MEM_RETURN_OK:
 			break;
 		case MEM_RETURN_COPY:
-			_memdb_remove(copy->mem);
-			if (_memdb_add(_new_mem, _size, file, line, &copy))
-				assert(0);
+			assert(0);
 			break;
 		case MEM_RETURN_MEMORY:
 			free(_new_mem);

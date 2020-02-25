@@ -1,5 +1,5 @@
 add_library(graphio graphio.c graphio.h)
-target_link_libraries(graphio graph map common)
+target_link_libraries(graphio graph map common memdb)
 target_include_directories(graphio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(graphio PROPERTIES FOLDER libraries)
 

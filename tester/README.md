@@ -64,3 +64,6 @@ There is only one way to catch errors raised by `TesterParseCallback`. It is by 
 
 In this folder are `tester.test.c` and `tester.script`, which exemplify the usage of the tester framework, as well as testing its main features, such as parsing and error handling. Be sure to consult them for reference.
 
+## Verbose
+
+You can also compile the `testerlib` with the flag `_VERBOSE` which allows a more verbose output to help debug with more confidence.

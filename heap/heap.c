@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <limits.h>
 
+#ifdef _DEBUG
+#include "memdb.h"
+#endif
+
 struct Heap
 {
 	void **arr; /* Array representation of binary tree */
@@ -125,6 +129,7 @@ void heapDestroy(Heap *pHeap)
 {
 	if (pHeap == NULL)
 		return;
+	free(pHeap->arr);
 	free(pHeap);
 }
 
