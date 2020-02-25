@@ -1,0 +1,27 @@
+# NULL parameter
+
+/insert 33
+/catch "invalid parameter"
+
+/extract 33
+/catch "invalid parameter"
+
+/resize 33
+/catch "invalid parameter"
+
+# Create heap of size 1
+/create 1
+
+# Insert object 1
+/insert 1
+
+# Try inserting one more
+/insert 33
+/catch full
+
+# Extract object 1
+/extract 1
+
+# Try extracting one more
+/extract 33
+/catch empty

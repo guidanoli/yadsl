@@ -19,6 +19,7 @@ static const char *int_f[] =    { "%d", "%u", NULL };
 static const char *long_f[] =   { "%l", "%lu", NULL };
 static const char *size_t_f[] = { "%zu", NULL };
 
+static long long refcount = 0;
 static size_t line; // line count
 static const char *externalReturnValueInfo = NULL; // external return value
 static const char *nativeReturnValueInfos[TESTER_RETURN_COUNT]; // return value
@@ -58,6 +59,8 @@ int main(int argc, char **argv)
 	exitReturn = TesterExitCallback();
 	if (ret == TESTER_RETURN_OK)
 		ret = exitReturn;
+	if (ret == TESTER_RETURN_OK && refcount)
+		ret = TESTER_RETURN_MEMLEAK;
 	_TesterPrintReturnValueInfo(ret);
 	return ret;
 }
@@ -157,6 +160,24 @@ void TesterLog(const char *message, ...)
 	spacing += vfprintf(stdout, message, va);
 	spacing += fprintf(stdout, "\" (line %zu, col %zu)\n", line, col);
 	va_end(va);
+}
+
+void TesterFree(void *memory)
+{
+	free(memory);
+	--refcount;
+}
+
+void *TesterMalloc(size_t size)
+{
+	void *mem = malloc(size);
+	if (mem) ++refcount;
+	return mem;
+}
+
+long long TesterGetReferenceCount()
+{
+	return refcount;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -45,6 +45,8 @@
 //   returned, the error is ignored.
 //
 
+#include <stddef.h>
+
 /**
 * Enumeration of tester return values.
 * OBS: TESTER_RETURN_COUNT and TESTER_RETURN_EXTERNAL are
@@ -160,6 +162,23 @@ void TesterLog(const char *message, ...);
 * way as if no arguments were provided.
 */
 void TesterPrintHelpStrings();
+
+/**
+* Wrapper around free that decrements from the Tester
+* framework internal reference count
+*/
+void TesterFree(void *memory);
+
+/**
+* Wrapper around malloc that increments the Tester
+* framerwork internal reference count if it succeeds
+*/
+void *TesterMalloc(size_t size);
+
+/**
+* Get Tester framework internal reference count
+*/
+long long TesterGetReferenceCount();
 
 /**
 * Get further information about return value

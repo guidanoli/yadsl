@@ -70,6 +70,7 @@ def new_project(prj, no_test = False, **kwargs):
 		testnames = [prj + fend for fend, _ in exts["test"]]
 		tests = [(t + 'test', t + '.test.c', t + '.script') for t in testnames]
 		lines += ["target_include_directories({} PUBLIC ${{CMAKE_CURRENT_SOURCE_DIR}})".format(prj)]
+		lines += ["set_target_properties({} PROPERTIES FOLDER libraries)".format(prj)]
 		lines += [""]
 		lines += ["add_tester_module({} SOURCES {} LINKS {})".format(tgt, src, prj) for tgt, src, _ in tests]
 		lines += ["add_tester_scripts({} SOURCES {})".format(tgt, script) for tgt, _, script in tests]
