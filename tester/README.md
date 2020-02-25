@@ -4,19 +4,19 @@ Framework designed for testing C modules.
 
 ## Motivation
 
-Creating individual testers for each module can be a very boring and error-prone process. It may lead to extra time wasted on debugging the test module, but not on the module itself. Having a single tester framework makes testing easier, enjoyable and energetic.
+Creating individual testers for each module can be a very dull and error-prone task. It may lead to extra time wasted on debugging the test module, but not the code itself. Having a single tester framework makes testing effortless, enjoyable and energetic.
 
 ## Paradigm
 
-Instead of creating a test module entirely from scratch, you should only write code that is specific to the module you're testing, right? That is why you only need to implement three functions:
+Instead of creating a test module entirely from scratch, you should only write code that is specific to what you're testing, right? That is why you only need to implement three functions, shown in order of activation.
 
-* `TesterInitCallback()`: called to initialize data structures or global variables
-* `TesterParseCallback(const char *)`: called for every command parsed from the script file
-* `TesterExitCallback()`: called after an error is caught or at the very end, if no errors are thrown
+* `TesterInitCallback()`: Called **once** to initialize data structures or global variables
+* `TesterParseCallback(const char *)`: Called **for every command parsed** from the script file
+* `TesterExitCallback()`: Called **once** at the very end of the testing cycle
 
-You may also want to display some helping information if no script file is passed to the tester, like what commands are available or how does your test work. For that, you may also set the following variable:
+You may also want to display some helping information if the tester receives no script file, like what commands are available or how does your test work. For that, you may also set the following variable:
 
-* `TesterHelpStrings`: array of strings that will be printed when no arguments are passed
+* `TesterHelpStrings`: An array of strings terminated by `NULL`.
 
 Following are some information about specific portions of the tester framework.
 
@@ -28,17 +28,17 @@ A script file has a very simple grammar, with the following tokens: **commands**
 * Arguments are parsed as `int`,  `float`, `long` or `char *`.
 * Comments are parsed as `#` + `any string`.
 
-(1) `char *` arguments can be parsed with quotation marks, allowing `spaces` and `tabs` to be ignored
+(1) `char *` arguments can be parsed with quotation marks, ignoring `spaces` and `tabs`.
 
 (2) comments ignore everything that comes after `#`, until the end of the line
 
 ## Commands
 
-Every time a command is parsed, the tester framework calls the `TesterParseCallback`, passing as argument the command string (without  `/`). It is the job of this function to parse this string (generally by `strcmp` with known commands), and requiring more parameters through `TesterParseArguments`, if necessary.
+The tester framework calls the `TesterParseCallback` for every potential command. It is the job of this function to parse this string, and requiring more parameters through `TesterParseArguments`, if necessary.
 
 ## Return value
 
-All of the functions to be implemented must return `TesterReturnValue`. If any of these functions, when called, return a value other than `TESTER_RETURN_OK`, an error will be raised. In `tester.h` are listed the called "native" errors. These errors have their own string identifiers too. Its use will be soon explained.
+All of the implementable functions return an enumerator of type `TesterReturnValue`. If any of these functions, when called, return a value other than `TESTER_RETURN_OK`, the corresponding cycle is interrupted. In `tester.h` are listed the called "native" errors. These errors have their string identifiers too, which are used for error handling, as we will see later on.
 
 |      **enumerator**      | **string** |     **description**      |
 | :----------------------: | :--------: | :----------------------: |
@@ -54,11 +54,11 @@ All of the functions to be implemented must return `TesterReturnValue`. If any o
 
 ### External return values
 
-You may have noticed that the `EXTERNAL` return value is the only one that does not have a string nor a description defined. That is due to the fact that it is a polymorphic return value. It can be whatever the user defines at runtime. Instead of returning the enumerator (`TESTER_RETURN_EXTERNAL`), you must call `TesterExternalReturnValue(const char *)`, passing its string as parameter, which then returns the enumerator.
+You may have noticed that the `EXTERNAL` return value is the only one that does not have a string nor a description defined. That is because it is a polymorphic return value. It can be whatever the user determines at runtime. Instead of returning this value right away, you ought to call `TesterExternalReturnValue`, passing its string as the parameter, which then returns the enumerator.
 
 ## Error handling
 
-There is only one way to catch errors raised by `TesterParseCallback`. It is by the `/catch` command, which must succeed the command that caused the error. Following the `/catch` command should be the error string. If the error string does not match the thrown error's string, the later will be thrown anyways.
+There is only one way to catch errors raised by `TesterParseCallback`. It is by the `/catch` command. Following the `/catch` command should be the expected error string.
 
 ## Example
 
