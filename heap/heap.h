@@ -109,9 +109,11 @@ HeapReturnID heapExtract(Heap *pHeap, void **pObj);
 *	- "pHeap" is NULL
 *	- "newSize" is 0
 * HEAP_RETURN_SHRINK
-*	- new size is smaller than (or equal to) current size
+*	- new size is smaller than the current size
 * HEAP_RETURN_MEMORY
 *	- HINT: you may try a smaller size
+* [!] If the current size is equal to the new size
+* HEAP_RETURN_OK will be returned
 */
 HeapReturnID heapResize(Heap *pHeap, size_t newSize);
 

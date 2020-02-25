@@ -2,18 +2,20 @@
 
 #include <string.h>
 
+#define TESTER_DYNMEMTK
 #include "tester.h"
 
 #define matches(a, b) (!strcmp(a,b))
 
 const char *TesterHelpStrings[] = {
     "This is the heap test module",
-    "This implements a min heap",
+    "This implements a min heap, meaning that the first item extracted",
+    "is the smallest of all in the heap",
     "",
-    "/create <size>",
-    "/insert <number>",
-    "/extract <expected number>",
-    "/resize <new size>",
+    "/create <size>               create a heap with size <size>",
+    "/insert <number>             insert <number> in the heap",
+    "/extract <expected number>   extract number from heap",
+    "/resize <new size>           resize heap to size <new size>",
     NULL,
 };
 
@@ -47,7 +49,7 @@ TesterReturnValue convert(HeapReturnID heapReturnValue)
 
 int cmpObjs(void *a, void *b)
 {
-    return *((int *) a) < *((int *) b);
+    return *((int *) a) < *((int *) b); /* MIN HEAP */
 }
 
 TesterReturnValue TesterParseCallback(const char *command)
@@ -60,20 +62,20 @@ TesterReturnValue TesterParseCallback(const char *command)
             return TESTER_RETURN_ARGUMENT;
         if (pHeap != NULL)
             heapDestroy(pHeap);
-        returnId = heapCreate(&temp, size, cmpObjs, TesterFree);
+        returnId = heapCreate(&temp, size, cmpObjs, free);
         if (!returnId)
             pHeap = temp;
     } else if matches(command, "insert") {
         int obj, *pObj;
         if (TesterParseArguments("i", &obj) != 1)
             return TESTER_RETURN_ARGUMENT;
-        pObj = TesterMalloc(sizeof(int));
+        pObj = malloc(sizeof(int));
         if (!pObj)
             return TESTER_RETURN_MALLOC;
         *pObj = obj;
         returnId = heapInsert(pHeap, pObj);
         if (returnId)
-            TesterFree(pObj);
+            free(pObj);
     } else if matches(command, "extract") {
         int *pObj, actual, expected;
         if (TesterParseArguments("i", &expected) != 1)
@@ -81,7 +83,7 @@ TesterReturnValue TesterParseCallback(const char *command)
         returnId = heapExtract(pHeap, &pObj);
         if (!returnId) {
             actual = *pObj;
-            TesterFree(pObj);
+            free(pObj);
             if (actual != expected)
                 return TESTER_RETURN_RETURN;
         }

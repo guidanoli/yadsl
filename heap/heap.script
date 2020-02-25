@@ -12,6 +12,13 @@
 # Create heap of size 1
 /create 1
 
+# Try resizing with 0
+/resize 0
+/catch "invalid parameter"
+
+# Try resizing with 1
+/resize 1
+
 # Insert object 1
 /insert 1
 
@@ -25,3 +32,34 @@
 # Try extracting one more
 /extract 33
 /catch empty
+
+# Create heap of size 2
+/create 2
+
+# Resize to size 1
+/resize 1
+
+# Then back to 2
+/resize 2
+
+# Insert two objects
+/insert 456
+/insert 123
+
+# Try inserting another
+/insert 789
+/catch full
+
+# Resize to size 3
+/resize 3
+
+# Try adding again
+/insert 789
+
+# Extract each item
+/extract 123
+/extract 456
+/extract 789
+
+
+

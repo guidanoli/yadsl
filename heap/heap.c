@@ -1,6 +1,7 @@
 #include "heap.h"
 
 #include <stdlib.h>
+#include <limits.h>
 
 struct Heap
 {
@@ -30,6 +31,8 @@ HeapReturnID heapCreate(Heap **ppHeap,
 	void **arr;
 	if (ppHeap == NULL || !initialSize)
 		return HEAP_RETURN_INVALID_PARAMETER;
+	if (initialSize > SIZE_MAX / sizeof(void *))
+		return HEAP_RETURN_MEMORY;
 	pHeap = malloc(sizeof(struct Heap));
 	arr = malloc(sizeof(void *) * initialSize);
 	if (pHeap == NULL || arr == NULL) {
@@ -104,9 +107,13 @@ HeapReturnID heapResize(Heap *pHeap, size_t newSize)
 	void *new_arr;
 	if (pHeap == NULL || newSize == 0)
 		return HEAP_RETURN_INVALID_PARAMETER;
-	if (newSize <= pHeap->last)
+	if (newSize < pHeap->last)
 		return HEAP_RETURN_SHRINK;
-	new_arr = realloc(pHeap->arr, newSize);
+	if (newSize == pHeap->size)
+		return HEAP_RETURN_OK;
+	if (newSize > SIZE_MAX / sizeof(void *))
+		return HEAP_RETURN_MEMORY;
+	new_arr = realloc(pHeap->arr, sizeof(void *) * newSize);
 	if (new_arr == NULL)
 		return HEAP_RETURN_MEMORY;
 	pHeap->arr = new_arr;

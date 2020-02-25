@@ -164,27 +164,41 @@ void TesterLog(const char *message, ...);
 void TesterPrintHelpStrings();
 
 /**
-* Wrapper around free that decrements from the Tester
-* framework internal reference count
-*/
-void TesterFree(void *memory);
-
-/**
-* Wrapper around malloc that increments the Tester
-* framerwork internal reference count if it succeeds
-*/
-void *TesterMalloc(size_t size);
-
-/**
-* Get Tester framework internal reference count
-*/
-long long TesterGetReferenceCount();
-
-/**
 * Get further information about return value
 * HINT: If an invalid return value is given,
 * a proper error message is returned.
 */
 const char *TesterGetReturnValueInfo(TesterReturnValue returnValue);
+
+////////////////////////////////////////////////////////////////////////////////
+// DYNAMIC MEMORY TOOLKIT
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+* This toolkits serves to trace possible memory leaks that might occurr
+* not only in your testing module but in the module you're testing too.
+* You may then define the macro TESTER_DYNMEMTK, which will overwrite
+* the main dynamic allocation functions of the standard library header
+* 
+* At the end of the testing cycle, a message will popup showing whether
+* there were memory leaks and in which file and line they were allocated.
+*/
+#ifdef TESTER_DYNMEMTK
+#define free     TesterFree
+#define malloc   TesterMalloc
+#define realloc  TesterRealloc
+#define calloc   TesterCalloc
+#endif
+
+void TesterFree(void *_mem);
+
+#define TesterMalloc(size) _TesterMalloc(size, __FILE__, __LINE__)
+void *_TesterMalloc(size_t _size, const char *file, const line);
+
+#define TesterRealloc(mem, size) _TesterRealloc(mem, size, __FILE__, __LINE__)
+void *_TesterRealloc(void *_mem, size_t _size, const char *file, const line);
+
+#define TesterCalloc(cnt, size) _TesterCalloc(cnt, size, __FILE__, __LINE__)
+void *_TesterCalloc(size_t _cnt, size_t _size, const char *file, const line);
 
 #endif
