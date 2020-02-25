@@ -1,7 +1,7 @@
 #include "heap.h"
 
 #include <stdlib.h>
-#include <limits.h>
+#include <stdint.h>
 
 #ifdef _DEBUG
 #include "memdb.h"
