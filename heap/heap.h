@@ -65,6 +65,7 @@ typedef struct Heap Heap;
 *                obj1 should be higher in the heap than obj2
 * freeObj      deallocation function or NULL (no ownership)
 *                Property deallocates object
+* arg          additional argument given to cmpObjs
 * Possible errors:
 * HEAP_RETURN_INVALID_PARAMETER
 *	- "ppHeap" is NULL
@@ -73,8 +74,8 @@ typedef struct Heap Heap;
 *	- HINT: you may try a smaller initial size
 */
 HeapReturnID heapCreate(Heap **ppHeap, size_t initialSize,
-	int (*cmpObjs)(void *obj1, void *obj2),
-	void (*freeObj)(void *obj));
+	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
+	void (*freeObj)(void *obj), void * arg);
 
 /**
 * Insert object in heap

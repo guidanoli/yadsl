@@ -16,7 +16,7 @@
 /resize 0
 /catch "invalid parameter"
 
-# Try resizing with 1
+# Try resizing to 1
 /resize 1
 
 # Insert object 1
@@ -50,6 +50,10 @@
 /insert 789
 /catch full
 
+# Try resizing to 1
+/resize 1
+/catch shrink
+
 # Resize to size 3
 /resize 3
 
@@ -61,5 +65,38 @@
 /extract 456
 /extract 789
 
+# Create big heap
+/create 7
 
+# Insert
+/insert -13
+/insert 123
+/insert 123
+/insert 34
+/insert 4758
+/insert 346
+/insert -53
 
+# Try inserting one more
+/insert 33
+/catch full
+
+# Try resizing to 15 then back to 7
+/resize 15
+/resize 7
+
+# Try resizing to 6
+/resize 6
+/catch shrink
+
+# Extract
+/extract -53
+/extract -13
+/extract 34
+/extract 123
+/extract 123
+/extract 346
+/extract 4758
+
+# Resize to 1
+/resize 1

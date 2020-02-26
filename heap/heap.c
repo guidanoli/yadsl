@@ -12,8 +12,9 @@ struct Heap
 	void **arr; /* Array representation of binary tree */
 	size_t size; /* Array total size */
 	size_t last; /* Index of rightmost empty position */
-	int (*cmpObjs)(void *obj1, void *obj2);
+	int (*cmpObjs)(void *obj1, void *obj2, void *arg);
 	void (*freeObj)(void *obj);
+	void *arg;
 };
 
 #define _ROOT 0
@@ -26,10 +27,14 @@ struct Heap
 
 void _swap(Heap *pHeap, size_t *a, size_t *b);
 
-HeapReturnID heapCreate(Heap **ppHeap,
-	size_t initialSize,
-	int (*cmpObjs)(void *obj1, void *obj2),
-	void (*freeObj)(void *obj))
+int _defaultCmp(void *obj1, void *obj2, void *arg)
+{
+	return obj1 < obj2;
+}
+
+HeapReturnID heapCreate(Heap **ppHeap, size_t initialSize,
+	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
+	void (*freeObj)(void *obj), void *arg)
 {
 	Heap *pHeap;
 	void **arr;
@@ -46,9 +51,10 @@ HeapReturnID heapCreate(Heap **ppHeap,
 	}
 	pHeap->last = 0;
 	pHeap->arr = arr;
-	pHeap->cmpObjs = cmpObjs;
+	pHeap->cmpObjs = cmpObjs || _defaultCmp;
 	pHeap->freeObj = freeObj;
 	pHeap->size = initialSize;
+	pHeap->arg = cmpObjs ? arg : NULL;
 	*ppHeap = pHeap;
 	return HEAP_RETURN_OK;
 }
@@ -67,7 +73,7 @@ HeapReturnID heapInsert(Heap *pHeap, void *obj)
 	while (!_ISROOT(newi)) {
 		parenti = _PARENT(newi);
 		parentObj = pHeap->arr[parenti];
-		if (pHeap->cmpObjs(obj, parentObj))
+		if (pHeap->cmpObjs(obj, parentObj, pHeap->arg))
 			_swap(pHeap, &newi, &parenti);
 		else
 			break;
@@ -90,15 +96,16 @@ HeapReturnID heapExtract(Heap *pHeap, void **pObj)
 		size_t lefti = _LEFT(obji), righti = _RIGHT(obji);
 		void *leftobj, *rightobj;
 		if (!_EXISTS(righti, pHeap)) {
-			if (pHeap->cmpObjs(pHeap->arr[lefti], obj))
+			if (pHeap->cmpObjs(pHeap->arr[lefti], obj, pHeap->arg))
 				_swap(pHeap, &obji, &lefti);
 			break;
 		}
 		leftobj = pHeap->arr[lefti];
 		rightobj = pHeap->arr[righti];
-		if (pHeap->cmpObjs(obj, leftobj) && pHeap->cmpObjs(obj, rightobj))
+		if (pHeap->cmpObjs(obj, leftobj, pHeap->arg) &&
+			pHeap->cmpObjs(obj, rightobj, pHeap->arg))
 			break;
-		if (pHeap->cmpObjs(leftobj, rightobj))
+		if (pHeap->cmpObjs(leftobj, rightobj, pHeap->arg))
 			_swap(pHeap, &lefti, &obji);
 		else
 			_swap(pHeap, &righti, &obji);
@@ -129,6 +136,9 @@ void heapDestroy(Heap *pHeap)
 {
 	if (pHeap == NULL)
 		return;
+	if (pHeap->freeObj)
+		while (pHeap->last--)
+			pHeap->freeObj(pHeap->arr[pHeap->last]);
 	free(pHeap->arr);
 	free(pHeap);
 }

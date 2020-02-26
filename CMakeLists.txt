@@ -54,8 +54,9 @@ endif()
 # Allow hierarchical solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Tester framework
+# Meta-modules
 add_subdirectory(tester)
+add_subdirectory(memdb)
 
 # Modules
 add_subdirectory(common)
@@ -68,4 +69,3 @@ add_subdirectory(set)
 add_subdirectory(queue)
 add_subdirectory(var)
 add_subdirectory(heap)
-add_subdirectory(memdb)

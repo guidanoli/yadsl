@@ -4,7 +4,7 @@
 Create new project with name 'prj'
 [!] Alters current working directory
 '''
-def new_project(prj, no_test = False, **kwargs):
+def new_project(prj, test = True, python = False, **kwargs):
 	import os
 	# Check if no additional kwarg was passed
 	if len(kwargs) != 0:
@@ -25,7 +25,7 @@ def new_project(prj, no_test = False, **kwargs):
 	os.chdir(prj)
 	exts = {
 		"source": [('', [''])],
-		"test": [] if no_test else [('', [''])],
+		"test": [('', [''])] if test else [],
 		"header": [('', '')],
 	}
 	def writelist(f, lst):
@@ -48,13 +48,13 @@ def new_project(prj, no_test = False, **kwargs):
 			lines += ["#include \"{}.h\"".format(h) for h in headers]
 			lines += ["", "#include \"tester.h\""]
 			lines += ["", "const char *TesterHelpStrings[] = {",
-			"    \"This is the {} test module\"".format(prj + fend), "};", "",
+			"	\"This is the {} test module\"".format(prj + fend), "};", "",
 			"TesterReturnValue TesterInitCallback()",
-			"{", "    return TESTER_RETURN_OK;", "}", "",
+			"{", "	return TESTER_RETURN_OK;", "}", "",
 			"TesterReturnValue TesterParseCallback(const char *command)",
-			"{","    return TESTER_RETURN_OK;", "}", "",
+			"{","	return TESTER_RETURN_OK;", "}", "",
 			"TesterReturnValue TesterExitCallback()",
-			"{","    return TESTER_RETURN_OK;", "}", ""]
+			"{","	return TESTER_RETURN_OK;", "}", ""]
 			writelist(f, lines)
 		with open(prj + fend + '.script', 'w') as f:
 			writelist(f, ["# " + prj + fend])
@@ -70,11 +70,58 @@ def new_project(prj, no_test = False, **kwargs):
 		testnames = [prj + fend for fend, _ in exts["test"]]
 		tests = [(t + 'test', t + '.test.c', t + '.script') for t in testnames]
 		lines += ["target_include_directories({} PUBLIC ${{CMAKE_CURRENT_SOURCE_DIR}})".format(prj)]
-		lines += ["set_target_properties({} PROPERTIES FOLDER libraries)".format(prj)]
+		if python:
+			lines += ["set_target_properties({} PROPERTIES".format(prj),
+			"\tFOLDER libraries",
+			"\tPOSITION_INDEPENDENT_CODE ON)"]
+		else:
+			lines += ["set_target_properties({} PROPERTIES FOLDER libraries)".format(prj)]
 		lines += [""]
-		lines += ["add_tester_module({} SOURCES {} LINKS {})".format(tgt, src, prj) for tgt, src, _ in tests]
-		lines += ["add_tester_scripts({} SOURCES {})".format(tgt, script) for tgt, _, script in tests]
+		lines += ["if(AA_BUILD_TESTS)"]
+		lines += ["\tadd_tester_module({} SOURCES {} LINKS {})".format(tgt, src, prj) for tgt, src, _ in tests]
+		lines += ["\tadd_tester_scripts({} SOURCES {})".format(tgt, script) for tgt, _, script in tests]
+		lines += ["endif()"]
+		if python:
+			lines += ["",
+			"if(AA_PYTHON_SUPPORT)",
+			"\tadd_subdirectory(python)",
+			"endif()"]
 		writelist(f, lines)
+	# Do python subfolder optional setup
+	if python:
+		pyprj = "py" + prj
+		# Create folder named <python>
+		os.mkdir("python")
+		os.chdir("python")
+		# Create CMakeLists.txt
+		with open("CMakeLists.txt", 'w') as f:
+			writelist(f, ["include(addPythonModule)",
+			"add_python_module({} {} {}.py.c)".format(pyprj, pyprj, prj),
+			"target_link_libraries({} {} common)".format(pyprj, prj)])
+		# Create file <prj>.py.c including Python.h and <prj>.h
+		with open(prj + ".py.c", 'w') as f:
+			writelist(f, ["#define PY_SSIZE_T_CLEAN",
+			"#include <Python.h>",
+			"",
+			"#include <common/pydefines.h>",
+			"",
+			"#include \"{}.h\"".format(prj),
+			"",
+			"PyModuleDef {}_module = {{".format(pyprj),
+			"\tPyModuleDef_HEAD_INIT,",
+			"\t\"{}\",".format(pyprj),
+			"};",
+			"",
+			"PyMODINIT_FUNC",
+			"PyInit_{}(void)".format(pyprj),
+			"{",
+			"\tPy_Initialize();",
+			"\treturn PyModule_Create(&{}_module);".format(pyprj),
+			"}"])
+		# Create file <prj>_test.c importing py<prj>
+		with open(prj + "_test.py", 'w') as f:
+			f.write("import {}".format(pyprj))
+		os.chdir("..")
 	# Add project to root CMakeLists.txt
 	os.chdir("..")
 	with open("CMakeLists.txt", "a") as f:
@@ -84,8 +131,24 @@ if __name__ == '__main__':
 	import sys
 	if len(sys.argv) > 1:
 		kwargs = dict()
-		kwargs["no_test"] = "--no-test" in sys.argv[1:]
+		for arg in sys.argv[2:]:
+			parts = arg.split("=")
+			if (len(parts) != 2 or
+			len(parts[0]) < 3 or
+			len(parts[1]) == 0 or
+			parts[0][:2] != "--"):
+				print("Invalid parameter {}".format(arg))
+				continue
+			key = parts[0][2:]
+			value = parts[1]
+			if key.lower() == "test":
+				kwargs["test"] = value.upper() == "YES"
+			if key.lower() == "python":
+				kwargs["python"] = value.upper() == "YES"
+			else:
+				print("Invalid key {}".format(key))
 		new_project(sys.argv[1], **kwargs)
 	else:
-		print("Usage: \tpython new.py <prj> [flags]")
-		print("--no-test \tDoes not add test to project automatically")
+		print("Usage: python new.py <prj> [flags]")
+		print("--test=[YES/NO], default = YES")
+		print("--python=[YES/NO], default = NO")

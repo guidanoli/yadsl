@@ -46,7 +46,7 @@ TesterReturnValue convert(HeapReturnID heapReturnValue)
     }
 }
 
-int cmpObjs(void *a, void *b)
+int cmpObjs(void *a, void *b, void *_unused)
 {
     return *((int *) a) < *((int *) b); /* MIN HEAP */
 }
@@ -61,7 +61,7 @@ TesterReturnValue TesterParseCallback(const char *command)
             return TESTER_RETURN_ARGUMENT;
         if (pHeap != NULL)
             heapDestroy(pHeap);
-        returnId = heapCreate(&temp, size, cmpObjs, free);
+        returnId = heapCreate(&temp, size, cmpObjs, free, NULL);
         if (!returnId)
             pHeap = temp;
     } else if matches(command, "insert") {
@@ -99,8 +99,10 @@ TesterReturnValue TesterParseCallback(const char *command)
 
 TesterReturnValue TesterExitCallback()
 {
-    if (pHeap)
+    if (pHeap) {
         heapDestroy(pHeap);
+        pHeap = NULL;
+    }
     return TESTER_RETURN_OK;
 }
 
