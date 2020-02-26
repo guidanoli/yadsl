@@ -236,17 +236,17 @@ void varDestroy(Variable *pVariable)
 
 // Compare
 
-static int _cmpInteger(long long *a, long long *b)
+static int _cmpInteger(_INT *a, _INT *b)
 {
 	return *a == *b;
 }
 
-static int _cmpDecimal(double *a, double *b)
+static int _cmpDecimal(_DEC *a, _DEC *b)
 {
 	return *a == *b;
 }
 
-static int _cmpString(char *a, char *b)
+static int _cmpString(_STR a, _STR b)
 {
 	return strcmp(a, b) == 0;
 }
