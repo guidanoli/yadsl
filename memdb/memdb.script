@@ -125,9 +125,7 @@
 /malloc 1 2
 /malloc 2 4
 /size 3
-/supress YES
 /clear
-/supress NO
 /size 0
 /contains 0 NO
 /contains 1 NO

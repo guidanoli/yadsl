@@ -21,6 +21,7 @@
 //
 
 #include <stddef.h>
+#include <stdio.h>
 
 // Get size of list of allocated data
 size_t _memdb_list_size();
@@ -31,18 +32,18 @@ int _memdb_contains(void *_mem);
 // Check if any error occurred
 int _memdb_error_occurred();
 
-// Supress messages
-void _memdb_supress_messages(int _supress);
-
 // Clear list of allocated data
 void _memdb_clear_list();
 
+// Set logging output or NULL to reset
+void _memdb_set_logger(FILE *fp);
+
 // Overwritten (de)allocation functions
-void _memdb_free(void *_mem);
-void *_memdb_malloc(size_t _size, const char *file, const line);
-void *_memdb_realloc(void *_mem, size_t _size, const char *file, const line);
-void *_memdb_calloc(size_t _cnt, size_t _size, const char *file, const line);
-char *_memdb_strdup(const char *_str, const char *file, const line);
+void _memdb_free(void *mem);
+void *_memdb_malloc(size_t size, const char *file, const int line);
+void *_memdb_realloc(void *mem, size_t size, const char *file, const int line);
+void *_memdb_calloc(size_t cnt, size_t size, const char *file, const int line);
+char *_memdb_strdup(const char *str, const char *file, const int line);
 
 #ifndef __MEMDB_SUPRESS_MACROS__
 // Overwritten (de)allocation macros

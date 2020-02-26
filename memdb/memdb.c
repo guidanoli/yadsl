@@ -3,9 +3,9 @@
 #include "memdb.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <stdarg.h>
 
 #pragma once
 #if defined(_MSC_VER)
@@ -32,8 +32,19 @@ struct _memdb_node
 
 static struct _memdb_node *list = NULL;
 static size_t listsize = 0;
-static int supress = 0;
 static int error_occurred = 0;
+static FILE *log_fp = NULL;
+
+static void _memdb_log(const char *format, ...)
+{
+	FILE *fp = log_fp ? log_fp : stderr;
+	va_list va;
+	va_start(va, format);
+	fprintf(fp, "MEMDB: ");
+	vfprintf(fp, format, va);
+	fprintf(fp, "\n");
+	va_end(va);
+}
 
 static struct _memdb_node *_memdb_get(void *_mem)
 {
@@ -56,6 +67,7 @@ static _memdb_enum _memdb_add(void *_mem, size_t _size, const char *file,
 	node = malloc(sizeof(struct _memdb_node));
 	if (node == NULL)
 		return MEM_RETURN_MEMORY;
+	_memdb_log("Allocated %p (%zuB) in %s:%d.", _mem, _size, file, line);
 	node->mem = _mem;
 	node->size = _size;
 	node->file = file;
@@ -71,6 +83,8 @@ static _memdb_enum _memdb_remove(void *_mem)
 	struct _memdb_node *node = list, *prev = NULL;
 	for (; node; node = node->next) {
 		if (node->mem == _mem) {
+			_memdb_log("Deallocated %p (%zuB) in %s:%d.", node->mem,
+				node->size, node->file, node->line);
 			if (prev == NULL)
 				list = node->next;
 			else
@@ -84,11 +98,6 @@ static _memdb_enum _memdb_remove(void *_mem)
 	return MEM_RETURN_NOT_FOUND;
 }
 
-void _memdb_supress_messages(int _supress)
-{
-	supress = _supress;
-}
-
 int _memdb_contains(void *_mem)
 {
 	return _memdb_get(_mem) != NULL;
@@ -97,13 +106,12 @@ int _memdb_contains(void *_mem)
 void _memdb_clear_list()
 {
 	struct _memdb_node *node = list, *next = NULL;
-	if (listsize && !supress)
-		fprintf(stderr, "MEMDB: %zu leak(s) in total:\n", listsize);
+	if (listsize)
+		_memdb_log("%zu leak(s) in total:", listsize);
 	for (; node; node = next) {
 		next = node->next;
-		if (!supress)
-			fprintf(stderr, "MEMDB: Leaked %p (%zuB), allocated in %s:%d\n",
-				node->mem, node->size, node->file, node->line);
+		_memdb_log("Leaked %p (%zuB), allocated in %s:%d.",
+			node->mem, node->size, node->file, node->line);
 		free(node->mem);
 		free(node);
 	}
@@ -124,14 +132,18 @@ int _memdb_error_occurred()
 void _memdb_free(void *_mem)
 {
 	if (_memdb_remove(_mem) == MEM_RETURN_NOT_FOUND) {
-		if (!supress)
-			fprintf(stderr, "MEMDB: Freeing block (%p) not in list.\n", _mem);
+		_memdb_log("Freeing block (%p) not in list.", _mem);
 		error_occurred = 1;
 	}
 	free(_mem);
 }
 
-void *_memdb_malloc(size_t _size, const char *file, const line)
+void _memdb_set_logger(FILE *fp)
+{
+	log_fp = fp;
+}
+
+void *_memdb_malloc(size_t _size, const char *file, const int line)
 {
 	void *_mem = malloc(_size);
 	if (_mem) {
@@ -152,7 +164,7 @@ void *_memdb_malloc(size_t _size, const char *file, const line)
 	return _mem;
 }
 
-void *_memdb_realloc(void *_mem, size_t _size, const char *file, const line)
+void *_memdb_realloc(void *_mem, size_t _size, const char *file, const int line)
 {
 	void *_new_mem = realloc(_mem, _size);
 	if (_new_mem) {
@@ -176,7 +188,7 @@ void *_memdb_realloc(void *_mem, size_t _size, const char *file, const line)
 	return _new_mem;
 }
 
-void *_memdb_calloc(size_t _cnt, size_t _size, const char *file, const line)
+void *_memdb_calloc(size_t _cnt, size_t _size, const char *file, const int line)
 {
 	void *_mem = calloc(_cnt, _size);
 	if (_mem) {
@@ -197,7 +209,7 @@ void *_memdb_calloc(size_t _cnt, size_t _size, const char *file, const line)
 	return _mem;
 }
 
-char *_memdb_strdup(const char *_str, const char *file, const line)
+char *_memdb_strdup(const char *_str, const char *file, const int line)
 {
 	char *_dup = strdup(_str);
 	if (_dup) {

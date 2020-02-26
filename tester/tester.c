@@ -45,14 +45,27 @@ static int _TesterParseArgFormat(const char **format_t, void *arg, size_t *inc);
 // EXTERN FUNCTIONS DEFINITIONS
 ////////////////////////////////////////////////////////////////////////////////
 
+int hasflag(int argc, char **argv, const char *flag)
+{
+	while (argc--)
+		if (strcmp(argv[argc], flag) == 0)
+			return 1;
+	return 0;
+}
+
 /**
-* Usage: <program> [script-path]
+* Usage: <program> [script-path [/LOG]]
 * If script-path is not provided,
 * then help strings are displayed.
 */
 int main(int argc, char **argv)
 {
 	TesterReturnValue exitReturn, ret;
+	FILE *logger = NULL;
+	if (hasflag(argc, argv, "/LOG")) {
+		logger = fopen("memdb.log", "w");
+		_memdb_set_logger(logger);
+	}
 	ret = _TesterMain(argc, argv);
 	exitReturn = TesterExitCallback();
 	if (ret == TESTER_RETURN_OK)
@@ -62,6 +75,8 @@ int main(int argc, char **argv)
 		ret = TESTER_RETURN_MEMLEAK;
 	_TesterPrintReturnValueInfo(ret);
 	_memdb_clear_list();
+	_memdb_set_logger(NULL);
+	if (logger) fclose(logger);
 	return ret;
 }
 

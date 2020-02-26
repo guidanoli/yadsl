@@ -94,15 +94,6 @@ TesterReturnValue TesterParseCallback(const char *command)
         actual = _memdb_contains(mem_array[idx]);
         if (actual != expected)
             return TESTER_RETURN_RETURN;
-    } else if matches(command, "supress") {
-        int supress;
-        if (TesterParseArguments("s", buffer) != 1)
-            return TESTER_RETURN_ARGUMENT;
-        supress = matches(buffer, "YES");
-        if (!supress && !matches(buffer, "NO"))
-            TesterLog("Expected \"YES\" or \"NO\", but got \"%s\" instead."
-                " (assumed NO)", buffer);
-        _memdb_supress_messages(supress);
     } else {
         return TESTER_RETURN_COMMAND;
     }

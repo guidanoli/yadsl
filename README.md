@@ -3,24 +3,24 @@
 
 This is a repository for toy projects that sparked from the lectures given by Eduardo Sany Laber, professor at PUC-Rio. I hope it comes to any help to you. Feel free to contribute to the repository too.
 
-## Modules
+## C Modules
 
-Each subfolder generally contains a source file (`module.c`), a header file (`module.h`), a test module (`module.test.c`), and a documentation file (`README.md`), as well as a compilation file.
+Each subfolder generally contains a source file (`module.c`), a header file (`module.h`), a test module (`module.test.c`), a test script (`module.script`), and a documentation file (`README.md`), as well as a `CMakeLists.txt` file.
 
-## Compilation
+### Compilation
 
-All the compilation process is described in form of `CMakeLists.txt`. Having installed [cmake](https://cmake.org/), simply run:
+All the compilation process is described in form of `CMakeLists.txt`. Having installed [cmake](https://cmake.org/), you may run the following commands:
 
 ```bash
 mkdir build
 cd build
 cmake ..
-cmake --build .
+cmake --build . --config=<CONFIG>
 ```
 
-## Tests
+### Tests
 
-All test modules implement the specific functions of the `tester` framework. To read more about it, go to `tester/README.md`. In order to run the tests, assuming you have [cmake](https://cmake.org/) installed, simply run:
+All test modules make use of the `tester` and `memdb` frameworks. To read more about it, go to `tester/README.md` and `memdb/README.md`. In order to run the tests, assuming you have [cmake](https://cmake.org/) installed, simply run:
 
 ```bash
 cd build
@@ -28,3 +28,32 @@ ctest -C <CONFIG>
 ```
 
 Where `CONFIG` stands for the project configuration (like `Debug` or `Release`).
+
+## Python modules
+
+Some modules have Python bindings, which comprehend each a source file (`module.py.c`) and a test file (`module_test.py`), as well as a `CMakeLists.txt` file. They are always contained inside the `python` folder of the corresponding C module.
+
+### Compilation
+
+Run the `setup.py` script, which will also properly install the python extension modules:
+
+```bash
+python setup.py install
+```
+
+### Tests
+
+All python modules can be easily tested with `pytest`, which searches for `*_test.py` files in the whole directory. Once the modules are compiled and installed by the `setup.py`, you may run the following commands:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pytest
+```
+
+## Creating a new project
+
+If you wish to create a new project following the pattern of the already existing ones, you may use the `new.py` script located on the root directory. You also choose whether to create testing code and python binding code.
+
+```bash
+python new.py [<project> [--python=[YES/NO]] [--test=[YES/NO]]]
+```

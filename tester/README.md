@@ -24,9 +24,9 @@ Following are some information about specific portions of the tester framework.
 
 A script file has a very simple grammar, with the following tokens: **commands**, **arguments** and **comments**. These tokens are separated by ` spaces` and `tabs`, with exceptions (1)(2), and by `newlines`.
 
-* Commands are written as `/`  + `string`, preceding its arguments.
-* Arguments are parsed as `int`,  `float`, `long` or `char *`.
-* Comments are parsed as `#` + `any string`.
+* **Commands** are written as `/`  + `string`, preceding its arguments.
+* **Arguments** can be parsed as `int`,  `float`, `long`, `size_t` or `char *`.
+* **Comments** are parsed as `#` + `any string`.
 
 (1) `char *` arguments can be parsed with quotation marks, ignoring `spaces` and `tabs`.
 
