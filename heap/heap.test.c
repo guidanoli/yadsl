@@ -14,6 +14,7 @@ const char *TesterHelpStrings[] = {
     "/create <size>               create a heap with size <size>",
     "/insert <number>             insert <number> in the heap",
     "/extract <expected number>   extract number from heap",
+    "/size <expected size>        get heap size",
     "/resize <new size>           resize heap to size <new size>",
     NULL,
 };
@@ -86,6 +87,13 @@ TesterReturnValue TesterParseCallback(const char *command)
             if (actual != expected)
                 return TESTER_RETURN_RETURN;
         }
+    } else if matches(command, "size") {
+        size_t actual, expected;
+        if (TesterParseArguments("z", &expected) != 1)
+            return TESTER_RETURN_ARGUMENT;
+        returnId = heapGetSize(pHeap, &actual);
+        if (!returnId && actual != expected)
+            return TESTER_RETURN_RETURN;
     } else if matches(command, "resize") {
         size_t newSize;
         if (TesterParseArguments("z", &newSize) != 1)

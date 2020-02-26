@@ -14,8 +14,82 @@ typedef struct
 	PyObject_HEAD
 	Heap *ob_heap;
 	PyObject *ob_func;
-	int lock : 1;
+	unsigned char lock : 1;
 } HeapObject;
+
+static PyObject *PyExc_Empty = NULL;
+static PyObject *PyExc_Full = NULL;
+static PyObject *PyExc_Lock = NULL;
+static PyObject *PyExc_Shrink = NULL;
+
+struct _exception_metadata
+{
+	PyObject **obj;
+	const char *fullname;
+	const char *name;
+	const char *doc;
+};
+
+static struct _exception_metadata exceptions[] = {
+	//
+	// Exception definitions
+	//
+	{
+		&PyExc_Empty,
+		"pyheap.Empty",
+		"Empty",
+		"Heap is empty."
+	},
+	{
+		&PyExc_Full,
+		"pyheap.Full",
+		"Full",
+		"Heap is full. Try resizing it."
+	},
+	{
+		&PyExc_Lock,
+		"pyheap.Lock",
+		"Lock",
+		"Heap is locked. Illegal operation detected.",
+	},
+	{
+		&PyExc_Shrink,
+		"pyheap.Shrink",
+		"Shrink",
+		"Cannot resize heap to smaller than "
+		"the current number of objects in it."
+	},
+	//
+	// Sentinel
+	//
+	{
+		NULL,
+		NULL,
+		NULL,
+	},
+};
+
+static const char *
+_Heap_get_exception_string(PyObject *exc)
+{
+	struct _exception_metadata *_exc;
+	for (_exc = exceptions; _exc->obj; ++_exc) {
+		if (*_exc->obj == exc)
+			return _exc->doc;
+	}
+	return NULL;
+}
+
+static void
+_Heap_throw_error(PyObject *exc)
+{
+	const char *doc = _Heap_get_exception_string(exc);
+	if (doc) {
+		PyErr_SetString(exc, doc);
+	} else {
+		PyErr_SetNone(exc);
+	}
+}
 
 static PyObject *
 Heap_new(PyTypeObject *type, PyObject *args, PyObject *kw)
@@ -39,14 +113,15 @@ decRefCallback(void *item)
 static int
 cmpCallback(void *obj1, void *obj2, void *arg)
 {
+	int result;
 	HeapObject *ho;
 	PyObject *callable;
 	ho = (HeapObject *) arg;
 	if (callable = ho->ob_func) {
-		int result;
 		PyObject *args, *resultObj;
 		if ((args = PyTuple_Pack(2, obj1, obj2)) == NULL) {
-			PyErr_SetNone(PyExc_MemoryError);
+			PyErr_SetString(PyExc_MemoryError,
+				"Could not create internal tuple.");
 			return 0;
 		}
 		ho->lock = 1;
@@ -54,15 +129,21 @@ cmpCallback(void *obj1, void *obj2, void *arg)
 		ho->lock = 0;
 		Py_DECREF(args);
 		if (resultObj == NULL) {
-			PyErr_SetNone(PyExc_RuntimeError);
+			if (!PyErr_Occurred())
+				PyErr_SetString(PyExc_RuntimeError,
+					"An unspecified error occurred during callback.");
 			return 0;
 		}
 		result = PyObject_IsTrue(resultObj);
 		Py_DECREF(resultObj);
-		return result;
 	} else {
-		return obj1 < obj2;
+		Py_XINCREF(obj1);
+		ho->lock = 1;
+		result = PyObject_RichCompareBool(obj1, obj2, Py_LT);
+		ho->lock = 0;
+		Py_XDECREF(obj1);
 	}
+	return result;
 }
 
 PyDoc_STRVAR(_Heap_init__doc__,
@@ -123,7 +204,178 @@ Heap_dealloc(HeapObject *self)
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
+PyDoc_STRVAR(_Heap_insert__doc__,
+"insert(obj : Object) -> None\n"
+"--\n"
+"\n"
+"Insert object in heap.");
+
+static PyObject *
+Heap_insert(HeapObject *self, PyObject *obj)
+{
+	HeapReturnID returnId;
+	if (self->lock) {
+		_Heap_throw_error(PyExc_Lock);
+		goto exit;
+	}
+	returnId = heapInsert(self->ob_heap, obj);
+	if (!returnId)
+		Py_INCREF(obj);
+	if (PyErr_Occurred())
+		goto exit;
+	switch (returnId) {
+	case HEAP_RETURN_OK:
+		Py_RETURN_NONE;
+	case HEAP_RETURN_INVALID_PARAMETER:
+		PyErr_BadInternalCall();
+		break;
+	case HEAP_RETURN_FULL:
+		_Heap_throw_error(PyExc_Full);
+		break;
+	default:
+		Py_UNREACHABLE();
+	}
+exit:
+	return NULL;
+}
+
+PyDoc_STRVAR(_Heap_extract__doc__,
+"extract() -> Object\n"
+"--\n"
+"\n"
+"Extract object from heap.");
+
+static PyObject *
+Heap_extract(HeapObject *self, PyObject *Py_UNUSED(ignored))
+{
+	HeapReturnID returnId;
+	PyObject *obj = NULL;
+	if (self->lock) {
+		_Heap_throw_error(PyExc_Lock);
+		goto exit;
+	}
+	returnId = heapExtract(self->ob_heap, &obj);
+	if (PyErr_Occurred()) {
+		Py_XDECREF(obj);
+		goto exit;
+	}
+	switch (returnId) {
+	case HEAP_RETURN_OK:
+		// Borrow reference
+		return obj;
+	case HEAP_RETURN_INVALID_PARAMETER:
+		PyErr_BadInternalCall();
+		break;
+	case HEAP_RETURN_EMPTY:
+		_Heap_throw_error(PyExc_Empty);
+		break;
+	default:
+		Py_UNREACHABLE();
+	}
+exit:
+	return NULL;
+}
+
+PyDoc_STRVAR(_Heap_size__doc__,
+"size() -> int\n"
+"--\n"
+"\n"
+"Get heap size.");
+
+static PyObject *
+Heap_size(HeapObject *self, PyObject *Py_UNUSED(ignored))
+{
+	size_t size;
+	switch (heapGetSize(self->ob_heap, &size)) {
+	case HEAP_RETURN_OK:
+		return PyLong_FromSize_t(size);
+	case HEAP_RETURN_INVALID_PARAMETER:
+		PyErr_BadInternalCall();
+		break;
+	default:
+		Py_UNREACHABLE();
+	}
+	return NULL;
+}
+
+PyDoc_STRVAR(_Heap_resize__doc__,
+"resize(size : int) -> None\n"
+"--\n"
+"\n"
+"Resize heap.");
+
+static PyObject *
+Heap_resize(HeapObject *self, PyObject *obj)
+{
+	size_t size;
+	if (self->lock) {
+		_Heap_throw_error(PyExc_Lock);
+		goto exit;
+	}
+	if (!PyLong_Check(obj)) {
+		PyErr_SetString(PyExc_TypeError,
+			"parameter size should be an integer");
+		goto exit;
+	}
+	size = PyLong_AsSize_t(obj);
+	if (size == ((size_t) -1) && PyErr_Occurred())
+		goto exit;
+	if (size == 0) {
+		PyErr_SetString(PyExc_ValueError, "size must not be zero");
+		goto exit;
+	}
+	switch (heapResize(self->ob_heap, size)) {
+	case HEAP_RETURN_OK:
+		Py_RETURN_NONE;
+	case HEAP_RETURN_INVALID_PARAMETER:
+		PyErr_BadInternalCall();
+		break;
+	case HEAP_RETURN_SHRINK:
+		_Heap_throw_error(PyExc_Shrink);
+		break;
+	case HEAP_RETURN_MEMORY:
+		PyErr_SetString(PyExc_MemoryError,
+			"Could not resize heap due to lack of memory");
+		break;
+	default:
+		Py_UNREACHABLE();
+	}
+exit:
+	return NULL;
+}
+
 PyMethodDef Heap_methods[] = {
+	//
+	// Objects
+	//
+	{
+		"insert",
+		(PyCFunction) Heap_insert,
+		METH_O,
+		_Heap_insert__doc__
+	},
+	{
+		"extract",
+		(PyCFunction) Heap_extract,
+		METH_NOARGS,
+		_Heap_extract__doc__
+	},
+	//
+	// Size management
+	//
+	{
+		"size",
+		(PyCFunction) Heap_size,
+		METH_NOARGS,
+		_Heap_size__doc__
+	},
+	{
+		"resize",
+		(PyCFunction) Heap_resize,
+		METH_O,
+		_Heap_resize__doc__
+	},
+	//
 	//
 	// Sentinel
 	//
@@ -163,6 +415,19 @@ PyInit_pyheap(void)
 	m = PyModule_Create(&pyheap_module);
 	if (m == NULL)
 		return NULL;
+	struct _exception_metadata *_exc;
+	for (_exc = exceptions; _exc->obj; ++_exc) {
+		*_exc->obj = PyErr_NewExceptionWithDoc(
+			_exc->fullname, /* name */
+			_exc->doc,      /* doc */
+			NULL,           /* base */
+			NULL);          /* dict */
+		if (*_exc->obj == NULL)
+			return NULL;
+		Py_INCREF(*_exc->obj);
+		if (PyModule_AddObject(m, _exc->name, *_exc->obj) < 0)
+			return NULL;
+	}
 	Py_INCREF(&HeapType);
 	if (PyModule_AddObject(m, "Heap", (PyObject *) &HeapType) < 0) {
 		Py_DECREF(&HeapType);

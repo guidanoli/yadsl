@@ -60,7 +60,7 @@ typedef struct Heap Heap;
 * Create an empty heap
 * ppHeap       (return) pointer to heap
 * initialSize  initial heap size
-* cmpObjs      comparison function or NULL (shallow comparison)
+* cmpObjs      comparison function or NULL (minheap based on address)
 *                Returns boolean value of whether
 *                obj1 should be higher in the heap than obj2
 * freeObj      deallocation function or NULL (no ownership)
@@ -102,6 +102,17 @@ HeapReturnID heapInsert(Heap *pHeap, void *obj);
 HeapReturnID heapExtract(Heap *pHeap, void **pObj);
 
 /**
+* Get heap maximum capacity
+* pHeap   pointer to heap
+* pSize   (return) size
+* Possible errors:
+* HEAP_RETURN_INVALID_PARAMETER
+*	- "pHeap" is NULL
+*	- "pSize" is NULL
+*/
+HeapReturnID heapGetSize(Heap *pHeap, size_t *pSize);
+
+/**
 * Resize heap maximum capacity
 * pHeap    pointer to heap
 * newSize  new size
@@ -110,7 +121,7 @@ HeapReturnID heapExtract(Heap *pHeap, void **pObj);
 *	- "pHeap" is NULL
 *	- "newSize" is 0
 * HEAP_RETURN_SHRINK
-*	- new size is smaller than the current size
+*	- new size is smaller than the number of objects
 * HEAP_RETURN_MEMORY
 *	- HINT: you may try a smaller size
 * [!] If the current size is equal to the new size

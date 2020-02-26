@@ -11,6 +11,7 @@
 
 # Create heap of size 1
 /create 1
+/size 1
 
 # Try resizing with 0
 /resize 0
@@ -18,6 +19,7 @@
 
 # Try resizing to 1
 /resize 1
+/size 1
 
 # Insert object 1
 /insert 1
@@ -35,12 +37,15 @@
 
 # Create heap of size 2
 /create 2
+/size 2
 
 # Resize to size 1
 /resize 1
+/size 1
 
 # Then back to 2
 /resize 2
+/size 2
 
 # Insert two objects
 /insert 456
@@ -56,6 +61,7 @@
 
 # Resize to size 3
 /resize 3
+/size 3
 
 # Try adding again
 /insert 789
@@ -67,6 +73,7 @@
 
 # Create big heap
 /create 7
+/size 7
 
 # Insert
 /insert -13
@@ -83,7 +90,9 @@
 
 # Try resizing to 15 then back to 7
 /resize 15
+/size 15
 /resize 7
+/size 7
 
 # Try resizing to 6
 /resize 6
@@ -100,3 +109,4 @@
 
 # Resize to 1
 /resize 1
+/size 1

@@ -51,7 +51,7 @@ HeapReturnID heapCreate(Heap **ppHeap, size_t initialSize,
 	}
 	pHeap->last = 0;
 	pHeap->arr = arr;
-	pHeap->cmpObjs = cmpObjs || _defaultCmp;
+	pHeap->cmpObjs = cmpObjs ? cmpObjs : _defaultCmp;
 	pHeap->freeObj = freeObj;
 	pHeap->size = initialSize;
 	pHeap->arg = cmpObjs ? arg : NULL;
@@ -110,6 +110,14 @@ HeapReturnID heapExtract(Heap *pHeap, void **pObj)
 		else
 			_swap(pHeap, &righti, &obji);
 	}
+	return HEAP_RETURN_OK;
+}
+
+HeapReturnID heapGetSize(Heap *pHeap, size_t *pSize)
+{
+	if (pHeap == NULL || pSize == NULL)
+		return HEAP_RETURN_INVALID_PARAMETER;
+	*pSize = pHeap->size;
 	return HEAP_RETURN_OK;
 }
 
