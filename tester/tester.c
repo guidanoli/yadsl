@@ -57,7 +57,8 @@ int main(int argc, char **argv)
 	exitReturn = TesterExitCallback();
 	if (ret == TESTER_RETURN_OK)
 		ret = exitReturn;
-	if (ret == TESTER_RETURN_OK && _memdb_list_size())
+	if (ret == TESTER_RETURN_OK &&
+		(_memdb_list_size() || _memdb_error_occurred()))
 		ret = TESTER_RETURN_MEMLEAK;
 	_TesterPrintReturnValueInfo(ret);
 	_memdb_clear_list();
