@@ -1,0 +1,14 @@
+# Test create and destroy
+/new
+
+# Try empty tree
+/contains 0 NO
+
+# Insert elements
+/insert 0
+/contains 0 YES
+
+# Try inserting duplicates
+/insert 0
+/catch duplicate
+/contains 0 YES
