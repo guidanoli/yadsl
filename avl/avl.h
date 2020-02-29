@@ -43,7 +43,9 @@ AVLReturnId avlInsert(AVLTree *pTree, void *object);
 
 AVLReturnId avlSearch(AVLTree *pTree, void *object, int *pExists);
 
-//AVLReturnId avlDelete(AVLTree *pTree, void *object);
+AVLReturnId avlTraverse(AVLTree *pTree, void (*visit_cb)(void *object));
+
+AVLReturnId avlDelete(AVLTree *pTree, void *object);
 
 void avlDestroy(AVLTree *pTree);
 

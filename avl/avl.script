@@ -1,14 +1,64 @@
-# Test create and destroy
-/new
-
 # Try empty tree
 /contains 0 NO
 
-# Insert elements
+# Insert element
 /insert 0
 /contains 0 YES
 
-# Try inserting duplicates
+# Try inserting duplicate
 /insert 0
 /catch duplicate
 /contains 0 YES
+
+# Left Rotate
+/new
+/insert 0
+/insert 1
+/insert 2
+/traverse 0 1 2
+
+# Right Rotate
+/new
+/insert 0
+/insert -1
+/insert -2
+/traverse -2 -1 0
+
+# Left Right Rotate
+/new
+/insert 0
+/insert -2
+/insert -1
+/traverse -2 -1 0
+
+# Right Left Rotate
+/new
+/insert 0
+/insert 2
+/insert 1
+/traverse 0 1 2
+
+# Insert in crescent range
+/new
+/insert* 0 32
+/contains* 0 32 YES
+/traverse* 0 32
+
+# Delete one
+/new
+/insert 0
+/contains 0 YES
+/delete 0
+/contains 0 NO
+
+## Delete multiple
+
+# In order of insertion
+/new
+/insert* 0 32
+/delete* 0 32
+
+# In reverse order of insertion
+/new
+/insert* 0 32
+/delete* 31 -1
