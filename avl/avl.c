@@ -8,6 +8,8 @@
 #include "memdb.h"
 #endif
 
+#define max(a, b) ((a > b) ? a : b)
+
 // For every x, x->left <= x <= x->right
 // -1: o1 < o2
 //  0: o1 = o2
