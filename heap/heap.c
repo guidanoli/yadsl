@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#ifdef _DEBUG
 #include "memdb.h"
-#endif
 
 struct Heap
 {

@@ -46,13 +46,17 @@ void *_memdb_realloc(void *mem, size_t size, const char *file, const int line);
 void *_memdb_calloc(size_t cnt, size_t size, const char *file, const int line);
 char *_memdb_strdup(const char *str, const char *file, const int line);
 
-#ifndef __MEMDB_SUPRESS_MACROS__
+#ifndef _DEBUG
+#define _memdb_dump() ((void) 0)
+#else
+// Print how many items are in list
+#define _memdb_dump() printf("MEMDB: %zu items in list\n", _memdb_list_size())
 // Overwritten (de)allocation macros
 #define	  free _memdb_free
 #define	  malloc(_size) _memdb_malloc(_size, __FILE__, __LINE__)
 #define   realloc(_mem, _size) _memdb_realloc(_mem, _size, __FILE__, __LINE__)
 #define   calloc(_cnt, _size) _memdb_calloc(_cnt, _size, __FILE__, __LINE__)
 #define   strdup(_str) _memdb_strdup(_str, __FILE__, __LINE__)
-#endif /* __MEMDB_SUPRESS_MACROS__ */
+#endif /* _DEBUG */
 
 #endif

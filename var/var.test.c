@@ -1,9 +1,10 @@
+#include "var.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "var.h"
 #include "tester.h"
 
 #pragma once

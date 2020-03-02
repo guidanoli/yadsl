@@ -54,7 +54,7 @@ int hasflag(int argc, char **argv, const char *flag)
 }
 
 /**
-* Usage: <program> [script-path [/LOG]]
+* Usage: <program> [script-path [/LOG] [/I]]
 * If script-path is not provided,
 * then help strings are displayed.
 */
@@ -183,7 +183,7 @@ void TesterLog(const char *message, ...)
 
 static TesterReturnValue _TesterMain(int argc, char **argv)
 {
-	FILE *fp;
+	FILE *fp = stdin;
 	TesterReturnValue ret;
 	// First, load return value informations
 	_TesterLoadReturnValueInfos();
@@ -193,9 +193,11 @@ static TesterReturnValue _TesterMain(int argc, char **argv)
 		return TESTER_RETURN_OK;
 	}
 	// Open file whose path was passed as argument
-	fp = fopen(argv[1], "r");
-	if (fp == NULL)
-		return TESTER_RETURN_FILE;
+	if (!hasflag(argc, argv, "/I")) {
+		fp = fopen(argv[1], "r");
+		if (fp == NULL)
+			return TESTER_RETURN_FILE;
+	}
 	// Initialize tester
 	if (ret = TesterInitCallback())
 		return ret;
@@ -228,17 +230,20 @@ static TesterReturnValue _TesterParse(FILE *fp)
 						// Check if an error already occurred
 						if (ret = _TesterParseCatchCommand(ret))
 							return ret;
+					} else if (strcmp(command, "exit") == 0) {
+						// Return current status value
+						return ret;
 					} else {
 						if (ret) {
 							fprintf(stderr,
 								"ERROR: Expected /catch command\n");
 							return ret;
 						}
-						// Call the command parser (can move cursor)
 #ifdef _VERBOSE
 						printf("Parsing '%s' at line %zu\n", command, line);
 #endif
 						externalReturnValueInfo = NULL;
+						// Call the command parser (can move cursor)
 						ret = TesterParseCallback(command);
 					}
 				} else {

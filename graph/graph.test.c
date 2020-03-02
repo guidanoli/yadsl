@@ -1,8 +1,9 @@
-#include <string.h>
-
 #include "graph.h"
 #include "graphio.h"
 #include "graphsearch.h"
+
+#include <string.h>
+
 #include "tester.h"
 #include "var.h"
 

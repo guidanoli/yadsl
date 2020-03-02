@@ -1,7 +1,8 @@
+#include "diff.h"
+
 #include <stdio.h>
 #include <string.h>
 
-#include "diff.h"
 #include "tester.h"
 
 const char *TesterHelpStrings[] = {

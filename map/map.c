@@ -5,10 +5,7 @@
 #include <common/assert.h>
 
 #include "set.h"
-
-#ifdef _DEBUG
 #include "memdb.h"
-#endif
 
 struct Entry
 {

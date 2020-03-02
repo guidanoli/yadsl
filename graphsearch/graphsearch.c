@@ -5,10 +5,7 @@
 #include <common/assert.h>
 
 #include "queue.h"
-
-#ifdef _DEBUG
 #include "memdb.h"
-#endif
 
 #ifdef _DEBUG
 #include <stdio.h>

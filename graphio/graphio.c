@@ -6,10 +6,7 @@
 #include <common/assert.h>
 
 #include "map.h"
-
-#ifdef _DEBUG
 #include "memdb.h"
-#endif
 
 #pragma once
 #if defined(_MSC_VER)

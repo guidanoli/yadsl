@@ -7,11 +7,31 @@
 //   / / /  __(__  ) /_/  __/ /    
 //  /_/  \___/____/\__/\___/_/                                 
 //
-// This incorporates the generic part of the
-// tester framework, which reads the script,
-// and parses commands and its arguments.
+// This incorporates the generic part of the tester framework, which reads
+// the script, and parses commands and its arguments.
+//
+// COMMAND LINE ARGUMENTS
+// ======================
+//
+// The executable takes the following arguments:
+// $ testerexecutable [script_path] [/I] [/LOG]
+//
+// Positional arguments
+// ---------------------
+// script_path: path to script file to be parsed
+//   If missing, help strings will be displayed
+//
+// Flag arguments
+// --------------
+// /I: interactive mode
+//   Ignores script_path, reads from stdin
+//
+// /LOG: logs debug information
+//   Redirects debugging output to file other than stdout
+//   e.g. memdb information goes to memdb.log
 //
 // SCRIPT GRAMMAR DEFINITION
+// =========================
 //
 // script: line | script nl line
 // line: lsep lcmds lcomm | $
@@ -28,6 +48,7 @@
 // size: %zu
 //
 // SCRIPT TOKENS DEFINITIONS
+// =========================
 //
 // $ = 
 // nl = \n
@@ -39,10 +60,15 @@
 // % identifiers from C standard library
 //
 // NATIVE COMMANDS
+// ===============
 //
 // /catch <return>
 //   if <return> is equal to the last value
 //   returned, the error is ignored.
+//
+// /exit
+//   exits tester environment
+//   specially useful when on interactive mode
 //
 
 #include <stddef.h>

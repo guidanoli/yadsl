@@ -4,10 +4,11 @@
 #include <common/pydefines.h>
 
 #include "heap.h"
-
-#ifdef _DEBUG
 #include "memdb.h"
-#endif
+
+//
+// Objects
+//
 
 typedef struct
 {
@@ -17,18 +18,16 @@ typedef struct
 	unsigned char lock : 1;
 } HeapObject;
 
+//
+// Exceptions
+//
+
 static PyObject *PyExc_Empty = NULL;
 static PyObject *PyExc_Full = NULL;
 static PyObject *PyExc_Lock = NULL;
 static PyObject *PyExc_Shrink = NULL;
 
-struct _exception_metadata
-{
-	PyObject **obj;
-	const char *fullname;
-	const char *name;
-	const char *doc;
-};
+_DEFINE_EXCEPTION_METADATA()
 
 static struct _exception_metadata exceptions[] = {
 	//
@@ -50,7 +49,7 @@ static struct _exception_metadata exceptions[] = {
 		&PyExc_Lock,
 		"pyheap.Lock",
 		"Lock",
-		"Heap is locked. Illegal operation detected.",
+		"Heap is locked. Illegal operation detected."
 	},
 	{
 		&PyExc_Shrink,
@@ -69,40 +68,11 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-static const char *
-_Heap_get_exception_string(PyObject *exc)
-{
-	struct _exception_metadata *_exc;
-	for (_exc = exceptions; _exc->obj; ++_exc) {
-		if (*_exc->obj == exc)
-			return _exc->doc;
-	}
-	return NULL;
-}
+_DEFINE_EXCEPTION_FUNCTIONS(Heap, exceptions)
 
-static void
-_Heap_throw_error(PyObject *exc)
-{
-	const char *doc = _Heap_get_exception_string(exc);
-	if (doc) {
-		PyErr_SetString(exc, doc);
-	} else {
-		PyErr_SetNone(exc);
-	}
-}
-
-static PyObject *
-Heap_new(PyTypeObject *type, PyObject *args, PyObject *kw)
-{
-	HeapObject *self;
-	self = (HeapObject *) type->tp_alloc(type, 0);
-	if (self != NULL) {
-		self->ob_heap = NULL;
-		self->ob_func = NULL;
-		self->lock = 0;
-	}
-	return (PyObject *) self;
-}
+//
+// Callbacks
+//
 
 static void
 decRefCallback(void *item)
@@ -146,6 +116,23 @@ cmpCallback(void *obj1, void *obj2, void *arg)
 	return result;
 }
 
+//
+// Method definitions
+//
+
+static PyObject *
+Heap_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+	HeapObject *self;
+	self = (HeapObject *) type->tp_alloc(type, 0);
+	if (self != NULL) {
+		self->ob_heap = NULL;
+		self->ob_func = NULL;
+		self->lock = 0;
+	}
+	return (PyObject *) self;
+}
+
 PyDoc_STRVAR(_Heap_init__doc__,
 "Heap(/, f=None, size=15)\n"
 "--\n"
@@ -163,8 +150,11 @@ Heap_init(HeapObject *self, PyObject *args, PyObject *kw)
 		&callbackObj, &PyLong_Type, &initialSizeObj))
 		return -1;
 	if (callbackObj != NULL) {
-		if (!PyCallable_Check(callbackObj))
-			callbackObj = NULL;
+		if (!PyCallable_Check(callbackObj)) {
+			PyErr_SetString(PyExc_TypeError,
+				"f should be a callable object");
+			return -1;
+		}
 	}
 	if (initialSizeObj != NULL) {
 		initialSize = PyLong_AsSize_t(initialSizeObj);
@@ -180,6 +170,7 @@ Heap_init(HeapObject *self, PyObject *args, PyObject *kw)
 	case HEAP_RETURN_OK:
 		break;
 	case HEAP_RETURN_MEMORY:
+		PyErr_SetString(PyExc_MemoryError, "Could not create heap");
 		return -1;
 	case HEAP_RETURN_INVALID_PARAMETER:
 		PyErr_BadInternalCall();
@@ -197,9 +188,7 @@ Heap_dealloc(HeapObject *self)
 {
 	if (self->ob_heap)
 		heapDestroy(self->ob_heap);
-#ifdef _DEBUG
-	printf("MEMDB: %zu items in list\n", _memdb_list_size());
-#endif
+	_memdb_dump();
 	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
@@ -213,18 +202,15 @@ PyDoc_STRVAR(_Heap_insert__doc__,
 static PyObject *
 Heap_insert(HeapObject *self, PyObject *obj)
 {
-	HeapReturnID returnId;
 	if (self->lock) {
 		_Heap_throw_error(PyExc_Lock);
 		goto exit;
 	}
-	returnId = heapInsert(self->ob_heap, obj);
-	if (!returnId)
-		Py_INCREF(obj);
-	if (PyErr_Occurred())
-		goto exit;
-	switch (returnId) {
+	switch (heapInsert(self->ob_heap, obj)) {
 	case HEAP_RETURN_OK:
+		Py_INCREF(obj);
+		if (PyErr_Occurred())
+			goto exit;
 		Py_RETURN_NONE;
 	case HEAP_RETURN_INVALID_PARAMETER:
 		PyErr_BadInternalCall();
@@ -344,6 +330,10 @@ exit:
 	return NULL;
 }
 
+//
+// Method table
+//
+
 PyMethodDef Heap_methods[] = {
 	//
 	// Objects
@@ -387,6 +377,10 @@ PyMethodDef Heap_methods[] = {
 	}
 };
 
+//
+// Types
+//
+
 static PyTypeObject HeapType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	.tp_name = "pyheap.Heap",
@@ -400,6 +394,10 @@ static PyTypeObject HeapType = {
 	.tp_new = (newfunc) Heap_new,
 };
 
+//
+// Module
+//
+
 PyModuleDef pyheap_module = {
 	PyModuleDef_HEAD_INIT,
 	"pyheap",
@@ -409,25 +407,14 @@ PyMODINIT_FUNC
 PyInit_pyheap(void)
 {
 	PyObject *m;
+	struct _exception_metadata *_exc;
 	Py_Initialize();
 	if (PyType_Ready(&HeapType) < 0)
 		return NULL;
 	m = PyModule_Create(&pyheap_module);
 	if (m == NULL)
 		return NULL;
-	struct _exception_metadata *_exc;
-	for (_exc = exceptions; _exc->obj; ++_exc) {
-		*_exc->obj = PyErr_NewExceptionWithDoc(
-			_exc->fullname, /* name */
-			_exc->doc,      /* doc */
-			NULL,           /* base */
-			NULL);          /* dict */
-		if (*_exc->obj == NULL)
-			return NULL;
-		Py_INCREF(*_exc->obj);
-		if (PyModule_AddObject(m, _exc->name, *_exc->obj) < 0)
-			return NULL;
-	}
+	_INIT_EXCEPTION_OBJECTS(m, _exc)
 	Py_INCREF(&HeapType);
 	if (PyModule_AddObject(m, "Heap", (PyObject *) &HeapType) < 0) {
 		Py_DECREF(&HeapType);

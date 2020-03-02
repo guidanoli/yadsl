@@ -1,6 +1,13 @@
-#define __MEMDB_SUPRESS_MACROS__
-
+// Boilerplate preprocessors to temporarily
+// disable macros
+#ifdef _DEBUG
+#define __DEBUG _DEBUG
+#undef _DEBUG
+#endif
 #include "memdb.h"
+#ifdef __DEBUG
+#define _DEBUG __DEBUG
+#endif
 
 #include <stdlib.h>
 #include <assert.h>
@@ -67,7 +74,9 @@ static _memdb_enum _memdb_add(void *_mem, size_t _size, const char *file,
 	node = malloc(sizeof(struct _memdb_node));
 	if (node == NULL)
 		return MEM_RETURN_MEMORY;
+#ifdef _VERBOSE
 	_memdb_log("Allocated %p (%zuB) in %s:%d.", _mem, _size, file, line);
+#endif
 	node->mem = _mem;
 	node->size = _size;
 	node->file = file;
@@ -83,8 +92,10 @@ static _memdb_enum _memdb_remove(void *_mem)
 	struct _memdb_node *node = list, *prev = NULL;
 	for (; node; node = node->next) {
 		if (node->mem == _mem) {
+#ifdef _VERBOSE
 			_memdb_log("Deallocated %p (%zuB) in %s:%d.", node->mem,
 				node->size, node->file, node->line);
+#endif
 			if (prev == NULL)
 				list = node->next;
 			else

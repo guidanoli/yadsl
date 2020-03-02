@@ -1,7 +1,9 @@
-#include "memdb.h"
-
 #include <string.h>
 #include <stdio.h>
+
+#define _DEBUG
+#include "memdb.h"
+#undef _DEBUG /* Force debug macros */
 
 #include "tester.h"
 
