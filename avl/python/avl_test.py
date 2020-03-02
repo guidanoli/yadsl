@@ -31,18 +31,15 @@ def test_adding():
 	# should not add duplicates
 	for xi in x:
 		assert not t.add(xi)
-	# should FIND and remove all
+	# removing all
 	for xi in x:
-		assert t.remove(xi)
+		t.remove(xi)
 	# should not contain any
 	for xi in x:
 		assert not t.contains(xi)
-	# should not FIND to remove
-	for xi in x:
-		assert not t.remove(xi)
 	# should add all again
 	for xi in x:
-		assert not t.add(xi)
+		assert t.add(xi)
 	# let destroy with x
 
 def test_iterate_crescent():
