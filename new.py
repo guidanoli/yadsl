@@ -120,7 +120,7 @@ def new_project(prj, test = True, python = False, **kwargs):
 			"}"])
 		# Create file <prj>_test.c importing py<prj>
 		with open(prj + "_test.py", 'w') as f:
-			f.write("import {}".format(pyprj))
+			f.write("from {} import *".format(pyprj))
 		os.chdir("..")
 	# Add project to root CMakeLists.txt
 	os.chdir("..")

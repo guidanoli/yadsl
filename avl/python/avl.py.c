@@ -61,43 +61,55 @@ decRefCallback(void *object)
 static int
 cmpCallback(void *obj1, void *obj2, void *arg)
 {
-	int result;
+	int result = 1;
 	AVLObject *ho;
 	PyObject *callable;
 	ho = (AVLObject *) arg;
 	if (callable = ho->ob_func) {
-		int overflow;
-		PyObject *args, *resultObj;
-		if ((args = PyTuple_Pack(2, obj1, obj2)) == NULL) {
-			PyErr_SetString(PyExc_MemoryError,
-				"Could not create internal tuple.");
-			return 0;
-		}
+		PyObject *args = NULL, *resultObj = NULL, *zero = NULL;
+		if ((args = PyTuple_Pack(2, obj1, obj2)) == NULL)
+			goto exit1;
 		ho->lock = 1;
 		resultObj = PyObject_CallObject(callable, args);
-		ho->lock = 0;
 		Py_DECREF(args);
 		if (resultObj == NULL) {
 			if (!PyErr_Occurred())
 				PyErr_SetString(PyExc_RuntimeError,
 					"An unspecified error occurred during callback.");
-			return 0;
-		}
-		if (!PyLong_Check(resultObj)) {
-			PyErr_Format(PyExc_TypeError,
-				"Return should be int, not %.200s",
-				Py_TYPE(resultObj)->tp_name);
-		}
-		result = PyLong_AsLongAndOverflow(resultObj, &overflow);
-		if (result == -1 && !overflow && PyErr_Occurred())
 			goto exit1;
-		if (overflow) {
-			result = overflow > 0 ? 1 : -1;
-		} else if (result) {
-			result = result > 0 ? 1 : -1;
+		}
+		if (!PyNumber_Check(resultObj)) {
+			PyErr_Format(PyExc_TypeError,
+				"Return should be a number, not %.200s",
+				Py_TYPE(resultObj)->tp_name);
+			goto exit1;
+		}
+		zero = PyLong_FromLong(0L);
+		if (zero == NULL)
+			goto exit1;
+		result = PyObject_RichCompareBool(resultObj, zero, Py_LT);
+		if (result == -1) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"An unspecified error while comparing objects.");
+			goto exit1;
+		}
+		if (result) {
+			// result = -1	-> resultObj < 0
+			result = -1;
+		} else {
+			result = PyObject_RichCompareBool(resultObj, zero, Py_GT);
+			if (result == -1) {
+				PyErr_SetString(PyExc_RuntimeError,
+					"An unspecified error while comparing objects.");
+				goto exit1;
+			}
+			// result = 0	-> obj1 == obj2
+			// result = 1	-> obj1 >	obj2
 		}
 exit1:
-		Py_DECREF(resultObj);
+		ho->lock = 0;
+		Py_XDECREF(zero);
+		Py_XDECREF(resultObj);
 	} else {
 		Py_XINCREF(obj1);
 		ho->lock = 1;
@@ -107,18 +119,18 @@ exit1:
 				"An unspecified error while comparing objects.");
 			goto exit2;
 		}
-		if (result)
-			// result = -1  -> obj1 <  obj2
+		if (result) {
+			// result = -1	-> obj1 <	obj2
 			result = -1;
-		else {
+		} else {
 			result = PyObject_RichCompareBool(obj1, obj2, Py_GT);
 			if (result == -1) {
 				PyErr_SetString(PyExc_RuntimeError,
 					"An unspecified error while comparing objects.");
 				goto exit2;
 			}
-			// result = 0  -> obj1 == obj2
-			// result = 1  -> obj1 >  obj2
+			// result = 0	-> obj1 == obj2
+			// result = 1	-> obj1 >	obj2
 		}
 exit2:
 		ho->lock = 0;
@@ -180,7 +192,13 @@ PyDoc_STRVAR(_AVL_init__doc__,
 "AVL(/, f=None)\n"
 "--\n"
 "\n"
-"Python AVL tree data structure.");
+"Python AVL tree data structure.\n"
+"f is the following comparison function:\n"
+"\tf(o1 : Object, o2: Object) -> int\n"
+"It takes two objects o1 and o2 and returns:\n"
+"\t< 0, if o1 < o2\n"
+"\t= 0, if o1 = o2\n"
+"\t> 0, if o1 > o2\n");
 
 static int
 AVL_init(AVLObject *self, PyObject *args, PyObject *kw)
@@ -323,8 +341,8 @@ PyDoc_STRVAR(_AVL_iterate__doc__,
 "--\n"
 "\n"
 "Iterate through tree in order with a function.\n"
-"If a value other than None/False is returned, the"
-"iteration will be interrupted and that will be the"
+"If a value other than None/False is returned, the\n"
+"iteration will be interrupted and that will be the\n"
 "returned value of iterate. Else, None is returned.");
 
 static PyObject *
