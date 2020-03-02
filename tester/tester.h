@@ -19,7 +19,6 @@
 // Positional arguments
 // ---------------------
 // script_path: path to script file to be parsed
-//   If missing, help strings will be displayed
 //
 // Flag arguments
 // --------------
@@ -30,16 +29,18 @@
 //   Redirects debugging output to file other than stdout
 //   e.g. memdb information goes to memdb.log
 //
+// No arguments
+// ------------
+// If no arguments are given, a help message will be displayed.
+//
 // SCRIPT GRAMMAR DEFINITION
 // =========================
 //
 // script: line | script nl line
-// line: lsep lcmds lcomm | $
-// lsep: lsep sep | $
-// lcmds: lcmds cmd | $
-// lcomm: comm | $
+// line: lcmds sep comment
+// lcmds: lcmds sep cmd | $
 // cmd: cmdname | cmdname largs
-// largs: largs lsep sep arg
+// largs: largs sep arg
 // arg: float | string | integer | long | size
 // float: %f | %g | %e
 // string: string_qm | string_wo_qm
@@ -52,7 +53,7 @@
 //
 // $ = 
 // nl = \n
-// sep = [ \t]
+// sep = [ \t]+
 // comment = #[^\n]*
 // cmdname = /[^ \t\n]+
 // string_qm = "[^"\n]*"
