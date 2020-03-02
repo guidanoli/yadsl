@@ -6,4 +6,4 @@ It works by overriding these functions with macros and extracting metadata from 
 
 You can also consult whether a memory block is in the list, get the list size, and clear it. Generally, you'd want to check whether it is empty or not, to make sure there was no memory leakage, and whether there was any error spotted.
 
-Additionally, if you do not want the said functions overridden, you can set a flag `__MEMDB_SUPRESS_MACROS__` before including the `memdb.h` header. And if you don't want the leaking addressed spit out to `stderr`, you can toggle it by calling `_memdb_supress_messages(1)`.
+Keep in mind that the macros are only defined when the `_DEBUG` flag is set. Some IDEs, like Visual Studio, already define this flag for Debug builds.
