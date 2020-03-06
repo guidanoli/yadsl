@@ -37,10 +37,9 @@
 // =========================
 //
 // script: line | script nl line
-// line: lcmds sep comment
-// lcmds: lcmds sep cmd | $
-// cmd: cmdname | cmdname largs
-// largs: largs sep arg
+// line: osep lcmds sep comment osep | osep lcmds osep
+// lcmds: lcmds sep cmdname largs | $
+// largs: largs sep arg | $
 // arg: float | string | integer | long | size
 // float: %f | %g | %e
 // string: string_qm | string_wo_qm
@@ -54,6 +53,7 @@
 // $ = 
 // nl = \n
 // sep = [ \t]+
+// osep = [ \t]*
 // comment = #[^\n]*
 // cmdname = /[^ \t\n]+
 // string_qm = "[^"\n]*"
