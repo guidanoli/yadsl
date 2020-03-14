@@ -18,6 +18,7 @@ def new_project(prj, test = True, python = False, **kwargs):
 	abspath = os.path.abspath(__file__)
 	dname = os.path.dirname(abspath)
 	os.chdir(dname)
+	os.chdir(src)
 	if os.path.exists(prj):
 		raise Exception("Project already exists")
 	# Create folder named <name>
