@@ -542,7 +542,7 @@ GraphReturnID graphSetAllVerticesFlags(Graph *pGraph, int flag)
 	if (pGraph == NULL)
 		return GRAPH_RETURN_INVALID_PARAMETER;
 	if(setFilterItem(pGraph->vertexSet, _setVertexFlag, &flag, &temp)
-		!= SET_RETURN_DOES_NOT_CONTAIN); // _setVertexFlag only returns 0
+		!= SET_RETURN_DOES_NOT_CONTAIN) // _setVertexFlag only returns 0
 		assert(0);
 	return GRAPH_RETURN_OK;
 }

@@ -18,7 +18,7 @@ def new_project(prj, test = True, python = False, **kwargs):
 	abspath = os.path.abspath(__file__)
 	dname = os.path.dirname(abspath)
 	os.chdir(dname)
-	os.chdir(src)
+	os.chdir('src')
 	if os.path.exists(prj):
 		raise Exception("Project already exists")
 	# Create folder named <name>
@@ -98,13 +98,13 @@ def new_project(prj, test = True, python = False, **kwargs):
 		with open("CMakeLists.txt", 'w') as f:
 			writelist(f, ["include(addPythonModule)",
 			"add_python_module({} {} {}.py.c)".format(pyprj, pyprj, prj),
-			"target_link_libraries({} {} common)".format(pyprj, prj)])
+			"target_link_libraries({} {} aa)".format(pyprj, prj)])
 		# Create file <prj>.py.c including Python.h and <prj>.h
 		with open(prj + ".py.c", 'w') as f:
 			writelist(f, ["#define PY_SSIZE_T_CLEAN",
 			"#include <Python.h>",
 			"",
-			"#include <common/pydefines.h>",
+			"#include \"pydefines.h\"",
 			"",
 			"#include \"{}.h\"".format(prj),
 			"",

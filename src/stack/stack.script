@@ -1,0 +1,15 @@
+/create
+/empty YES
+/remove -1
+/catch empty
+/add 0
+/add 1
+/add 2
+/empty NO
+/remove 2
+/remove 1
+/remove 0
+/empty YES
+/remove -1
+/catch empty
+/destroy

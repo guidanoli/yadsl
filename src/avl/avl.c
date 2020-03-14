@@ -1,8 +1,8 @@
 #include "avl.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "memdb.h"
 
