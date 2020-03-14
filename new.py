@@ -39,8 +39,10 @@ def new_project(prj, test = True, python = False, **kwargs):
 	# Create file <name><fend>.c including [<name><hend>.h ...]
 	for fend, hends in exts["source"]:
 		with open(prj + fend + '.c', 'w') as f:
-			writelist(f, ["#include \"{}{}.h\"".format(prj, hend)
-			for hend in hends])
+			lines = list()
+			lines += ["#include \"{}{}.h\"".format(prj, hend) for hend in hends]
+			lines += ["#include \"memdb.h\""]
+			writelist(f, lines)
 	# Create file <name><fend>.test.c including [tester.h <name><hend>.h ...]
 	for fend, hends in exts["test"]:
 		with open(prj + fend + '.test.c', 'w') as f:
@@ -70,6 +72,7 @@ def new_project(prj, test = True, python = False, **kwargs):
 		lines += ["add_library({} {})".format(prj, " ".join(sources + headers))]
 		testnames = [prj + fend for fend, _ in exts["test"]]
 		tests = [(t + 'test', t + '.test.c', t + '.script') for t in testnames]
+		lines += ["target_link_libraries({} memdb)".format(prj)]
 		lines += ["target_include_directories({} PUBLIC ${{CMAKE_CURRENT_SOURCE_DIR}})".format(prj)]
 		if python:
 			lines += ["set_target_properties({} PROPERTIES".format(prj),
@@ -98,7 +101,7 @@ def new_project(prj, test = True, python = False, **kwargs):
 		with open("CMakeLists.txt", 'w') as f:
 			writelist(f, ["include(addPythonModule)",
 			"add_python_module({} {} {}.py.c)".format(pyprj, pyprj, prj),
-			"target_link_libraries({} {} aa)".format(pyprj, prj)])
+			"target_link_libraries({} {} aa memdb)".format(pyprj, prj)])
 		# Create file <prj>.py.c including Python.h and <prj>.h
 		with open(prj + ".py.c", 'w') as f:
 			writelist(f, ["#define PY_SSIZE_T_CLEAN",
@@ -107,6 +110,7 @@ def new_project(prj, test = True, python = False, **kwargs):
 			"#include \"pydefines.h\"",
 			"",
 			"#include \"{}.h\"".format(prj),
+			"#include \"memdb.h\"",
 			"",
 			"PyModuleDef {}_module = {{".format(pyprj),
 			"\tPyModuleDef_HEAD_INIT,",

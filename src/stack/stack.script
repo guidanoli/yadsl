@@ -13,3 +13,24 @@
 /remove -1
 /catch empty
 /destroy
+
+/create
+/add 0
+/add 1
+/add 2
+/destroy
+
+/create
+/add 0
+/add 1
+/add 2
+/remove 2
+/add 3
+/add 4
+/add 5
+/remove 5
+/remove 4
+/remove 3
+/remove 1
+/add 6
+/destroy

@@ -62,14 +62,14 @@ TesterReturnValue TesterParseCallback(const char *command)
 		if (ret)
 			free(num_ptr);
 	} else if matches(command, "remove") {
-		int *actual_ptr;
+		int *actual_ptr, expected;
+		if (TesterParseArguments("i", &expected) != 1)
+			return TESTER_RETURN_ARGUMENT;
 		ret = stack_remove(st, &actual_ptr);
 		if (!ret) {
-			int actual, expected;
+			int actual;
 			actual = *actual_ptr;
 			free(actual_ptr);
-			if (TesterParseArguments("i", &expected) != 1)
-				return TESTER_RETURN_ARGUMENT;
 			if (expected != actual)
 				return TESTER_RETURN_ARGUMENT;
 		}

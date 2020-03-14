@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 
+#include "memdb.h"
+
 struct stack_item
 {
 	void *object;

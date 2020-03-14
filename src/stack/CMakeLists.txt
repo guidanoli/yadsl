@@ -1,4 +1,5 @@
 add_library(stack stack.c stack.h)
+target_link_libraries(stack memdb)
 target_include_directories(stack PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(stack PROPERTIES
 	FOLDER libraries
