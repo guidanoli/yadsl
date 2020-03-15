@@ -47,9 +47,8 @@ TesterReturnValue TesterParseCallback(const char *command)
 	if matches(command, "create") {
 		ret = stackCreate(&st);
 	} else if matches(command, "destroy") {
-		ret = stackDestroy(st, free);
-		if (!ret)
-			st = NULL;
+		stackDestroy(st, free);
+		st = NULL;
 	} else if matches(command, "add") {
 		int num, *num_ptr;
 		if (TesterParseArguments("i", &num) != 1)
@@ -91,7 +90,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 
 TesterReturnValue TesterExitCallback()
 {
-	if (st) return convert(stackDestroy(st, free));
+	if (st) stackDestroy(st, free);
 	return TESTER_RETURN_OK;
 }
 

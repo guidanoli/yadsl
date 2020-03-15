@@ -33,14 +33,6 @@
 // will always assume the value 0. This does not exclude
 // the importance to check other values returned by ref.
 //
-// DOCUMENTATION
-// -------------
-//
-// 	- (optional) arguments can be NULL.
-// 	- (return) arguments should be references
-//      - [!] are warning markers for client use
-//      - Possible errors exclude AVL_RETURN_OK
-// 
 
 typedef enum
 {
@@ -59,16 +51,14 @@ typedef struct AVL AVL;
 
 /**
 * Create an empty tree
-* ppTree   (return) pointer to tree
-* cmpObjs  (optional) function that compares two objects
-*          	- if NULL, does shallow address comparison
-* freeObj  (optional) function that deallocates object
-*          	- if NULL, does not take ownership over objects
-* arg      argument passed to cmpObjs
-* Possible errors:
-* AVL_RETURN_INVALID_PARAMETER
-*	- "ppTree" is NULL
-* AVL_RETURN_MEMORY
+* ppTree (ret): pointer to tree
+* cmpObjs (opt): function that compares two objects
+*          	       if NULL, does shallow address comparison
+* freeObj (opt): function that deallocates object
+*          	       if NULL, does not take ownership over objects
+* arg: argument passed to cmpObjs
+* -> AVL_RETURN_INVALID_PARAMETER
+* -> AVL_RETURN_MEMORY
 */
 AVLReturnId avlCreate(AVL **ppTree,
 	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
@@ -76,15 +66,13 @@ AVLReturnId avlCreate(AVL **ppTree,
 
 /**
 * Insert object in tree
-* pTree    pointer to tree
-* object   object to be inserted
-* pExists  (optional return) object was in tree before
-*          	- if NULL, won't be able to check whether
-*          	object was truly inserted in tree or not.
-* Possible errors:
-* AVL_RETURN_INVALID_PARAMETER
-*	- "pTree" is NULL
-* AVL_RETURN_MEMORY
+* pTree (ret): pointer to tree
+* object: object to be inserted
+* pExists (opt ret): object was in tree before
+*          	         if NULL, won't be able to check whether
+*          	         object was truly inserted in tree or not.
+* -> AVL_RETURN_INVALID_PARAMETER
+* -> AVL_RETURN_MEMORY
 * [!] Only takes the ownership of object if
 *     AVL_RETURN_OK && *pExists == 0
 */
@@ -92,30 +80,26 @@ AVLReturnId avlInsert(AVL *pTree, void *object, int *pExists);
 
 /**
 * Search for object in tree
-* pTree    pointer to tree
-* object   object to be searched for
-* pExists  (optional return) whether object is in tree
-*          	- if NULL, won't be able to check whether
-*          	object is in tree or not.
-* Possible errors:
-* AVL_RETURN_INVALID_PARAMETER
-*	- "pTree" is NULL
+* pTree: pointer to tree
+* object: object to be searched for
+* pExists (opt ret): whether object is in tree
+*          	         if NULL, won't be able to check whether
+*          	         object is in tree or not.
+* -> AVL_RETURN_INVALID_PARAMETER
 * [!] Does not take ownership of object
 */
 AVLReturnId avlSearch(AVL *pTree, void *object, int *pExists);
 
 /**
 * Traverse through tree
-* pTree      pointer to tree
-* visit_cb   (optional) function called for every visted object
-*            	- if NULL, it will simply not be called.
-*            	- if it returns a value other than NULL (0), traversing
-*            	stops and this value is returned by reference on *pReturn.
-* arg        argument passed to visit_cb
-* pReturn    (optional return) last return value by visit_cb
-* Possible errors:
-* AVL_RETURN_INVALID_PARAMETER
-*	- "pTree" is NULL
+* pTree: pointer to tree
+* visit_cb (opt): function called for every visted object
+*            	  if NULL, it will simply not be called.
+*            	  if it returns a value other than NULL (0), traversing
+*            	  stops and this value is returned by reference on *pReturn.
+* arg: argument passed to visit_cb
+* pReturn (opt ret): last return value by visit_cb
+* -> AVL_RETURN_INVALID_PARAMETER
 */
 AVLReturnId avlTraverse(AVL *pTree,
 	void * (*visit_cb)(void *object, void *arg),
@@ -123,14 +107,12 @@ AVLReturnId avlTraverse(AVL *pTree,
 
 /**
 * Delete object from tree
-* pTree    pointer to tree
-* object   object to be deleted
-* pExists  (optional return) object was in tree before
-*          	- if NULL, won't be able to check whether
-*          	it was in tree before or not.
-* Possible errors:
-* AVL_RETURN_INVALID_PARAMETER
-*	- "pTree" is NULL
+* pTree: pointer to tree
+* object: object to be deleted
+* pExists (opt ret): object was in tree before
+*          	         if NULL, won't be able to check whether
+*          	         it was in tree before or not.
+* -> AVL_RETURN_INVALID_PARAMETER
 * [!] Does not take ownership of object
 */
 AVLReturnId avlDelete(AVL *pTree, void *object, int *pExists);

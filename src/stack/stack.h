@@ -47,6 +47,6 @@ StackReturnID stackRemove(Stack *pStack, void **pObject);
 // Destroy stack
 // stack
 // freeObject (opt): function that frees remaining objects
-StackReturnID stackDestroy(Stack *pStack, void freeObject(void *));
+void stackDestroy(Stack *pStack, void freeObject(void *));
 
 #endif

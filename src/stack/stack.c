@@ -62,7 +62,7 @@ StackReturnID stackRemove(Stack *pStack, void **pObject)
 	return STACK_OK;
 }
 
-StackReturnID stackDestroy(Stack *pStack, void freeObject(void *))
+void stackDestroy(Stack *pStack, void freeObject(void *))
 {
 	struct StackItem *current, *next;
 	for (current = pStack->first; current; current = next) {
@@ -72,5 +72,4 @@ StackReturnID stackDestroy(Stack *pStack, void freeObject(void *))
 		free(current);
 	}
 	free(pStack);
-	return STACK_OK;
 }
