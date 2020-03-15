@@ -4,32 +4,32 @@
 
 #include "memdb.h"
 
-struct stack_item
+struct StackItem
 {
 	void *object;
-	struct stack_item *next;
+	struct StackItem *next;
 };
 
-struct stack
+struct Stack
 {
-	struct stack_item *first;
+	struct StackItem *first;
 };
 
-stack_return stack_create(stack **stack_ptr)
+StackReturnID stackCreate(Stack **ppStack)
 {
-	stack *st;
-	st = malloc(sizeof(struct stack));
+	Stack *st;
+	st = malloc(sizeof(struct Stack));
 	if (st == NULL)
 		return STACK_MEMORY;
 	st->first = NULL;
-	*stack_ptr = st;
+	*ppStack = st;
 	return STACK_OK;
 }
 
-struct stack_item *alloc_item(void *object, struct stack_item *first)
+struct StackItem *alloc_item(void *object, struct StackItem *first)
 {
-	struct stack_item *item;
-	item = malloc(sizeof(struct stack_item));
+	struct StackItem *item;
+	item = malloc(sizeof(struct StackItem));
 	if (item) {
 		item->object = object;
 		item->next = first;
@@ -37,40 +37,40 @@ struct stack_item *alloc_item(void *object, struct stack_item *first)
 	return item;
 }
 
-stack_return stack_add(stack *stack, void *object)
+StackReturnID stackAdd(Stack *pStack, void *object)
 {
-	struct stack_item *item = alloc_item(object, stack->first);
+	struct StackItem *item = alloc_item(object, pStack->first);
 	if (object == NULL)
 		return STACK_MEMORY;
-	stack->first = item;
+	pStack->first = item;
 	return STACK_OK;
 }
 
-stack_return stack_empty(stack *stack, int *is_empty_ptr)
+StackReturnID stackEmpty(Stack *pStack, int *pIsEmpty)
 {
-	*is_empty_ptr = !stack->first;
+	*pIsEmpty = !pStack->first;
 	return STACK_OK;
 }
 
-stack_return stack_remove(stack *stack, void **object_ptr)
+StackReturnID stackRemove(Stack *pStack, void **pObject)
 {
-	struct stack_item *first = stack->first;
+	struct StackItem *first = pStack->first;
 	if (!first) return STACK_EMPTY;
-	*object_ptr = first->object;
-	stack->first = first->next;
+	*pObject = first->object;
+	pStack->first = first->next;
 	free(first);
 	return STACK_OK;
 }
 
-stack_return stack_destroy(stack *stack, void free_object(void *))
+StackReturnID stackDestroy(Stack *pStack, void freeObject(void *))
 {
-	struct stack_item *current, *next;
-	for (current = stack->first; current; current = next) {
+	struct StackItem *current, *next;
+	for (current = pStack->first; current; current = next) {
 		next = current->next;
-		if (free_object)
-			free_object(current->object);
+		if (freeObject)
+			freeObject(current->object);
 		free(current);
 	}
-	free(stack);
+	free(pStack);
 	return STACK_OK;
 }

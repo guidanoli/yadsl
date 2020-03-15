@@ -8,7 +8,8 @@
 //  /____/\__/\__,_/\___/_/|_|  
 //                              
 // A stack starts empty. You can add and
-// remove objects (if not empty).
+// remove objects (if not empty), and check
+// whether the stack is empty or not.
 //
 
 typedef enum
@@ -17,35 +18,35 @@ typedef enum
 	STACK_EMPTY,
 	STACK_MEMORY,
 }
-stack_return;
+StackReturnID;
 
-typedef struct stack stack;
+typedef struct Stack Stack;
 
-// Create stack at *stack_ptr
-// stack_ptr (ret): new stack
+// Create stack at *ppStack
+// ppStack (ret): new stack
 // -> STACK_MEMORY
-stack_return stack_create(stack **stack_ptr);
+StackReturnID stackCreate(Stack **ppStack);
 
 // Add object to stack
 // stack
 // object (opt): object to be added
 // -> STACK_MEMORY
-stack_return stack_add(stack *stack, void *object);
+StackReturnID stackAdd(Stack *pStack, void *object);
 
 // Check if stack is empty
 // stack
-// is_empty_ptr (ret): stack is empty or not
-stack_return stack_empty(stack *stack, int *is_empty_ptr);
+// pIsEmpty (ret): stack is empty or not
+StackReturnID stackEmpty(Stack *pStack, int *pIsEmpty);
 
 // Remove object from stack
 // stack
-// object_ptr (ret): removed object
+// pObject (ret): removed object
 // -> STACK_EMPTY
-stack_return stack_remove(stack *stack, void **object_ptr);
+StackReturnID stackRemove(Stack *pStack, void **pObject);
 
 // Destroy stack
 // stack
-// free_object (opt): function that frees remaining objects
-stack_return stack_destroy(stack *stack, void free_object(void *));
+// freeObject (opt): function that frees remaining objects
+StackReturnID stackDestroy(Stack *pStack, void freeObject(void *));
 
 #endif

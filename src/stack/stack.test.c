@@ -18,7 +18,7 @@ const char *TesterHelpStrings[] = {
 	NULL
 };
 
-static stack *st;
+static Stack *st;
 char buffer[BUFSIZ];
 
 TesterReturnValue TesterInitCallback()
@@ -27,7 +27,7 @@ TesterReturnValue TesterInitCallback()
 	return TESTER_RETURN_OK;
 }
 
-TesterReturnValue convert(stack_return ret)
+TesterReturnValue convert(StackReturnID ret)
 {
 	switch (ret) {
 	case STACK_OK:
@@ -43,11 +43,11 @@ TesterReturnValue convert(stack_return ret)
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-	stack_return ret = STACK_OK;
+	StackReturnID ret = STACK_OK;
 	if matches(command, "create") {
-		ret = stack_create(&st);
+		ret = stackCreate(&st);
 	} else if matches(command, "destroy") {
-		ret = stack_destroy(st, free);
+		ret = stackDestroy(st, free);
 		if (!ret)
 			st = NULL;
 	} else if matches(command, "add") {
@@ -58,14 +58,14 @@ TesterReturnValue TesterParseCallback(const char *command)
 		if (num_ptr == NULL)
 			return TESTER_RETURN_MALLOC;
 		*num_ptr = num;
-		ret = stack_add(st, num_ptr);
+		ret = stackAdd(st, num_ptr);
 		if (ret)
 			free(num_ptr);
 	} else if matches(command, "remove") {
 		int *actual_ptr, expected;
 		if (TesterParseArguments("i", &expected) != 1)
 			return TESTER_RETURN_ARGUMENT;
-		ret = stack_remove(st, &actual_ptr);
+		ret = stackRemove(st, &actual_ptr);
 		if (!ret) {
 			int actual;
 			actual = *actual_ptr;
@@ -80,7 +80,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
 			TesterLog("Argument wasn't YES nor NO, so 'NO' was assumed.");
-		ret = stack_empty(st, &actual);
+		ret = stackEmpty(st, &actual);
 		if ((ret == STACK_OK || ret == STACK_EMPTY) && (actual != expected))
 			return TESTER_RETURN_RETURN;
 	} else {
@@ -91,7 +91,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 
 TesterReturnValue TesterExitCallback()
 {
-	if (st) return convert(stack_destroy(st, free));
+	if (st) return convert(stackDestroy(st, free));
 	return TESTER_RETURN_OK;
 }
 

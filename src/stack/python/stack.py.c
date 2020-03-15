@@ -13,7 +13,7 @@
 typedef struct
 {
 	PyObject_HEAD
-	stack *ob_stack;
+	Stack *ob_stack;
 } stack_object;
 
 //
@@ -79,7 +79,7 @@ PyDoc_STRVAR(_stack_init__doc__,
 static int
 _stack_init(stack_object *self, PyObject *Py_UNUSED(ignored))
 {
-	switch (stack_create(&self->ob_stack)) {
+	switch (stackCreate(&self->ob_stack)) {
 	case STACK_OK:
 		break;
 	case STACK_MEMORY:
@@ -95,21 +95,21 @@ static void
 _stack_dealloc(stack_object *self)
 {
 	if (self->ob_stack)
-		stack_destroy(self->ob_stack, decRefCallback);
+		stackDestroy(self->ob_stack, decRefCallback);
 	_memdb_dump();
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
-PyDoc_STRVAR(_stack_add__doc__,
+PyDoc_STRVAR(_stackAdd__doc__,
 "add(obj : Object) -> None\n"
 "--\n"
 "\n"
 "Add object in stack.");
 
 static PyObject *
-_stack_add(stack_object *self, PyObject *obj)
+_stackAdd(stack_object *self, PyObject *obj)
 {
-	switch (stack_add(self->ob_stack, obj)) {
+	switch (stackAdd(self->ob_stack, obj)) {
 	case STACK_OK:
 		Py_INCREF(obj);
 		Py_RETURN_NONE;
@@ -122,17 +122,17 @@ _stack_add(stack_object *self, PyObject *obj)
 	return NULL;
 }
 
-PyDoc_STRVAR(_stack_remove__doc__,
+PyDoc_STRVAR(_stackRemove__doc__,
 "remove() -> Object\n"
 "--\n"
 "\n"
 "Remove object from stack.");
 
 static PyObject *
-_stack_remove(stack_object *self, PyObject *Py_UNUSED(ignored))
+_stackRemove(stack_object *self, PyObject *Py_UNUSED(ignored))
 {
 	PyObject *obj = NULL;
-	switch (stack_remove(self->ob_stack, &obj)) {
+	switch (stackRemove(self->ob_stack, &obj)) {
 	case STACK_OK:
 		// Borrow reference
 		return obj;
@@ -145,17 +145,17 @@ _stack_remove(stack_object *self, PyObject *Py_UNUSED(ignored))
 	return NULL;
 }
 
-PyDoc_STRVAR(_stack_is_empty__doc__,
+PyDoc_STRVAR(_stackEmpty__doc__,
 "is_empty() -> bool\n"
 "--\n"
 "\n"
 "Check if stack is empty.");
 
 static PyObject *
-_stack_is_empty(stack_object *self, PyObject *Py_UNUSED(ignored))
+_stackEmpty(stack_object *self, PyObject *Py_UNUSED(ignored))
 {
 	int is_empty = 0;
-	switch (stack_empty(self->ob_stack, &is_empty)) {
+	switch (stackEmpty(self->ob_stack, &is_empty)) {
 	case STACK_OK:
 		return PyBool_FromLong(is_empty);
 	default:
@@ -174,21 +174,21 @@ PyMethodDef stack_methods[] = {
 	//
 	{
 		"add",
-		(PyCFunction) _stack_add,
+		(PyCFunction) _stackAdd,
 		METH_O,
-		_stack_add__doc__
+		_stackAdd__doc__
 	},
 	{
 		"remove",
-		(PyCFunction) _stack_remove,
+		(PyCFunction) _stackRemove,
 		METH_NOARGS,
-		_stack_remove__doc__
+		_stackRemove__doc__
 	},
 	{
 		"is_empty",
-		(PyCFunction) _stack_is_empty,
+		(PyCFunction) _stackEmpty,
 		METH_NOARGS,
-		_stack_is_empty__doc__
+		_stackEmpty__doc__
 	},
 	//
 	//
