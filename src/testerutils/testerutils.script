@@ -1,0 +1,6 @@
+/yes YES
+/no NO
+/no ANYTHING
+
+/serialize "My enourmous string which is awesome" ser1.txt
+/deserialize "My enourmous string which is awesome" ser1.txt

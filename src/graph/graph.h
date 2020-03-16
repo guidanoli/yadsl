@@ -9,467 +9,331 @@
 //  \____/_/   \__,_/ .___/_/ /_/
 //                 /_/
 //
-// A Graph starts with no vertices and, therefore, no edges.
+//  A Graph starts with no vertices and, therefore, no edges.
 // You are able to add and remove vertices and edges, check
 // if vertices and edges are contained in graph, iterate through
 // vertices and vertex neighbours (in, out or all), obtain
 // vertex count, vertex degrees (in, out or total), and set/get
 // flags set to vertices (for searches in graph, coloring...)
 //
-// Observations:
-// - On the documentation of every function, it might be written
-// "Possible errors" (which disconsider GRAPH_RETURN_OK), or
-// "Possible return values" (which consider all values possible).
-// - Undirected graphs store edges differently than directed
-// graphs, but still, in such way that graphGetNextOutNeighbour
-// or graphGetNextInNeighbour will provide unique edges, for every
-// vertex on a graph. That's why it can be used for serialization.
+// HINTS
+// -----
 //
-// HINT: GRAPH_RETURN_OK will always be 0, therefore it can be used
-// as a boolean value to check if a function went OK or not, eg:
-// if (graphId = grpahFunction(pGraph)) { ... }
+//  Undirected graphs store edges differently than directed
+// graphs, but still, in such way that functions that relate to
+// in or out neighbours will provide diferent edges, for every
+// vertex on a graph. That's why it can be used for serialization.
 //
 
 typedef enum
 {
-	// SEMANTIC RETURN VALUES
-
-	/* Everything went as excepted */
-	GRAPH_RETURN_OK = 0,
-
-	/* Graph does not contain any vertices whatsoever */
-	GRAPH_RETURN_EMPTY,
-
-	/* Graph contains vertex */
-	GRAPH_RETURN_CONTAINS_VERTEX,
-
-	/* Graph does not contain vertex */
-	GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX,
-
-	/* Graph contains edge */
-	GRAPH_RETURN_CONTAINS_EDGE,
-
-	/* Graph does not contain edge */
-	GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE,
-
-	// ERROR RETURN VALUES
-
-	/* Invalid parameter was provided */
-	GRAPH_RETURN_INVALID_PARAMETER,
-
-	/* Could not allocate memory space */
-	GRAPH_RETURN_MEMORY,
-
+	GRAPH_OK = 0,
+	GRAPH_EMPTY,
+	GRAPH_CONTAINS_VERTEX,
+	GRAPH_DOES_NOT_CONTAIN_VERTEX,
+	GRAPH_CONTAINS_EDGE,
+	GRAPH_DOES_NOT_CONTAIN_EDGE,
+	GRAPH_MEMORY,
 }
-GraphReturnID;
+GraphRet;
 
 typedef struct Graph Graph;
 
 #include <stddef.h>
 
-/**
-* Create an empty graph
-* ppGraph           address of pointer to graph
-* isDirected        whether graph is directed or not
-* cmpVertices,      function that compares two
-* cmpEdges          data structures (vertices or edges)
-*                   and returns 0 if they are different
-*                   (and if else, they are equal)
-*                   if NULL, does a shallow comparison
-* freeVertex,       function that frees a foreign data
-* freeEdges         structure (vertex or edge) from memory
-*                   if NULL, does nothing to vertex
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "ppGraph" is NULL
-* GRAPH_RETURN_MEMORY
-*/
-GraphReturnID graphCreate(Graph **ppGraph,
+//  ============= ============================================
+//   graphCreate            Create an empty graph          
+//  ============= ============================================
+//   ppGraph       (ret) pointer to graph                
+//   cmpVertices   (opt) comparison function between vertices  
+//   cmpEdges      (opt) comparison function between edges     
+//   freeVertex    (opt) deallocation function for vertices    
+//   freeEdge      (opt) deallocation function for edges       
+//  ============= ============================================
+//  [!] GRAPH_MEMORY
+
+GraphRet graphCreate(Graph **ppGraph,
 	int isDirected,
 	int (*cmpVertices)(void *a, void *b),
 	void (*freeVertex)(void *v),
 	int (*cmpEdges)(void *a, void *b),
 	void (*freeEdge)(void *e));
 
-/**
-* Check whether graph is directed or not
-* pGraph        pointer to graph
-* pIsDirected   (return) whether graph is directed or not
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pIsDirected" is NULL
-*/
-GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected);
+//  ================= ======================================== 
+//   graphIsDirected   Check whether graph is directed or not  
+//  ================= ======================================== 
+//   pGraph            pointer to graph                        
+//   pIsDirected       (ret) whether graph is directed or not  
+//  ================= ======================================== 
 
-/**
-* Get number of vertices in graph
-* pGraph    pointer to graph
-* pSize     address of variable that will hold the number of vertices
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pSize" is NULL
-*/
-GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize);
+GraphRet graphIsDirected(Graph *pGraph, int *pIsDirected);
 
-/**
-* Get next vertex in graph (loops)
-* pGraph    pointer to graph
-* pV        address of variable that will hold the vertex
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* GRAPH_RETURN_EMPTY
-*/
-GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV);
+//  ========================== ================================= 
+//   graphGetNumberOfVertices   Get number of vertices in graph  
+//  ========================== ================================= 
+//   pGraph                     pointer to graph                 
+//   pNumberOfVertices          (ret) number of vertices         
+//  ========================== ================================= 
 
-/**
-* Get previous vertex in graph (loops)
-* pGraph    pointer to graph
-* pV        address of variable that will hold the vertex
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* GRAPH_RETURN_EMPTY
-*/
-GraphReturnID graphGetPreviousVertex(Graph *pGraph, void **pV);
+GraphRet graphGetNumberOfVertices(Graph *pGraph, size_t *pNumberOfVertices);
 
-/**
-* Get out degree of a given vertex, that is, how many edges come from it
-* pGraph    pointer to graph
-* v         graph vertex
-* pOut      (return) out degree of v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pOut" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "v" does not exist
-*/
-GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
-	size_t *pOut);
+//  ==================== ================================= 
+//   graphGetNextVertex   Get next vertex (loops)
+//  ==================== ================================= 
+//   pGraph               pointer to graph                 
+//   pNextVertex          (ret) next vertex                
+//  ==================== ================================= 
+//  [!] GRAPH_EMPTY
 
-/**
-* Get in degree of a given vertex, that is, how many edges go to it
-* pGraph    pointer to graph
-* v         graph vertex
-* pIn       (return) in degree of v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pIn" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "v" does not exist
-*/
-GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
-	size_t *pIn);
+GraphRet graphGetNextVertex(Graph *pGraph, void **pNextVertex);
 
-/**
-* Get degree of a given vertex, that is, how many edges are incident to it
-* It would be the sum of the in degree and out degree for directed graphs
-* Or the number of neighbouring vertices for undirected graphs
-* pGraph    pointer to graph
-* v         graph vertex
-* pDegree   (return) degree of v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pDegree" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "v" does not exist
-*/
-GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
-	size_t *pDegree);
+//  ======================== ============================= 
+//   graphGetPreviousVertex   Get previous vertex (loops)  
+//  ======================== ============================= 
+//   pGraph                   pointer to graph             
+//   pPreviousVertex          (ret) previous vertex        
+//  ======================== ============================= 
+//  [!] GRAPH_EMPTY
 
-/**
-* Get next neighbour of given vertex
-* The function will loop through the same vertices until some
-* modification is made in relation to this vertex, such as
-* adding or removing edges connected to it
-* pGraph    pointer to graph
-* u         graph vertex
-* pV        (return) neighbour of u
-* uv        (return) edge between u and v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* 	- "uv" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- "u" does not contain neighbours, that is, edges
-*/
-GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv);
+GraphRet graphGetPreviousVertex(Graph *pGraph, void **pPreviousVertex);
 
-/**
-* Get previous neighbour of given vertex
-* The function will loop through the same vertices until some
-* modification is made in relation to this vertex, such as
-* adding or removing edges connected to it
-* pGraph    pointer to graph
-* u         graph vertex
-* pV        (return) neighbour of u
-* uv        (return) edge between u and v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* 	- "uv" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- "u" does not contain neighbours, that is, edges
-*/
-GraphReturnID graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv);
+//  ========================= ========================= 
+//   graphGetVertexOutDegree    Get vertex out degree   
+//  ========================= ========================= 
+//   pGraph                    pointer to graph         
+//   vertex                    graph vertex             
+//   pOutDegree                (ret) vertex out degree  
+//  ========================= ========================= 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
 
-/**
-* Get next neighbour that has an edge that incides in a given vertex
-* The function will loop through the same vertices until some
-* modification is made in relation to this vertex, such as
-* adding or removing edges connected to it
-* pGraph    pointer to graph
-* u         graph vertex
-* pV        (return) neighbour of u, through edge "vu"
-* uv        (return) edge between u and v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* 	- "uv" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- "u" does not contain in-neighbours
-*/
-GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv);
+GraphRet graphGetVertexOutDegree(Graph *pGraph,
+	void *vertex, size_t *pOutDegree);
 
-/**
-* Get previous neighbour that has an edge that incides in a given vertex
-* The function will loop through the same vertices until some
-* modification is made in relation to this vertex, such as
-* adding or removing edges connected to it
-* pGraph    pointer to graph
-* u         graph vertex
-* pV        (return) neighbour of u, through edge "vu"
-* uv        (return) edge between u and v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* 	- "uv" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- "u" does not contain in-neighbours
-*/
-GraphReturnID graphGetPreviousInNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv);
+//  ======================== ======================== 
+//   graphGetVertexInDegree    Get vertex in degree   
+//  ======================== ======================== 
+//   pGraph                   pointer to graph        
+//   vertex                   graph vertex            
+//   pInDegree                (ret) vertex in degree  
+//  ======================== ======================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
 
-/**
-* Get next neighbour that has an edge that comes from a given vertex
-* The function will loop through the same vertices until some
-* modification is made in relation to this vertex, such as
-* adding or removing edges connected to it
-* pGraph    pointer to graph
-* u         graph vertex
-* pV        (return) neighbour of u, through edge "uv"
-* uv        (return) edge between u and v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* 	- "uv" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- "u" does not contain out-neighbours
-*/
-GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv);
+GraphRet graphGetVertexInDegree(Graph *pGraph,
+	void *vertex, size_t *pInDegree);
 
-/**
-* Get previous neighbour that has an edge that comes from a given vertex
-* The function will loop through the same vertices until some
-* modification is made in relation to this vertex, such as
-* adding or removing edges connected to it
-* pGraph    pointer to graph
-* u         graph vertex
-* pV        (return) neighbour of u, through edge "uv"
-* uv        (return) edge between u and v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pV" is NULL
-* 	- "uv" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- "u" does not contain out-neighbours
-*/
-GraphReturnID graphGetPreviousOutNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv);
+//  ======================== =========================== 
+//   graphGetVertexInDegree   Get vertex (total) degree  
+//  ======================== =========================== 
+//   pGraph                   pointer to graph           
+//   vertex                   graph vertex               
+//   pDegree                  (ret) vertex degree        
+//  ======================== =========================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
 
-/**
-* Check whether graph contains vertex or not
-* pGraph    pointer to graph
-* v         graph vertex
-* pContains (return) whether graph contains vertex or not
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-*   - "pContains" is NULL
-*/
-GraphReturnID graphContainsVertex(Graph *pGraph, void *v, int *pContains);
+GraphRet graphGetVertexDegree(Graph *pGraph,
+	void *vertex, size_t *pDegree);
 
-/**
-* Add vertex to graph
-* pGraph    pointer to graph
-* v         graph vertex
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* GRAPH_RETURN_CONTAINS_VERTEX
-* 	- graph already contains vertex "v"
-* GRAPH_RETURN_MEMORY
-*/
-GraphReturnID graphAddVertex(Graph *pGraph, void *v);
+//  ======================= ============================================= 
+//   graphGetNextNeighbour       Get next neighbour of a given vertex       
+//  ======================= ============================================= 
+//   pGraph                  pointer to graph                             
+//   vertex                  graph vertex                                 
+//   pNextNeighbour          (ret) next neighbour of vertex               
+//   pEdge                   (ret) edge between vertex and its neighbour  
+//  ======================= ============================================= 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
 
-/**
-* Remove vertex and all edges containing it
-* pGraph    pointer to graph
-* v         graph vertex
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*/
-GraphReturnID graphRemoveVertex(Graph *pGraph, void *v);
+GraphRet graphGetNextNeighbour(Graph *pGraph,
+	void *vertex, void **pNextNeighbour, void **pEdge);
 
-/**
-* Check whether graph contains edge or not
-* pGraph    pointer to graph
-* u, v      graph vertices
-* pContains (return) whether graph contains edge
-* Possible return values:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-*	- "pContains" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" or vertex "v" does not exist
-*/
-GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains);
+//  =========================== ============================================= 
+//   graphGetPreviousNeighbour     Get previous neighbour of a given vertex     
+//  =========================== ============================================= 
+//   pGraph                      pointer to graph                             
+//   vertex                      graph vertex                                 
+//   pPreviousNeighbour          (ret) previous neighbour of vertex           
+//   pEdge                       (ret) edge between vertex and its neighbour  
+//  =========================== ============================================= 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
 
-/**
-* Add edge to graph
-* pGraph    pointer to graph
-* u, v      graph vertices
-* uv        edge between u and u
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" or vertex "v" does not exist
-* GRAPH_RETURN_CONTAINS_EDGE
-* 	- Edge "uv" already exists in the graph
-* GRAPH_RETURN_MEMORY
-* [!] Alters the state of the iterator provided by the
-* graphGetNext*Neighbour functions for the manipulated
-* vertices u and v, if the function is successful
-*/
-GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv);
+GraphRet graphGetPreviousNeighbour(Graph *pGraph,
+	void *u, void **pV, void **uv);
 
-/**
-* Obtain edge from vertices provided
-* pGraph    pointer to graph
-* u, v      graph vertices
-* uv        (return) edge between u and v
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" or vertex "v" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- Edge "uv" does not exist in the graph
-*/
-GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv);
+//  ========================= ============================================= 
+//   graphGetNextInNeighbour     Get next in neighbour of a given vertex    
+//  ========================= ============================================= 
+//   pGraph                    pointer to graph                             
+//   vertex                    graph vertex                                 
+//   pNextInNeighbour          (ret) next in neighbour of vertex            
+//   pEdge                     (ret) edge between vertex and its neighbour  
+//  ========================= ============================================= 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
 
-/**
-* Remove edge from graph
-* pGraph    pointer to graph
-* u, v      graph vertices
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-* 	- vertex "u" or vertex "v" does not exist
-* GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-* 	- Edge "uv" does not exist in the graph
-* [!] Alters the state of the iterator provided by the
-* graphGetNext*Neighbour functions for the manipulated
-* vertices u and v, if the function is successful
-*/
-GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v);
+GraphRet graphGetNextInNeighbour(Graph *pGraph,
+	void *vertex, void **pNextInNeighbour, void **pEdge);
 
-/**
-* Gets flag associated to vertex
-* pGraph    pointer to graph
-* v         graph vertices
-* pFlag     (return) flag
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-*	- "pGraph" is NULL
-*	- "pFlag" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*/
-GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag);
+//  ============================= ============================================= 
+//   graphGetPreviousInNeighbour   Get previous in neighbour of a given vertex  
+//  ============================= ============================================= 
+//   pGraph                        pointer to graph                             
+//   vertex                        graph vertex                                 
+//   pPreviousInNeighbour          (ret) previous in neighbour of vertex        
+//   pEdge                         (ret) edge between vertex and its neighbour  
+//  ============================= ============================================= 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
 
-/**
-* Sets flag associated to vertex
-* pGraph    pointer to graph
-* v         graph vertices
-* flag      flag to be set
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-*	- "pGraph" is NULL
-* GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-*/
-GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag);
+GraphRet graphGetPreviousInNeighbour(Graph *pGraph,
+	void *vertex, void **pPreviousInNeighbour, void **pEdge);
 
-/**
-* Sets the same flag for all vertices
-* pGraph    pointer to graph
-* flag      flag to be set
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-*	- "pGraph" is NULL
-*/
-GraphReturnID graphSetAllVerticesFlags(Graph *pGraph, int flag);
+//  ========================== ============================================= 
+//   graphGetNextOutNeighbour    Get next out neighbour of a given vertex    
+//  ========================== ============================================= 
+//   pGraph                     pointer to graph                             
+//   vertex                     graph vertex                                 
+//   pNextOutNeighbour          (ret) next out neighbour of vertex           
+//   pEdge                      (ret) edge between vertex and its neighbour  
+//  ========================== ============================================= 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
 
-/**
-* Obtain graph vertex comparison function provided
-* TO BE DEPRECATED
-* on graphCreate as parameter
-* pGraph        poitner to graph
-* cmpVertices   (return) comparison function
-* Possible errors:
-* GRAPH_RETURN_INVALID_PARAMETER
-* 	- "pGraph" is NULL
-* 	- "pCmpVertices" is NULL
-*/
-GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
-	int (**pCmpVertices)(void *a, void *b));
+GraphRet graphGetNextOutNeighbour(Graph *pGraph,
+	void *vertex, void **pNextOutNeighbour, void **pEdge);
 
-/**
-* Free graph structure from memory
-* pGraph    pointer to graph
-*/
+//  ============================== ============================================= 
+//   graphGetPreviousOutNeighbour   Get previous out neighbour of a vertex  
+//  ============================== ============================================= 
+//   pGraph                         pointer to graph                              
+//   vertex                         graph vertex                                  
+//   pPreviousOutNeighbour          (ret) previous out neighbour of vertex        
+//   pEdge                          (ret) edge between vertex and its neighbour   
+//  ============================== ============================================= 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+
+GraphRet graphGetPreviousOutNeighbour(Graph *pGraph,
+	void *vertex, void **pPreviousOutNeighbour, void **pEdge);
+
+//  ===================== ============================================ 
+//   graphContainsVertex   Check whether graph contains vertex or not  
+//  ===================== ============================================ 
+//   pGraph                pointer to graph                            
+//   vertex                graph vertex                                
+//   pContains             (ret) whether graph contains vertex or not  
+//  ===================== ============================================ 
+
+GraphRet graphContainsVertex(Graph *pGraph, void *vertex, int *pContains);
+
+//  ================ ===================== 
+//   graphAddVertex   Add vertex to graph  
+//  ================ ===================== 
+//   pGraph           pointer to graph     
+//   vertex           graph vertex         
+//  ================ ===================== 
+//  [!] GRAPH_CONTAINS_VERTEX
+//  [!] GRAPH_MEMORY
+
+GraphRet graphAddVertex(Graph *pGraph, void *vertex);
+
+//  =================== ======================== 
+//   graphRemoveVertex   Remove vertex to graph  
+//  =================== ======================== 
+//   pGraph              pointer to graph        
+//   vertex              graph vertex            
+//  =================== ======================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+
+GraphRet graphRemoveVertex(Graph *pGraph, void *vertex);
+
+//  =================== ========================================== 
+//   graphContainsEdge   Check whether graph contains edge or not  
+//  =================== ========================================== 
+//   pGraph              pointer to graph                          
+//   u, v                graph vertices                            
+//   pContains           (ret) whether graph contains edge or not  
+//  =================== ========================================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+
+GraphRet graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains);
+
+//  ============== ====================== 
+//   graphAddEdge    Add edge to graph    
+//  ============== ====================== 
+//   pGraph         pointer to graph      
+//   u, v           graph vertices        
+//   uv             edge between u and v  
+//  ============== ====================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_CONTAINS_EDGE
+//  [!] GRAPH_MEMORY
+//  [!] Alters the state of the neighbour iterator functions
+
+GraphRet graphAddEdge(Graph *pGraph, void *u, void *v, void *uv);
+
+//  ============== =========================================== 
+//   graphGetEdge   Obtain edge between two vertices in graph  
+//  ============== =========================================== 
+//   pGraph         pointer to graph                           
+//   u, v           graph vertices                             
+//   pEdge          (ret) edge between u and v                 
+//  ============== =========================================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+
+GraphRet graphGetEdge(Graph *pGraph, void *u, void *v, void **pEdge);
+
+//  ================= ======================== 
+//   graphRemoveEdge   Remove edge from graph  
+//  ================= ======================== 
+//   pGraph            pointer to graph        
+//   u, v              graph vertices          
+//  ================= ======================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+//  [!] Alters the state of the neighbour iterator functions
+
+GraphRet graphRemoveEdge(Graph *pGraph, void *u, void *v);
+
+//  ==================== ======================================== 
+//   graphGetVertexFlag   Get flag associated to vertex in graph  
+//  ==================== ======================================== 
+//   pGraph               pointer to graph                        
+//   vertex               graph vertex                            
+//   pFlag                (ret) flag associated to vertex         
+//  ==================== ======================================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+
+GraphRet graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag);
+
+//  ==================== ======================================== 
+//   graphSetVertexFlag   Set flag associated to vertex in graph  
+//  ==================== ======================================== 
+//   pGraph               pointer to graph                        
+//   vertex               graph vertex                            
+//   flag                 flag to be associated to vertex         
+//  ==================== ======================================== 
+//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+
+GraphRet graphSetVertexFlag(Graph *pGraph, void *v, int flag);
+
+//  ========================= ======================================= 
+//   graphSetAllVerticesFlag    Sets flag to all vertices in graph    
+//  ========================= ======================================= 
+//   pGraph                    pointer to graph                       
+//   flag                      flag to be associated to all vertices  
+//  ========================= ======================================= 
+
+GraphRet graphSetAllVerticesFlags(Graph *pGraph, int flag);
+
+//  ============== ========================================= 
+//   graphDestroy   Deallocates graph structure from memory  
+//  ============== ========================================= 
+//   pGraph         pointer to graph                         
+//  ============== ========================================= 
+
 void graphDestroy(Graph *pGraph);
 
 #endif

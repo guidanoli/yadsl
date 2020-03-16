@@ -7,9 +7,14 @@
 //   ___/ / /_/ /_/ / /__/ ,<   
 //  /____/\__/\__,_/\___/_/|_|  
 //                              
-// A stack starts empty. You can add and
+//  A Stack starts empty. You can add and
 // remove objects (if not empty), and check
 // whether the stack is empty or not.
+//
+// HINTS
+// -----
+//
+// Objects can assume the value NULL (0).
 //
 
 typedef enum
@@ -18,35 +23,55 @@ typedef enum
 	STACK_EMPTY,
 	STACK_MEMORY,
 }
-StackReturnID;
+StackRet;
 
 typedef struct Stack Stack;
 
-// Create stack at *ppStack
-// ppStack (ret): new stack
-// -> STACK_MEMORY
-StackReturnID stackCreate(Stack **ppStack);
+//  ============= ============================== 
+//   stackCreate           Create stack          
+//  ============= ============================== 
+//   ppStack       (owned ret) pointer to stack  
+//  ============= ============================== 
+//  [!] STACK_MEMORY
 
-// Add object to stack
-// stack
-// object (opt): object to be added
-// -> STACK_MEMORY
-StackReturnID stackAdd(Stack *pStack, void *object);
+StackRet stackCreate(Stack **ppStack);
 
-// Check if stack is empty
-// stack
-// pIsEmpty (ret): stack is empty or not
-StackReturnID stackEmpty(Stack *pStack, int *pIsEmpty);
+//  ========== ===================== 
+//   stackAdd   Add object to stack  
+//  ========== ===================== 
+//   pStack     pointer to stack     
+//   object     object to be added   
+//  ========== ===================== 
+//  [!] STACK_MEMORY
 
-// Remove object from stack
-// stack
-// pObject (ret): removed object
-// -> STACK_EMPTY
-StackReturnID stackRemove(Stack *pStack, void **pObject);
+StackRet stackAdd(Stack *pStack, void *object);
 
-// Destroy stack
-// stack
-// freeObject (opt): function that frees remaining objects
+//  ============ ===================================== 
+//   stackEmpty         Check if stack is empty        
+//  ============ ===================================== 
+//   pStack       pointer to stack                     
+//   pIsEmpty     (ret) whether stack is empty or not  
+//  ============ ===================================== 
+
+StackRet stackEmpty(Stack *pStack, int *pIsEmpty);
+
+//  ============= ============================ 
+//   stackRemove    Remove object from stack   
+//  ============= ============================ 
+//   pStack        pointer to stack            
+//   pObject       (owned ret) removed object  
+//  ============= ============================ 
+//  [!] STACK_EMPTY
+
+StackRet stackRemove(Stack *pStack, void **pObject);
+
+//  ============== ============================================ 
+//   stackDestroy   Deallocate stack and its remaining objects  
+//  ============== ============================================ 
+//   pStack         pointer to stack                            
+//   freeObject     object deallocation function                
+//  ============== ============================================ 
+
 void stackDestroy(Stack *pStack, void freeObject(void *));
 
 #endif

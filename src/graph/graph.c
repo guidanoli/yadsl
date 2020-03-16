@@ -96,22 +96,22 @@ static int _setVertexFlag(struct GraphVertex *pVertex, int *flag);
 static void _resetAdjListCounters(struct GraphVertex *pVertex, int orientation);
 static void _cycleSetCursor(Set *pSet, void **pValue, int orientation);
 
-GraphReturnID _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv, int direction, int orientation);
 
-static GraphReturnID _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
+static GraphRet _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
 	struct GraphVertex *pVertexV, struct GraphVertex **ppSource,
 	struct GraphVertex **ppDestination, struct GraphEdge **ppEdgeUV);
 
 #define _parseVertices(...) __parseVertices(__VA_ARGS__, NULL, NULL)
-static GraphReturnID __parseVertices(Graph *pGraph, void *item,
+static GraphRet __parseVertices(Graph *pGraph, void *item,
 	struct GraphVertex **ppVertex, ...);
 
   /**********************/
  /*  Public functions  */
 /**********************/
 
-GraphReturnID graphCreate(Graph **ppGraph,
+GraphRet graphCreate(Graph **ppGraph,
 	int isDirected,
 	int (*cmpVertices)(void *a, void *b),
 	void (*freeVertex)(void *v),
@@ -119,14 +119,12 @@ GraphReturnID graphCreate(Graph **ppGraph,
 	void (*freeEdge)(void *e))
 {
 	struct Graph *pGraph;
-	if (ppGraph == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	pGraph = malloc(sizeof(struct Graph));
 	if (pGraph == NULL)
-		return GRAPH_RETURN_MEMORY;
+		return GRAPH_MEMORY;
 	if (setCreate(&pGraph->vertexSet)) {
 		free(pGraph);
-		return GRAPH_RETURN_MEMORY;
+		return GRAPH_MEMORY;
 	}
 	pGraph->isDirected = isDirected;
 	pGraph->freeVertex = freeVertex;
@@ -134,146 +132,136 @@ GraphReturnID graphCreate(Graph **ppGraph,
 	pGraph->cmpVertices = cmpVertices;
 	pGraph->cmpEdges = cmpEdges;
 	*ppGraph = pGraph;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetNumberOfVertices(Graph *pGraph, size_t *pSize)
+GraphRet graphGetNumberOfVertices(Graph *pGraph, size_t *pSize)
 {
 	size_t temp;
-	if (pGraph == NULL || pSize == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (setGetSize(pGraph->vertexSet, &temp)) assert(0);
 	*pSize = temp;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetNextVertex(Graph *pGraph, void **pV)
+GraphRet graphGetNextVertex(Graph *pGraph, void **pV)
 {
-	SetReturnID setId;
+	SetRet setId;
 	struct GraphVertex *pVertex = NULL;
-	if (pGraph == NULL || pV == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (setId = setGetCurrentItem(pGraph->vertexSet, &pVertex)) {
-		assert(setId == SET_RETURN_EMPTY);
-		return GRAPH_RETURN_EMPTY;
+		assert(setId == SET_EMPTY);
+		return GRAPH_EMPTY;
 	}
 	if (setId = setNextItem(pGraph->vertexSet)) {
-		assert(setId == SET_RETURN_OUT_OF_BOUNDS);
+		assert(setId == SET_OUT_OF_BOUNDS);
 		if (setFirstItem(pGraph->vertexSet)) assert(0);
 	}
 	*pV = pVertex->item;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 
 }
 
-GraphReturnID graphGetPreviousVertex(Graph *pGraph, void **pV)
+GraphRet graphGetPreviousVertex(Graph *pGraph, void **pV)
 {
-	SetReturnID setId;
+	SetRet setId;
 	struct GraphVertex *pVertex = NULL;
-	if (pGraph == NULL || pV == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (setId = setGetCurrentItem(pGraph->vertexSet, &pVertex)) {
-		assert(setId == SET_RETURN_EMPTY);
-		return GRAPH_RETURN_EMPTY;
+		assert(setId == SET_EMPTY);
+		return GRAPH_EMPTY;
 	}
 	if (setId = setPreviousItem(pGraph->vertexSet)) {
-		assert(setId == SET_RETURN_OUT_OF_BOUNDS);
+		assert(setId == SET_OUT_OF_BOUNDS);
 		if (setLastItem(pGraph->vertexSet)) assert(0);
 	}
 	*pV = pVertex->item;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 
 }
 
-GraphReturnID graphIsDirected(Graph *pGraph, int *pIsDirected)
+GraphRet graphIsDirected(Graph *pGraph, int *pIsDirected)
 {
-	if (pGraph == NULL || pIsDirected == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	*pIsDirected = pGraph->isDirected;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphContainsVertex(Graph *pGraph, void *v, int *pContains)
+GraphRet graphContainsVertex(Graph *pGraph, void *v, int *pContains)
 {
 	void *p; // does nothing with p
 	struct _cmpVertexItemParam par = { v, pGraph->cmpVertices };
-	if (pGraph == NULL || pContains == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	switch (setFilterItem(pGraph->vertexSet, _cmpVertexItem, &par, &p)) {
-	case SET_RETURN_OK:
+	case SET_OK:
 		*pContains = 1;
 		break;
-	case SET_RETURN_DOES_NOT_CONTAIN:
+	case SET_DOES_NOT_CONTAIN:
 		*pContains = 0;
 		break;
 	default:
 		assert(0);
 	}
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphAddVertex(Graph *pGraph, void *v)
+GraphRet graphAddVertex(Graph *pGraph, void *v)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
-	SetReturnID setId;
+	GraphRet graphId;
+	SetRet setId;
 	int containsVertex;
 	if (graphId = graphContainsVertex(pGraph, v, &containsVertex))
 		return graphId;
 	if (containsVertex)
-		return GRAPH_RETURN_CONTAINS_VERTEX;
+		return GRAPH_CONTAINS_VERTEX;
 	pVertex = malloc(sizeof(struct GraphVertex));
 	if (pVertex == NULL)
-		return GRAPH_RETURN_MEMORY;
+		return GRAPH_MEMORY;
 	pVertex->item = v;
 	pVertex->flag = 0;
 	pVertex->inEdgesToIterate = 0;
 	pVertex->outEdgesToIterate = 0;
 	if (setCreate(&pVertex->inEdges)) {
 		free(pVertex);
-		return GRAPH_RETURN_MEMORY;
+		return GRAPH_MEMORY;
 	}
 	if (setCreate(&pVertex->outEdges)) {
 		setDestroy(pVertex->inEdges);
 		free(pVertex);
-		return GRAPH_RETURN_MEMORY;
+		return GRAPH_MEMORY;
 	}
 	if (setId = setAddItem(pGraph->vertexSet, pVertex)) {
 		setDestroy(pVertex->inEdges);
 		setDestroy(pVertex->outEdges);
 		free(pVertex);
-		assert(setId == SET_RETURN_MEMORY);
-		return GRAPH_RETURN_MEMORY;
+		assert(setId == SET_MEMORY);
+		return GRAPH_MEMORY;
 	}
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphRemoveVertex(Graph *pGraph, void *v)
+GraphRet graphRemoveVertex(Graph *pGraph, void *v)
 {
 	struct GraphVertex *pVertex = NULL;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
 	if (setRemoveItem(pGraph->vertexSet, pVertex)) assert(0);
 	_freeVertex(pVertex, pGraph);
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
+GraphRet graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 {
 	struct GraphVertex *pVertexU = NULL, *pVertexV = NULL;
 	struct GraphEdge *pEdgeUV = NULL;
-	GraphReturnID graphId;
-	SetReturnID setId;
+	GraphRet graphId;
+	SetRet setId;
 	int containsEdge;
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
 	if (graphContainsEdge(pGraph, u, v, &containsEdge)) assert(0);
 	if (containsEdge)
-		return GRAPH_RETURN_CONTAINS_EDGE;
+		return GRAPH_CONTAINS_EDGE;
 	pEdgeUV = malloc(sizeof(struct GraphEdge));
 	if (pEdgeUV == NULL)
-		return GRAPH_RETURN_MEMORY;
+		return GRAPH_MEMORY;
 	pEdgeUV->item = uv;
 	if (pGraph->isDirected) {
 		pEdgeUV->pSource = pVertexU;
@@ -285,48 +273,46 @@ GraphReturnID graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
 	assert(pEdgeUV->pSource != NULL);
 	if (setId = setAddItem(pEdgeUV->pSource->outEdges, pEdgeUV)) {
 		free(pEdgeUV);
-		assert(setId == SET_RETURN_MEMORY);
-		return GRAPH_RETURN_MEMORY;
+		assert(setId == SET_MEMORY);
+		return GRAPH_MEMORY;
 	}
 	_resetAdjListCounters(pEdgeUV->pSource, 1);
 	assert(pEdgeUV->pDestination != NULL);
 	if (setId = setAddItem(pEdgeUV->pDestination->inEdges, pEdgeUV)) {
 		if (setRemoveItem(pEdgeUV->pSource->outEdges, pEdgeUV)) assert(0);
 		free(pEdgeUV);
-		assert(setId == SET_RETURN_MEMORY);
-		return GRAPH_RETURN_MEMORY;
+		assert(setId == SET_MEMORY);
+		return GRAPH_MEMORY;
 	}
 	_resetAdjListCounters(pEdgeUV->pDestination, 1);
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains)
+GraphRet graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains)
 {
 	struct GraphVertex *pVertexU = NULL, *pVertexV = NULL;
-	GraphReturnID graphId;
-	if (pContains == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
+	GraphRet graphId;
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
 	switch (_parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, NULL)) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		*pContains = 1;
 		break;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+	case GRAPH_DOES_NOT_CONTAIN_EDGE:
 		*pContains = 0;
 		break;
 	default:
 		assert(0);
 	}
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v)
+GraphRet graphRemoveEdge(Graph *pGraph, void *u, void *v)
 {
 	struct GraphVertex *pVertexU = NULL, *pVertexV = NULL,
 		*pSource = NULL, *pDestination = NULL;
 	struct GraphEdge *pEdgeUV = NULL;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
 	if (graphId = _parseEdge(pGraph, pVertexU, pVertexV, &pSource,
@@ -339,85 +325,75 @@ GraphReturnID graphRemoveEdge(Graph *pGraph, void *u, void *v)
 	if (pGraph->freeEdge)
 		pGraph->freeEdge(pEdgeUV->item);
 	free(pEdgeUV);
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetEdge(Graph *pGraph, void *u, void *v, void **uv)
+GraphRet graphGetEdge(Graph *pGraph, void *u, void *v, void **uv)
 {
 	struct GraphVertex *pVertexU, *pVertexV;
 	struct GraphEdge *temp;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
 		return graphId;
-	if (graphId = _parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, &temp)) {
-		assert(graphId != GRAPH_RETURN_INVALID_PARAMETER);
+	if (graphId = _parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, &temp))
 		return graphId;
-	}
 	*uv = temp->item;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetVertexOutDegree(Graph *pGraph, void *v,
+GraphRet graphGetVertexOutDegree(Graph *pGraph, void *v,
 	size_t *pOut)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	size_t temp;
-	if (pOut == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
 	if (setGetSize(pVertex->outEdges, &temp)) assert(0);
 	*pOut = temp;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetVertexInDegree(Graph *pGraph, void *v,
+GraphRet graphGetVertexInDegree(Graph *pGraph, void *v,
 	size_t *pIn)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	size_t temp;
-	if (pIn == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
 	if (setGetSize(pVertex->inEdges, &temp)) assert(0);
 	*pIn = temp;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetVertexDegree(Graph *pGraph, void *v,
+GraphRet graphGetVertexDegree(Graph *pGraph, void *v,
 	size_t *pDegree)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	size_t in, out;
-	if (pDegree == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
 	if (setGetSize(pVertex->inEdges, &in)) assert(0);
 	if (setGetSize(pVertex->outEdges, &out)) assert(0);
 	*pDegree = in + out;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	size_t inSize, outSize;
 	struct GraphEdge *temp;
-	if (pGraph == NULL || pV == NULL || uv == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertex))
 		return graphId;
 	if (setGetSize(pVertex->inEdges, &inSize)) assert(0);
 	if (setGetSize(pVertex->outEdges, &outSize)) assert(0);
 	if (inSize == 0 && outSize == 0)
-		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
+		return GRAPH_DOES_NOT_CONTAIN_EDGE;
 	if (inSize == 0) {
 		// thus, outSize > 0
 		_cycleSetCursor(pVertex->outEdges, &temp, 1);
@@ -444,24 +420,22 @@ GraphReturnID graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
 	*pV = temp->pDestination == pVertex ?
 		temp->pSource->item : temp->pDestination->item;
 	*uv = temp->item;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	size_t inSize, outSize;
 	struct GraphEdge *temp;
-	if (pGraph == NULL || pV == NULL || uv == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertex))
 		return graphId;
 	if (setGetSize(pVertex->inEdges, &inSize)) assert(0);
 	if (setGetSize(pVertex->outEdges, &outSize)) assert(0);
 	if (inSize == 0 && outSize == 0)
-		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
+		return GRAPH_DOES_NOT_CONTAIN_EDGE;
 	if (inSize == 0) {
 		// thus, outSize > 0
 		_cycleSetCursor(pVertex->outEdges, &temp, -1);
@@ -487,73 +461,60 @@ GraphReturnID graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
 	*pV = temp->pDestination == pVertex ?
 		temp->pSource->item : temp->pDestination->item;
 	*uv = temp->item;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
 	return _graphGetNeighbour(pGraph, u, pV, uv, 1, 1);
 }
 
-GraphReturnID graphGetPreviousInNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet graphGetPreviousInNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
 	return _graphGetNeighbour(pGraph, u, pV, uv, 1, -1);
 }
 
-GraphReturnID graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
 	return _graphGetNeighbour(pGraph, u, pV, uv, -1, 1);
 }
 
-GraphReturnID graphGetPreviousOutNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet graphGetPreviousOutNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv)
 {
 	return _graphGetNeighbour(pGraph, u, pV, uv, -1, -1);
 }
 
-GraphReturnID graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag)
+GraphRet graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
-	if (pFlag == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
+	GraphRet graphId;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
 	*pFlag = pVertex->flag;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphSetVertexFlag(Graph *pGraph, void *v, int flag)
+GraphRet graphSetVertexFlag(Graph *pGraph, void *v, int flag)
 {
 	struct GraphVertex *pVertex;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	if (graphId = _parseVertices(pGraph, v, &pVertex))
 		return graphId;
 	pVertex->flag = flag;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
-GraphReturnID graphSetAllVerticesFlags(Graph *pGraph, int flag)
+GraphRet graphSetAllVerticesFlags(Graph *pGraph, int flag)
 {
 	void *temp;
-	if (pGraph == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if(setFilterItem(pGraph->vertexSet, _setVertexFlag, &flag, &temp)
-		!= SET_RETURN_DOES_NOT_CONTAIN) // _setVertexFlag only returns 0
+		!= SET_DOES_NOT_CONTAIN) // _setVertexFlag only returns 0
 		assert(0);
-	return GRAPH_RETURN_OK;
-}
-
-GraphReturnID graphGetVertexComparisonFunc(Graph *pGraph,
-	int (**pCmpVertices)(void *a, void *b))
-{
-	if (pGraph == NULL || pCmpVertices == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
-	*pCmpVertices = pGraph->cmpVertices;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
 void graphDestroy(Graph *pGraph)
@@ -574,16 +535,16 @@ void graphDestroy(Graph *pGraph)
 // [!] Assumes set is not empty!
 static void _cycleSetCursor(Set *pSet, void **pValue, int orientation)
 {
-	SetReturnID setId;
-	SetReturnID (*cycleFunc)(Set *);
-	SetReturnID (*resetFunc)(Set *);
+	SetRet setId;
+	SetRet (*cycleFunc)(Set *);
+	SetRet (*resetFunc)(Set *);
 	void *temp;
 	assert(orientation == 1 || orientation == -1);
 	cycleFunc = orientation == 1 ? setNextItem : setPreviousItem;
 	resetFunc = orientation == 1 ? setFirstItem : setLastItem;
 	if (setGetCurrentItem(pSet, &temp)) assert(0);
 	if (setId = cycleFunc(pSet)) {
-		assert(setId == SET_RETURN_OUT_OF_BOUNDS);
+		assert(setId == SET_OUT_OF_BOUNDS);
 		if (resetFunc(pSet)) assert(0);
 	}
 	*pValue = temp;
@@ -654,20 +615,18 @@ static void _freeOutEdge(struct GraphEdge *pEdge, void (*freeEdge)(void *e))
 // ppSource, ppDestination and ppEdgeUV are optional and
 // NULL can be parsed without a problem.
 // Possible errors:
-// GRAPH_RETURN_INVALID_PARAMETER
+// GRAPH_INVALID_PARAMETER
 //	- "pGraph" is NULL
 //	- "pVertexU" is NULL
 //	- "pVertexV" is NULL
-// GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE
-static GraphReturnID _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
+// GRAPH_DOES_NOT_CONTAIN_EDGE
+static GraphRet _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
 	struct GraphVertex *pVertexV, struct GraphVertex **ppSource,
 	struct GraphVertex **ppDestination, struct GraphEdge **ppEdgeUV)
 {
 	struct GraphVertex *pSource, *pDestination;
 	struct GraphEdge *pEdgeUV;
-	SetReturnID setId;
-	if (pGraph == NULL || pVertexU == NULL || pVertexV == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
+	SetRet setId;
 	pSource = (pGraph->isDirected || pVertexU < pVertexV) ?
 		pVertexU : pVertexV;
 	pDestination = pVertexU == pSource ? pVertexV : pVertexU;
@@ -677,17 +636,17 @@ static GraphReturnID _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
 		pDestination,        /* arg */
 		&pEdgeUV);           /* pItem */
 	switch (setId) {
-	case SET_RETURN_OK:
+	case SET_OK:
 		if (ppSource) *ppSource = pSource;
 		if (ppDestination) *ppDestination = pDestination;
 		if (ppEdgeUV) *ppEdgeUV = pEdgeUV;
 		break;
-	case SET_RETURN_DOES_NOT_CONTAIN:
-		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
+	case SET_DOES_NOT_CONTAIN:
+		return GRAPH_DOES_NOT_CONTAIN_EDGE;
 	default:
 		assert(0);
 	}
-	return GRAPH_RETURN_OK;;
+	return GRAPH_OK;;
 }
 
 // Retrieves the vertices through the items contained in them.
@@ -697,18 +656,16 @@ static GraphReturnID _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
 // Does not alter the vertexSet cursor pointer, only the current pointer,
 // which is of internal use, and doesn't interfeer with NextVertex iteration.
 // Possible errors:
-// GRAPH_RETURN_INVALID_PARAMETER
+// GRAPH_INVALID_PARAMETER
 //  - "pGraph" is NULL
 //  - "ppVertex" is NULL
-// GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX
-static GraphReturnID __parseVertices(Graph *pGraph, void *item,
+// GRAPH_DOES_NOT_CONTAIN_VERTEX
+static GraphRet __parseVertices(Graph *pGraph, void *item,
 	struct GraphVertex **ppVertex, ...)
 {
-	SetReturnID setId;
+	SetRet setId;
 	va_list va;
 	struct _cmpVertexItemParam param;
-	if (pGraph == NULL || ppVertex == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	param.item = item;
 	param.cmpVertices = pGraph->cmpVertices;
 	va_start(va, ppVertex);
@@ -719,15 +676,15 @@ static GraphReturnID __parseVertices(Graph *pGraph, void *item,
 			&param,            /* arg */
 			ppVertex)) {       /* pItem */
 			va_end(va);
-			assert(setId == SET_RETURN_DOES_NOT_CONTAIN);
-			return GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX;
+			assert(setId == SET_DOES_NOT_CONTAIN);
+			return GRAPH_DOES_NOT_CONTAIN_VERTEX;
 		}
 		param.item = va_arg(va, void *);
 		if (!(ppVertex = va_arg(va, struct GraphVertex **)))
 			break; /* sentinel */
 	} while (1);
 	va_end(va);
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }
 
 // set vertex flag to *flag
@@ -742,25 +699,23 @@ static int _setVertexFlag(struct GraphVertex *pVertex, int *flag)
 // orientation = 1 for Next, -1 for Previous
 // The other parameters are the same of graphGet(1)(2)Neighbour,
 // where (1) is in {'Next', 'Previous'} and (2) is in {'In', 'Out'}.
-GraphReturnID _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
+GraphRet _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
 	void **uv, int direction, int orientation)
 {
 	struct GraphVertex *pVertex;
 	Set *pSet;
-	GraphReturnID graphId;
+	GraphRet graphId;
 	size_t setSize;
 	struct GraphEdge *temp;
-	if (pV == NULL || uv == NULL)
-		return GRAPH_RETURN_INVALID_PARAMETER;
 	if (graphId = _parseVertices(pGraph, u, &pVertex))
 		return graphId;
 	assert(direction == 1 || direction == -1);
 	pSet = direction == 1 ? pVertex->inEdges : pVertex->outEdges;
 	if (setGetSize(pSet, &setSize)) assert(0);
 	if (setSize == 0)
-		return GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE;
+		return GRAPH_DOES_NOT_CONTAIN_EDGE;
 	_cycleSetCursor(pSet, &temp, orientation);
 	*pV = direction == 1 ? temp->pSource->item : temp->pDestination->item;
 	*uv = temp->item;
-	return GRAPH_RETURN_OK;
+	return GRAPH_OK;
 }

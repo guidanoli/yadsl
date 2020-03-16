@@ -111,20 +111,20 @@ PyDoc_STRVAR(_Graph_add_vertex__doc__,
 static PyObject *
 Graph_add_vertex(GraphObject *self, PyObject *obj)
 {
-	GraphReturnID returnId;
+	GraphRet returnId;
 	returnId = graphAddVertex(self->ob_graph, obj);
 	if (!returnId)
 		Py_INCREF(obj);
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		Py_RETURN_NONE;
-	case GRAPH_RETURN_CONTAINS_VERTEX:
+	case GRAPH_CONTAINS_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex already existed in graph");
 		break;
-	case GRAPH_RETURN_MEMORY:
+	case GRAPH_MEMORY:
 		return PyErr_NoMemory();
 	default:
 		Py_UNREACHABLE();
@@ -142,14 +142,14 @@ PyDoc_STRVAR(_Graph_remove_vertex__doc__,
 static PyObject *
 Graph_remove_vertex(GraphObject *self, PyObject *obj)
 {
-	GraphReturnID returnId;
+	GraphRet returnId;
 	returnId = graphRemoveVertex(self->ob_graph, obj);
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		Py_RETURN_NONE;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
@@ -184,7 +184,7 @@ PyDoc_STRVAR(_Graph_contains_edge__doc__,
 static PyObject *
 Graph_contains_edge(GraphObject *self, PyObject *args)
 {
-	GraphReturnID returnId;
+	GraphRet returnId;
 	PyObject *u, *v;
 	int contains;
 	if (!PyArg_ParseTuple(args,
@@ -195,9 +195,9 @@ Graph_contains_edge(GraphObject *self, PyObject *args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		return PyBool_FromLong(contains);
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
@@ -218,7 +218,7 @@ PyDoc_STRVAR(_Graph_add_edge__doc__,
 static PyObject *
 Graph_add_edge(GraphObject *self, PyObject *args)
 {
-	GraphReturnID returnId;
+	GraphRet returnId;
 	PyObject *u, *v, *uv;
 	if (!PyArg_ParseTuple(args,
 		"OOO:pygraph.Graph.add_edge",
@@ -230,17 +230,17 @@ Graph_add_edge(GraphObject *self, PyObject *args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		Py_RETURN_NONE;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
-	case GRAPH_RETURN_CONTAINS_EDGE:
+	case GRAPH_CONTAINS_EDGE:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Edge already found in graph");
 		break;
-	case GRAPH_RETURN_MEMORY:
+	case GRAPH_MEMORY:
 		return PyErr_NoMemory();
 	default:
 		Py_UNREACHABLE();
@@ -258,7 +258,7 @@ PyDoc_STRVAR(_Graph_remove_edge__doc__,
 static PyObject*
 Graph_remove_edge(GraphObject* self, PyObject* args)
 {
-	GraphReturnID returnId;
+	GraphRet returnId;
 	PyObject *u, *v;
 	if (!PyArg_ParseTuple(args,
 		"OO:pygraph.Graph.remove_edge",
@@ -268,13 +268,13 @@ Graph_remove_edge(GraphObject* self, PyObject* args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		Py_RETURN_NONE;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+	case GRAPH_DOES_NOT_CONTAIN_EDGE:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Edge not found in graph");
 		break;
@@ -292,7 +292,7 @@ PyDoc_STRVAR(_Graph_get_edge__doc__,
 static PyObject*
 Graph_get_edge(GraphObject* self, PyObject* args)
 {
-	GraphReturnID returnId;
+	GraphRet returnId;
 	PyObject *u, *v, *uv;
 	if (!PyArg_ParseTuple(args,
 		"OO:pygraph.Graph.remove_edge",
@@ -302,14 +302,14 @@ Graph_get_edge(GraphObject* self, PyObject* args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		Py_INCREF(uv);
 		return uv;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_EDGE:
+	case GRAPH_DOES_NOT_CONTAIN_EDGE:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Edge not found in graph");
 		break;
@@ -363,10 +363,10 @@ Graph_neighbours(GraphObject *self, PyObject *args, PyObject *kw)
 {
 	int in = 1, out = 1;
 	size_t size;
-	GraphReturnID returnId;
+	GraphRet returnId;
 	PyObject *vertex, *tuple = NULL, *subtuple, *neighbour, *edge;
-	GraphReturnID (*getDegree)(Graph *, void *, size_t *);
-	GraphReturnID (*getPrevious)(Graph *, void *, void **, void **);
+	GraphRet (*getDegree)(Graph *, void *, size_t *);
+	GraphRet (*getPrevious)(Graph *, void *, void **, void **);
 	static char *keywords[] = { "vertex", "ingoing", "outgoing", NULL };
 	if (!PyArg_ParseTupleAndKeywords(args, kw,
 		"O|pp:pygraph.Graph.neighbours", keywords, &vertex, &in, &out))
@@ -387,9 +387,7 @@ Graph_neighbours(GraphObject *self, PyObject *args, PyObject *kw)
 	}
 	if (returnId = getDegree(self->ob_graph, vertex, &size)) {
 		switch (returnId) {
-		case GRAPH_RETURN_INVALID_PARAMETER:
-			goto badinternalcall_exit;
-		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+		case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 			PyErr_SetString(PyExc_RuntimeError,
 				"Vertex not found in graph");
 			goto exit;
@@ -434,8 +432,8 @@ Graph_degree(GraphObject *self, PyObject *args, PyObject *kw)
 	int in = 1, out = 1;
 	size_t size;
 	PyObject *vertex;
-	GraphReturnID returnId;
-	GraphReturnID(*getDegree)(Graph *, void *, size_t *);
+	GraphRet returnId;
+	GraphRet(*getDegree)(Graph *, void *, size_t *);
 	static char *keywords[] = { "vertex", "ingoing", "outgoing", NULL };
 	if (!PyArg_ParseTupleAndKeywords(args, kw,
 		"O|pp:pygraph.Graph.degree", keywords, &vertex, &in, &out))
@@ -453,9 +451,7 @@ Graph_degree(GraphObject *self, PyObject *args, PyObject *kw)
 	}
 	if (returnId = getDegree(self->ob_graph, vertex, &size)) {
 		switch (returnId) {
-		case GRAPH_RETURN_INVALID_PARAMETER:
-			goto badinternalcall_exit;
-		case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+		case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 			PyErr_SetString(PyExc_RuntimeError,
 				"Vertex not found in graph");
 			goto exit;
@@ -464,8 +460,6 @@ Graph_degree(GraphObject *self, PyObject *args, PyObject *kw)
 		}
 	}
 	return PyLong_FromSize_t(size);
-badinternalcall_exit:
-	PyErr_BadInternalCall();
 exit:
 	return NULL;
 }
@@ -481,12 +475,9 @@ Graph_get_flag(GraphObject *self, PyObject *obj)
 {
 	int flag;
 	switch (graphGetVertexFlag(self->ob_graph, obj, &flag)) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		return PyLong_FromLong(flag);
-	case GRAPH_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
@@ -510,12 +501,9 @@ Graph_set_flag(GraphObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "Oi:pygraph.Graph.set_flag", &vertex, &flag))
 		return NULL;
 	switch (graphSetVertexFlag(self->ob_graph, vertex, flag)) {
-	case GRAPH_RETURN_OK:
+	case GRAPH_OK:
 		Py_RETURN_NONE;
-	case GRAPH_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
-	case GRAPH_RETURN_DOES_NOT_CONTAIN_VERTEX:
+	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;

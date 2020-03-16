@@ -1,12 +1,11 @@
 #include "queue.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "tester.h"
-#include "var.h"
-
-#define matches(a, b) (strcmp(a, b) == 0)
+#include "testerutils.h"
 
 const char *TesterHelpStrings[] = {
 	"This is the queue test module",
@@ -21,51 +20,50 @@ const char *TesterHelpStrings[] = {
 
 static char buffer[BUFSIZ];
 static Queue *pQueue = NULL;
-static TesterReturnValue convertReturnValue(QueueReturnID queueId);
+static TesterReturnValue convertReturnValue(QueueRet queueId);
 
 TesterReturnValue TesterInitCallback()
 {
-	if (queueCreate(&pQueue, varDestroy))
-		return TESTER_RETURN_MALLOC;
-	return TESTER_RETURN_OK;
+	if (queueCreate(&pQueue, free))
+		return TESTER_MALLOC;
+	return TESTER_OK;
 }
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-	Variable *var, *var2;
-	QueueReturnID queueId = QUEUE_RETURN_OK;
+	char *str1, *str2;
+	QueueRet queueId = QUEUE_OK;
 	if matches(command, "queue") {
 		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_RETURN_ARGUMENT;
-		if (varCreate(buffer, &var) != VAR_RETURN_OK)
-			return TESTER_RETURN_MALLOC;
-		if (queueId = queueQueue(pQueue, var))
-			varDestroy(var);
+			return TESTER_ARGUMENT;
+		if ((str1 = strdup(buffer)) == NULL)
+			return TESTER_MALLOC;
+		if (queueId = queueQueue(pQueue, str1))
+			free(str1);
 	} else if matches(command, "dequeue") {
 		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_RETURN_ARGUMENT;
-		if (varCreate(buffer, &var) != VAR_RETURN_OK)
-			return TESTER_RETURN_MALLOC;
-		if (queueId = queueDequeue(pQueue, &var2)) {
-			varDestroy(var);
+			return TESTER_ARGUMENT;
+		if ((str1 = strdup(buffer)) == NULL)
+			return TESTER_MALLOC;
+		if (queueId = queueDequeue(pQueue, &str2)) {
+			free(str1);
 		} else {
-			int result;
-			VarReturnID varId = varCompare(var, var2, &result);
-			varDestroy(var);
-			varDestroy(var2);
-			if (varId || !result)
-				return TESTER_RETURN_RETURN;
+			int equal = matches(str1, str2);
+			free(str1);
+			free(str2);
+			if (!equal)
+				return TESTER_RETURN;
 		}
 	} else if matches(command, "empty") {
 		int expected, obtained;
 		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_RETURN_ARGUMENT;
-		expected = matches(buffer, "true");
+			return TESTER_ARGUMENT;
+		expected = TesterGetYesOrNoFromString(buffer);
 		queueId = queueIsEmpty(pQueue, &obtained);
-		if (queueId == QUEUE_RETURN_OK && expected != obtained)
-			return TESTER_RETURN_RETURN;
+		if (queueId == QUEUE_OK && expected != obtained)
+			return TESTER_RETURN;
 	} else {
-		return TESTER_RETURN_COMMAND;
+		return TESTER_COMMAND;
 	}
 	return convertReturnValue(queueId);
 }
@@ -74,23 +72,17 @@ TesterReturnValue TesterExitCallback()
 {
 	queueDestroy(pQueue);
 	pQueue = NULL;
-#ifdef _DEBUG
-	if (varGetRefCount())
-		return TESTER_RETURN_MEMLEAK;
-#endif
-	return TESTER_RETURN_OK;
+	return TESTER_OK;
 }
 
-static TesterReturnValue convertReturnValue(QueueReturnID queueId)
+static TesterReturnValue convertReturnValue(QueueRet queueId)
 {
 	switch (queueId) {
-	case QUEUE_RETURN_OK:
-		return TESTER_RETURN_OK;
-	case QUEUE_RETURN_EMPTY:
+	case QUEUE_OK:
+		return TESTER_OK;
+	case QUEUE_EMPTY:
 		return TesterExternalReturnValue("empty");
-	case QUEUE_RETURN_INVALID_PARAMETER:
-		return TesterExternalReturnValue("parameter");
-	case QUEUE_RETURN_MEMORY:
+	case QUEUE_MEMORY:
 		return TesterExternalReturnValue("malloc");
 	default:
 		return TesterExternalReturnValue("unknown");

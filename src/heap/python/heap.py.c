@@ -167,13 +167,10 @@ Heap_init(HeapObject *self, PyObject *args, PyObject *kw)
 	}
 	switch (heapCreate(&self->ob_heap, initialSize,
 		cmpCallback, decRefCallback, self)) {
-	case HEAP_RETURN_OK:
+	case HEAP_OK:
 		break;
-	case HEAP_RETURN_MEMORY:
+	case HEAP_MEMORY:
 		PyErr_SetString(PyExc_MemoryError, "Could not create heap");
-		return -1;
-	case HEAP_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
 		return -1;
 	default:
 		Py_UNREACHABLE();
@@ -207,15 +204,12 @@ Heap_insert(HeapObject *self, PyObject *obj)
 		goto exit;
 	}
 	switch (heapInsert(self->ob_heap, obj)) {
-	case HEAP_RETURN_OK:
+	case HEAP_OK:
 		Py_INCREF(obj);
 		if (PyErr_Occurred())
 			goto exit;
 		Py_RETURN_NONE;
-	case HEAP_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
-	case HEAP_RETURN_FULL:
+	case HEAP_FULL:
 		_Heap_throw_error(PyExc_Full);
 		break;
 	default:
@@ -234,7 +228,7 @@ PyDoc_STRVAR(_Heap_extract__doc__,
 static PyObject *
 Heap_extract(HeapObject *self, PyObject *Py_UNUSED(ignored))
 {
-	HeapReturnID returnId;
+	HeapRet returnId;
 	PyObject *obj = NULL;
 	if (self->lock) {
 		_Heap_throw_error(PyExc_Lock);
@@ -246,13 +240,10 @@ Heap_extract(HeapObject *self, PyObject *Py_UNUSED(ignored))
 		goto exit;
 	}
 	switch (returnId) {
-	case HEAP_RETURN_OK:
+	case HEAP_OK:
 		// Borrow reference
 		return obj;
-	case HEAP_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
-	case HEAP_RETURN_EMPTY:
+	case HEAP_EMPTY:
 		_Heap_throw_error(PyExc_Empty);
 		break;
 	default:
@@ -273,11 +264,8 @@ Heap_size(HeapObject *self, PyObject *Py_UNUSED(ignored))
 {
 	size_t size;
 	switch (heapGetSize(self->ob_heap, &size)) {
-	case HEAP_RETURN_OK:
+	case HEAP_OK:
 		return PyLong_FromSize_t(size);
-	case HEAP_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
 	default:
 		Py_UNREACHABLE();
 	}
@@ -311,15 +299,12 @@ Heap_resize(HeapObject *self, PyObject *obj)
 		goto exit;
 	}
 	switch (heapResize(self->ob_heap, size)) {
-	case HEAP_RETURN_OK:
+	case HEAP_OK:
 		Py_RETURN_NONE;
-	case HEAP_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
-	case HEAP_RETURN_SHRINK:
+	case HEAP_SHRINK:
 		_Heap_throw_error(PyExc_Shrink);
 		break;
-	case HEAP_RETURN_MEMORY:
+	case HEAP_MEMORY:
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not resize heap due to lack of memory");
 		break;

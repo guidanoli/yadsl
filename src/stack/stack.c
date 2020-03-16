@@ -15,7 +15,7 @@ struct Stack
 	struct StackItem *first;
 };
 
-StackReturnID stackCreate(Stack **ppStack)
+StackRet stackCreate(Stack **ppStack)
 {
 	Stack *st;
 	st = malloc(sizeof(struct Stack));
@@ -37,7 +37,7 @@ struct StackItem *alloc_item(void *object, struct StackItem *first)
 	return item;
 }
 
-StackReturnID stackAdd(Stack *pStack, void *object)
+StackRet stackAdd(Stack *pStack, void *object)
 {
 	struct StackItem *item = alloc_item(object, pStack->first);
 	if (object == NULL)
@@ -46,13 +46,13 @@ StackReturnID stackAdd(Stack *pStack, void *object)
 	return STACK_OK;
 }
 
-StackReturnID stackEmpty(Stack *pStack, int *pIsEmpty)
+StackRet stackEmpty(Stack *pStack, int *pIsEmpty)
 {
 	*pIsEmpty = !pStack->first;
 	return STACK_OK;
 }
 
-StackReturnID stackRemove(Stack *pStack, void **pObject)
+StackRet stackRemove(Stack *pStack, void **pObject)
 {
 	struct StackItem *first = pStack->first;
 	if (!first) return STACK_EMPTY;

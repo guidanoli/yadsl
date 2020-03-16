@@ -23,55 +23,55 @@ double val, eax = -1.0; /* Last computed value */
 
 TesterReturnValue TesterInitCallback()
 {
-	return TESTER_RETURN_OK;
+	return TESTER_OK;
 }
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
 	if matches(command, "diff"){
 		if (TesterParseArguments("ss", X, Y) != 2)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		eax = diff(X, Y);
 		if (eax == -1.0)
-			return TESTER_RETURN_MALLOC;
+			return TESTER_MALLOC;
 		TesterLog("diff = %lf", eax);
 	} else if matches(command, "equ") {
 		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		if (!(eax == val))
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "neq") {
 		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		if (!(eax != val))
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "gtr") {
 		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		if (!(eax > val))
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "lwr") {
 		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		if (!(eax < val))
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "geq") {
 		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		if (!(eax >= val))
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "leq") {
 		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		if (!(eax <= val))
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else {
-		return TESTER_RETURN_COMMAND;
+		return TESTER_COMMAND;
 	}
-	return TESTER_RETURN_OK;
+	return TESTER_OK;
 }
 
 TesterReturnValue TesterExitCallback()
 {
-	return TESTER_RETURN_OK;
+	return TESTER_OK;
 }

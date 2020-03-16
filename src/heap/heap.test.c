@@ -25,23 +25,21 @@ static Heap *pHeap;
 TesterReturnValue TesterInitCallback()
 {
     pHeap = NULL;
-    return TESTER_RETURN_OK;
+    return TESTER_OK;
 }
 
-TesterReturnValue convert(HeapReturnID heapReturnValue)
+TesterReturnValue convert(HeapRet heapReturnValue)
 {
     switch (heapReturnValue) {
-    case HEAP_RETURN_OK:
-        return TESTER_RETURN_OK;
-    case HEAP_RETURN_EMPTY:
+    case HEAP_OK:
+        return TESTER_OK;
+    case HEAP_EMPTY:
         return TesterExternalReturnValue("empty");
-    case HEAP_RETURN_FULL:
+    case HEAP_FULL:
         return TesterExternalReturnValue("full");
-    case HEAP_RETURN_SHRINK:
+    case HEAP_SHRINK:
         return TesterExternalReturnValue("shrink");
-    case HEAP_RETURN_INVALID_PARAMETER:
-        return TesterExternalReturnValue("invalid parameter");
-    case HEAP_RETURN_MEMORY:
+    case HEAP_MEMORY:
         return TesterExternalReturnValue("memory");
     default:
         return TesterExternalReturnValue("unknown");
@@ -55,12 +53,12 @@ int cmpObjs(void *a, void *b, void *_unused)
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-    HeapReturnID returnId = HEAP_RETURN_OK;
+    HeapRet returnId = HEAP_OK;
     if matches(command, "create") {
         size_t size;
         Heap *temp;
         if (TesterParseArguments("z", &size) != 1)
-            return TESTER_RETURN_ARGUMENT;
+            return TESTER_ARGUMENT;
         if (pHeap != NULL)
             heapDestroy(pHeap);
         returnId = heapCreate(&temp, size, cmpObjs, free, NULL);
@@ -69,10 +67,10 @@ TesterReturnValue TesterParseCallback(const char *command)
     } else if matches(command, "insert") {
         int obj, *pObj;
         if (TesterParseArguments("i", &obj) != 1)
-            return TESTER_RETURN_ARGUMENT;
+            return TESTER_ARGUMENT;
         pObj = malloc(sizeof(int));
         if (!pObj)
-            return TESTER_RETURN_MALLOC;
+            return TESTER_MALLOC;
         *pObj = obj;
         returnId = heapInsert(pHeap, pObj);
         if (returnId)
@@ -80,28 +78,28 @@ TesterReturnValue TesterParseCallback(const char *command)
     } else if matches(command, "extract") {
         int *pObj, actual, expected;
         if (TesterParseArguments("i", &expected) != 1)
-            return TESTER_RETURN_ARGUMENT;
+            return TESTER_ARGUMENT;
         returnId = heapExtract(pHeap, &pObj);
         if (!returnId) {
             actual = *pObj;
             free(pObj);
             if (actual != expected)
-                return TESTER_RETURN_RETURN;
+                return TESTER_RETURN;
         }
     } else if matches(command, "size") {
         size_t actual, expected;
         if (TesterParseArguments("z", &expected) != 1)
-            return TESTER_RETURN_ARGUMENT;
+            return TESTER_ARGUMENT;
         returnId = heapGetSize(pHeap, &actual);
         if (!returnId && actual != expected)
-            return TESTER_RETURN_RETURN;
+            return TESTER_RETURN;
     } else if matches(command, "resize") {
         size_t newSize;
         if (TesterParseArguments("z", &newSize) != 1)
-            return TESTER_RETURN_ARGUMENT;
+            return TESTER_ARGUMENT;
         returnId = heapResize(pHeap, newSize);
     } else {
-        return TESTER_RETURN_COMMAND;
+        return TESTER_COMMAND;
     }
     return convert(returnId);
 }
@@ -112,6 +110,6 @@ TesterReturnValue TesterExitCallback()
         heapDestroy(pHeap);
         pHeap = NULL;
     }
-    return TESTER_RETURN_OK;
+    return TESTER_OK;
 }
 

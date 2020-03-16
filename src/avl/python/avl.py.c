@@ -216,13 +216,10 @@ AVL_init(AVLObject *self, PyObject *args, PyObject *kw)
 		}
 	}
 	switch (avlCreate(&self->ob_tree, cmpCallback, decRefCallback, self)) {
-	case AVL_RETURN_OK:
+	case AVL_OK:
 		break;
-	case AVL_RETURN_MEMORY:
+	case AVL_MEMORY:
 		PyErr_SetString(PyExc_MemoryError, "Could not create avl tree");
-		return -1;
-	case AVL_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
 		return -1;
 	default:
 		Py_UNREACHABLE();
@@ -259,19 +256,16 @@ AVL_add(AVLObject *self, PyObject *obj)
 		return NULL;
 	}
 	switch (avlInsert(self->ob_tree, obj, &exists)) {
-	case AVL_RETURN_OK:
+	case AVL_OK:
 		_memdb_dump();
 		if (!exists)
 			Py_INCREF(obj);
 		if (PyErr_Occurred())
 			return NULL;
 		return PyBool_FromLong(!exists);
-	case AVL_RETURN_MEMORY:
+	case AVL_MEMORY:
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not allocate memory for newly added item in tree");
-		break;
-	case AVL_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
 		break;
 	default:
 		Py_UNREACHABLE();
@@ -294,14 +288,11 @@ AVL_remove(AVLObject *self, PyObject *obj)
 		return NULL;
 	}
 	switch (avlDelete(self->ob_tree, obj, &exists)) {
-	case AVL_RETURN_OK:
+	case AVL_OK:
 		_memdb_dump();
 		if (PyErr_Occurred())
 			return NULL;
 		Py_RETURN_NONE;
-	case AVL_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
 	default:
 		Py_UNREACHABLE();
 	}
@@ -323,13 +314,10 @@ AVL_contains(AVLObject *self, PyObject *obj)
 		return NULL;
 	}
 	switch (avlSearch(self->ob_tree, obj, &exists)) {
-	case AVL_RETURN_OK:
+	case AVL_OK:
 		if (PyErr_Occurred())
 			return NULL;
 		return PyBool_FromLong(exists);
-	case AVL_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
 	default:
 		Py_UNREACHABLE();
 	}
@@ -362,16 +350,13 @@ AVL_iterate(AVLObject *self, PyObject *obj)
 	arg.ao = self;
 	arg.func = obj;
 	switch (avlTraverse(self->ob_tree, visitCallback, &arg, &ret)) {
-	case AVL_RETURN_OK:
+	case AVL_OK:
 		_memdb_dump();
 		if (PyErr_Occurred())
 			goto exit;
 		if (ret == NULL)
 			Py_RETURN_NONE;
 		return ret;
-	case AVL_RETURN_INVALID_PARAMETER:
-		PyErr_BadInternalCall();
-		break;
 	default:
 		Py_UNREACHABLE();
 	}

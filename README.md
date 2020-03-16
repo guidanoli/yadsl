@@ -29,6 +29,24 @@ ctest -C <CONFIG>
 
 Where `CONFIG` stands for the project configuration (like `Debug` or `Release`).
 
+## Documentation details
+
+Each function has the following fields documented:
+
+* **name**: function name
+* **description**: function description
+* **parameters**: parameter description and tags
+* **possible error values**: and eventual annotations
+
+Along with a parameter there might be one or more tags associated:
+
+* **ret**: parameter returned by reference and **not owned** by the caller
+* **owned ret**: parameter returned by reference and **owned** by the caller
+* **opt**: parameter (typically a pointer) can assume **`NULL`**
+* **owned**: if the function succeeds, the parameter is **owned** by data structure 
+
+**DISCLAIMER:** A parameter cannot be NULL unless otherwise said so.
+
 ## Python modules
 
 Some modules have Python bindings, which comprehend each a source file (`module.py.c`) and a test file (`module_test.py`), as well as a `CMakeLists.txt` file. They are always contained inside the `python` folder of the corresponding C module.

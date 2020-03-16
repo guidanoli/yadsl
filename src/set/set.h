@@ -9,205 +9,173 @@
 //  /____/\___/\__/  
 //  
 //
-// A Set starts empty.
+//  A Set starts empty.
 // You are able to add and remove items (opaque pointers),
 // check if items are contained within a set or not,
 // and iterate through them.
-// It does not acquire the ownership of the items it
+//
+//  It does not acquire the ownership of the items it
 // stores and, therefore, does not deallocates them
 // when destroyed.
-// HINT: SET_RETURN_OK will always be 0, therefore
-// it can be used as a boolean value to check if a
-// function went OK or not, eg:
-// if (setId = setFunction(pSet)) { ... }
-// HINT: The set stores items according to their
-// address, thus, totally arbitrarily. The list
-// does not give any information about the value
-// stored at all.
+//
+// HINTS
+// -----
+//
+//  Items can assume NULL (0) value.
+//
+//  The filtering function takes an item and the additional
+// argument as parameters and should return a boolean value
+// indicating if the item is the one to be filtered. If 'True'
+// is returned, the iteration stops and the item is returned
+// by reference (yet, the ownership is still the set's).
+//
+//  If the set state is changed while filtering, the function
+// will be recursively. No guarantee is given that the call
+// will terminate.
 //
 
 typedef enum
 {
-	/* All went ok */
-	SET_RETURN_OK = 0,
-
-	/* Invalid parameter was provided */
-	SET_RETURN_INVALID_PARAMETER,
-
-	/* Could not allocate memory space */
-	SET_RETURN_MEMORY,
-
-	/* Set contains item */
-	SET_RETURN_CONTAINS,
-
-	/* Set does not contain item */
-	SET_RETURN_DOES_NOT_CONTAIN,
-
-	/* Empty set */
-	SET_RETURN_EMPTY,
-
-	/* Could not go backwards or forward in list */
-	SET_RETURN_OUT_OF_BOUNDS,
-
+	SET_OK = 0,
+	SET_MEMORY,
+	SET_CONTAINS,
+	SET_DOES_NOT_CONTAIN,
+	SET_EMPTY,
+	SET_OUT_OF_BOUNDS,
 }
-SetReturnID;
+SetRet;
 
 typedef struct Set Set;
 
 #include <stddef.h>
 
-/**
-* Create an empty set
-* ppSet	 address of pointer to set
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "ppSet" is NULL
-* SET_RETURN_MEMORY
-*/
-SetReturnID setCreate(Set **ppSet);
+//  =========== ============================ 
+//   setCreate   Create an empty set         
+//  =========== ============================ 
+//   ppSet       (owned ret) pointer to set  
+//  =========== ============================ 
+//  [!] SET_MEMORY
 
-/**
-* Check whether set contains item or not
-* pSet	  pointer to set
-* item	  item to be consulted
-* Possible return values:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* SET_RETURN_CONTAINS
-* 	- set contains item
-* SET_RETURN_DOES_NOT_CONTAIN
-* 	- set does not contain item
-*/
-SetReturnID setContainsItem(Set *pSet, void *item);
+SetRet setCreate(Set **ppSet);
 
-/**
-* Filter through the set with a filtering function and returns
-* the first item that returns with positive response.
-* pSet      pointer to set
-* func      filtering function: takes an item from the set and
-*           an auxiliary argument as parameters, in that order,
-*           and returns a boolean.
-* arg       auxiliary argument parsed to the filtering function
-* pItem     address of pointer that will point to the found item
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* 	- "func" is NULL
-* 	- "pItem" is NULL
-* SET_RETURN_DOES_NOT_CONTAIN
-* 	- set does not contain such item
-* [!] The filter function must not alter the set state (like adding,
-* deleting or freeing items), since it can corrupt the set
-*/
-SetReturnID setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
+//  ================= ======================================== 
+//   setContainsItem   Check whether set contains item or not  
+//  ================= ======================================== 
+//   pSet              pointer to set                          
+//   item              item to be checked                      
+//  ================= ======================================== 
+//  [!] SET_CONTAINS
+//  [!] SET_DOES_NOT_CONTAIN
+
+SetRet setContainsItem(Set *pSet, void *item);
+
+//  =============== ==================================== 
+//   setFilterItem      Filter item from set             
+//  =============== ==================================== 
+//   pSet            pointer to set                     
+//   func            filtering function                
+//   arg             (opt) additional argument to func   
+//   pItem           (ret) filtered item                 
+//  =============== ==================================== 
+//  [!] SET_DOES_NOT_CONTAIN: no item filtered
+
+SetRet setFilterItem(Set *pSet, int (*func) (void *item, void *arg),
 	void *arg, void **pItem);
 
-/**
-* Adds item to set
-* pSet      pointer to set
-* item      item to be added
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* SET_RETURN_CONTAINS
-* 	- set already contains item
-* SET_RETURN_MEMORY
-*/
-SetReturnID setAddItem(Set *pSet, void *item);
+//  ============ ========================== 
+//   setAddItem   Add item to set           
+//  ============ ========================== 
+//   pSet         pointer to set           
+//   item         (owned) item to be added  
+//  ============ ========================== 
+//  [!] SET_CONTAINS
+//  [!] SET_MEMORY
 
-/**
-* Remove item from set
-* pSet  pointer to set
-* item	item to be removed
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* SET_RETURN_DOES_NOT_CONTAIN
-* 	- set does not contain item
-*/
-SetReturnID setRemoveItem(Set *pSet, void *item);
+SetRet setAddItem(Set *pSet, void *item);
 
-/**
-* Obtain item currently pointed by the cursor
-* pSet      pointer to set
-* pItem     address of variable that will hold the item
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* 	- "pItem" is NULL
-* SET_RETURN_EMPTY
-*/
-SetReturnID setGetCurrentItem(Set *pSet, void **pItem);
+//  =============== ====================== 
+//   setRemoveItem   Remove item from set  
+//  =============== ====================== 
+//   pSet            pointer to set        
+//   item            item to be removed    
+//  =============== ====================== 
+//  [!] SET_DOES_NOT_CONTAIN
 
-/**
-* Obtain number of items contained in the set
-* pSet      pointer to set
-* pSize	    address of variable that will hold the value
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* 	- "pSize" is NULL
-*/
-SetReturnID setGetSize(Set *pSet, size_t *pSize);
+SetRet setRemoveItem(Set *pSet, void *item);
 
-/**
-* Make cursor point to the previous item
-* pSet	  pointer to set
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* SET_RETURN_EMPTY
-* SET_RETURN_OUT_OF_BOUNDS
-* 	- current item is the first in the set
-*/
-SetReturnID setPreviousItem(Set *pSet);
+//  =================== ========================================== 
+//   setGetCurrentItem   Get item currently pointed by the cursor  
+//  =================== ========================================== 
+//   pSet                pointer to set                            
+//   pItem               (ret) item pointed by the cursor          
+//  =================== ========================================== 
+//  [!] SET_EMPTY
 
-/**
-* Make cursor point to the next item
-* pSet     pointer to set
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* SET_RETURN_EMPTY
-* SET_RETURN_OUT_OF_BOUNDS
-* 	- current item is the last in the set
-*/
-SetReturnID setNextItem(Set *pSet);
+SetRet setGetCurrentItem(Set *pSet, void **pItem);
 
-/**
-* Make cursor point to the first item
-* pSet	  pointer to set
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* SET_RETURN_EMPTY
-*/
-SetReturnID setFirstItem(Set *pSet);
+//  ============ ======================= 
+//   setGetSize    Get set cardinality   
+//  ============ ======================= 
+//   pSet         pointer to set         
+//   pSize        (ret) set cardinality  
+//  ============ ======================= 
 
-/**
-* Make cursor point to the last item
-* pSet  pointer to set
-* Possible errors:
-* SET_RETURN_INVALID_PARAMETER
-* 	- "pSet" is NULL
-* SET_RETURN_EMPTY
-*/
-SetReturnID setLastItem(Set *pSet);
+SetRet setGetSize(Set *pSet, size_t *pSize);
 
-/**
-* Free set structure from memory
-* pSet  pointer to set
-*/
+//  ================= ======================================== 
+//   setPreviousItem   Make cursor point to the previous item  
+//  ================= ======================================== 
+//   pSet              pointer to set                          
+//  ================= ======================================== 
+//  [!] SET_EMPTY
+//  [!] SET_OUT_OF_BOUNDS: current item is the first in the set
+
+SetRet setPreviousItem(Set *pSet);
+
+//  ============= ==================================== 
+//   setNextItem   Make cursor point to the next item  
+//  ============= ==================================== 
+//   pSet          pointer to set                      
+//  ============= ==================================== 
+//  [!] SET_EMPTY
+//  [!] SET_OUT_OF_BOUNDS: current item is the last in the set
+
+SetRet setNextItem(Set *pSet);
+
+//  ============== ===================================== 
+//   setFirstItem   Make cursor point to the first item  
+//  ============== ===================================== 
+//   pSet           pointer to set                       
+//  ============== ===================================== 
+//  [!] SET_EMPTY
+
+SetRet setFirstItem(Set *pSet);
+
+//  ============= ==================================== 
+//   setLastItem   Make cursor point to the last item  
+//  ============= ==================================== 
+//   pSet          pointer to set                      
+//  ============= ==================================== 
+//  [!] SET_EMPTY
+
+SetRet setLastItem(Set *pSet);
+
+//  ============ ======================================== 
+//   setDestroy   Deallocate set and its remaining items  
+//  ============ ======================================== 
+//   pSet         pointer to set                          
+//  ============ ======================================== 
+
 void setDestroy(Set *pSet);
 
-/**
-* Free set structure from memory and call a special function
-* for each item that is removed, avoiding memory leak
-* pSet      pointer to set
-* freeItem  function that will be called for every
-*           item in the set exactly once
-* arg       auxiliary argument
-*/
+//  ============ ======================================== 
+//   setDestroy   Deallocate set and its remaining items  
+//  ============ ======================================== 
+//   pSet         pointer to set                          
+//   freeItem     item deallocation function              
+//   arg          additional argument passed to freeItem  
+//  ============ ======================================== 
+
 void setDestroyDeep(Set *pSet, void (*freeItem)(void *item, void *arg), void *arg);
 
 #endif

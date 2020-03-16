@@ -42,7 +42,7 @@ void *visit_cb_range(void *object, void *arg)
 	assert(arg == &pTree);
 	curr = *((int *) object);
 	if (curr != first)
-		cbReturnValue = TESTER_RETURN_RETURN;
+		cbReturnValue = TESTER_RETURN;
 	else
 		if (first < last)
 			++first;
@@ -59,29 +59,27 @@ void *visit_cb(void *object, void *arg)
 	actual = *((int *) object);
 	if (TesterParseArguments("i", &expected) != 1) {
 		if (!cbReturnValue)
-			cbReturnValue = TESTER_RETURN_ARGUMENT;
+			cbReturnValue = TESTER_ARGUMENT;
 		return 0;
 	}
 	if (!cbReturnValue && actual != expected)
-		cbReturnValue = TESTER_RETURN_RETURN;
+		cbReturnValue = TESTER_RETURN;
 	return 0;
 }
 
 TesterReturnValue TesterInitCallback()
 {
 	if (avlCreate(&pTree, cmpObjs, free, &pTree))
-		return TESTER_RETURN_MALLOC;
-	return TESTER_RETURN_OK;
+		return TESTER_MALLOC;
+	return TESTER_OK;
 }
 
-TesterReturnValue convert(AVLReturnId returnId)
+TesterReturnValue convert(AVLRet returnId)
 {
 	switch (returnId) {
-	case AVL_RETURN_OK:
-		return TESTER_RETURN_OK;
-	case AVL_RETURN_INVALID_PARAMETER:
-		return TesterExternalReturnValue("invalid parameter");
-	case AVL_RETURN_MEMORY:
+	case AVL_OK:
+		return TESTER_OK;
+	case AVL_MEMORY:
 		return TesterExternalReturnValue("memory");
 	default:
 		return TesterExternalReturnValue("unknown");
@@ -98,7 +96,7 @@ int getYesOrNoFromString(const char *str)
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-	AVLReturnId returnId = AVL_RETURN_OK;
+	AVLRet returnId = AVL_OK;
 	if matches(command, "new") {
 		AVL *newTree;
 		returnId = avlCreate(&newTree, cmpObjs, free, &pTree);
@@ -110,25 +108,25 @@ TesterReturnValue TesterParseCallback(const char *command)
 		int *pNumber, actual, expected;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
-			return TESTER_RETURN_MALLOC;
+			return TESTER_MALLOC;
 		if (TesterParseArguments("is", pNumber, buffer) != 2)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		expected = !getYesOrNoFromString(buffer);
 		returnId = avlInsert(pTree, pNumber, &actual);
 		if (returnId || actual)
 			free(pNumber);
 		if (!returnId && actual != expected)
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "insert*") {
 		int first, last, expected, actual;
 		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		expected = !getYesOrNoFromString(buffer);
 		do {
 			int *pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
-				return TESTER_RETURN_MALLOC;
+				return TESTER_MALLOC;
 			*pNumber = first;
 			returnId = avlInsert(pTree, pNumber, &actual);
 			if (returnId || actual) {
@@ -136,7 +134,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 				break;
 			}
 			if (!returnId && actual != expected)
-				return TESTER_RETURN_RETURN;
+				return TESTER_RETURN;
 			if (first < last)
 				++first;
 			else if (first > last)
@@ -146,20 +144,20 @@ TesterReturnValue TesterParseCallback(const char *command)
 		int actual, expected, *pNumber;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
-			return TESTER_RETURN_MALLOC;
+			return TESTER_MALLOC;
 		if (TesterParseArguments("is", pNumber, buffer) != 2)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
 			TesterLog("Expected YES or NO, but got %s. Assumed NO.", buffer);
 		returnId = avlSearch(pTree, pNumber, &actual);
 		free(pNumber);
 		if (!returnId && actual != expected)
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "contains*") {
 		int first, last, expected, actual;
 		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
 			TesterLog("Expected YES or NO, but got %s. Assumed NO.", buffer);
@@ -167,28 +165,28 @@ TesterReturnValue TesterParseCallback(const char *command)
 			int *pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
-				return TESTER_RETURN_MALLOC;
+				return TESTER_MALLOC;
 			*pNumber = first;
 			returnId = avlSearch(pTree, pNumber, &actual);
 			free(pNumber);
 			if (returnId)
 				break;
 			else if (actual != expected)
-				return TESTER_RETURN_RETURN;
+				return TESTER_RETURN;
 			if (first < last)
 				++first;
 			else if (first > last)
 				--first;
 		} while (first != last);
 	} else if matches(command, "traverse") {
-		cbReturnValue = AVL_RETURN_OK;
+		cbReturnValue = AVL_OK;
 		returnId = avlTraverse(pTree, visit_cb, &pTree, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
 	} else if matches(command, "traverse*") {
-		cbReturnValue = AVL_RETURN_OK;
+		cbReturnValue = AVL_OK;
 		if (TesterParseArguments("ii", &first, &last) != 2)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		returnId = avlTraverse(pTree, visit_cb_range, &pTree, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
@@ -196,38 +194,38 @@ TesterReturnValue TesterParseCallback(const char *command)
 		int *pNumber, expected, actual;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
-			return TESTER_RETURN_MALLOC;
+			return TESTER_MALLOC;
 		if (TesterParseArguments("is", pNumber, buffer) != 2)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		expected = getYesOrNoFromString(buffer);
 		returnId = avlDelete(pTree, pNumber, &actual);
 		free(pNumber);
 		if (!returnId && actual != expected)
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else if matches(command, "delete*") {
 		int first, last, expected, actual;
 		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		expected = getYesOrNoFromString(buffer);
 		do {
 			int *pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
-				return TESTER_RETURN_MALLOC;
+				return TESTER_MALLOC;
 			*pNumber = first;
 			returnId = avlDelete(pTree, pNumber, &actual);
 			free(pNumber);
 			if (returnId)
 				break;
 			else if (actual != expected)
-				return TESTER_RETURN_RETURN;
+				return TESTER_RETURN;
 			if (first < last)
 				++first;
 			else if (first > last)
 				--first;
 		} while (first != last);
 	} else {
-		return TESTER_RETURN_COMMAND;
+		return TESTER_COMMAND;
 	}
 	return convert(returnId);
 }
@@ -236,6 +234,6 @@ TesterReturnValue TesterExitCallback()
 {
 	if (pTree)
 		avlDestroy(pTree);
-	return TESTER_RETURN_OK;
+	return TESTER_OK;
 }
 

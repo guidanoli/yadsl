@@ -78,22 +78,22 @@
 
 /**
 * Enumeration of tester return values.
-* OBS: TESTER_RETURN_COUNT and TESTER_RETURN_EXTERNAL are
+* OBS: TESTER_COUNT and TESTER_EXTERNAL are
 * not meant to be used as return values, since they serve
 * merely for internal purposes.
 */
 typedef enum
 {
-	TESTER_RETURN_OK = 0,
-	TESTER_RETURN_FILE,
-	TESTER_RETURN_MALLOC,
-	TESTER_RETURN_MEMLEAK,
-	TESTER_RETURN_OVERFLOW,
-	TESTER_RETURN_COMMAND,
-	TESTER_RETURN_ARGUMENT,
-	TESTER_RETURN_RETURN,
-	TESTER_RETURN_EXTERNAL,
-	TESTER_RETURN_COUNT,
+	TESTER_OK = 0,
+	TESTER_FILE,
+	TESTER_MALLOC,
+	TESTER_MEMLEAK,
+	TESTER_OVERFLOW,
+	TESTER_COMMAND,
+	TESTER_ARGUMENT,
+	TESTER_RETURN,
+	TESTER_EXTERNAL,
+	TESTER_COUNT,
 }
 TesterReturnValue;
 
@@ -128,7 +128,7 @@ extern TesterReturnValue TesterParseCallback(const char *command);
 
 /**
 * Callback called when TesterParseCallback returns
-* a value different from TESTER_RETURN_OK, or after
+* a value different from TESTER_OK, or after
 * parsing the whole script, if no errors are thrown.
 */
 extern TesterReturnValue TesterExitCallback();

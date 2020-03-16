@@ -6,6 +6,6 @@ set_target_properties(set PROPERTIES
 	POSITION_INDEPENDENT_CODE ON)
 
 if(AA_BUILD_TESTS)
-	add_tester_module(settest SOURCES set.test.c LINKS set var)
+	add_tester_module(settest SOURCES set.test.c LINKS set testerutils)
 	add_tester_scripts(settest SOURCES set.script)
 endif()

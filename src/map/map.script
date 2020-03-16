@@ -14,15 +14,14 @@
 ## One entry
 
 # Put entry
-/put ANSWER 42
+/put ANSWER 42 NO
 
 # Check if entry was put
 /nentries 1
 /get ANSWER 42
 
 # Overwriting entry
-/put ANSWER Seamus
-/catch overwrite
+/put ANSWER Seamus YES
 
 # Checking if entry was overwritten
 /nentries 1
@@ -39,9 +38,9 @@
 ## Many entries
 
 # Putting entries
-/put GOLD "Metal"
-/put NEON "Noble Gas"
-/put HYDROGEN "Metal"
+/put GOLD "Metal" NO
+/put NEON "Noble Gas" NO
+/put HYDROGEN "Metal" NO
 
 # Checking entries
 /nentries 3
@@ -50,8 +49,7 @@
 /get HYDROGEN "Metal"
 
 # Overwriting one of them
-/put HYDROGEN "No Family"
-/catch overwrite
+/put HYDROGEN "No Family" YES
 
 # Checking if entry was overwritten
 /nentries 3

@@ -21,10 +21,10 @@
 
 typedef enum
 {
-	MEM_RETURN_OK = 0,
-	MEM_RETURN_COPY,
-	MEM_RETURN_NOT_FOUND,
-	MEM_RETURN_MEMORY,
+	MEM_OK = 0,
+	MEM_COPY,
+	MEM_NOT_FOUND,
+	MEM_MEMORY,
 }
 _memdb_enum;
 
@@ -69,11 +69,11 @@ static _memdb_enum _memdb_add(void *_mem, size_t _size, const char *file,
 	struct _memdb_node *node;
 	if (node = _memdb_get(_mem)) {
 		*pCopy = node;
-		return MEM_RETURN_COPY;
+		return MEM_COPY;
 	}
 	node = malloc(sizeof(struct _memdb_node));
 	if (node == NULL)
-		return MEM_RETURN_MEMORY;
+		return MEM_MEMORY;
 #ifdef _VERBOSE
 	_memdb_log("Allocated %p (%zuB) in %s:%d.", _mem, _size, file, line);
 #endif
@@ -84,7 +84,7 @@ static _memdb_enum _memdb_add(void *_mem, size_t _size, const char *file,
 	node->next = list;
 	list = node;
 	++listsize;
-	return MEM_RETURN_OK;
+	return MEM_OK;
 }
 
 static _memdb_enum _memdb_remove(void *_mem)
@@ -102,11 +102,11 @@ static _memdb_enum _memdb_remove(void *_mem)
 				prev->next = node->next;
 			free(node);
 			--listsize;
-			return MEM_RETURN_OK;
+			return MEM_OK;
 		}
 		prev = node;
 	}
-	return MEM_RETURN_NOT_FOUND;
+	return MEM_NOT_FOUND;
 }
 
 int _memdb_contains(void *_mem)
@@ -142,7 +142,7 @@ int _memdb_error_occurred()
 
 void _memdb_free(void *_mem)
 {
-	if (_memdb_remove(_mem) == MEM_RETURN_NOT_FOUND) {
+	if (_memdb_remove(_mem) == MEM_NOT_FOUND) {
 		_memdb_log("Freeing block (%p) not in list.", _mem);
 		error_occurred = 1;
 	}
@@ -160,12 +160,12 @@ void *_memdb_malloc(size_t _size, const char *file, const int line)
 	if (_mem) {
 		struct _memdb_node *copy;
 		switch (_memdb_add(_mem, _size, file, line, &copy)) {
-		case MEM_RETURN_OK:
+		case MEM_OK:
 			break;
-		case MEM_RETURN_COPY:
+		case MEM_COPY:
 			assert(0);
 			break;
-		case MEM_RETURN_MEMORY:
+		case MEM_MEMORY:
 			free(_mem);
 			return NULL;
 		default:
@@ -184,12 +184,12 @@ void *_memdb_realloc(void *_mem, size_t _size, const char *file, const int line)
 		if (_memdb_remove(_mem)) assert(0);
 		returnId = _memdb_add(_new_mem, _size, file, line, &copy);
 		switch (returnId) {
-		case MEM_RETURN_OK:
+		case MEM_OK:
 			break;
-		case MEM_RETURN_COPY:
+		case MEM_COPY:
 			assert(0);
 			break;
-		case MEM_RETURN_MEMORY:
+		case MEM_MEMORY:
 			free(_new_mem);
 			return NULL;
 		default:
@@ -205,12 +205,12 @@ void *_memdb_calloc(size_t _cnt, size_t _size, const char *file, const int line)
 	if (_mem) {
 		struct _memdb_node *copy;
 		switch (_memdb_add(_mem, _cnt * _size, file, line, &copy)) {
-		case MEM_RETURN_OK:
+		case MEM_OK:
 			break;
-		case MEM_RETURN_COPY:
+		case MEM_COPY:
 			assert(0);
 			break;
-		case MEM_RETURN_MEMORY:
+		case MEM_MEMORY:
 			free(_mem);
 			return NULL;
 		default:
@@ -226,12 +226,12 @@ char *_memdb_strdup(const char *_str, const char *file, const int line)
 	if (_dup) {
 		struct _memdb_node *copy;
 		switch (_memdb_add(_dup, sizeof(_dup), file, line, &copy)) {
-		case MEM_RETURN_OK:
+		case MEM_OK:
 			break;
-		case MEM_RETURN_COPY:
+		case MEM_COPY:
 			assert(0);
 			break;
-		case MEM_RETURN_MEMORY:
+		case MEM_MEMORY:
 			free(_dup);
 			return NULL;
 		default:

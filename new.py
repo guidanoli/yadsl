@@ -51,13 +51,15 @@ def new_project(prj, test = True, python = False, **kwargs):
 			lines += ["#include \"{}.h\"".format(h) for h in headers]
 			lines += ["", "#include \"tester.h\""]
 			lines += ["", "const char *TesterHelpStrings[] = {",
-			"	\"This is the {} test module\"".format(prj + fend), "};", "",
+			"	\"This is the {} test module\",".format(prj + fend),
+			"	NULL,",
+			"};", "",
 			"TesterReturnValue TesterInitCallback()",
-			"{", "	return TESTER_RETURN_OK;", "}", "",
+			"{", "	return TESTER_OK;", "}", "",
 			"TesterReturnValue TesterParseCallback(const char *command)",
-			"{","	return TESTER_RETURN_OK;", "}", "",
+			"{","	return TESTER_OK;", "}", "",
 			"TesterReturnValue TesterExitCallback()",
-			"{","	return TESTER_RETURN_OK;", "}", ""]
+			"{","	return TESTER_OK;", "}", ""]
 			writelist(f, lines)
 		with open(prj + fend + '.script', 'w') as f:
 			writelist(f, ["# " + prj + fend])

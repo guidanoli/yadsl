@@ -1,21 +1,10 @@
-# NULL parameter
-
-/insert 33
-/catch "invalid parameter"
-
-/extract 33
-/catch "invalid parameter"
-
-/resize 33
-/catch "invalid parameter"
-
 # Create heap of size 1
 /create 1
 /size 1
 
 # Try resizing with 0
 /resize 0
-/catch "invalid parameter"
+/catch "memory"
 
 # Try resizing to 1
 /resize 1

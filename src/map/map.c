@@ -34,84 +34,79 @@ struct _freeEntryParameter
 	void *arg;
 };
 
-static MapReturnID _allocateEntry(void *key, void *value,
+static MapRet _allocateEntry(void *key, void *value,
 	struct Entry **ppEntry);
 static void _freeEntry(struct Entry *pEntry, struct _freeEntryParameter *par);
 static int _cmpEntryKey(struct Entry *pEntry,
 	struct _cmpEntryKeyParameter *par);
-static MapReturnID _getEntry(Map *pMap, void *key, struct Entry **ppEntry);
+static MapRet _getEntry(Map *pMap, void *key, struct Entry **ppEntry);
 
 /* Public functions */
 
-MapReturnID mapCreate(Map **ppMap,
+MapRet mapCreate(Map **ppMap,
 	int (*compareKeys)(void *a, void *b),
 	void (*freeEntry)(void *key, void *value, void *arg),
 	void *arg)
 {
-	SetReturnID setId;
+	SetRet setId;
 	Map *pMap = NULL;
-	if (ppMap == NULL)
-		return MAP_RETURN_INVALID_PARAMETER;
 	pMap = malloc(sizeof(struct Map));
 	if (pMap == NULL)
-		return MAP_RETURN_MEMORY;
+		return MAP_MEMORY;
 	if (setId = setCreate(&pMap->entrySet)) {
 		free(pMap);
-		assert(setId == SET_RETURN_MEMORY);
-		return MAP_RETURN_MEMORY;
+		assert(setId == SET_MEMORY);
+		return MAP_MEMORY;
 	}
 	pMap->compareKeys = compareKeys;
 	pMap->freeEntry = freeEntry;
 	pMap->arg = arg;
 	*ppMap = pMap;
-	return MAP_RETURN_OK;
+	return MAP_OK;
 }
 
-MapReturnID mapPutEntry(Map *pMap, void *key, void *value,
+MapRet mapPutEntry(Map *pMap, void *key, void *value,
+	int *pOverwritten,
 	void **pPreviousValue)
 {
-	MapReturnID mapId;
-	SetReturnID setId;
+	MapRet mapId;
+	SetRet setId;
 	struct Entry *pEntry;
-	if (pMap == NULL || pPreviousValue == NULL)
-		return MAP_RETURN_INVALID_PARAMETER;
 	if (mapId = _getEntry(pMap, key, &pEntry)) {
-		if (mapId != MAP_RETURN_ENTRY_NOT_FOUND)
+		*pOverwritten = 0;
+		if (mapId != MAP_ENTRY_NOT_FOUND)
 			return mapId;
 	} else {
 		*pPreviousValue = pEntry->value;
+		*pOverwritten = 1;
 		pEntry->value = value;
-		return MAP_RETURN_OVERWROTE_ENTRY;
+		return MAP_OK;
 	}
 	if (mapId = _allocateEntry(key, value, &pEntry))
 		return mapId;
 	if (setId = setAddItem(pMap->entrySet, pEntry)) {
 		free(pEntry);
-		assert(setId == SET_RETURN_MEMORY);
-		return MAP_RETURN_MEMORY;
+		assert(setId == SET_MEMORY);
+		return MAP_MEMORY;
 	}
-	return MAP_RETURN_OK;
+	return MAP_OK;
 }
 
-MapReturnID mapGetEntry(Map *pMap, void *key, void **pValue)
+MapRet mapGetEntry(Map *pMap, void *key, void **pValue)
 {
-	MapReturnID mapId;
+	MapRet mapId;
 	struct Entry *pEntry;
-	if (pMap == NULL || pValue == NULL)
-		return MAP_RETURN_INVALID_PARAMETER;
 	if (mapId = _getEntry(pMap, key, &pEntry))
 		return mapId;
 	*pValue = pEntry->value;
-	return MAP_RETURN_OK;
+	return MAP_OK;
 }
 
-MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue)
+MapRet mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue)
 {
-	MapReturnID mapId;
+	MapRet mapId;
 	struct Entry *pEntry;
 	void *tempKey, *tempValue;
-	if (pMap == NULL || pKey == NULL || pValue == NULL)
-		return MAP_RETURN_INVALID_PARAMETER;
 	if (mapId = _getEntry(pMap, key, &pEntry))
 		return mapId;
 	tempKey = pEntry->key;
@@ -121,18 +116,16 @@ MapReturnID mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue)
 	free(pEntry);
 	*pKey = tempKey;
 	*pValue = tempValue;
-	return MAP_RETURN_OK;
+	return MAP_OK;
 }
 
-MapReturnID mapGetNumberOfEntries(Map *pMap, size_t *pNum)
+MapRet mapGetNumberOfEntries(Map *pMap, size_t *pNum)
 {
 	size_t temp;
-	if (pMap == NULL || pNum == NULL)
-		return MAP_RETURN_INVALID_PARAMETER;
 	if (setGetSize(pMap->entrySet, &temp))
 		assert(0);
 	*pNum = temp;
-	return MAP_RETURN_OK;
+	return MAP_OK;
 }
 
 void mapDestroy(Map *pMap)
@@ -164,26 +157,26 @@ static int _cmpEntryKey(struct Entry *pEntry,
 		return pEntry->key == par->key;
 }
 
-static MapReturnID _getEntry(Map *pMap, void *key, struct Entry **ppEntry)
+static MapRet _getEntry(Map *pMap, void *key, struct Entry **ppEntry)
 {
-	SetReturnID setId;
+	SetRet setId;
 	struct _cmpEntryKeyParameter arg = { key, pMap->compareKeys };
 	if (setId = setFilterItem(pMap->entrySet, _cmpEntryKey, &arg, ppEntry)) {
-		assert(setId == SET_RETURN_DOES_NOT_CONTAIN);
-		return MAP_RETURN_ENTRY_NOT_FOUND;
+		assert(setId == SET_DOES_NOT_CONTAIN);
+		return MAP_ENTRY_NOT_FOUND;
 	}
-	return MAP_RETURN_OK;
+	return MAP_OK;
 }
 
-static MapReturnID _allocateEntry(void *key, void *value,
+static MapRet _allocateEntry(void *key, void *value,
 	struct Entry **ppEntry)
 {
 	struct Entry *pEntry;
 	pEntry = malloc(sizeof(struct Entry));
 	if (pEntry == NULL)
-		return MAP_RETURN_MEMORY;
+		return MAP_MEMORY;
 	pEntry->key = key;
 	pEntry->value = value;
 	*ppEntry = pEntry;
-	return MAP_RETURN_OK;
+	return MAP_OK;
 }

@@ -6,7 +6,7 @@ set_target_properties(queue PROPERTIES
 	POSITION_INDEPENDENT_CODE ON)
 
 if(AA_BUILD_TESTS)
-	add_tester_module(queuetest SOURCES queue.test.c LINKS queue var)
+	add_tester_module(queuetest SOURCES queue.test.c LINKS queue testerutils)
 	add_tester_scripts(queuetest SOURCES queue.script)
 endif()
 

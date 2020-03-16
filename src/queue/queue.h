@@ -1,87 +1,77 @@
 #ifndef __QUEUE_H__
 #define __QUEUE_H__
 
-/**
-* A queue starts empty.
-* You can only queue and dequeue items.
-* On destruction, freeItem is called for
-* every remaining item still on queue.
-*/
+//
+//     ____                      
+//    / __ \__  _____  __  _____ 
+//   / / / / / / / _ \/ / / / _ \
+//  / /_/ / /_/ /  __/ /_/ /  __/
+//  \___\_\__,_/\___/\__,_/\___/ 
+//                              
+//
+//  A Queue starts empty. You can only queue and dequeue items.
+// On destruction, freeItem is called for every remaining item still on queue.
+//
 
 typedef enum
 {
-	// Ok
-	QUEUE_RETURN_OK = 0,
-
-	// Queue is empty
-	QUEUE_RETURN_EMPTY,
-
-	// Unexpected parameter value
-	QUEUE_RETURN_INVALID_PARAMETER,
-
-	// Could not allocate memory space
-	QUEUE_RETURN_MEMORY,
+	QUEUE_OK = 0,
+	QUEUE_EMPTY,
+	QUEUE_MEMORY,
 }
-QueueReturnID;
+QueueRet;
 
 typedef struct Queue Queue;
 
-/**
-* Creates an empty queue
-* ppQueue   (return) pointer to queue
-* freeItem  function responsible for
-*           freeing items when the queue
-*           is destroyed. If NULL, then
-*           function will not be called.
-* Possible errors:
-* QUEUE_RETURN_INVALID_PARAMETER
-* 	- "ppQueue" is NULL
-* QUEUE_RETURN_MEMORY
-*/
-QueueReturnID queueCreate(Queue **ppQueue,
+//  ============= ================================== 
+//   queueCreate        Create an empty queue        
+//  ============= ================================== 
+//   ppQueue       (ret) pointer to queue            
+//   freeItem      (opt) item deallocation function  
+//  ============= ================================== 
+//  [!] QUEUE_MEMORY
+
+QueueRet queueCreate(Queue **ppQueue,
 	void (*freeItem)(void *item));
 
-/**
-* Queue item
-* pQueue    pointer to queue
-* item      item to be queued
-* Possible errors:
-* QUEUE_RETURN_INVALID_PARAMETER
-* 	- "pQueue" is NULL
-* QUEUE_RETURN_MEMORY
-*/
-QueueReturnID queueQueue(Queue *pQueue,
+//  ============ =================== 
+//   queueQueue      Queue item      
+//  ============ =================== 
+//   pQueue       pointer to queue   
+//   item         item to be queued  
+//  ============ =================== 
+//  [!] QUEUE_MEMORY
+
+QueueRet queueQueue(Queue *pQueue,
 	void *item);
 
-/**
-* Dequeue item
-* pQueue    pointer to queue
-* pItem	    (return) item from top
-* Possible errors:
-* QUEUE_RETURN_INVALID_PARAMETER
-* 	- "pQueue" is NULL
-* QUEUE_RETURN_EMPTY
-* 	- no item to be dequeued
-*/
-QueueReturnID queueDequeue(Queue *pQueue,
+//  ============== ===================== 
+//   queueDequeue      Dequeue item      
+//  ============== ===================== 
+//   pQueue         pointer to queue     
+//   pItem          (ret) dequeued item  
+//  ============== ===================== 
+//  [!] QUEUE_EMPTY
+
+QueueRet queueDequeue(Queue *pQueue,
 	void **pItem);
 
-/**
-* Checks whether queue is empty or not
-* pQueue    pointer to queue
-* pIsEmpty  (return) is empty
-* Possible errors:
-* QUEUE_RETURN_INVALID_PARAMETER
-* 	- "pQueue" is NULL
-* 	- "pIsEmpty" is NULL
-*/
-QueueReturnID queueIsEmpty(Queue *pQueue,
+//  ============== ====================================== 
+//   queueIsEmpty   Checks whether queue is empty or not  
+//  ============== ====================================== 
+//   pQueue         pointer to queue                      
+//   pIsEmpty       (ret) whether queue is empty or not   
+//  ============== ====================================== 
+
+QueueRet queueIsEmpty(Queue *pQueue,
 	int *pIsEmpty);
 
-/**
-* Destroy queue and items left
-* pQueue    pointer to queue
-*/
+//  ============== ======================================= 
+//   queueDestroy   Destroy queue and its remaining items  
+//  ============== ======================================= 
+//   pQueue         pointer to queue                       
+//  ============== ======================================= 
+
 void queueDestroy(Queue *pQueue);
 
 #endif

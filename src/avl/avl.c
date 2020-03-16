@@ -62,22 +62,19 @@ struct AVL
 	void *arg;
 };
 
-AVLReturnId avlCreate(AVL **ppTree,
+AVLRet avlCreate(AVL **ppTree,
 	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
 	void (*freeObj)(void *object), void *arg)
 {
-	AVL *pTree;
-	if (ppTree == NULL)
-		return AVL_RETURN_INVALID_PARAMETER;
-	pTree = malloc(sizeof(struct AVL));
+	AVL *pTree = malloc(sizeof(struct AVL));
 	if (pTree == NULL)
-		return AVL_RETURN_MEMORY;
+		return AVL_MEMORY;
 	pTree->root = NULL;
 	pTree->cmpObjs = cmpObjs;
 	pTree->freeObj = freeObj;
 	pTree->arg = arg;
 	*ppTree = pTree;
-	return AVL_RETURN_OK;
+	return AVL_OK;
 }
 
 struct Node *create_node(void *object)
@@ -227,21 +224,18 @@ struct Node *insertNode(struct Node *node, struct Node *x,
 	return rebalanceTree(node->object, x, pTree);
 }
 
-AVLReturnId avlInsert(AVL *pTree, void *object, int *pExists)
+AVLRet avlInsert(AVL *pTree, void *object, int *pExists)
 {
 	int exists = 0;
-	struct Node *node;
-	if (pTree == NULL)
-		return AVL_RETURN_INVALID_PARAMETER;
-	node = create_node(object);
+	struct Node *node = create_node(object);
 	if (node == NULL)
-		return AVL_RETURN_MEMORY;
+		return AVL_MEMORY;
 	pTree->root = insertNode(node, pTree->root, pTree, &exists);
 	if (exists)
 		free(node);
 	if (pExists)
 		*pExists = exists;
-	return AVL_RETURN_OK;
+	return AVL_OK;
 }
 
 int searchNode(struct Node *node, void *object, AVL *pTree)
@@ -259,15 +253,12 @@ int searchNode(struct Node *node, void *object, AVL *pTree)
 		return 1;
 }
 
-AVLReturnId avlSearch(AVL *pTree, void *object, int *pExists)
+AVLRet avlSearch(AVL *pTree, void *object, int *pExists)
 {
-	int exists;
-	if (pTree == NULL)
-		return AVL_RETURN_INVALID_PARAMETER;
-	exists = searchNode(pTree->root, object, pTree);
+	int exists = searchNode(pTree->root, object, pTree);
 	if (pExists)
 		*pExists = exists;
-	return AVL_RETURN_OK;
+	return AVL_OK;
 }
 
 void *nodeTraverse(struct Node *node,
@@ -286,17 +277,14 @@ void *nodeTraverse(struct Node *node,
 	return NULL;
 }
 
-AVLReturnId avlTraverse(AVL *pTree,
+AVLRet avlTraverse(AVL *pTree,
 	void * (*visit_cb)(void *object, void *arg),
 	void *arg, void **pReturn)
 {
-	void *ret;
-	if (pTree == NULL)
-		return AVL_RETURN_INVALID_PARAMETER;
-	ret = nodeTraverse(pTree->root, visit_cb, arg);
+	void *ret = nodeTraverse(pTree->root, visit_cb, arg);
 	if (pReturn)
 		*pReturn = ret;
-	return AVL_RETURN_OK;
+	return AVL_OK;
 }
 
 // assumes node isn't NULL
@@ -365,14 +353,12 @@ struct Node *deleteNode(struct Node *x, void *object,
 	return rebalanceTree(object, x, pTree);
 }
 
-AVLReturnId avlDelete(AVL *pTree, void *object, int *pExists)
+AVLRet avlDelete(AVL *pTree, void *object, int *pExists)
 {
-	if (pTree == NULL)
-		return AVL_RETURN_INVALID_PARAMETER;
 	if (pExists)
 		*pExists = 0;
 	pTree->root = deleteNode(pTree->root, object, pTree, pExists, 1);
-	return AVL_RETURN_OK;
+	return AVL_OK;
 }
 
 void avlDestroyNode(AVL *pTree, struct Node *node)

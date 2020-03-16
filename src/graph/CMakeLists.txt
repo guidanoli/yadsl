@@ -6,7 +6,8 @@ set_target_properties(graph PROPERTIES
 	POSITION_INDEPENDENT_CODE ON)
 
 if(AA_BUILD_TESTS)
-	add_tester_module(graphtest SOURCES graph.test.c LINKS graph graphio graphsearch var)
+	add_tester_module(graphtest SOURCES graph.test.c
+		LINKS graph graphio graphsearch testerutils)
 	add_tester_scripts(graphtest SOURCES graph.script)
 endif()
 

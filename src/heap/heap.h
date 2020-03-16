@@ -8,132 +8,102 @@
 //   / __  /  __/ /_/ / /_/ /
 //  /_/ /_/\___/\__,_/ .___/ 
 //                  /_/      
-//  
-// A Heap starts empty and can be populated with arbitrary data
+//
+//  A Heap starts empty and can be populated with arbitrary data
 // ordered by an arbitrary comparison function. Items can be then
 // inserted in or extracted from the heap at any given time.
 //
-// The comparison function must be consistent for any two arbitrary
+// HINTS
+// -----
+//
+//  The comparison function must be consistent for any two arbitrary
 // data objects inserted. It will dictate which items must have
 // higher priority over the others.
-// 
-// The Heap data structure acquires ownership of an object once it
+//
+//  The return of a comparison function should be a boolean value which
+// indicates whether the first item should be higher in the heap than
+// the second item provided.
+//
+//  The Heap data structure acquires ownership of an object once it
 // is successfully inserted and looses it if eventually extracted.
 // When destructed, the heap calls an arbitrary free function, given
 // by the caller at time of construction, for every remaining object.
 //
-// HINT: HEAP_RETURN_OK will always be 0, so that you can easily
-// assert that a function has succeeded or not.
-//
 
 typedef enum
 {
-	// SEMANTIC RETURN VALUES
-
-	/* All went ok */
-	HEAP_RETURN_OK = 0,
-
-	/* Heap is empty */
-	HEAP_RETURN_EMPTY,
-
-	/* Heap is full */
-	HEAP_RETURN_FULL,
-	
-	/* Cannot shrink */
-	HEAP_RETURN_SHRINK,
-
-	// ERROR RETURN VALUES
-
-	/* An invalid parameter was passed */
-	HEAP_RETURN_INVALID_PARAMETER,
-
-	/* Could not allocate memory */
-	HEAP_RETURN_MEMORY,
-
-} HeapReturnID;
+	HEAP_OK = 0,
+	HEAP_EMPTY,
+	HEAP_FULL,
+	HEAP_SHRINK,
+	HEAP_MEMORY,
+} HeapRet;
 
 typedef struct Heap Heap;
 
 #include <stddef.h>
 
-/**
-* Create an empty heap
-* ppHeap       (return) pointer to heap
-* initialSize  initial heap size
-* cmpObjs      comparison function or NULL (minheap based on address)
-*                Returns boolean value of whether
-*                obj1 should be higher in the heap than obj2
-* freeObj      deallocation function or NULL (no ownership)
-*                Property deallocates object
-* arg          additional argument given to cmpObjs
-* Possible errors:
-* HEAP_RETURN_INVALID_PARAMETER
-*	- "ppHeap" is NULL
-*	- "initialSize" is 0
-* HEAP_RETURN_MEMORY
-*	- HINT: you may try a smaller initial size
-*/
-HeapReturnID heapCreate(Heap **ppHeap, size_t initialSize,
-	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
-	void (*freeObj)(void *obj), void * arg);
+//  ============= ========================================= 
+//   heapCreate             Create an empty heap            
+//  ============= ========================================= 
+//   ppHeap        (ret) pointer to heap                    
+//   initialSize   initial heap size (> 0)                  
+//   cmpObjects    (opt) object comparison function         
+//   freeObject    (opt) object deallocation function       
+//   arg           additional argument given to cmpObjects  
+//  ============= ========================================= 
+//  [!] HEAP_MEMORY: try a smaller size
 
-/**
-* Insert object in heap
-* pHeap   pointer to heap
-* obj     object to be inserted
-* Possible errors:
-* HEAP_RETURN_INVALID_PARAMETER
-*	- "pHeap" is NULL
-* HEAP_RETURN_FULL
-*	- HINT: you may call heapResize
-*/
-HeapReturnID heapInsert(Heap *pHeap, void *obj);
+HeapRet heapCreate(Heap **ppHeap, size_t initialSize,
+	int (*cmpObjects)(void *obj1, void *obj2, void *arg),
+	void (*freeObject)(void *obj), void * arg);
 
-/**
-* Extract object from heap
-* pHeap   pointer to heap
-* pObj    (return) extracted object
-* Possible errors:
-* HEAP_RETURN_INVALID_PARAMETER
-*	- "pHeap" is NULL
-*	- "pObj" is NULL
-* HEAP_RETURN_EMPTY
-*/
-HeapReturnID heapExtract(Heap *pHeap, void **pObj);
+//  ============ ======================= 
+//   heapInsert   Insert object in heap  
+//  ============ ======================= 
+//   pHeap        pointer to heap        
+//   object       object to be inserted  
+//  ============ ======================= 
+//  [!] HEAP_FULL: try resizing the heap
 
-/**
-* Get heap maximum capacity
-* pHeap   pointer to heap
-* pSize   (return) size
-* Possible errors:
-* HEAP_RETURN_INVALID_PARAMETER
-*	- "pHeap" is NULL
-*	- "pSize" is NULL
-*/
-HeapReturnID heapGetSize(Heap *pHeap, size_t *pSize);
+HeapRet heapInsert(Heap *pHeap, void *object);
 
-/**
-* Resize heap maximum capacity
-* pHeap    pointer to heap
-* newSize  new size
-* Possible errors:
-* HEAP_RETURN_INVALID_PARAMETER
-*	- "pHeap" is NULL
-*	- "newSize" is 0
-* HEAP_RETURN_SHRINK
-*	- new size is smaller than the number of objects
-* HEAP_RETURN_MEMORY
-*	- HINT: you may try a smaller size
-* [!] If the current size is equal to the new size
-* HEAP_RETURN_OK will be returned
-*/
-HeapReturnID heapResize(Heap *pHeap, size_t newSize);
+//  ============= ======================== 
+//   heapExtract   Insert object in heap   
+//  ============= ======================== 
+//   pHeap         pointer to heap         
+//   pObject       (ret) extracted object  
+//  ============= ======================== 
+//  [!] HEAP_EMPTY
 
-/**
-* Destroy a heap and its objects, if a deallocation
-* function was passed at the time of construction
-* pHeap   pointer to heap
-*/
+HeapRet heapExtract(Heap *pHeap, void **pObj);
+
+//  ============= =========================== 
+//   heapGetSize   Get heap maximum capacity  
+//  ============= =========================== 
+//   pHeap         pointer to heap            
+//   pSize         (ret) heap size            
+//  ============= =========================== 
+
+HeapRet heapGetSize(Heap *pHeap, size_t *pSize);
+
+//  ============ ============================== 
+//   heapResize   Resize heap maximum capacity  
+//  ============ ============================== 
+//   pHeap        pointer to heap               
+//   newSize      new heap size                 
+//  ============ ============================== 
+//  [!] HEAP_SHRINK: new size is smaller than the number of objects
+//  [!] HEAP_MEMORY: try a smaller size
+
+HeapRet heapResize(Heap *pHeap, size_t newSize);
+
+//  ============= ======================================== 
+//   heapDestroy   Destroy heap and its remaining objects  
+//  ============= ======================================== 
+//   pHeap         pointer to heap                         
+//  ============= ======================================== 
+
 void heapDestroy(Heap *pHeap);
 
 #endif

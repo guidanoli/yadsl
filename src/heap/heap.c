@@ -30,22 +30,22 @@ int _defaultCmp(void *obj1, void *obj2, void *arg)
 	return obj1 < obj2;
 }
 
-HeapReturnID heapCreate(Heap **ppHeap, size_t initialSize,
+HeapRet heapCreate(Heap **ppHeap, size_t initialSize,
 	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
 	void (*freeObj)(void *obj), void *arg)
 {
 	Heap *pHeap;
 	void **arr;
-	if (ppHeap == NULL || !initialSize)
-		return HEAP_RETURN_INVALID_PARAMETER;
+	if (initialSize == 0)
+		return HEAP_MEMORY;
 	if (initialSize > SIZE_MAX / sizeof(void *))
-		return HEAP_RETURN_MEMORY;
+		return HEAP_MEMORY;
 	pHeap = malloc(sizeof(struct Heap));
 	arr = malloc(sizeof(void *) * initialSize);
 	if (pHeap == NULL || arr == NULL) {
 		if (pHeap) free(pHeap);
 		if (arr) free(arr);
-		return HEAP_RETURN_MEMORY;
+		return HEAP_MEMORY;
 	}
 	pHeap->last = 0;
 	pHeap->arr = arr;
@@ -54,17 +54,15 @@ HeapReturnID heapCreate(Heap **ppHeap, size_t initialSize,
 	pHeap->size = initialSize;
 	pHeap->arg = cmpObjs ? arg : NULL;
 	*ppHeap = pHeap;
-	return HEAP_RETURN_OK;
+	return HEAP_OK;
 }
 
-HeapReturnID heapInsert(Heap *pHeap, void *obj)
+HeapRet heapInsert(Heap *pHeap, void *obj)
 {
 	void *parentObj;
 	size_t newi, parenti;
-	if (pHeap == NULL)
-		return HEAP_RETURN_INVALID_PARAMETER;
 	if (pHeap->last == pHeap->size)
-		return HEAP_RETURN_FULL;
+		return HEAP_FULL;
 	newi = pHeap->last;
 	pHeap->arr[newi] = obj;
 	++pHeap->last;
@@ -76,17 +74,15 @@ HeapReturnID heapInsert(Heap *pHeap, void *obj)
 		else
 			break;
 	}
-	return HEAP_RETURN_OK;
+	return HEAP_OK;
 }
 
-HeapReturnID heapExtract(Heap *pHeap, void **pObj)
+HeapRet heapExtract(Heap *pHeap, void **pObj)
 {
 	size_t obji = _ROOT;
 	void *obj;
-	if (pHeap == NULL || pObj == NULL)
-		return HEAP_RETURN_INVALID_PARAMETER;
 	if (pHeap->last == _ROOT)
-		return HEAP_RETURN_EMPTY;
+		return HEAP_EMPTY;
 	*pObj = pHeap->arr[_ROOT];
 	obj = pHeap->arr[--pHeap->last];
 	pHeap->arr[_ROOT] = obj;
@@ -108,34 +104,32 @@ HeapReturnID heapExtract(Heap *pHeap, void **pObj)
 		else
 			_swap(pHeap, &righti, &obji);
 	}
-	return HEAP_RETURN_OK;
+	return HEAP_OK;
 }
 
-HeapReturnID heapGetSize(Heap *pHeap, size_t *pSize)
+HeapRet heapGetSize(Heap *pHeap, size_t *pSize)
 {
-	if (pHeap == NULL || pSize == NULL)
-		return HEAP_RETURN_INVALID_PARAMETER;
 	*pSize = pHeap->size;
-	return HEAP_RETURN_OK;
+	return HEAP_OK;
 }
 
-HeapReturnID heapResize(Heap *pHeap, size_t newSize)
+HeapRet heapResize(Heap *pHeap, size_t newSize)
 {
 	void *new_arr;
-	if (pHeap == NULL || newSize == 0)
-		return HEAP_RETURN_INVALID_PARAMETER;
+	if (newSize == 0)
+		return HEAP_MEMORY;
 	if (newSize < pHeap->last)
-		return HEAP_RETURN_SHRINK;
+		return HEAP_SHRINK;
 	if (newSize == pHeap->size)
-		return HEAP_RETURN_OK;
+		return HEAP_OK;
 	if (newSize > SIZE_MAX / sizeof(void *))
-		return HEAP_RETURN_MEMORY;
+		return HEAP_MEMORY;
 	new_arr = realloc(pHeap->arr, sizeof(void *) * newSize);
 	if (new_arr == NULL)
-		return HEAP_RETURN_MEMORY;
+		return HEAP_MEMORY;
 	pHeap->arr = new_arr;
 	pHeap->size = newSize;
-	return HEAP_RETURN_OK;
+	return HEAP_OK;
 }
 
 void heapDestroy(Heap *pHeap)

@@ -5,9 +5,9 @@
 /catch empty
 
 # It is empty
-/empty true
+/empty YES
 
-/empty false
+/empty NO
 /catch return
 
 ## One item
@@ -15,9 +15,9 @@
 /queue X
 
 # It is not empty
-/empty false
+/empty NO
 
-/empty true
+/empty YES
 /catch return
 
 ## Dequeue item
@@ -25,9 +25,9 @@
 /dequeue X
 
 # Empty again
-/empty true
+/empty YES
 
-/empty false
+/empty NO
 /catch return
 
 # Try dequeuing an empty queue again
@@ -42,20 +42,20 @@
 
 ## Queue and dequeue many items
 
-/empty true
+/empty YES
 /queue X
-/empty false
+/empty NO
 /queue A
-/empty false
+/empty NO
 /dequeue X
-/empty false
+/empty NO
 /queue B
-/empty false
+/empty NO
 /queue C
-/empty false
+/empty NO
 /dequeue A
-/empty false
+/empty NO
 /dequeue B
-/empty false
+/empty NO
 /dequeue C
-/empty true
+/empty YES

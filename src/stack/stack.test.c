@@ -24,14 +24,14 @@ char buffer[BUFSIZ];
 TesterReturnValue TesterInitCallback()
 {
 	st = NULL;
-	return TESTER_RETURN_OK;
+	return TESTER_OK;
 }
 
-TesterReturnValue convert(StackReturnID ret)
+TesterReturnValue convert(StackRet ret)
 {
 	switch (ret) {
 	case STACK_OK:
-		return TESTER_RETURN_OK;
+		return TESTER_OK;
 	case STACK_EMPTY:
 		return TesterExternalReturnValue("empty");
 	case STACK_MEMORY:
@@ -43,7 +43,7 @@ TesterReturnValue convert(StackReturnID ret)
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-	StackReturnID ret = STACK_OK;
+	StackRet ret = STACK_OK;
 	if matches(command, "create") {
 		ret = stackCreate(&st);
 	} else if matches(command, "destroy") {
@@ -52,10 +52,10 @@ TesterReturnValue TesterParseCallback(const char *command)
 	} else if matches(command, "add") {
 		int num, *num_ptr;
 		if (TesterParseArguments("i", &num) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		num_ptr = malloc(sizeof(int));
 		if (num_ptr == NULL)
-			return TESTER_RETURN_MALLOC;
+			return TESTER_MALLOC;
 		*num_ptr = num;
 		ret = stackAdd(st, num_ptr);
 		if (ret)
@@ -63,27 +63,27 @@ TesterReturnValue TesterParseCallback(const char *command)
 	} else if matches(command, "remove") {
 		int *actual_ptr, expected;
 		if (TesterParseArguments("i", &expected) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		ret = stackRemove(st, &actual_ptr);
 		if (!ret) {
 			int actual;
 			actual = *actual_ptr;
 			free(actual_ptr);
 			if (expected != actual)
-				return TESTER_RETURN_ARGUMENT;
+				return TESTER_ARGUMENT;
 		}
 	} else if matches(command, "empty") {
 		int actual, expected;
 		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_RETURN_ARGUMENT;
+			return TESTER_ARGUMENT;
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
 			TesterLog("Argument wasn't YES nor NO, so 'NO' was assumed.");
 		ret = stackEmpty(st, &actual);
 		if ((ret == STACK_OK || ret == STACK_EMPTY) && (actual != expected))
-			return TESTER_RETURN_RETURN;
+			return TESTER_RETURN;
 	} else {
-		return TESTER_RETURN_COMMAND;
+		return TESTER_COMMAND;
 	}
 	return convert(ret);
 }
@@ -91,6 +91,6 @@ TesterReturnValue TesterParseCallback(const char *command)
 TesterReturnValue TesterExitCallback()
 {
 	if (st) stackDestroy(st, free);
-	return TESTER_RETURN_OK;
+	return TESTER_OK;
 }
 

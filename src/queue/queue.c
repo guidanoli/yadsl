@@ -17,31 +17,26 @@ struct Queue
 	void (*freeItem)(void *item);
 };
 
-QueueReturnID queueCreate(Queue **ppQueue,
+QueueRet queueCreate(Queue **ppQueue,
 	void (*freeItem)(void *item))
 {
 	Queue *pQueue;
-	if (ppQueue == NULL)
-		return QUEUE_RETURN_INVALID_PARAMETER;
 	pQueue = malloc(sizeof(struct Queue));
 	if (pQueue == NULL)
-		return QUEUE_RETURN_MEMORY;
+		return QUEUE_MEMORY;
 	pQueue->freeItem = freeItem;
 	pQueue->entrance = NULL;
 	pQueue->exit = NULL;
 	*ppQueue = pQueue;
-	return QUEUE_RETURN_OK;
+	return QUEUE_OK;
 }
 
-QueueReturnID queueQueue(Queue *pQueue,
+QueueRet queueQueue(Queue *pQueue,
 	void *item)
 {
-	struct QueueItem *pQueueItem;
-	if (pQueue == NULL)
-		return QUEUE_RETURN_INVALID_PARAMETER;
-	pQueueItem = malloc(sizeof(struct QueueItem));
+	struct QueueItem *pQueueItem = malloc(sizeof(struct QueueItem));
 	if (pQueueItem == NULL)
-		return QUEUE_RETURN_MEMORY;
+		return QUEUE_MEMORY;
 	pQueueItem->item = item;
 	pQueueItem->previous = NULL;
 	if (pQueue->entrance != NULL)
@@ -49,33 +44,29 @@ QueueReturnID queueQueue(Queue *pQueue,
 	pQueue->entrance = pQueueItem;
 	if (pQueue->exit == NULL)
 		pQueue->exit = pQueueItem;
-	return QUEUE_RETURN_OK;
+	return QUEUE_OK;
 }
 
-QueueReturnID queueDequeue(Queue *pQueue,
+QueueRet queueDequeue(Queue *pQueue,
 	void **pItem)
 {
 	struct QueueItem *newExit;
-	if (pQueue == NULL || pItem == NULL)
-		return QUEUE_RETURN_INVALID_PARAMETER;
 	if (pQueue->exit == NULL)
-		return QUEUE_RETURN_EMPTY;
+		return QUEUE_EMPTY;
 	newExit = pQueue->exit->previous;
 	*pItem = pQueue->exit->item;
 	free(pQueue->exit);
 	pQueue->exit = newExit;
 	if (newExit == NULL)
 		pQueue->entrance = NULL;
-	return QUEUE_RETURN_OK;
+	return QUEUE_OK;
 }
 
-QueueReturnID queueIsEmpty(Queue *pQueue,
+QueueRet queueIsEmpty(Queue *pQueue,
 	int *pIsEmpty)
 {
-	if (pQueue == NULL || pIsEmpty == NULL)
-		return QUEUE_RETURN_INVALID_PARAMETER;
 	*pIsEmpty = pQueue->exit == NULL;
-	return QUEUE_RETURN_OK;
+	return QUEUE_OK;
 }
 
 void queueDestroy(Queue *pQueue)
