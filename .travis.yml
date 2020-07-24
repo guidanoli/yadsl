@@ -15,23 +15,20 @@ script:
     - cd ${AA_CMAKE_DIR} && ctest -V -C Release
 after_failure:
   - cat "${AA_CMAKE_DIR}/CMakeFiles/CMakeOutput.log"
-env:
-  matrix:
-    - LUA=lua5.1
-    - LUA=lua5.2
-    - LUA=lua5.3
-before_install:
-  - source .travis/setenv_lua.sh
 matrix:
   include:
     - os: linux
       env:
         - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.linux-x86_64-3.6"
+        - LUA=lua5.3
       before_install:
         - pyenv global 3.6.7
+        - source .travis/setenv_lua.sh
     - os: windows
       before_install:
         - choco install python --version 3.7.6
+        - source .travis/setenv_lua.sh
       env: 
         - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.win-amd64-3.7/Release"
         - PATH=/c/Python37:/c/Python37/Scripts:$PATH
+        - LUA=lua5.3
