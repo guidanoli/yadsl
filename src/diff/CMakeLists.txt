@@ -13,3 +13,7 @@ endif()
 if(AA_PYTHON_SUPPORT)
 	add_subdirectory(python)
 endif()
+
+if(AA_LUA_SUPPORT)
+    add_subdirectory(lua)
+endif()
