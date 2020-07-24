@@ -5,9 +5,8 @@
 #include "diff.h"
 
 static int c_diff(lua_State* L) {
-    size_t size1, size2;
-    const char* s1 = luaL_checklstring(L, 1, &size1);
-    const char* s2 = luaL_checklstring(L, 2, &size2);
+    const char* s1 = luaL_checkstring(L, 1);
+    const char* s2 = luaL_checkstring(L, 2);
     if (!s1 || !s2)
         return 0;
     double diffs1s2 = diff(s1, s2);

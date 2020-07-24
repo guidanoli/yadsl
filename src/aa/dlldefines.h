@@ -15,7 +15,7 @@
     //  do nothing and hope for the best?
     #define EXPORT
     #define IMPORT
-    #pragma warning Unknown dynamic link import/export semantics.
+    #error "Unknown dynamic link import/export semantics."
 #endif
 
 #endif
