@@ -1,3 +1,6 @@
+#ifndef _AA_PYDEFINES_H_
+#define _AA_PYDEFINES_H_
+
 // Python definitions header file
 // Make sure to include this after including the Python headers
 
@@ -59,3 +62,5 @@ for (_exc_ptr = exceptions; _exc_ptr->obj; ++_exc_ptr) { \
 	if (PyModule_AddObject(m, _exc_ptr->name, *_exc_ptr->obj) < 0) \
 		return NULL; \
 }
+
+#endif

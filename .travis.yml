@@ -20,16 +20,16 @@ matrix:
     - os: linux
       env:
         - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.linux-x86_64-3.6"
-        - PATH=${TRAVIS_BUILD_DIR}/install/lua:$PATH
         - LUA=lua5.3
+        - AA_LUA_SUPPORT=ON
+        - PATH=${TRAVIS_BUILD_DIR}/install/lua:$PATH
       before_install:
         - pyenv global 3.6.7
         - source .travis/setenv_lua.sh
     - os: windows
       before_install:
         - choco install python --version 3.7.6
-        - source .travis/setenv_lua.sh
       env: 
         - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.win-amd64-3.7/Release"
-        - PATH=/c/Python37:/c/Python37/Scripts:${TRAVIS_BUILD_DIR}/install/lua:$PATH
-        - LUA=lua5.3
+        - AA_LUA_SUPPORT=OFF
+        - PATH=/c/Python37:/c/Python37/Scripts:$PATH

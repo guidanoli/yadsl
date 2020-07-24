@@ -1,3 +1,5 @@
+#include "dlldefines.h"
+
 #include "lauxlib.h"
 
 #include "diff.h"
@@ -20,7 +22,7 @@ static const struct luaL_Reg luadiff[] = {
         {NULL, NULL}  /* sentinel */
 };
 
-__declspec(dllexport) int luaopen_luadiff(lua_State* L) {
+EXPORT int luaopen_luadiff(lua_State* L) {
     luaL_newlib(L, luadiff);
     return 1;
 }

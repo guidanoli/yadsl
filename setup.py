@@ -7,9 +7,9 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
 def _get_env_variable(name, default='OFF'):
-    if name not in os.environ.keys():
-        return default
-    return os.environ[name]
+	if name not in os.environ.keys():
+		return default
+	return os.environ[name]
 
 class CMakeExtension(Extension):
 	def __init__(self, name, cmake_lists_dir='.', sources=[], **kwa):
@@ -28,6 +28,8 @@ class CMakeBuild(build_ext):
 		for ext in self.extensions:
 			extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
 			cmake_args = [
+				'-DAA_PYTHON_SUPPORT={}'.format(_get_env_variable('AA_PYTHON_SUPPORT', default='ON')),
+				'-DAA_LUA_SUPPORT={}'.format(_get_env_variable('AA_LUA_SUPPORT', default='OFF')),
 				'-DAA_BUILD_TESTS={}'.format(_get_env_variable('AA_BUILD_TESTS', default='ON')),
 				'-DCMAKE_BUILD_TYPE=Release',
 				'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE={}'.format(extdir),
