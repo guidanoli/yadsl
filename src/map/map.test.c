@@ -7,6 +7,10 @@
 #include "tester.h"
 #include "testerutils.h"
 
+#ifdef WIN32
+#define strdup _strdup
+#endif
+
 const char *TesterHelpStrings[] = {
 	"This is an interactive module of the map library",
 	"You interact with a single map object at all times",

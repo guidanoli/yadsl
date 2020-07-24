@@ -7,6 +7,10 @@
 #include "tester.h"
 #include "testerutils.h"
 
+#ifdef WIN32
+#define strdup _strdup
+#endif
+
 const char *TesterHelpStrings[] = {
 	"This is the queue test module",
 	"You will be interacting with the same queue at all times",

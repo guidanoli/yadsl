@@ -9,10 +9,15 @@
 #define _DEBUG __DEBUG
 #endif
 
+#ifdef WIN32
+#define strdup _strdup
+#endif
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
+#include <string.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
@@ -63,7 +68,7 @@ static struct _memdb_node *_memdb_get(void *_mem)
 }
 
 static _memdb_enum _memdb_add(void *_mem, size_t _size, const char *file,
-	const line, struct _memdb_node **pCopy)
+	const int line, struct _memdb_node **pCopy)
 {
 	struct _memdb_node *node;
 	if (node = _memdb_get(_mem)) {

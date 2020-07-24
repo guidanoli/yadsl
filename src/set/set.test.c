@@ -2,9 +2,14 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "tester.h"
 #include "testerutils.h"
+
+#ifdef WIN32
+#define strdup _strdup
+#endif
 
 /* Help */
 
