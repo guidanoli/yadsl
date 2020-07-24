@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#pragma once
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
 #endif

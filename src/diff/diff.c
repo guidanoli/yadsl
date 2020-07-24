@@ -7,7 +7,6 @@
 
 #include "memdb.h"
 
-#pragma once
 #if defined(_MSC_VER)
 # pragma warning(disable : 6386)
 # pragma warning(disable : 6385)
