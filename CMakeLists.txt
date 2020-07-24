@@ -7,6 +7,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 option(AA_BUILD_TESTS "Build unit tests" ON)
 option(AA_PYTHON_SUPPORT "Build Python C extension modules" ON)
+option(AA_LUA_SUPPORT "Build Lua C bindings" ON)
 
 # Allow hierarchical solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -39,6 +40,10 @@ if(AA_PYTHON_SUPPORT)
 	
 	# Add 'add_python_module' function
 	include(addPythonModule)
+endif()
+
+if (AA_LUA_SUPPORT)
+    find_package(Lua 5.0 REQUIRED MODULE)
 endif()
 
 # Search for math library
