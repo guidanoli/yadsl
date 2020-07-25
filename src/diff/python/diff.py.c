@@ -9,11 +9,13 @@ PyDoc_STRVAR(_diff__doc__,
 
 static PyObject *pydiff_diff(PyObject *self, PyObject *args)
 {
-	char *s1, *s2;
+	const char *s1, *s2;
 	double result;
 	if (!PyArg_ParseTuple(args, "ss", &s1, &s2))
 		return NULL;
 	result = diff(s1, s2);
+	if (result == -1.0)
+		return NULL;
 	return PyFloat_FromDouble(result);
 }
 
