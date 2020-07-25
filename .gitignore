@@ -1,3 +1,7 @@
+lib32/
+lib32d/
+lib64/
+lib64d/
 build/
 *__pycache__/
 *.pytest_cache/

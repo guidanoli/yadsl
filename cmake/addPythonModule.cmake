@@ -25,4 +25,7 @@ function(add_python_module target modulename)
 		target_link_libraries(${target} ${PYTHON_LIBRARIES})
 	endif()
 	set_target_properties(${target} PROPERTIES FOLDER python)
+	
+	include(moveLibraries)
+	move_target_library(${target})
 endfunction()
