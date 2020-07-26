@@ -47,6 +47,14 @@ Along with a parameter there might be one or more tags associated:
 
 **DISCLAIMER:** A parameter cannot be NULL unless otherwise said so.
 
+# Creating a new project
+
+If you wish to create a new project following the pattern of the already existing ones, you may use the `new.py` script located on the root directory. You also choose whether to create testing code and python binding code.
+
+```bash
+python new.py [<project> [--python=[YES/NO]] [--test=[YES/NO]]]
+```
+
 ## Python modules
 
 Some modules have Python bindings, which comprehend each a source file (`module.py.c`) and a test file (`module_test.py`), as well as a `CMakeLists.txt` file. They are always contained inside the `python` folder of the corresponding C module.
@@ -68,10 +76,22 @@ python -m pip install -r requirements.txt
 python -m pytest
 ```
 
-## Creating a new project
+## Lua modules
 
-If you wish to create a new project following the pattern of the already existing ones, you may use the `new.py` script located on the root directory. You also choose whether to create testing code and python binding code.
+Some modules have Lua bindings, which comprehend each a source file (`module.lua.c`) and a test file (`module_test.lua`), as well as a `CMakeLists.txt` file. They are always contained inside the `lua` folder of the corresponding C module.
+
+### Compilation
+
+Run the `setup.py` script, with the environment variable `AA_LUA_SUPPORT` set to `ON`.
+If you don't want to generate the python bindings, just set `AA_PYTHON_SUPPORT` to `OFF`.
+Here I write environment exports in bash but there is an equivalent syntax in Windows terminals.
 
 ```bash
-python new.py [<project> [--python=[YES/NO]] [--test=[YES/NO]]]
+export AA_LUA_SUPPORT="ON"
+export AA_PYTHON_SUPPORT="OFF"
+python setup.py install
 ```
+
+### Tests
+
+All lua modules are run individually. Maybe in the future I will make a similar `pytest` with `lua` scripts.
