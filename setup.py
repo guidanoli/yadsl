@@ -34,7 +34,6 @@ class CMakeBuild(build_ext):
 				'-DCMAKE_BUILD_TYPE=Release',
 				'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE={}'.format(extdir),
 				'-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE={}'.format(self.build_temp),
-				'-DPYTHON_EXECUTABLE={}'.format(sys.executable),
 			]
 
 			if platform.system() == 'Windows':
@@ -72,9 +71,12 @@ setup(name='aa',
 	  long_description=open('README.md').read(),
 	  long_description_content_type='text/markdown',
 	  ext_modules=[
+		  CMakeExtension('pyavl'),
 		  CMakeExtension('pydiff'),
+		  CMakeExtension('pygraph'),
+		  CMakeExtension('pyheap'),
 		  CMakeExtension('pyqueue'),
-		  CMakeExtension('pygraph')],
+		  CMakeExtension('pystack')],
 	  cmdclass={'build_ext': CMakeBuild},
 	  zip_safe=False,
 	  classifiers=[

@@ -1,3 +1,5 @@
+*~
+*.swp
 lib32/
 lib32d/
 lib64/

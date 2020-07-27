@@ -1,23 +1,16 @@
 // Boilerplate preprocessors to temporarily
 // disable macros
-#ifdef _DEBUG
-#define __DEBUG _DEBUG
-#undef _DEBUG
-#endif
-#include "memdb.h"
-#ifdef __DEBUG
-#define _DEBUG __DEBUG
-#endif
-
-#ifdef WIN32
-#define strdup _strdup
-#endif
-
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 #include <stdarg.h>
-#include <string.h>
+
+#define _MEMDB_INTERNAL
+#include "memdb.h"
+
+#ifdef WIN32
+#define strdup(_str) _strdup(_str)
+#endif
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)

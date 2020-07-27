@@ -20,6 +20,7 @@ if(AA_BUILD_TESTS)
 endif()
 
 if(AA_PYTHON_SUPPORT)
+	# Find Python interpreter
 	set(Python_FIND_VIRTUALENV FIRST)
 	find_package(PythonInterp 3.6 REQUIRED)
 
@@ -27,8 +28,8 @@ if(AA_PYTHON_SUPPORT)
 	exec_program(${PYTHON_EXECUTABLE}
 		ARGS "-c \"import sysconfig; print(sysconfig.get_paths()['include'])\""
 		OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
-		RETURN_VALUE PYTHON_INCLUDE_DIRS_NOT_FOUND
-		)
+		RETURN_VALUE PYTHON_INCLUDE_DIRS_NOT_FOUND)
+
 	if(PYTHON_INCLUDE_DIRS_NOT_FOUND)
 		message(FATAL_ERROR "Python headers not found")
 	endif()
@@ -43,7 +44,10 @@ if(AA_PYTHON_SUPPORT)
 endif()
 
 if (AA_LUA_SUPPORT)
-    find_package(Lua 5.0 REQUIRED MODULE)
+	find_package(Lua 5.0 REQUIRED MODULE)
+
+	# Add 'add_lua_module' function
+	include(addLuaModule)
 endif()
 
 # Search for math library
