@@ -72,6 +72,7 @@ python setup.py install
 All python modules can be easily tested with `pytest`, which searches for `*_test.py` files in the whole directory. Once the modules are compiled and installed by the `setup.py`, you may run the following commands:
 
 ```bash
+export PYTHONPATH=$PWD/lib64
 python -m pip install -r requirements.txt
 python -m pytest
 ```
