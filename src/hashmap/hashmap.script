@@ -1,0 +1,47 @@
+### Empty hash map
+
+/get key 10
+/catch "doesnt exist"
+
+### One key
+
+/add key 10
+/get key 10
+
+# Try adding again with same value
+
+/add key 10
+/catch "exists"
+
+# Try adding again with different value
+
+/add key 20
+/catch "exists"
+
+# Remove
+
+/rmv key
+
+# Try removing again
+
+/rmv key
+/catch "doesnt exist"
+
+# Try getting
+
+/get key 10
+/catch "doesnt exist"
+
+# Add again
+
+/add key 20
+/get key 20
+
+### Create one larger
+
+/new 5
+
+# Check that key is gone
+
+/get key 20
+/catch "doesnt exist"

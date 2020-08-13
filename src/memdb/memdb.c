@@ -8,10 +8,6 @@
 #define _MEMDB_INTERNAL
 #include "memdb.h"
 
-#ifdef WIN32
-#define strdup(_str) _strdup(_str)
-#endif
-
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
 #endif

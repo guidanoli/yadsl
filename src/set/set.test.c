@@ -7,10 +7,6 @@
 #include "tester.h"
 #include "testerutils.h"
 
-#ifdef WIN32
-#define strdup _strdup
-#endif
-
 /* Help */
 
 const char *TesterHelpStrings[] = {
