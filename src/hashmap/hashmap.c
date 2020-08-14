@@ -1,5 +1,11 @@
 #include "hashmap.h"
 
+#ifdef __STDC_ALLOC_LIB__
+#define __STDC_WANT_LIB_EXT2__ 1
+#else
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -78,6 +84,7 @@ static Entry* newEntry(const char* key, void* value)
 	if (!(pEntry->key = strdup(key)))
 		goto fail2;
 	pEntry->value = value;
+	pEntry->next = NULL;
 	return pEntry;
 fail2:
 	free(pEntry);
