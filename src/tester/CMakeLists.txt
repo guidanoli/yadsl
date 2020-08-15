@@ -1,7 +1,5 @@
-add_library(tester tester.c tester.h)
-target_include_directories(tester PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(tester memdb)
-set_target_properties(tester PROPERTIES FOLDER libraries)
+add_aa_library(tester STATIC
+    SOURCES tester.c tester.h)
 
 # Makes tester tools visible to global scope and allows tools to
 # be included by other projects too.

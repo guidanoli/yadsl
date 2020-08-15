@@ -4,7 +4,6 @@
 #include "pydefines.h"
 
 #include "stack.h"
-#include "memdb.h"
 
 //
 // Objects
@@ -96,7 +95,6 @@ _stack_dealloc(stack_object *self)
 {
 	if (self->ob_stack)
 		stackDestroy(self->ob_stack, decRefCallback);
-	_memdb_dump();
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
 

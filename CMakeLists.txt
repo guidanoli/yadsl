@@ -15,6 +15,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Add cmake scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+# Add 'add_library' function
+include(addLibrary)
+
 if(AA_BUILD_TESTS)
 	enable_testing()
 endif()

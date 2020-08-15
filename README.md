@@ -11,7 +11,7 @@ Each subfolder generally contains a source file (`module.c`), a header file (`mo
 
 All the compilation process is described in form of `CMakeLists.txt`. Having installed [cmake](https://cmake.org/), you may run the following commands:
 
-```bash
+```sh
 mkdir build
 cd build
 cmake ..
@@ -22,7 +22,7 @@ cmake --build . --config=<CONFIG>
 
 All test modules make use of the `tester` and `memdb` frameworks. To read more about it, go to `tester/README.md` and `memdb/README.md`. In order to run the tests, assuming you have [cmake](https://cmake.org/) installed, simply run:
 
-```bash
+```sh
 cd build
 ctest -C <CONFIG>
 ```
@@ -49,11 +49,7 @@ Along with a parameter there might be one or more tags associated:
 
 # Creating a new project
 
-If you wish to create a new project following the pattern of the already existing ones, you may use the `new.py` script located on the root directory. You also choose whether to create testing code and python binding code.
-
-```bash
-python new.py [<project> [--python=[YES/NO]] [--test=[YES/NO]]]
-```
+If you wish to create a new project following the pattern of the already existing ones, you may use the `add_new_project.py` script located on the `config` directory.
 
 ## Python modules
 
@@ -63,7 +59,7 @@ Some modules have Python bindings, which comprehend each a source file (`module.
 
 Run the `setup.py` script, which will also properly install the python extension modules:
 
-```bash
+```sh
 python setup.py install
 ```
 
@@ -71,7 +67,7 @@ python setup.py install
 
 All python modules can be easily tested with `pytest`, which searches for `*_test.py` files in the whole directory. Once the modules are compiled and installed by the `setup.py`, you may run the following commands:
 
-```bash
+```sh
 export PYTHONPATH=$PWD/lib64
 python -m pip install -r requirements.txt
 python -m pytest
@@ -85,14 +81,40 @@ Some modules have Lua bindings, which comprehend each a source file (`module.lua
 
 Run the `setup.py` script, with the environment variable `AA_LUA_SUPPORT` set to `ON`.
 If you don't want to generate the python bindings, just set `AA_PYTHON_SUPPORT` to `OFF`.
-Here I write environment exports in bash but there is an equivalent syntax in Windows terminals.
 
-```bash
-export AA_LUA_SUPPORT="ON"
-export AA_PYTHON_SUPPORT="OFF"
+#### POSIX
+
+```sh
+export AA_LUA_SUPPORT=ON
+export AA_PYTHON_SUPPORT=OFF
+python setup.py install
+```
+
+#### Windows
+
+```dos
+set AA_LUA_SUPPORT=ON
+set AA_PYTHON_SUPPORT=OFF
 python setup.py install
 ```
 
 ### Tests
 
-All lua modules are run individually. Maybe in the future I will make a similar `pytest` with `lua` scripts.
+All lua modules can be easily tested with `luatest`, which searches for `*_test.lua` files in the whole directory. Once the modules are compiled, you may run the following command:
+
+Make sure to set the LUA environment variable to the Lua interpreter name available on your machine.
+
+#### POSIX
+
+```sh
+export LUA=lua54
+chmod +x luatest.sh
+./luatest.sh
+```
+
+#### Windows
+
+```dos
+set LUA=lua54
+luatest
+```

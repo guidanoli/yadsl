@@ -1,8 +1,3 @@
-package.cpath = package.cpath
-                .. ";../../../lib64/?.dll"   -- Windows
-                .. ";../../../lib64/?.so"    -- POSIX
-                .. ";../../../lib64/?.dylib" -- MacOS
-
 local m = require "luadiff"
 
 assert(m.diff("", "") == 0,
@@ -27,5 +22,3 @@ assert(m.diff("rspace", "rspace ") ~= 0,
        "Right space should not make diff different from zero")
 assert(m.diff("case-sensitive", "CaSe-SeNsitIvE") ~= 0,
        "Diff should be case-sensitive")
-
-print("Success")

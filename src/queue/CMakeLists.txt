@@ -1,15 +1,2 @@
-add_library(queue queue.c queue.h)
-target_link_libraries(queue memdb)
-target_include_directories(queue PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-set_target_properties(queue PROPERTIES
-	FOLDER libraries
-	POSITION_INDEPENDENT_CODE ON)
-
-if(AA_BUILD_TESTS)
-	add_tester_module(queuetest SOURCES queue.test.c LINKS queue testerutils)
-	add_tester_scripts(queuetest SOURCES queue.script)
-endif()
-
-if(AA_PYTHON_SUPPORT)
-	add_subdirectory(python)
-endif()
+add_aa_library(queue TEST PYTHON
+    SOURCES queue.c queue.h)

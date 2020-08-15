@@ -22,7 +22,7 @@ function(add_python_module target modulename)
 	target_include_directories(${target} PUBLIC ${PYTHON_INCLUDE_DIRS})
 	# On Windows, it is required to link to the Python libraries
 	if(WIN32)
-		target_link_libraries(${target} ${PYTHON_LIBRARIES})
+		target_link_libraries(${target} ${PYTHON_LIBRARIES} aa)
 	endif()
 	set_target_properties(${target} PROPERTIES FOLDER python)
 	
