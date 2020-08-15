@@ -6,12 +6,10 @@
 cmake --version
 
 # Python
-python -m pip --version
+python --version
 
 # PIP
-if [ "$AA_PYTHON_SUPPORT" == "ON" ]; then
-	python --version
-fi
+python -m pip --version
 
 # Lua
 if [ "$AA_LUA_SUPPORT" == "ON" ]; then

@@ -25,6 +25,4 @@ make INSTALL_TOP="$LUA_HOME_DIR" install;
 ln -s $LUA_HOME_DIR/bin/lua $HOME/.lua/lua
 ln -s $LUA_HOME_DIR/bin/luac $HOME/.lua/luac;
 
-cd $TRAVIS_BUILD_DIR
-
-lua -v
+LUA=$TRAVIS_BUILD_DIR/lua

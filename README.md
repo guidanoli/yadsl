@@ -18,6 +18,13 @@ cmake ..
 cmake --build . --config=<CONFIG>
 ```
 
+or, alternatively, you can use the `setup.py` script. You can use environment variables to control your options too.
+
+```sh
+export AA_PYTHON_SUPPORT=ON
+python setup.py install
+```
+
 ### Tests
 
 All test modules make use of the `tester` and `memdb` frameworks. To read more about it, go to `tester/README.md` and `memdb/README.md`. In order to run the tests, assuming you have [cmake](https://cmake.org/) installed, simply run:
@@ -108,8 +115,7 @@ Make sure to set the LUA environment variable to the Lua interpreter name availa
 
 ```sh
 export LUA=lua54
-chmod +x luatest.sh
-./luatest.sh
+source luatest.sh
 ```
 
 #### Windows
