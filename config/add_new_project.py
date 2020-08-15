@@ -34,6 +34,13 @@ def get_repository_root():
     )                   # [1]   [0]
 
 class BaseFileEntity(object):
+    '''
+    A generic target
+
+    Parameters:
+        make_if - return value for can_make (bool)
+            Default: True
+    '''
     def __init__(self, *args, **kwargs):
         self.make_if = kwargs.get('make_if', True)
     def can_make(self, *args, **kwargs):
@@ -42,6 +49,16 @@ class BaseFileEntity(object):
         pass
 
 class File(BaseFileEntity):
+    '''
+    A file in system
+
+    Parameters:
+        name    - file name and extension (str)
+        make_cb - callback called with file pointer (function)
+            Default: None (empty file)
+        append  - whether make_cb will append or write to file (bool)
+            Default: False (writes from BOF)
+    '''
     def __init__(self, name, make_cb=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = name
@@ -61,6 +78,12 @@ class File(BaseFileEntity):
                 self.make_cb(f, *args, **kwargs)
 
 class Group(BaseFileEntity):
+    '''
+    A group of entities
+
+    Parameters:
+        items - collection of entities (list)
+    '''
     def __init__(self, items, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.items = items
@@ -70,6 +93,15 @@ class Group(BaseFileEntity):
                 item.make(*args, **kwargs)
 
 class Directory(Group):
+    '''
+    A directory in system
+
+    Parameters:
+        name  - directory name (str)
+        items - directory items (list)
+        new   - whether directory must be created (bool)
+            Default: True (creates directory)
+    '''
     def __init__(self, name, items, *args, **kwargs):
         super().__init__(items, *args, **kwargs)
         self.name = name
@@ -87,6 +119,13 @@ class Directory(Group):
         super().make(*args, **kwargs)
 
 class TemplateSubstitutionRule(object):
+    '''
+    Substitution rule
+
+    Parameters:
+        pattern - re pattern to be matched
+        subfunc - function called by re.sub
+    '''
     def __init__(self, pattern, subfunc):
         self.pattern = pattern
         self.subfunc = subfunc
@@ -99,6 +138,12 @@ class TemplateSubstitutionRule(object):
         return text
 
 class TemplateSubstitutionRuleSet(TemplateSubstitutionRule):
+    '''
+    Substitution rule set
+
+    Parameters:
+        rules - collection of substitution rules (list)
+    '''
     def __init__(self, rules):
         self.rules = rules
     def substitute(self, text):
@@ -107,6 +152,14 @@ class TemplateSubstitutionRuleSet(TemplateSubstitutionRule):
         return text
 
 class FileFromTemplate(File):
+    '''
+    A file created from template with substitution rules
+
+    Parameters:
+        name     - same as File.name
+        template - template file path
+        rule     - substitution rule
+    '''
     def __init__(self, name, template, rule, *args, **kwargs):
         super().__init__(name, self.write, *args, **kwargs)
         self.template = template
@@ -138,21 +191,21 @@ def main(*args, **kwargs):
     import re
     kwargs['name'] = args[0]
     
-    var_patt = re.compile("(%[^%]+?%)")
+    var_patt = re.compile("(%[^%]+%)")
     cond_patt = re.compile("<([^?]+)\?([^:]*):([^>]*)>")
     
     def var_replace(match):
-        key = match.group(0)[1:-1]
+        key = match.group(0)[1:-1] # removes %%
         err = f'<missing value for {key}>'
         return kwargs.get(key, err)
 
     def cond_replace(match):
-        cond_exp, true_val, false_val = match.groups()
+        cond, true, false = match.groups()
         try:
-            val = eval(cond_exp, {}, kwargs)
+            val = eval(cond, {}, kwargs)
         except:
             val = False
-        return true_val if val else false_val
+        return true if val else false
 
     var_rule = TemplateSubstitutionRule(var_patt, var_replace)
     cond_rule = TemplateSubstitutionRule(cond_patt, cond_replace)
@@ -161,22 +214,23 @@ def main(*args, **kwargs):
     make_tests = kwargs.get('tests', False)
     make_python = kwargs.get('python', False)
     make_lua = kwargs.get('lua', False)
-    
+   
+    root = get_repository_root()
+
     class ProjectFileFromTemplate(FileFromTemplate):
-        def __init__(self, name, *args, **kwargs):
+        def __init__(self, filepath, *args, **kwargs):
             import re
-            template = (
-                'templates'
-                +os.path.sep
-                +'src'
-                +os.path.sep
-                +'x'
-                +os.path.sep
-                +name.replace('?', 'x')
+            templatepath = (
+                root
+                / 'config'
+                / 'templates'
+                / 'src'
+                / 'x'
+                / filepath.replace('?', 'x')
+                .__str__()
             )
-            patt = re.compile('(.*/)')
-            name = patt.sub('', name)
-            super().__init__(name, template, rule_set, *args, **kwargs)
+            filename = re.sub('(.*/)', '', filepath)
+            super().__init__(filename, templatepath, rule_set, *args, **kwargs)
     
     directory = Directory('src', [
         Directory('?', [
@@ -201,10 +255,27 @@ def main(*args, **kwargs):
         ProjectFileFromTemplate('../CMakeLists.txt', append=True)
     ], new=False)
     
-    directory.make(*args, **kwargs, path=get_repository_root())
+    directory.make(*args, **kwargs, path=root)
 
-if __name__ == '__main__':
-    import sys
+def process_argv(argv):
+    '''
+    Process command-line arguments into args and kwargs
+
+    --key=value => ['key'] = eval(value, {}, kwargs)
+    --key       => ['key'] = True
+    -abc        => ['a'] = ['b'] = ['c'] = True
+    value       => args.append(eval(value, {}, kwargs))
+
+    Parameters:
+        argv - command line arguments
+               Hint: see sys.argv
+               Hint: don't forget to remove sys.argv[0]
+    Return:
+        args   - list of positional arguments
+        kwargs - dictionary of keyword arguments
+    '''
+    import re
+
     args = list()
     kwargs = dict()
     
@@ -213,13 +284,29 @@ if __name__ == '__main__':
             return eval(exp, {}, kwargs)
         except:
             return exp
-        
-    for arg in sys.argv[1:]:
-        if '=' in arg:
-            k, v = arg.split('=')
+    
+    kw_patt = re.compile('--([^=]+)=(.*)')
+    string_flag_patt = re.compile('--(^=)$')
+    char_flag_patt = re.compile('-([^-=][^=]+)')
+
+    for arg in argv:
+        if match := kw_patt.match(arg):
+            k, v = match.groups()
             kwargs[k] = _eval(v)
+        elif match := string_flag_patt.match(arg):
+            v = match.group(1)
+            kwargs[v] = True
+        elif match := char_flag_patt.match(arg):
+            vs = match.group(1)
+            for v in vs:
+                kwargs[v] = True
         else:
             v = _eval(arg)
             args.append(v)
     
+    return args, kwargs
+
+if __name__ == '__main__':
+    import sys
+    args, kwargs = process_argv(sys.argv[1:])
     main(*args, **kwargs)
