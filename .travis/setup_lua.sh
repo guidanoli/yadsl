@@ -12,16 +12,10 @@ mkdir $HOME/.lua
 
 mkdir -p "$LUA_HOME_DIR"
 
-if [ "$LUA" == "lua5.1" ]; then
-  curl http://www.lua.org/ftp/lua-5.1.5.tar.gz | tar xz
-  cd lua-5.1.5;
-elif [ "$LUA" == "lua5.2" ]; then
-  curl http://www.lua.org/ftp/lua-5.2.4.tar.gz | tar xz
-  cd lua-5.2.4;
-elif [ "$LUA" == "lua5.3" ]; then
-  curl http://www.lua.org/ftp/lua-5.3.2.tar.gz | tar xz
-  cd lua-5.3.2;
-fi
+LUA_VERSION=$LUA_MAJOR.$LUA_MINOR.$LUA_PATCH
+
+curl http://www.lua.org/ftp/lua-$LUA_VERSION.tar.gz | tar xz
+cd lua-$LUA_VERSION;
 
 # Build Lua without backwards compatibility for testing
 perl -i -pe 's/-DLUA_COMPAT_(ALL|5_2)//' src/Makefile

@@ -7,6 +7,7 @@ function(add_lua_module target modulename)
 	set_target_properties(
 		${target}
 		PROPERTIES
+			PREFIX ""
 			OUTPUT_NAME "${modulename}"
 			LINKER_LANGUAGE C
 	)
