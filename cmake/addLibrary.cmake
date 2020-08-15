@@ -13,6 +13,27 @@ function(safe_target_link_libraries target)
     endforeach()
 endfunction()
 
+# Do logical ternary based on value and save
+# result in variable
+#
+# do_ternary("new_var" old_var OKAY NOT_OKAY)
+#
+macro(do_ternary varName varValue trueValue falseValue)
+  if(${varValue})
+    set(${varName} ${trueValue})
+  else()
+    set(${varName} ${falseValue})
+  endif()  
+endmacro()
+
+# Invert value and save it in variable
+#
+# invert_boolean("new_var" old_var)
+#
+macro(invert_boolean varName varValue)
+  do_ternary(${varName} ${varValue} FALSE TRUE)
+endmacro()
+
 # Adds library for aa (wrapper around add_library)
 #
 # add_aa_library(target [TEST] [LUA] [PYTHON] [STATIC]
@@ -27,18 +48,22 @@ function(add_aa_library target)
     cmake_parse_arguments(OPTS "${options}" "${oneValueArgs}"
                           "${multiValueArgs}" ${ARGN})
     
-    add_library(${target} ${OPTS_SOURCES})
+    if(${OPTS_PYTHON} OR ${OPTS_LUA})
+        set(${OPTS_STATIC} FALSE)
+    endif()
+    
+    do_ternary("OPTS_LIBTYPE" OPTS_STATIC STATIC SHARED)
+    
+    add_library(${target} ${OPTS_LIBTYPE} ${OPTS_SOURCES})
     safe_target_link_libraries(${target} aa memdb)
     target_include_directories(${target} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
     
+    invert_boolean("OPTS_FPIC" OPTS_STATIC)
+        
     set_target_properties(${target} PROPERTIES
-        FOLDER libraries)
+        FOLDER libraries
+        POSITION_INDEPENDENT_CODE ${OPTS_FPIC})
     
-    if(NOT ${STATIC})
-        set_target_properties(${target} PROPERTIES
-            POSITION_INDEPENDENT_CODE ON)
-    endif()
-
     include(moveLibraries)
 	move_target_library(${target})
     
