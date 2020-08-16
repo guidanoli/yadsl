@@ -28,7 +28,7 @@ class CMakeBuild(build_ext):
 		for ext in self.extensions:
 			extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
 			cmake_args = [
-				'-DAA_PYTHON_SUPPORT={}'.format(_get_env_variable('AA_PYTHON_SUPPORT', default='ON')),
+				'-DAA_PYTHON_SUPPORT={}'.format(_get_env_variable('AA_PYTHON_SUPPORT', default='OFF')),
 				'-DAA_LUA_SUPPORT={}'.format(_get_env_variable('AA_LUA_SUPPORT', default='OFF')),
 				'-DAA_BUILD_TESTS={}'.format(_get_env_variable('AA_BUILD_TESTS', default='ON')),
 				'-DCMAKE_BUILD_TYPE=Release',
@@ -74,7 +74,7 @@ setup(name='aa',
 		  CMakeExtension('pyavl'),
 		  CMakeExtension('pydiff'),
 		  CMakeExtension('pygraph'),
-          CMakeExtension('pyhashmap'),
+		  CMakeExtension('pyhashmap'),
 		  CMakeExtension('pyheap'),
 		  CMakeExtension('pyqueue'),
 		  CMakeExtension('pystack')],
