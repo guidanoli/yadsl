@@ -1,7 +1,7 @@
 #include "graphio.h"
 
+#include "posixstring.h"
 #include <assert.h>
-#include <string.h>
 #include <stdlib.h>
 
 #include "map.h"

@@ -1,6 +1,6 @@
 #include "stack.h"
 
-#include <string.h>
+#include "posixstring.h"
 #include <stdlib.h>
 #include <stdio.h>
 

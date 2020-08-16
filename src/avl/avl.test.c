@@ -1,7 +1,7 @@
 #include "avl.h"
 
+#include "posixstring.h"
 #include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 
 #include "tester.h"

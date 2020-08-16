@@ -1,7 +1,7 @@
 #include "tester.h"
 
+#include "posixstring.h"
 #include <stdio.h>
-#include <string.h>
 #include <stdarg.h>
 
 #if defined(_MSC_VER)

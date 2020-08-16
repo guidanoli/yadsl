@@ -1,9 +1,9 @@
 #include "diff.h"
 
+#include "posixstring.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 
 #include "memdb.h"
 

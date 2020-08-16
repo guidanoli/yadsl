@@ -1,7 +1,7 @@
 #include "diff.h"
 
+#include "posixstring.h"
 #include <stdio.h>
-#include <string.h>
 
 #include "tester.h"
 
