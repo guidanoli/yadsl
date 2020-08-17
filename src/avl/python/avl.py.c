@@ -13,7 +13,7 @@
 typedef struct
 {
 	PyObject_HEAD
-	AVL *ob_tree;
+	AVLTreeHandle *ob_tree;
 	PyObject *ob_func;
 	unsigned char lock : 1;
 } AVLObject;
@@ -46,7 +46,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-_DEFINE_EXCEPTION_FUNCTIONS(AVL, exceptions)
+_DEFINE_EXCEPTION_FUNCTIONS(AVLTreeHandle, exceptions)
 
 //
 // Callbacks
@@ -59,12 +59,12 @@ decRefCallback(void *object)
 }
 
 static int
-cmpCallback(void *obj1, void *obj2, void *arg)
+cmpCallback(void *obj1, void *obj2, void *cmp_objs_arg)
 {
 	int result = 1;
 	AVLObject *ho;
 	PyObject *callable;
-	ho = (AVLObject *) arg;
+	ho = (AVLObject *) cmp_objs_arg;
 	if (callable = ho->ob_func) {
 		PyObject *args = NULL, *resultObj = NULL, *zero = NULL;
 		if ((args = PyTuple_Pack(2, obj1, obj2)) == NULL)
@@ -145,14 +145,14 @@ struct _visit_cb_arg
 	PyObject *func; /* callable object */
 };
 
-void *visitCallback(void *object, void *arg)
+void *visitCallback(void *object, void *cmp_objs_arg)
 {
-	struct _visit_cb_arg *info = (struct _visit_cb_arg *) arg;
+	struct _visit_cb_arg *info = (struct _visit_cb_arg *) cmp_objs_arg;
 	PyObject *func_arg = PyTuple_Pack(1, object), *result;
 	if (func_arg == NULL) {
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not create internal tuple");
-		return arg; // Flag for 'internal error'
+		return cmp_objs_arg; // Flag for 'internal error'
 	}
 	info->ao->lock = 1;
 	result = PyObject_CallObject(info->func, func_arg);
@@ -162,7 +162,7 @@ void *visitCallback(void *object, void *arg)
 		if (!PyErr_Occurred())
 			PyErr_SetString(PyExc_RuntimeError,
 				"An unspecified error occurred during callback.");
-		return arg; // Flag for 'internal error'
+		return cmp_objs_arg; // Flag for 'internal error'
 	}
 	if (!PyObject_IsTrue(result)) {
 		Py_DECREF(result);
@@ -215,10 +215,10 @@ AVL_init(AVLObject *self, PyObject *args, PyObject *kw)
 			return -1;
 		}
 	}
-	switch (avlCreate(&self->ob_tree, cmpCallback, decRefCallback, self)) {
-	case AVL_OK:
+	switch (aa_avltree_tree_create(cmpCallback, self, decRefCallback, &self->ob_tree)) {
+	case AA_AVLTREE_RET_OK:
 		break;
-	case AVL_MEMORY:
+	case AA_AVLTREE_RET_MEMORY:
 		PyErr_SetString(PyExc_MemoryError, "Could not create avl tree");
 		return -1;
 	default:
@@ -234,7 +234,7 @@ static void
 AVL_dealloc(AVLObject *self)
 {
 	if (self->ob_tree)
-		avlDestroy(self->ob_tree);
+		aa_avltree_destroy(self->ob_tree);
 	_memdb_dump();
 	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
@@ -252,18 +252,18 @@ AVL_add(AVLObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_AVL_throw_error(PyExc_Lock);
+		_AVLTreeHandle_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (avlInsert(self->ob_tree, obj, &exists)) {
-	case AVL_OK:
+	switch (aa_avltree_object_insert(self->ob_tree, obj, &exists)) {
+	case AA_AVLTREE_RET_OK:
 		_memdb_dump();
 		if (!exists)
 			Py_INCREF(obj);
 		if (PyErr_Occurred())
 			return NULL;
 		return PyBool_FromLong(!exists);
-	case AVL_MEMORY:
+	case AA_AVLTREE_RET_MEMORY:
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not allocate memory for newly added item in tree");
 		break;
@@ -284,11 +284,11 @@ AVL_remove(AVLObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_AVL_throw_error(PyExc_Lock);
+		_AVLTreeHandle_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (avlDelete(self->ob_tree, obj, &exists)) {
-	case AVL_OK:
+	switch (aa_avltree_object_remove(self->ob_tree, obj, &exists)) {
+	case AA_AVLTREE_RET_OK:
 		_memdb_dump();
 		if (PyErr_Occurred())
 			return NULL;
@@ -310,11 +310,11 @@ AVL_contains(AVLObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_AVL_throw_error(PyExc_Lock);
+		_AVLTreeHandle_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (avlSearch(self->ob_tree, obj, &exists)) {
-	case AVL_OK:
+	switch (aa_avltree_object_search(self->ob_tree, obj, &exists)) {
+	case AA_AVLTREE_RET_OK:
 		if (PyErr_Occurred())
 			return NULL;
 		return PyBool_FromLong(exists);
@@ -336,10 +336,10 @@ PyDoc_STRVAR(_AVL_iterate__doc__,
 static PyObject *
 AVL_iterate(AVLObject *self, PyObject *obj)
 {
-	struct _visit_cb_arg arg;
+	struct _visit_cb_arg cmp_objs_arg;
 	void *ret = NULL;
 	if (self->lock) {
-		_AVL_throw_error(PyExc_Lock);
+		_AVLTreeHandle_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	if (!PyCallable_Check(obj)) {
@@ -347,10 +347,10 @@ AVL_iterate(AVLObject *self, PyObject *obj)
 			"argument should be a callable object");
 		return NULL;
 	}
-	arg.ao = self;
-	arg.func = obj;
-	switch (avlTraverse(self->ob_tree, visitCallback, &arg, &ret)) {
-	case AVL_OK:
+	cmp_objs_arg.ao = self;
+	cmp_objs_arg.func = obj;
+	switch (aa_avltree_tree_traverse(self->ob_tree, visitCallback, &cmp_objs_arg, &ret)) {
+	case AA_AVLTREE_RET_OK:
 		_memdb_dump();
 		if (PyErr_Occurred())
 			goto exit;
@@ -361,7 +361,7 @@ AVL_iterate(AVLObject *self, PyObject *obj)
 		Py_UNREACHABLE();
 	}
 exit:
-	if (ret != &arg) // flag for 'internal error'
+	if (ret != &cmp_objs_arg) // flag for 'internal error'
 		Py_XDECREF(ret);
 	return NULL;
 }

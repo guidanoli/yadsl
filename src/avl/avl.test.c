@@ -25,21 +25,21 @@ const char *TesterHelpStrings[] = {
 };
 
 char buffer[BUFSIZ];
-AVL *pTree;
+AVLTreeHandle *pTree;
 TesterReturnValue cbReturnValue;
 int first, last;
 
-int cmpObjs(void *obj1, void *obj2, void *arg)
+int cmp_objs_func(void *obj1, void *obj2, void *cmp_objs_arg)
 {
-	assert(arg == &pTree);
+	assert(cmp_objs_arg == &pTree);
 	return *((int *) obj1) - *((int *) obj2);
 }
 
-void *visit_cb_range(void *object, void *arg)
+void *visit_cb_range(void *object, void *cmp_objs_arg)
 {
 	int curr;
 	assert(object);
-	assert(arg == &pTree);
+	assert(cmp_objs_arg == &pTree);
 	curr = *((int *) object);
 	if (curr != first)
 		cbReturnValue = TESTER_RETURN;
@@ -51,11 +51,11 @@ void *visit_cb_range(void *object, void *arg)
 	return 0;
 }
 
-void *visit_cb(void *object, void *arg)
+void *visit_cb(void *object, void *cmp_objs_arg)
 {
 	int actual, expected;
 	assert(object);
-	assert(arg == &pTree);
+	assert(cmp_objs_arg == &pTree);
 	actual = *((int *) object);
 	if (TesterParseArguments("i", &expected) != 1) {
 		if (!cbReturnValue)
@@ -69,17 +69,17 @@ void *visit_cb(void *object, void *arg)
 
 TesterReturnValue TesterInitCallback()
 {
-	if (avlCreate(&pTree, cmpObjs, free, &pTree))
+	if (aa_avltree_tree_create(cmp_objs_func, &pTree, free, &pTree))
 		return TESTER_MALLOC;
 	return TESTER_OK;
 }
 
-TesterReturnValue convert(AVLRet returnId)
+TesterReturnValue convert(AVLTreeRet returnId)
 {
 	switch (returnId) {
-	case AVL_OK:
+	case AA_AVLTREE_RET_OK:
 		return TESTER_OK;
-	case AVL_MEMORY:
+	case AA_AVLTREE_RET_MEMORY:
 		return TesterExternalReturnValue("memory");
 	default:
 		return TesterExternalReturnValue("unknown");
@@ -96,12 +96,12 @@ int getYesOrNoFromString(const char *str)
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-	AVLRet returnId = AVL_OK;
+	AVLTreeRet returnId = AA_AVLTREE_RET_OK;
 	if matches(command, "new") {
-		AVL *newTree;
-		returnId = avlCreate(&newTree, cmpObjs, free, &pTree);
+		AVLTreeHandle *newTree;
+		returnId = aa_avltree_tree_create(cmp_objs_func, &pTree, free, &newTree);
 		if (!returnId) {
-			avlDestroy(pTree);
+			aa_avltree_destroy(pTree);
 			pTree = newTree;
 		}
 	} else if matches(command, "insert") {
@@ -112,7 +112,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 		if (TesterParseArguments("is", pNumber, buffer) != 2)
 			return TESTER_ARGUMENT;
 		expected = !getYesOrNoFromString(buffer);
-		returnId = avlInsert(pTree, pNumber, &actual);
+		returnId = aa_avltree_object_insert(pTree, pNumber, &actual);
 		if (returnId || actual)
 			free(pNumber);
 		if (!returnId && actual != expected)
@@ -128,7 +128,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 			if (pNumber == NULL)
 				return TESTER_MALLOC;
 			*pNumber = first;
-			returnId = avlInsert(pTree, pNumber, &actual);
+			returnId = aa_avltree_object_insert(pTree, pNumber, &actual);
 			if (returnId || actual) {
 				free(pNumber);
 				break;
@@ -150,7 +150,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
 			TesterLog("Expected YES or NO, but got %s. Assumed NO.", buffer);
-		returnId = avlSearch(pTree, pNumber, &actual);
+		returnId = aa_avltree_object_search(pTree, pNumber, &actual);
 		free(pNumber);
 		if (!returnId && actual != expected)
 			return TESTER_RETURN;
@@ -167,7 +167,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 			if (pNumber == NULL)
 				return TESTER_MALLOC;
 			*pNumber = first;
-			returnId = avlSearch(pTree, pNumber, &actual);
+			returnId = aa_avltree_object_search(pTree, pNumber, &actual);
 			free(pNumber);
 			if (returnId)
 				break;
@@ -179,15 +179,15 @@ TesterReturnValue TesterParseCallback(const char *command)
 				--first;
 		} while (first != last);
 	} else if matches(command, "traverse") {
-		cbReturnValue = AVL_OK;
-		returnId = avlTraverse(pTree, visit_cb, &pTree, NULL);
+		cbReturnValue = AA_AVLTREE_RET_OK;
+		returnId = aa_avltree_tree_traverse(pTree, visit_cb, &pTree, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
 	} else if matches(command, "traverse*") {
-		cbReturnValue = AVL_OK;
+		cbReturnValue = AA_AVLTREE_RET_OK;
 		if (TesterParseArguments("ii", &first, &last) != 2)
 			return TESTER_ARGUMENT;
-		returnId = avlTraverse(pTree, visit_cb_range, &pTree, NULL);
+		returnId = aa_avltree_tree_traverse(pTree, visit_cb_range, &pTree, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
 	} else if matches(command, "delete") {
@@ -198,7 +198,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 		if (TesterParseArguments("is", pNumber, buffer) != 2)
 			return TESTER_ARGUMENT;
 		expected = getYesOrNoFromString(buffer);
-		returnId = avlDelete(pTree, pNumber, &actual);
+		returnId = aa_avltree_object_remove(pTree, pNumber, &actual);
 		free(pNumber);
 		if (!returnId && actual != expected)
 			return TESTER_RETURN;
@@ -213,7 +213,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 			if (pNumber == NULL)
 				return TESTER_MALLOC;
 			*pNumber = first;
-			returnId = avlDelete(pTree, pNumber, &actual);
+			returnId = aa_avltree_object_remove(pTree, pNumber, &actual);
 			free(pNumber);
 			if (returnId)
 				break;
@@ -233,7 +233,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 TesterReturnValue TesterExitCallback()
 {
 	if (pTree)
-		avlDestroy(pTree);
+		aa_avltree_destroy(pTree);
 	return TESTER_OK;
 }
 

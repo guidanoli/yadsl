@@ -6,6 +6,8 @@
 
 #include "memdb.h"
 
+/**** Macros ****/
+
 #ifndef abs
 #define abs(a) (a > 0 ? a : -a)
 #endif /* abs */
@@ -14,12 +16,9 @@
 #define max(a, b) ((a > b) ? a : b)
 #endif /* max */
 
-// For every x, x->left <= x <= x->right
-// -1: o1 < o2
-//  0: o1 = o2
-// +1: o1 > o2
-#define CMP(o1, o2, t) (t->cmpObjs ? t->cmpObjs(o1, o2, t->arg) : \
- (o1 < o2 ? -1 : (o1 == o2 ? 0 : 1)))
+// normalized object comparison function
+#define compare_objects(o1, o2, t) \
+(t->cmp_objs_func ? t->cmp_objs_func(o1, o2, t->cmp_objs_arg) : (o1 < o2 ? -1 : (o1 == o2 ? 0 : 1)))
 
 // height of a node
 #define height(x) (x ? x->height : 0)
@@ -33,352 +32,528 @@
 // check AVL tree invariants
 #ifdef _DEBUG
 #define check_invariants(x) do { \
-	if (x != NULL) { \
-		assert(x != x->left); \
-		assert(x != x->right); \
-		if (x->left != NULL && x->right != NULL) \
-			assert(x->left != x->right); \
-		assert(height(x) == 1 + max(height(x->left), height(x->right))); \
-		assert(abs(balance(x)) < 2); \
-	} \
+    if (x != NULL) { \
+        assert(x != x->left); \
+        assert(x != x->right); \
+        if (x->left != NULL && x->right != NULL) \
+            assert(x->left != x->right); \
+        assert(height(x) == 1 + max(height(x->left), height(x->right))); \
+        assert(abs(balance(x)) < 2); \
+    } \
 } while(0)
 #else /* ifndef _DEBUG */
 #define check_invariants(x) ((void) 0)
 #endif /* _DEBUG */
 
-struct Node
-{
-	struct Node *left;
-	struct Node *right;
-	int height; // 2^INT_MAX nodes
-	void *object;
-};
+/**** Structs ****/
 
-struct AVL
+typedef struct AVLTreeNode
 {
-	struct Node *root;
-	int (*cmpObjs)(void *obj1, void *obj2, void *arg);
-	void (*freeObj)(void *object);
-	void *arg;
-};
+    /* Left AVL tree node */
+    struct AVLTreeNode *left;
 
-AVLRet avlCreate(AVL **ppTree,
-	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
-	void (*freeObj)(void *object), void *arg)
+    /* Right AVL tree node */
+    struct AVLTreeNode *right;
+
+    /* AVL tree node height */
+    int height; // 2^INT_MAX nodes
+
+    /* AVL tree node object */
+    AVLTreeObject *object;
+}
+/* AVL tree node */
+AVLTreeNode;
+
+typedef struct
 {
-	AVL *pTree = malloc(sizeof(struct AVL));
-	if (pTree == NULL)
-		return AVL_MEMORY;
-	pTree->root = NULL;
-	pTree->cmpObjs = cmpObjs;
-	pTree->freeObj = freeObj;
-	pTree->arg = arg;
-	*ppTree = pTree;
-	return AVL_OK;
+    /* AVL tree root node */
+    AVLTreeNode *root;
+
+    /* AVL tree object comparison function */
+    AVLTreeCmpObjsFunc cmp_objs_func;
+
+    /* AVL tree object comparison function user argument */
+    AVLTreeCmpObjsArg *cmp_objs_arg;
+
+    /* AVL tree object freeing function */
+    AVLTreeFreeObjFunc free_object_func;
+}
+/* AVL tree */
+AVLTree;
+
+/**** Internal functions declarations ****/
+
+static AVLTreeNode* aa_avltree_node_create_internal(AVLTreeObject* object);
+
+static AVLTreeNode* aa_avltree_subtree_left_rotate_internal(AVLTreeNode* x);
+
+static AVLTreeNode* aa_avltree_subtree_right_rotate_internal(AVLTreeNode* x);
+
+static AVLTreeNode* aa_avl_subtree_rebalance_internal(AVLTreeNode* x);
+
+static AVLTreeNode* aa_avltree_subtree_node_insert_internal(
+    AVLTree* tree,
+    AVLTreeNode* x,
+    AVLTreeNode* node,
+    int* has_duplicate_ptr);
+
+static int aa_avltree_subtree_node_search_internal(
+    AVLTree* tree,
+    AVLTreeObject* object,
+    AVLTreeNode* node);
+
+static AVLTreeVisitObjRet* aa_avltree_subtree_traverse_internal(
+    AVLTreeNode* node,
+    AVLTreeVisitObjFunc visit_func,
+    AVLTreeVisitObjArg* visit_arg);
+
+static AVLTreeNode* aa_avltree_subtree_get_min_node_internal(AVLTreeNode* node);
+
+static AVLTreeNode* aa_avltree_subtree_node_remove_internal(
+    AVLTree* tree,
+    AVLTreeObject* object,
+    AVLTreeNode* x,
+    int free_obj /* = 1 */,
+    int* exists_ptr);
+
+static void aa_avltree_subtree_destroy_internal(
+    AVLTree* tree,
+    AVLTreeNode * x);
+
+/**** External functions definitions ****/
+
+AVLTreeRet aa_avltree_tree_create(
+    AVLTreeCmpObjsFunc cmp_objs_func,
+    AVLTreeCmpObjsArg *cmp_objs_arg,
+    AVLTreeFreeObjFunc free_object_func,
+    AVLTreeHandle **tree_handle_ptr)
+{
+    AVLTree *tree = malloc(sizeof *tree);
+    if (tree == NULL)
+        return AA_AVLTREE_RET_MEMORY;
+    tree->root = NULL;
+    tree->cmp_objs_func = cmp_objs_func;
+    tree->free_object_func = free_object_func;
+    tree->cmp_objs_arg = cmp_objs_arg;
+    *tree_handle_ptr = tree;
+    return AA_AVLTREE_RET_OK;
 }
 
-struct Node *create_node(void *object)
+AVLTreeRet aa_avltree_object_insert(
+    AVLTreeHandle* tree_handle,
+    AVLTreeObject* object,
+    int* exists_ptr)
 {
-	struct Node *node = malloc(sizeof(struct Node));
-	if (node) {
-		node->height = 1;
-		node->left = NULL;
-		node->right = NULL;
-		node->object = object;
-	}
-	return node;
+    int exists = 0;
+    AVLTreeNode *node = aa_avltree_node_create_internal(object);
+    if (node == NULL)
+        return AA_AVLTREE_RET_MEMORY;
+    AVLTree* tree = (AVLTree*) tree_handle;
+    tree->root = aa_avltree_subtree_node_insert_internal(tree, tree->root, node, &exists);
+    if (exists)
+        free(node);
+    if (exists_ptr)
+        *exists_ptr = exists;
+    return AA_AVLTREE_RET_OK;
 }
 
-// Assumes x->left != NULL
-struct Node *leftRotate(struct Node *x)
+AVLTreeRet aa_avltree_object_search(
+    AVLTreeHandle *tree_handle,
+    AVLTreeObject *object,
+    int *exists_ptr)
 {
-	struct Node *y = x->right;
-	struct Node *T2 = y->left;
-	//     |                   |
-	//     x                   y
-	//    / \                 / \
-	//  T1   y      ==>      x   T3
-	//      / \             / \
-	//    T2   T3         T1   T2
-	x->right = T2;
-	y->left = x;
-	update_height(x);
-	update_height(y);
-	return y;
+    AVLTree* tree = (AVLTree*) tree_handle;
+    int exists = aa_avltree_subtree_node_search_internal(tree, object, tree->root);
+    if (exists_ptr)
+        *exists_ptr = exists;
+    return AA_AVLTREE_RET_OK;
 }
 
-// Assumes x->right != NULL
-struct Node *rightRotate(struct Node *x)
+AVLTreeRet aa_avltree_tree_traverse(
+    AVLTreeHandle *tree_handle,
+    AVLTreeVisitObjFunc visit_func,
+    AVLTreeVisitObjArg *visit_arg,
+    AVLTreeVisitObjRet **visit_ret_ptr)
 {
-	struct Node *y = x->left;
-	struct Node *T2 = y->right;
-	//       |                   |
-	//       x                   y
-	//      / \                 / \
-	//     y   T3      ==>    T1   x
-	//    / \                     / \
-	//  T1   T2                 T2   T3
-	x->left = T2;
-	y->right = x;
-	update_height(x);
-	update_height(y);
-	return y;
+    AVLTree* tree = (AVLTree*) tree_handle;
+    AVLTreeVisitObjRet *ret = aa_avltree_subtree_traverse_internal(tree->root, visit_func, visit_arg);
+    if (visit_ret_ptr)
+        *visit_ret_ptr = ret;
+    return AA_AVLTREE_RET_OK;
 }
 
-struct Node *rebalanceTree(void *object, struct Node *x,
-	AVL *pTree)
+AVLTreeRet aa_avltree_object_remove(
+    AVLTreeHandle *tree_handle,
+    AVLTreeObject *object,
+    int *exists_ptr)
 {
-	int balance;
-	if (x == NULL)
-		return NULL;
-	x->height = 1 + max(height(x->left), height(x->right));
-	balance = balance(x);
-	if (balance < -1) {
-		//    |
-		//    x
-		//   / \
-		// T1*  T2
-		assert(x->left);
-		balance = balance(x->left);
-		if (balance <= 0) {
-			//      |
-			//      x
-			//     / \
-			//    y   T3
-			//   / \
-			// T1*  T2
-			assert(x->left->left);
-			return rightRotate(x);
-		} else {
-			//      |
-			//      x
-			//     / \
-			//    y   T3
-			//   / \
-			// T1   T2*
-			assert(x->left->right);
-			x->left = leftRotate(x->left);
-			return rightRotate(x);
-		}
-	} else if (balance > 1) {
-		//    |
-		//    x
-		//   / \
-		// T1   T2*
-		assert(x->right);
-		balance = balance(x->right);
-		if (balance >= 0) {
-			//    |
-			//    x
-			//   / \
-			// T1   y
-			//     / \
-			//   T2   T3*
-			assert(x->right->right);
-			return leftRotate(x);
-		} else {
-			//    |
-			//    x
-			//   / \
-			// T1   y
-			//     / \
-			//   T2*  T3
-			assert(x->right->left);
-			x->right = rightRotate(x->right);
-			return leftRotate(x);
-		}
-	}
-	check_invariants(x);
-	return x;
+    if (exists_ptr)
+        *exists_ptr = 0;
+    AVLTree* tree = (AVLTree*) tree_handle;
+    tree->root = aa_avltree_subtree_node_remove_internal(tree, object, tree->root, 1, exists_ptr);
+    return AA_AVLTREE_RET_OK;
 }
 
-// node: node to be inserted
-// x: current node being analysed
-// pTree: avl tree object
-// pDup: (return) whether there is a duplicate or not
-// return: node to be in position of x
-struct Node *insertNode(struct Node *node, struct Node *x,
-	AVL *pTree, int *pDup)
+void aa_avltree_destroy(AVLTreeHandle *tree_handle)
 {
-	int cmp;
-	if (x == NULL)
-		return node;
-	cmp = CMP(node->object, x->object, pTree);
-	if (cmp < 0) {
-		//    |
-		//    x
-		//   / \
-		// T1*  T2
-		x->left = insertNode(node, x->left, pTree, pDup);
-	} else if (cmp > 0) {
-		//    |
-		//    x
-		//   / \
-		// T1   T2*
-		x->right = insertNode(node, x->right, pTree, pDup);
-	} else {
-		// Duplicate object
-		*pDup = 1;
-	}
-	if (*pDup) return x;
-	return rebalanceTree(node->object, x, pTree);
+    if (tree_handle == NULL)
+        return;
+    AVLTree* tree = (AVLTree*) tree_handle;
+    aa_avltree_subtree_destroy_internal(tree, tree->root);
+    free(tree);
 }
 
-AVLRet avlInsert(AVL *pTree, void *object, int *pExists)
+/**** Internal functions definitions ****/
+
+/* Create leaf node with object
+
+   Parameters:
+     * object - object to be stored in node
+   
+   Returns:
+     * pointer to node or NULL, if could not allocate memory
+*/
+AVLTreeNode *aa_avltree_node_create_internal(AVLTreeObject *object)
 {
-	int exists = 0;
-	struct Node *node = create_node(object);
-	if (node == NULL)
-		return AVL_MEMORY;
-	pTree->root = insertNode(node, pTree->root, pTree, &exists);
-	if (exists)
-		free(node);
-	if (pExists)
-		*pExists = exists;
-	return AVL_OK;
+    AVLTreeNode *node = malloc(sizeof *node);
+    if (node) {
+        node->height = 1;
+        node->left = NULL;
+        node->right = NULL;
+        node->object = object;
+    }
+    return node;
 }
 
-int searchNode(struct Node *node, void *object, AVL *pTree)
+/* Left-rotate a subtree around its root
+
+      |                   |
+      x                   y
+     / \                 / \
+   T1   y      ==>      x   T3
+       / \             / \
+     T2   T3         T1   T2
+
+   Parameters:
+     * x - subtree root before rotation
+           [!] assumes x->left != NULL
+
+   Returns:
+     * subtree root after rotation
+*/
+AVLTreeNode *aa_avltree_subtree_left_rotate_internal(AVLTreeNode *x)
 {
-	int cmp;
-	if (node == NULL)
-		return 0;
-	check_invariants(node);
-	cmp = CMP(object, node->object, pTree);
-	if (cmp < 0)
-		return searchNode(node->left, object, pTree);
-	else if (cmp > 0)
-		return searchNode(node->right, object, pTree);
-	else
-		return 1;
+    AVLTreeNode *y = x->right;
+    AVLTreeNode *T2 = y->left;
+    x->right = T2;
+    y->left = x;
+    update_height(x);
+    update_height(y);
+    return y;
 }
 
-AVLRet avlSearch(AVL *pTree, void *object, int *pExists)
+/* Right-rotate a subtree around its root
+
+        |                   |
+        x                   y
+       / \                 / \
+      y   T3      ==>    T1   x
+     / \                     / \
+   T1   T2                 T2   T3
+
+   Parameters:
+     * x - subtree root before rotation
+           [!] assumes x->right != NULL
+
+   Returns:
+     * subtree root after rotation
+*/
+AVLTreeNode *aa_avltree_subtree_right_rotate_internal(AVLTreeNode *x)
 {
-	int exists = searchNode(pTree->root, object, pTree);
-	if (pExists)
-		*pExists = exists;
-	return AVL_OK;
+    AVLTreeNode *y = x->left;
+    AVLTreeNode *T2 = y->right;
+    x->left = T2;
+    y->right = x;
+    update_height(x);
+    update_height(y);
+    return y;
 }
 
-void *nodeTraverse(struct Node *node,
-	void * (*visit_cb)(void *object, void *arg), void *arg)
+/* Balance subtree
+
+   Parameters:
+     * x - subtree root before balancing
+
+   Returns:
+     * subtree root after balancing
+*/
+AVLTreeNode *aa_avl_subtree_rebalance_internal(AVLTreeNode *x)
 {
-	void *ret;
-	if (node == NULL)
-		return NULL;
-	if (ret = nodeTraverse(node->left, visit_cb, arg))
-		return ret;
-	check_invariants(node);
-	if (visit_cb && (ret = visit_cb(node->object, arg)))
-		return ret;
-	if (ret = nodeTraverse(node->right, visit_cb, arg))
-		return ret;
-	return NULL;
+    int balance;
+    if (x == NULL)
+        return NULL;
+    x->height = 1 + max(height(x->left), height(x->right));
+    balance = balance(x);
+    if (balance < -1) {
+        //    |
+        //    x
+        //   / \
+        // T1*  T2
+        assert(x->left);
+        balance = balance(x->left);
+        if (balance <= 0) {
+            //      |
+            //      x
+            //     / \
+            //    y   T3
+            //   / \
+            // T1*  T2
+            assert(x->left->left);
+            return aa_avltree_subtree_right_rotate_internal(x);
+        } else {
+            //      |
+            //      x
+            //     / \
+            //    y   T3
+            //   / \
+            // T1   T2*
+            assert(x->left->right);
+            x->left = aa_avltree_subtree_left_rotate_internal(x->left);
+            return aa_avltree_subtree_right_rotate_internal(x);
+        }
+    } else if (balance > 1) {
+        //    |
+        //    x
+        //   / \
+        // T1   T2*
+        assert(x->right);
+        balance = balance(x->right);
+        if (balance >= 0) {
+            //    |
+            //    x
+            //   / \
+            // T1   y
+            //     / \
+            //   T2   T3*
+            assert(x->right->right);
+            return aa_avltree_subtree_left_rotate_internal(x);
+        } else {
+            //    |
+            //    x
+            //   / \
+            // T1   y
+            //     / \
+            //   T2*  T3
+            assert(x->right->left);
+            x->right = aa_avltree_subtree_right_rotate_internal(x->right);
+            return aa_avltree_subtree_left_rotate_internal(x);
+        }
+    }
+    check_invariants(x);
+    return x;
 }
 
-AVLRet avlTraverse(AVL *pTree,
-	void * (*visit_cb)(void *object, void *arg),
-	void *arg, void **pReturn)
+/* Insert node in subtree
+
+   Parameters:
+     * x - subtree root before insertion
+     * node - node to be inserted
+
+   Returns:
+     * subtree root after insertion
+     * if *has_duplicate_ptr == 1, then subtree has duplicate of node
+*/
+AVLTreeNode *aa_avltree_subtree_node_insert_internal(
+    AVLTree *tree,
+    AVLTreeNode *x,
+    AVLTreeNode *node,
+    int *has_duplicate_ptr)
 {
-	void *ret = nodeTraverse(pTree->root, visit_cb, arg);
-	if (pReturn)
-		*pReturn = ret;
-	return AVL_OK;
+    int cmp;
+    if (x == NULL)
+        return node;
+    cmp = compare_objects(node->object, x->object, tree);
+    if (cmp < 0) {
+        //    |
+        //    x
+        //   / \
+        // T1*  T2
+        x->left = aa_avltree_subtree_node_insert_internal(tree, x->left, node, has_duplicate_ptr);
+    } else if (cmp > 0) {
+        //    |
+        //    x
+        //   / \
+        // T1   T2*
+        x->right = aa_avltree_subtree_node_insert_internal(tree, x->right, node, has_duplicate_ptr);
+    } else {
+        // Duplicate object
+        *has_duplicate_ptr = 1;
+    }
+    if (*has_duplicate_ptr)
+        return x;
+    return aa_avl_subtree_rebalance_internal(x);
 }
 
-// assumes node isn't NULL
-struct Node *treeMin(struct Node *node)
+/* Search for node containing object in subtree
+
+   Parameters:
+     * object - object to be searched
+     * node - subtree root
+
+   Returns:
+     * boolean indicating whether node was found
+*/
+int aa_avltree_subtree_node_search_internal(
+    AVLTree *tree,
+    AVLTreeObject *object,
+    AVLTreeNode *node)
 {
-	for (; node->left; node = node->left);
-	return node;
+    int cmp;
+    if (node == NULL)
+        return 0;
+    check_invariants(node);
+    cmp = compare_objects(object, node->object, tree);
+    if (cmp < 0)
+        return aa_avltree_subtree_node_search_internal(tree, object, node->left);
+    else if (cmp > 0)
+        return aa_avltree_subtree_node_search_internal(tree, object, node->right);
+    else
+        return 1;
 }
 
-struct Node *deleteNode(struct Node *x, void *object,
-	AVL *pTree, int *pExists, int freeObject)
+/* Delete node containing object from subtree
+
+   Parameters:
+     * object - object to be deleted
+     * x - subtree root before removal
+     * free_obj - whether to free object or not
+                  Hint: unless you know what you're doing, pass 1.
+   Returns:
+     * subtree root after removal
+     * if *exists_ptr == 1, then node was removed
+*/
+AVLTreeNode *aa_avltree_subtree_node_remove_internal(
+    AVLTree *tree,
+    AVLTreeObject *object,
+    AVLTreeNode *x,
+    int free_obj /* = 1 */,
+    int *exists_ptr)
 {
-	if (x == NULL)
-		return NULL;
-	int cmp = CMP(object, x->object, pTree);
-	if (cmp < 0) {
-		//    |
-		//    x
-		//   / \
-		// T1*  T2
-		x->left = deleteNode(x->left, object, pTree, pExists, freeObject);
-	} else if (cmp > 0) {
-		//    |
-		//    x
-		//   / \
-		// T1   T2*
-		x->right = deleteNode(x->right, object, pTree, pExists, freeObject);
-	} else {
-		struct Node *retnode;
-		if (pExists)
-			*pExists = 1;
-		if (x->left == NULL && x->right == NULL) {
-			//   |            |
-			//   x    ==>    NULL
-			//
-			retnode = NULL;
-		} else if (x->left == NULL) {
-			//   |            |
-			//   x            o
-			//    \   ==>   
-			//     o
-			retnode = x->right;
-		} else if (x->right == NULL) {
-			//   |            |
-			//   x    ==>     o
-			//  /
-			// o
-			retnode = x->left;
-		} else {
-			//    |           |
-			//    x   ==>   min(T2)
-			//   / \         / \
-			// T1   T2     T1   T2-min(T2)
-			retnode = treeMin(x->right);
-			retnode->right = deleteNode(x->right,
-				retnode->object, pTree, pExists, 0);
-			retnode->left = x->left;
-		}
-		if (freeObject) {
-			if (pTree->freeObj)
-				pTree->freeObj(x->object);
-			free(x);
-		}
-		x = retnode;
-	}
-	return rebalanceTree(object, x, pTree);
+    if (x == NULL)
+        return NULL;
+    int cmp = compare_objects(object, x->object, tree);
+    if (cmp < 0) {
+        //    |
+        //    x
+        //   / \
+        // T1*  T2
+        x->left = aa_avltree_subtree_node_remove_internal(tree, object, x->left, free_obj, exists_ptr);
+    } else if (cmp > 0) {
+        //    |
+        //    x
+        //   / \
+        // T1   T2*
+        x->right = aa_avltree_subtree_node_remove_internal(tree, object, x->right, free_obj, exists_ptr);
+    } else {
+        AVLTreeNode *retnode;
+        if (exists_ptr)
+            *exists_ptr = 1;
+        if (x->left == NULL && x->right == NULL) {
+            //   |            |
+            //   x    ==>    NULL
+            //
+            retnode = NULL;
+        } else if (x->left == NULL) {
+            //   |            |
+            //   x            o
+            //    \   ==>   
+            //     o
+            retnode = x->right;
+        } else if (x->right == NULL) {
+            //   |            |
+            //   x    ==>     o
+            //  /
+            // o
+            retnode = x->left;
+        } else {
+            //    |           |
+            //    x   ==>   min(T2)
+            //   / \         / \
+            // T1   T2     T1   T2-min(T2)
+            retnode = aa_avltree_subtree_get_min_node_internal(x->right);
+            retnode->right = aa_avltree_subtree_node_remove_internal(tree, retnode->object, x->right, 0, exists_ptr);
+            retnode->left = x->left;
+        }
+        if (free_obj) {
+            if (tree->free_object_func)
+                tree->free_object_func(x->object);
+            free(x);
+        }
+        x = retnode;
+    }
+    return aa_avl_subtree_rebalance_internal(x);
 }
 
-AVLRet avlDelete(AVL *pTree, void *object, int *pExists)
+/* Traverse subtree in-order
+
+   Parameters:
+     * node - subtree root
+     * visit_func - visitation function
+     * visit_arg - argument passed to visit_func
+
+   Returns:
+     * first value returned by visit_func, or 0, if never
+*/
+AVLTreeVisitObjRet *aa_avltree_subtree_traverse_internal(
+    AVLTreeNode *node,
+    AVLTreeVisitObjFunc visit_func,
+    AVLTreeVisitObjArg *visit_arg)
 {
-	if (pExists)
-		*pExists = 0;
-	pTree->root = deleteNode(pTree->root, object, pTree, pExists, 1);
-	return AVL_OK;
+    AVLTreeVisitObjRet *ret;
+    if (node == NULL)
+        return NULL;
+    if (ret = aa_avltree_subtree_traverse_internal(node->left, visit_func, visit_arg))
+        return ret;
+    check_invariants(node);
+    if (visit_func && (ret = visit_func(node->object, visit_arg)))
+        return ret;
+    if (ret = aa_avltree_subtree_traverse_internal(node->right, visit_func, visit_arg))
+        return ret;
+    return NULL;
 }
 
-void avlDestroyNode(AVL *pTree, struct Node *node)
+/* Get subtree minimum node
+
+   Parameters:
+     * node - subtree root
+       [!] assumes node != NULL
+
+   Returns:
+     * subtree minimum node
+*/
+AVLTreeNode *aa_avltree_subtree_get_min_node_internal(AVLTreeNode *node)
 {
-	struct Node *left, *right;
-	if (node == NULL)
-		return;
-	left = node->left;
-	right = node->right;
-	if (pTree->freeObj)
-		pTree->freeObj(node->object);
-	free(node);
-	avlDestroyNode(pTree, left);
-	avlDestroyNode(pTree, right);
+    for (; node->left; node = node->left);
+    return node;
 }
 
-void avlDestroy(AVL *pTree)
+/* Destroy subtree
+
+   Parameters:
+     * x - subtree root
+*/
+void aa_avltree_subtree_destroy_internal(
+    AVLTree *tree,
+    AVLTreeNode *x)
 {
-	if (pTree == NULL)
-		return;
-	avlDestroyNode(pTree, pTree->root);
-	free(pTree);
+    AVLTreeNode *left, *right;
+    if (x == NULL)
+        return;
+    left = x->left;
+    right = x->right;
+    if (tree->free_object_func)
+        tree->free_object_func(x->object);
+    free(x);
+    aa_avltree_subtree_destroy_internal(tree, left);
+    aa_avltree_subtree_destroy_internal(tree, right);
 }
