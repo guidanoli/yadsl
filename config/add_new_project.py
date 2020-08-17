@@ -1,27 +1,7 @@
-'''Adds new project to the code base
-
-When run directly, additional parameters are
-processed in the following way:
-
-- If contains '=', it is split between key and value
-  and added as a keyword argument
-    - key is a string
-    - value is evaluated
-- If doesn't contain '=', it is evaluated and added
-  as a positional argument (in the same order)
-
-PS: If evaluation fails, it is used as string
-
-Example:
-
-python add_new_project prj python=True lua=False
-
-... calls main('prj', python=True, lua=False)
-'''
+'''Adds a new project to the repository'''
 
 def get_repository_root():
-    '''
-    Get repository root based on this file's path
+    '''Get repository root based on this file's path
     
     Return:
         repository root (pathlib.Path)
@@ -34,8 +14,7 @@ def get_repository_root():
     )                   # [1]   [0]
 
 class BaseFileEntity(object):
-    '''
-    A generic target
+    '''A generic target
 
     Parameters:
         make_if - return value for can_make (bool)
@@ -49,8 +28,7 @@ class BaseFileEntity(object):
         pass
 
 class File(BaseFileEntity):
-    '''
-    A file in system
+    '''A file in system
 
     Parameters:
         name    - file name and extension (str)
@@ -78,8 +56,7 @@ class File(BaseFileEntity):
                 self.make_cb(f, *args, **kwargs)
 
 class Group(BaseFileEntity):
-    '''
-    A group of entities
+    '''A group of entities
 
     Parameters:
         items - collection of entities (list)
@@ -119,8 +96,7 @@ class Directory(Group):
         super().make(*args, **kwargs)
 
 class TemplateSubstitutionRule(object):
-    '''
-    Substitution rule
+    '''Substitution rule
 
     Parameters:
         pattern - re pattern to be matched
@@ -138,8 +114,7 @@ class TemplateSubstitutionRule(object):
         return text
 
 class TemplateSubstitutionRuleSet(TemplateSubstitutionRule):
-    '''
-    Substitution rule set
+    '''Substitution rule set
 
     Parameters:
         rules - collection of substitution rules (list)
@@ -152,8 +127,7 @@ class TemplateSubstitutionRuleSet(TemplateSubstitutionRule):
         return text
 
 class FileFromTemplate(File):
-    '''
-    A file created from template with substitution rules
+    '''A file created from template with substitution rules
 
     Parameters:
         name     - same as File.name
@@ -171,8 +145,7 @@ class FileFromTemplate(File):
             f.write(newtext)
 
 def main(*args, **kwargs):
-    '''
-    Creates project to the code base
+    '''Creates project to the code base
     
     main(project, **opts)
     
@@ -180,19 +153,20 @@ def main(*args, **kwargs):
         project - project name (str)
         
     Optional parameters:
-        tests - add test suites (bool)
+        test - add test suite (bool)
             Default: False
-        python - add Python bindings (bool)
+        python - add Python binding (bool)
             Default: False
-        lua - add lua bindings (bool)
+        lua - add lua binding (bool)
             Default: False
     '''
     import os
     import re
+    
     kwargs['name'] = args[0]
     
-    var_patt = re.compile("(%[^%]+%)")
-    cond_patt = re.compile("<([^?]+)\?([^:]*):([^>]*)>")
+    var_patt = re.compile(r"(%[^%]+%)")
+    cond_patt = re.compile(r"<([^?]+)\?([^:]*):([^>]*)>")
     
     def var_replace(match):
         key = match.group(0)[1:-1] # removes %%
@@ -211,7 +185,7 @@ def main(*args, **kwargs):
     cond_rule = TemplateSubstitutionRule(cond_patt, cond_replace)
     rule_set = TemplateSubstitutionRuleSet([cond_rule, var_rule])
 
-    make_tests = kwargs.get('tests', False)
+    make_test = kwargs.get('test', False)
     make_python = kwargs.get('python', False)
     make_lua = kwargs.get('lua', False)
    
@@ -240,7 +214,7 @@ def main(*args, **kwargs):
             Group([
                 ProjectFileFromTemplate('?.test.c'),
                 File('?.script'),
-            ], make_if=make_tests),
+            ], make_if=make_test),
             Directory('python', [
                 ProjectFileFromTemplate('python/CMakeLists.txt'),
                 ProjectFileFromTemplate('python/?.py.c'),
@@ -258,8 +232,7 @@ def main(*args, **kwargs):
     directory.make(*args, **kwargs, path=root)
 
 def process_argv(argv):
-    '''
-    Process command-line arguments into args and kwargs
+    '''Process command-line arguments into args and kwargs
 
     --key=value => ['key'] = eval(value, {}, kwargs)
     --key       => ['key'] = True
@@ -285,9 +258,9 @@ def process_argv(argv):
         except:
             return exp
     
-    kw_patt = re.compile('--([^=]+)=(.*)')
-    string_flag_patt = re.compile('--(^=)$')
-    char_flag_patt = re.compile('-([^-=][^=]+)')
+    kw_patt = re.compile(r'^--([^=]+)=(.*)$')
+    string_flag_patt = re.compile(r'^--([^=]+)$')
+    char_flag_patt = re.compile(r'^-([^=]+)$')
 
     for arg in argv:
         if match := kw_patt.match(arg):
@@ -306,7 +279,54 @@ def process_argv(argv):
     
     return args, kwargs
 
+__usage__ = f'''Usage
+
+  python {__file__} <project-name> [options]
+
+Since the project files will reside in a folder of same name, it must contain
+only valid characters, as for any other folder in your operating system.'''
+
+__usage_help__ = f'''Run 'python {__file__} --help' for more information.'''
+
+__usage_opts__ = f'''Options
+  --help=<bool>    = Print usage information and exit.
+  --test=<bool>    = Create C test module.
+  --python=<bool>  = Create Python binding.
+  --lua=<bool>     = Create Lua binding.'''
+
+__usage_eval__ = f'''Argument evaluation
+  Command line arguments are evaluated in a special way.'''
+
+__usage_eval_args__ = f'''  Positional arguments
+    <expr>           = Evaluation of <expr> as Python expression.
+    <not-expr>       = Evaluation of <not-expr> as string.'''
+
+__usage_eval_kwargs__ = f'''  Keyword arguments
+    --key=<expr>     = Evaluation of <expr> as Python expression.
+    --key=<not-expr> = Evaluation of <not-expr> as string.
+    --key            = --key=True
+    -key             = --k --e --y'''
+
+__usage_eval_strings__ = f'''  Evaluating arguments as strings
+    By using quotes (") or ('), the argument is forced to evaluate to a string.
+    For example, take the word 'list'.
+    
+    list             = <class 'list'>
+    'list'           = 'list' '''
+
 if __name__ == '__main__':
     import sys
     args, kwargs = process_argv(sys.argv[1:])
-    main(*args, **kwargs)
+    if kwargs.get('help', False):
+        exit('\n\n'.join([__usage__,
+                          __usage_opts__,
+                          __usage_eval__,
+                          __usage_eval_args__,
+                          __usage_eval_kwargs__,
+                          __usage_eval_strings__]))
+    try:
+        main(*args, **kwargs)
+    except Exception as e:
+        print("Error:", e)
+        exit('\n\n'.join([__usage__,
+                          __usage_help__]))

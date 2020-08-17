@@ -11,7 +11,7 @@ popd
 if [ "$AA_PYTHON_SUPPORT" == "ON" ]; then
 	export PYTHONPATH=$PWD/lib64
 	python -m pip install --user -r requirements.txt
-	python -m pytest -s src
+	python -m pytest -s --ignore=config/templates
 fi
 
 # Lua
