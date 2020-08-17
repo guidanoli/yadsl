@@ -52,9 +52,7 @@ function(add_aa_library target)
         set(${OPTS_STATIC} FALSE)
     endif()
     
-    do_ternary("OPTS_LIBTYPE" OPTS_STATIC STATIC SHARED)
-    
-    add_library(${target} ${OPTS_LIBTYPE} ${OPTS_SOURCES})
+    add_library(${target} ${OPTS_SOURCES})
     safe_target_link_libraries(${target} aa memdb)
     target_include_directories(${target} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
     
