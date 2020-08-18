@@ -25,8 +25,10 @@ before_install:
             fi
 before_script:
         - python --version
-        - pip install --upgrade pip
-        - pip install -r config/dev-requirements.txt
+        - python -m pip --version
+        - python -m pip install --upgrade pip
+        - python -m pip --version
+        - python -m pip install -r config/dev-requirements.txt
         - PYTHON_EXEC=$(pyenv which python)
 script:
         - mkdir -p build_release
