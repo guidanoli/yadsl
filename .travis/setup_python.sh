@@ -11,14 +11,14 @@ PY_VERSION=$PY_MAJOR.$PY_MINOR.$PY_PATCH
 case $PLATFORM in
 	linux)
 		PY_CMD=python$PY_MAJOR.$PY_MINOR
-		if sudo apt-get install -y $PY_CMD ; then
-			echo "Installed $($PY_CMD -V) from apt-get"
+		if [ sudo apt update && sudo apt install -y $PY_CMD ]; then
+			echo "Installed $(${PY_CMD} -V) from apt-get"
 		else
 			PY_HOME_DIR=$TRAVIS_BUILD_DIR/install/python
 
 			mkdir -p "$PY_HOME_DIR"
 
-			sudo apt-get install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
+			sudo apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
 			libnss3-dev libssl-dev libreadline-dev libffi-dev wget
 
 			pushd "$PY_HOME_DIR"
@@ -39,7 +39,7 @@ case $PLATFORM in
 		choco install python --version $PY_VERSION
         	export PATH=/c/Python$PY_MAJOR$PY_MINOR:/c/Python$PY_MAJOR$PY_MINOR/Scripts:$PATH
 		PY_CMD=python
-		echo "Installed $($PY_CMD -V) from chocolatey"
+		echo "Installed $(${PY_CMD} -V) from chocolatey"
 		;;
 	*)
 		echo "Unsupported platform \"$PLATFORM\""
