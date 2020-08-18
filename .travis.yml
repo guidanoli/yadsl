@@ -21,6 +21,8 @@ before_script:
         - pyenv install $PYTHON
         - pyenv global $PYTHON
         - python --version
+        - pip install --upgrade pip
+        - pip install pytest
         - PYTHON_EXEC=$(pyenv which python)
 script:
         - mkdir -p build
