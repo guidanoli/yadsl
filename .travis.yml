@@ -19,12 +19,23 @@ matrix:
         - PY_MAJOR=3
         - PY_MINOR=8
         - PY_PATCH=3
+        # Python executable
+        - PY_CMD=python$PY_MAJOR.$PY_MINOR
         # Lua version
         - LUA_MAJOR=5
         - LUA_MINOR=3
         - LUA_PATCH=2
+        # Lua executable
+        - LUA_CMD=lua
+        # CMake environment variables
+        - AA_PYTHON_SUPPORT=ON
+        - AA_LUA_SUPPORT=ON
+        # Path
+        - PATH=${TRAVIS_BUILD_DIR}/install/lua:$HOME/.lua:$HOME/.local/bin:$PATH
       before_install:
-        - source .travis/setup_python.sh
+        - sudo add-apt-repository -y ppa:deadsnakes/ppa
+        - sudo apt-get -q update
+        - sudo apt-get -y install $PY_CMD
         - source .travis/setup_lua.sh
     - os: windows
       env: 
@@ -32,5 +43,12 @@ matrix:
         - PY_MAJOR=3
         - PY_MINOR=8
         - PY_PATCH=3
+        # Python executable
+        - PY_CMD=python
+        # CMake environment variables
+        - AA_PYTHON_SUPPORT=ON
+        - AA_LUA_SUPPORT=OFF
+        # Path
+        - PATH=/c/Python$PY_MAJOR$PY_MINOR:/c/Python$PY_MAJOR$PY_MINOR/Scripts:$PATH
       before_install:
-        - source .travis/setup_python.sh
+        - choco install python --version $PY_MAJOR.$PY_MINOR.$PY_PATCH 

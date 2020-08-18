@@ -24,7 +24,3 @@ make INSTALL_TOP="$LUA_HOME_DIR" install;
 
 ln -s $LUA_HOME_DIR/bin/lua $HOME/.lua/lua
 ln -s $LUA_HOME_DIR/bin/luac $HOME/.lua/luac;
-
-PATH=${PATH}:$LUA_HOME_DIR:$HOME/.lua:$HOME/.local/bin
-LUA_CMD=lua
-AA_LUA_SUPPORT=ON
