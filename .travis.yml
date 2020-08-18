@@ -36,7 +36,7 @@ matrix:
         - sudo add-apt-repository -y ppa:deadsnakes/ppa
         - sudo apt-get -q update
         - sudo apt-get -y install $PY_CMD
-        - source .travis/setup_lua.sh
+        - bash .travis/setup_lua.sh
     - os: windows
       env: 
         # Python version
