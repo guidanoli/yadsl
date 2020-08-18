@@ -4,4 +4,4 @@ branches:
         only:
                 - master
                 - /^travis.*$/
-script: .travis/script.sh
+script: ./.travis/script.sh

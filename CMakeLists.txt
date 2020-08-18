@@ -6,8 +6,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(AA_BUILD_TESTS "Build unit tests" ON)
-option(AA_PYTHON_SUPPORT "Build Python C extension modules" ON)
-option(AA_LUA_SUPPORT "Build Lua C bindings" ON)
+option(AA_PYTHON_SUPPORT "Build Python C extension modules" OFF)
+option(AA_LUA_SUPPORT "Build Lua C bindings" OFF)
 
 # Allow hierarchical solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
