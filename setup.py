@@ -17,10 +17,10 @@ class CMakeExtension(Extension):
 		self.cmake_lists_dir = os.path.abspath(cmake_lists_dir)
 
 def _write_to(filename, string, mode='w'):
-        from pathlib import Path
-        filepath = Path(__file__).resolve().parent / filename
-        with open(str(filepath), mode) as f:
-            f.write(string)
+	from pathlib import Path
+	filepath = Path(__file__).resolve().parent / filename
+	with open(str(filepath), mode) as f:
+	    f.write(string)
 
 class CMakeBuild(build_ext):
 
@@ -30,7 +30,7 @@ class CMakeBuild(build_ext):
 		except OSError:
 			raise RuntimeError('Cannot find CMake executable')
 
-                from pathlib import Path
+		from pathlib import Path
 		_write_to('build_dir.cfg', str(Path(self.build_temp).resolve()))
 
 		for ext in self.extensions:
@@ -63,7 +63,7 @@ class CMakeBuild(build_ext):
 
 			if not os.path.exists(self.build_temp):
 				os.makedirs(self.build_temp)
-
+			
 			# Config and build the extension
 			subprocess.check_call(['cmake', ext.cmake_lists_dir] + cmake_args,
 								  cwd=self.build_temp)
