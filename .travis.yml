@@ -1,14 +1,14 @@
 language: c
 os: linux
 branches:
-    only:
-        - master
-        - /^travis.*$/
+  only:
+    - master
+    - /^travis.*$/
 install:
-    - source .travis/show_versions.sh
-    - python setup.py install || python3 setup.py install
+  - bash .travis/show_versions.sh
+  - bash .travis/install.sh
 script:
-    - bash run_tests.sh
+  - bash run_tests.sh
 after_failure:
   - cat "${AA_CMAKE_DIR}/CMakeFiles/CMakeOutput.log"
 matrix:
@@ -23,20 +23,14 @@ matrix:
         - LUA_MAJOR=5
         - LUA_MINOR=3
         - LUA_PATCH=2
-        # Lua executable
-        - LUA=lua
         # CMake build directory
         - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.linux-x86_64-$PY_MAJOR.$PY_MINOR"
         # CMake options
         - AA_LUA_SUPPORT=ON
         - AA_PYTHON_SUPPORT=ON
-        # Path environment variable
-        - PATH=${TRAVIS_BUILD_DIR}/install/lua:$PATH
       before_install:
-        - pyenv update
-        - pyenv install $PY_MAJOR.$PY_MINOR.$PY_PATCH
-        - pyenv global $PY_MAJOR.$PY_MINOR.$PY_PATCH
-        - source .travis/setenv_lua.sh
+        - source .travis/setup_python.sh
+        - source .travis/setup_lua.sh
     - os: windows
       env: 
         # Python version
@@ -48,8 +42,5 @@ matrix:
         # CMake options
         - AA_LUA_SUPPORT=OFF
         - AA_PYTHON_SUPPORT=ON
-        # Path environment variable
-        - PATH=/c/Python$PY_MAJOR$PY_MINOR:/c/Python$PY_MAJOR$PY_MINOR/Scripts:$PATH
       before_install:
-        - choco install python --version $PY_MAJOR.$PY_MINOR.$PY_PATCH
-        - python -m pip install --upgrade pip
+        - source .travis/setup_python.sh

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# A script for setting up environment for travis-ci testing
+# A script for setting up a Lua interpreter
 
 set -eufo pipefail
 
@@ -24,3 +24,6 @@ make INSTALL_TOP="$LUA_HOME_DIR" install;
 
 ln -s $LUA_HOME_DIR/bin/lua $HOME/.lua/lua
 ln -s $LUA_HOME_DIR/bin/luac $HOME/.lua/luac;
+
+export PATH=${PATH}:$LUA_HOME_DIR:$HOME/.lua:$HOME/.local/bin
+export LUA_CMD=lua
