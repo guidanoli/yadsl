@@ -8,18 +8,21 @@ branches:
                 - master
                 - /^travis.*$/
 env:
-        - PYTHON=3.5.4
-        - PYTHON=3.6.3
-        - PYTHON=3.7-dev
+        - PYTHON=3.5.9
+        - PYTHON=3.6.11
+        - PYTHON=3.7.8
+        - PYTHON=3.8.5
 before_script:
+        - cd /opt/pyenv/ && git pull && cd -
+        - pyenv --version
         - pyenv install $PYTHON
         - pyenv global $PYTHON
+        - python --version
         - PYTHON_EXEC=$(pyenv which python)
-        - cmake --version
-        - python -V
 script:
         - mkdir -p build
         - pushd build
+        - cmake --version
         - cmake .. -DCMAKE_BUILD_TYPE=Release -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PYTHON_EXEC
         - cmake --build . --config Release
         - ctest . -C Release
