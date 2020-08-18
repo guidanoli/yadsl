@@ -15,5 +15,5 @@ $PY_CMD -m pip -V
 
 # Lua
 if [ "$AA_LUA_SUPPORT" == "ON" ]; then
-	$LUA -v
+	$LUA_CMD -v
 fi
