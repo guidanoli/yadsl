@@ -8,12 +8,12 @@ branches:
                 - master
                 - /^travis.*$/
 env:
-        - PYTHON_VERSION=python3.5.4
-        - PYTHON_VERSION=python3.6.3
-        - PYTHON_VERSION=python3.7-dev
+        - PYTHON=3.5.4
+        - PYTHON=3.6.3
+        - PYTHON=3.7-dev
 before_script:
-        - pyenv install $PYTHON_VERSION
-        - pyenv global $PYTHON_VERSION
+        - pyenv install $PYTHON
+        - pyenv global $PYTHON
         - PYTHON_EXEC=$(pyenv which python)
         - cmake --version
         - python -V
