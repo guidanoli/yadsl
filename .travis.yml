@@ -6,7 +6,7 @@ branches:
     - /^travis.*$/
 install:
   - bash .travis/show_versions.sh
-  - bash .travis/install.sh
+  - sudo $PY_CMD setup.py install
 script:
   - bash .travis/run_tests.sh
 after_failure:
