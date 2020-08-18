@@ -31,7 +31,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 	if matches(command, "diff"){
 		if (TesterParseArguments("ss", X, Y) != 2)
 			return TESTER_ARGUMENT;
-		eax = diff(X, Y);
+		eax = aa_utils_diff(X, Y);
 		if (eax == -1.0)
 			return TESTER_MALLOC;
 		TesterLog("diff = %lf", eax);

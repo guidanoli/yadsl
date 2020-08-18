@@ -9,7 +9,7 @@ static int l_diff(lua_State* L) {
     const char* s2 = luaL_checkstring(L, 2);
     if (!s1 || !s2)
         return 0;
-    double result = diff(s1, s2);
+    double result = aa_utils_diff(s1, s2);
     if (result == -1.0)
         return 0;
     lua_pushnumber(L, result);
