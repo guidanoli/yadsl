@@ -1,3 +1,9 @@
+#! bin/bash
+
+# A script for testing lua modules
+
+set -eo pipefail
+
 export LUA_CPATH=$PWD/lib64/?.so
 find src -name '*_test.lua' -print0 | xargs -n 1 -0 $LUA_CMD
 if [ $? -eq 0 ]

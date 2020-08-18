@@ -8,7 +8,7 @@ install:
   - bash .travis/show_versions.sh
   - bash .travis/install.sh
 script:
-  - bash run_tests.sh
+  - bash .travis/run_tests.sh
 after_failure:
   - cat "${AA_CMAKE_DIR}/CMakeFiles/CMakeOutput.log"
 matrix:
@@ -23,11 +23,6 @@ matrix:
         - LUA_MAJOR=5
         - LUA_MINOR=3
         - LUA_PATCH=2
-        # CMake build directory
-        - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.linux-x86_64-$PY_MAJOR.$PY_MINOR"
-        # CMake options
-        - AA_LUA_SUPPORT=ON
-        - AA_PYTHON_SUPPORT=ON
       before_install:
         - source .travis/setup_python.sh
         - source .travis/setup_lua.sh
@@ -37,10 +32,5 @@ matrix:
         - PY_MAJOR=3
         - PY_MINOR=8
         - PY_PATCH=3
-        # CMake build directory
-        - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.win-amd64-$PY_MAJOR.$PY_MINOR/Release"
-        # CMake options
-        - AA_LUA_SUPPORT=OFF
-        - AA_PYTHON_SUPPORT=ON
       before_install:
         - source .travis/setup_python.sh

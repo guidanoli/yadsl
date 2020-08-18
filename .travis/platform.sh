@@ -1,3 +1,7 @@
+#! bin/bash
+
+# A script for detecting the operating system
+
 if [ -z "${PLATFORM:-}" ]; then
   PLATFORM=$TRAVIS_OS_NAME;
 fi

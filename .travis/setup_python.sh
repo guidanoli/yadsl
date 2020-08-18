@@ -46,3 +46,4 @@ case $PLATFORM in
 		exit 1
 		;;
 esac
+export AA_PYTHON_SUPPORT=ON

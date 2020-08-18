@@ -2,6 +2,8 @@
 
 # A script for showing software versions for travis-ci
 
+set -euo pipefail
+
 # CMake
 cmake --version
 

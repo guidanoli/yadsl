@@ -2,8 +2,10 @@
 
 # A script for running test suites for travis-ci
 
+set -eof pipefail
+
 # CMake
-pushd $AA_CMAKE_DIR
+pushd $(cat build_dir.cfg)
 ctest -V -C Release
 popd
 

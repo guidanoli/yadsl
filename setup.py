@@ -16,6 +16,11 @@ class CMakeExtension(Extension):
 		Extension.__init__(self, name, sources=sources, **kwa)
 		self.cmake_lists_dir = os.path.abspath(cmake_lists_dir)
 
+def _write_to(filename, string, mode='w'):
+        from pathlib import Path
+        filepath = Path(__file__).resolve().parent / filename
+        with open(str(filepath), mode) as f:
+            f.write(string)
 
 class CMakeBuild(build_ext):
 
@@ -24,6 +29,9 @@ class CMakeBuild(build_ext):
 			out = subprocess.check_output(['cmake', '--version'])
 		except OSError:
 			raise RuntimeError('Cannot find CMake executable')
+
+                from pathlib import Path
+		_write_to('build_dir.cfg', str(Path(self.build_temp).resolve()))
 
 		for ext in self.extensions:
 			extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -63,7 +71,7 @@ class CMakeBuild(build_ext):
 								  cwd=self.build_temp)
 
 setup(name='aa',
-	  version='dev',
+	  version='0.0.1',
 	  description='Algorithm Analysis Modules',
 	  author='Guilherme Dantas',
 	  author_email='guidanoli@hotmail.com',

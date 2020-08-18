@@ -27,3 +27,4 @@ ln -s $LUA_HOME_DIR/bin/luac $HOME/.lua/luac;
 
 export PATH=${PATH}:$LUA_HOME_DIR:$HOME/.lua:$HOME/.local/bin
 export LUA_CMD=lua
+export AA_LUA_SUPPORT=ON
