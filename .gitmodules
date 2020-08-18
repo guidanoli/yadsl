@@ -1,3 +1,0 @@
-[submodule "config/travis-pyenv"]
-	path = config/travis-pyenv
-	url = https://github.com/praekeltfoundation/travis-pyenv.git

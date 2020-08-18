@@ -7,19 +7,22 @@ branches:
         only:
                 - master
                 - /^travis.*$/
+cache:
+        - pip
+        - directories:
+                - $HOME/.pyenv_cache
 env:
-        - PYTHON=3.5.9
-        - PYTHON=3.6.11
-        - PYTHON=3.7.8
-        - PYTHON=3.8.5
+        - PYENV_VERSION='3.5.9'  PYENV_VERSION_STRING='Python 3.5.9'
+        - PYENV_VERSION='3.6.11' PYENV_VERSION_STRING='Python 3.6.11'
+        - PYENV_VERSION='3.7.8'  PYENV_VERSION_STRING='Python 3.7.8'
+        - PYENV_VERSION='3.8.5'  PYENV_VERSION_STRING='Python 3.8.5'
+before_install:
+        - |
+            if [[ -n "$PYENV_VERSION" ]]; then
+              wget https://github.com/praekeltfoundation/travis-pyenv/releases/download/0.4.0/setup-pyenv.sh
+              source setup-pyenv.sh
+            fi
 before_script:
-        - pyenv --version
-        - pushd /opt/pyenv/
-        - git pull --rebase origin master
-        - popd
-        - pyenv --version
-        - pyenv install $PYTHON
-        - pyenv global $PYTHON
         - python --version
         - pip install --upgrade pip
         - pip install -r config/dev-requirements.txt
