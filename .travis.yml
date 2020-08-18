@@ -25,10 +25,9 @@ before_install:
             fi
 before_script:
         - python --version
-        - python -m pip --version
-        - python -m pip install --upgrade pip
-        - python -m pip --version
-        - python -m pip install -r config/dev-requirements.txt
+        - pip install --upgrade pip
+        - pip --version
+        - pip install -r config/dev-requirements.txt
         - PYTHON_EXEC=$(pyenv which python)
 script:
         - mkdir -p build_release
@@ -39,7 +38,7 @@ script:
         - ctest . -C Release
         - popd
         - export PYTHONPATH=$PWD/lib64
-        - $PYTHON_EXEC -m pytest -s --ignore=config/templates
+        - pytest -s --ignore=config/templates
         - mkdir -p build_debug
         - pushd build_debug
         - cmake .. -DCMAKE_BUILD_TYPE=Debug -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PYTHON_EXEC
