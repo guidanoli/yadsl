@@ -22,7 +22,7 @@ before_script:
         - pyenv global $PYTHON
         - python --version
         - pip install --upgrade pip
-        - pip install pytest
+        - pip install -r config/dev-requirements.txt
         - PYTHON_EXEC=$(pyenv which python)
 script:
         - mkdir -p build

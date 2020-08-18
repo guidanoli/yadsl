@@ -1,0 +1,3 @@
+# Developer requirements
+-r user-requirements.txt
+pytest
