@@ -23,9 +23,11 @@ if(AA_BUILD_TESTS)
 endif()
 
 if(AA_PYTHON_SUPPORT)
-	# Find Python interpreter
-	set(Python_FIND_VIRTUALENV FIRST)
-	find_package(PythonInterp 3.6 REQUIRED)
+	if(NOT PYTHON_EXECUTABLE)
+		# Find Python interpreter
+		set(Python_FIND_VIRTUALENV FIRST)
+		find_package(PythonInterp 3.5 REQUIRED)
+	endif()
 
 	# Find Python headers
 	exec_program(${PYTHON_EXECUTABLE}
@@ -39,7 +41,7 @@ if(AA_PYTHON_SUPPORT)
 
 	# This goes after, since it uses PythonInterp as a hint
 	if(WIN32)
-		find_package(PythonLibs 3.6 REQUIRED)
+		find_package(PythonLibs 3.5 REQUIRED)
 	endif()
 	
 	# Add 'add_python_module' function

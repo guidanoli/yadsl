@@ -7,13 +7,23 @@ branches:
         only:
                 - master
                 - /^travis.*$/
+env:
+        - PY_CMD=python3.5
+        - PY_CMD=python3.6
+        - PY_CMD=python3.7
+        - PY_CMD=python3.8
+before_script:
+        - sudo add-apt-repository -y ppa:deadsnakes/ppa
+        - sudo apt-get -q update
+        - sudo apt-get -y install $PY_CMD $PY_CMD-distutils
+        - curl https://bootstrap.pypa.io/get-pip.py | sudo $PY_CMD 
 script:
         - mkdir -p build
         - pushd build
-        - cmake .. -DCMAKE_BUILD_TYPE=Release -DAA_PYTHON_SUPPORT=ON
+        - cmake .. -DCMAKE_BUILD_TYPE=Release -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PY_CMD
         - cmake --build . --config Release
         - ctest . -C Release
-        - cmake .. -DCMAKE_BUILD_TYPE=Debug -DAA_PYTHON_SUPPORT=ON
+        - cmake .. -DCMAKE_BUILD_TYPE=Debug -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PY_CMD
         - cmake --build . --config Debug
         - ctest . -C Debug
         - popd
