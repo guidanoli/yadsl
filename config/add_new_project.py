@@ -263,13 +263,18 @@ def process_argv(argv):
     char_flag_patt = re.compile(r'^-([^=]+)$')
 
     for arg in argv:
-        if match := kw_patt.match(arg):
+        match = kw_patt.match(arg)
+        if match:
             k, v = match.groups()
             kwargs[k] = _eval(v)
-        elif match := string_flag_patt.match(arg):
+            continue
+        match = string_flag_patt.match(arg)
+        if match:
             v = match.group(1)
             kwargs[v] = True
-        elif match := char_flag_patt.match(arg):
+            continue
+        match = char_flag_patt.match(arg)
+        if match:
             vs = match.group(1)
             for v in vs:
                 kwargs[v] = True
