@@ -2,7 +2,7 @@
 
 # A script for setting up a Python interpreter
 
-set -ufo pipefail
+set -eufo pipefail
 
 source .travis/platform.sh
 
@@ -11,8 +11,8 @@ PY_VERSION=$PY_MAJOR.$PY_MINOR.$PY_PATCH
 case $PLATFORM in
 	linux)
 		PY_CMD=python$PY_MAJOR.$PY_MINOR
-		sudo apt update
-		sudo add-apt-repository ppa:deadsnakes/ppa 
+		sudo apt update -y
+		sudo add-apt-repository -y ppa:deadsnakes/ppay
 		sudo apt install -y $PY_CMD
 		echo "Installed $(${PY_CMD} -V) from apt"
 		;;
