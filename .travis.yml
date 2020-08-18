@@ -8,17 +8,22 @@ branches:
                 - master
                 - /^travis.*$/
 env:
-        - PY_CMD=python3.5
-        - PY_CMD=python3.6
-        - PY_CMD=python3.7
-        - PY_CMD=python3.8
+        - PYTHON_VERSION=python3.5.4
+        - PYTHON_VERSION=python3.6.3
+        - PYTHON_VERSION=python3.7-dev
+before_script:
+        - pyenv install $PYTHON_VERSION
+        - pyenv global $PYTHON_VERSION
+        - PYTHON_EXEC=$(pyenv which python)
+        - cmake --version
+        - python -V
 script:
         - mkdir -p build
         - pushd build
-        - cmake .. -DCMAKE_BUILD_TYPE=Release -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PY_CMD
+        - cmake .. -DCMAKE_BUILD_TYPE=Release -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PYTHON_EXEC
         - cmake --build . --config Release
         - ctest . -C Release
-        - cmake .. -DCMAKE_BUILD_TYPE=Debug -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PY_CMD
+        - cmake .. -DCMAKE_BUILD_TYPE=Debug -DAA_PYTHON_SUPPORT=ON -DPYTHON_EXECUTABLE=$PYTHON_EXEC
         - cmake --build . --config Debug
         - ctest . -C Debug
         - popd
