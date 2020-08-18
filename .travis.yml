@@ -32,7 +32,7 @@ script:
         - cmake --build . --config Release
         - ctest . -C Release
         - popd
-        - PYTHONPATH=$PWD/lib64
+        - export PYTHONPATH=$PWD/lib64
         - $PYTHON_EXEC -m pytest -s --ignore=config/templates
         - mkdir -p build_debug
         - pushd build_debug
