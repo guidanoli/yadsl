@@ -170,7 +170,7 @@ def main(*args, **kwargs):
     
     def var_replace(match):
         key = match.group(0)[1:-1] # removes %%
-        err = f'<missing value for {key}>'
+        err = '<missing value for {key}>'.format(key=key)
         return kwargs.get(key, err)
 
     def cond_replace(match):
@@ -284,35 +284,35 @@ def process_argv(argv):
     
     return args, kwargs
 
-__usage__ = f'''Usage
+__usage__ = '''Usage
 
-  python {__file__} <project-name> [options]
+  python {file} <project-name> [options]
 
 Since the project files will reside in a folder of same name, it must contain
-only valid characters, as for any other folder in your operating system.'''
+only valid characters, as for any other folder in your operating system.'''.format(file=__file__)
 
-__usage_help__ = f'''Run 'python {__file__} --help' for more information.'''
+__usage_help__ = '''Run 'python {file} --help' for more information.'''.format(file=__file__)
 
-__usage_opts__ = f'''Options
+__usage_opts__ = '''Options
   --help=<bool>    = Print usage information and exit.
   --test=<bool>    = Create C test module.
   --python=<bool>  = Create Python binding.
   --lua=<bool>     = Create Lua binding.'''
 
-__usage_eval__ = f'''Argument evaluation
+__usage_eval__ = '''Argument evaluation
   Command line arguments are evaluated in a special way.'''
 
-__usage_eval_args__ = f'''  Positional arguments
+__usage_eval_args__ = '''  Positional arguments
     <expr>           = Evaluation of <expr> as Python expression.
     <not-expr>       = Evaluation of <not-expr> as string.'''
 
-__usage_eval_kwargs__ = f'''  Keyword arguments
+__usage_eval_kwargs__ = '''  Keyword arguments
     --key=<expr>     = Evaluation of <expr> as Python expression.
     --key=<not-expr> = Evaluation of <not-expr> as string.
     --key            = --key=True
     -key             = --k --e --y'''
 
-__usage_eval_strings__ = f'''  Evaluating arguments as strings
+__usage_eval_strings__ = '''  Evaluating arguments as strings
     By using quotes (") or ('), the argument is forced to evaluate to a string.
     For example, take the word 'list'.
     
