@@ -11,7 +11,10 @@ PY_VERSION=$PY_MAJOR.$PY_MINOR.$PY_PATCH
 case $PLATFORM in
 	linux)
 		PY_CMD=python$PY_MAJOR.$PY_MINOR
-		if sudo apt update && sudo apt install -y $PY_CMD ; then
+
+		if sudo apt update && \
+		   sudo add-apt-repository ppa:deadsnakes/ppa && \
+		   sudo apt install -y $PY_CMD ; then
 			echo "Installed $(${PY_CMD} -V) from apt-get"
 		else
 			PY_HOME_DIR=$TRAVIS_BUILD_DIR/install/python
