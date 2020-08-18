@@ -10,6 +10,7 @@ PY_VERSION=$PY_MAJOR.$PY_MINOR.$PY_PATCH
 
 case $PLATFORM in
 	linux)
+		PY_CMD=python$PY_MAJOR.$PY_MINOR
 		if sudo apt-get install -y $PY_CMD ; then
 			echo "Installed $($PY_CMD -V) from apt-get"
 		else
@@ -33,12 +34,11 @@ case $PLATFORM in
 
 			echo "Installed $($PY_CMD -V) from source"
 		fi
-		export PY_CMD=python$PY_MAJOR.$PY_MINOR
 		;;
 	windows)
 		choco install python --version $PY_VERSION
         	export PATH=/c/Python$PY_MAJOR$PY_MINOR:/c/Python$PY_MAJOR$PY_MINOR/Scripts:$PATH
-		export PY_CMD=python
+		PY_CMD=python
 		echo "Installed $($PY_CMD -V) from chocolatey"
 		;;
 	*)
