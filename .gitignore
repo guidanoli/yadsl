@@ -1,13 +1,4 @@
-*~
-*.swp
-lib32/
-lib32d/
-lib64/
-lib64d/
-build/
+lib*/
+build*/
 *__pycache__/
 *.pytest_cache/
-*.egg-info/
-dist/
-Testing/
-*.cfg

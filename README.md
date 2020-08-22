@@ -1,11 +1,40 @@
 # Analysis of Algorithms (INF1721)
 [![Build Status](https://travis-ci.com/guidanoli/aa.svg?branch=master)](https://travis-ci.com/guidanoli/aa)
 
-This is a repository for toy projects that sparked from the lectures given by [Eduardo Sany Laber](http://www.inf.puc-rio.br/blog/professor/@eduardo-sany-laber), professor at [PUC-Rio](https://www.puc-rio.br/index.html). I hope it comes to any help to you. Feel free to contribute to the repository too.
+This is a repository for toy projects that sparked from the lectures given by Eduardo Sany Laber, professor at PUC-Rio. I hope it comes to any help to you. Feel free to contribute to the repository too.
 
-## Creating a new project
+## C Modules
 
-If you wish to create a new project following the pattern of the already existing ones, you may run the `config/add_new_project.py` script.
+Each subfolder generally contains a source file (`module.c`), a header file (`module.h`), a test module (`module.test.c`), a test script (`module.script`), and a documentation file (`README.md`), as well as a `CMakeLists.txt` file.
+
+### Compilation
+
+All the compilation process is described in form of `CMakeLists.txt`. Having installed [cmake](https://cmake.org/), you may run the following commands:
+
+```sh
+mkdir build
+cd build
+cmake ..
+cmake --build . --config=<CONFIG>
+```
+
+or, alternatively, you can use the `setup.py` script. You can use environment variables to control your options too.
+
+```sh
+export AA_PYTHON_SUPPORT=ON
+python setup.py install
+```
+
+### Tests
+
+All test modules make use of the `tester` and `memdb` frameworks. To read more about it, go to `tester/README.md` and `memdb/README.md`. In order to run the tests, assuming you have [cmake](https://cmake.org/) installed, simply run:
+
+```sh
+cd build
+ctest -C <CONFIG>
+```
+
+Where `CONFIG` stands for the project configuration (like `Debug` or `Release`).
 
 ## Documentation details
 
@@ -25,71 +54,58 @@ Along with a parameter there might be one or more tags associated:
 
 **DISCLAIMER:** A parameter cannot be NULL unless otherwise said so.
 
-## C Modules
+# Creating a new project
 
-Any module has its files located in a `src/<module-name>` folder. There you can find not only the module code, but also test code and bindings to other languages.
-
-### Compilation
-
-All the compilation process is described in form of CMake lists. Having installed [CMake](https://cmake.org/), you may run the following commands:
-
-```sh
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=<CONFIG> [other options]
-cmake --build . --config=<CONFIG>
-```
-
-### Tests
-
-All test modules make use of the `tester` and `memdb` frameworks. To read more about it, go to `tester/README.md` and `memdb/README.md`. In order to run the tests, assuming you have [CMake](https://cmake.org/) installed, simply run:
-
-```sh
-cd build
-ctest -C <CONFIG>
-```
+If you wish to create a new project following the pattern of the already existing ones, you may use the `add_new_project.py` script located on the `config` directory.
 
 ## Python modules
 
-Some C modules have Python bindings, along with a test script. They are generally contained inside the `python` folder of the corresponding C module.
+Some modules have Python bindings, which comprehend each a source file (`module.py.c`) and a test file (`module_test.py`), as well as a `CMakeLists.txt` file. They are always contained inside the `python` folder of the corresponding C module.
 
 ### Compilation
 
-Simply enable the `AA_PYTHON_SUPPORT` option.
+Run the `setup.py` script, which will also properly install the python extension modules:
 
 ```sh
-cmake .. -DAA_PYTHON_SUPPORT=ON [other options]
-```
-
-If you are having a hard time trying to make CMake point to a specific Python version, worry not! You can set the `PYTHON_EXECUTABLE` option.
-
-```sh
-cmake .. -DPYTHON_EXECUTABLE=$(pyenv which python) [other options]
+python setup.py install
 ```
 
 ### Tests
 
-All python modules can be easily tested with `pytest`, which searches for `*_test.py` files in the whole directory. After building the extension modules, you may run the following commands, from the root of the repository:
+All python modules can be easily tested with `pytest`, which searches for `*_test.py` files in the whole directory. Once the modules are compiled and installed by the `setup.py`, you may run the following commands:
 
 ```sh
 export PYTHONPATH=$PWD/lib64
-pip install -r config/dev-requirements.txt
-python -m pytest -s --ignore=config/templates
+python -m pip install -r requirements.txt
+python -m pytest
 ```
 
 ## Lua modules
 
-Some C modules have Lua bindings, along with a test script. They are generally contained inside the `lua` folder of the corresponding C module.
+Some modules have Lua bindings, which comprehend each a source file (`module.lua.c`) and a test file (`module_test.lua`), as well as a `CMakeLists.txt` file. They are always contained inside the `lua` folder of the corresponding C module.
 
 ### Compilation
 
-Simply enable the `AA_LUA_SUPPORT` option.
+Run the `setup.py` script, with the environment variable `AA_LUA_SUPPORT` set to `ON`.
+If you don't want to generate the python bindings, just set `AA_PYTHON_SUPPORT` to `OFF`.
+
+#### POSIX
 
 ```sh
-cmake .. -DAA_LUA_SUPPORT=ON [other options]
+export AA_LUA_SUPPORT=ON
+export AA_PYTHON_SUPPORT=OFF
+python setup.py install
 ```
 
-### Tests (TODO)
+#### Windows
+
+```dos
+set AA_LUA_SUPPORT=ON
+set AA_PYTHON_SUPPORT=OFF
+python setup.py install
+```
+
+### Tests
 
 All lua modules can be easily tested with `luatest`, which searches for `*_test.lua` files in the whole directory. Once the modules are compiled, you may run the following command:
 

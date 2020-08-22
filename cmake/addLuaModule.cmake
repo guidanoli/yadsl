@@ -12,7 +12,9 @@ function(add_lua_module target modulename)
 			LINKER_LANGUAGE C
 	)
 	target_include_directories(${target} PUBLIC ${LUA_INCLUDE_DIR})
-	target_link_libraries(${target} ${LUA_LIBRARIES})
+	if(WIN32)
+		target_link_libraries(${target} ${LUA_LIBRARIES})
+	endif()
 	set_target_properties(${target} PROPERTIES FOLDER lua)
 	
 	include(moveLibraries)
