@@ -1,8 +1,8 @@
+#include <aa/posixstring.h>
 #include <graph/graph.h>
 #include <graphio/graphio.h>
 #include <graphsearch/graphsearch.h>
 
-#include <aa/posixstring.h>
 #include <stdlib.h>
 
 #include <tester/tester.h>

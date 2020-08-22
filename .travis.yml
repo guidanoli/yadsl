@@ -1,55 +1,28 @@
 language: c
 os: linux
+compiler:
+        - gcc
+        - clang
 branches:
-    only:
-        - master
-        - /^travis.*$/
-install:
-    - source .travis/show_versions.sh
-    - python setup.py install || python3 setup.py install
+        only:
+                - master
+                - /^travis.*$/
+cache:
+        - pip
+        - directories:
+                - $HOME/.pyenv_cache
+                - $HOME/.lua
+env:
+        - PYENV_VERSION='3.5.9'  PYENV_VERSION_STRING='Python 3.5.9'
+        - PYENV_VERSION='3.6.11' PYENV_VERSION_STRING='Python 3.6.11'
+        - PYENV_VERSION='3.7.8'  PYENV_VERSION_STRING='Python 3.7.8'
+        - PYENV_VERSION='3.8.5'  PYENV_VERSION_STRING='Python 3.8.5'
+        - LUA_VERSION='5.3.5'
+before_install:
+        - source config/before_install.sh
+before_script:
+        - source config/before_script.sh
 script:
-    - bash run_tests.sh
+        - ./config/script.sh
 after_failure:
-  - cat "${AA_CMAKE_DIR}/CMakeFiles/CMakeOutput.log"
-matrix:
-  include:
-    - os: linux
-      env:
-        # Python version
-        - PY_MAJOR=3
-        - PY_MINOR=8
-        - PY_PATCH=3
-        # Lua version
-        - LUA_MAJOR=5
-        - LUA_MINOR=3
-        - LUA_PATCH=2
-        # Lua executable
-        - LUA=lua
-        # CMake build directory
-        - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.linux-x86_64-$PY_MAJOR.$PY_MINOR"
-        # CMake options
-        - AA_LUA_SUPPORT=ON
-        - AA_PYTHON_SUPPORT=ON
-        # Path environment variable
-        - PATH=${TRAVIS_BUILD_DIR}/install/lua:$PATH
-      before_install:
-        - pyenv update
-        - pyenv install $PY_MAJOR.$PY_MINOR.$PY_PATCH
-        - pyenv global $PY_MAJOR.$PY_MINOR.$PY_PATCH
-        - source .travis/setenv_lua.sh
-    - os: windows
-      env: 
-        # Python version
-        - PY_MAJOR=3
-        - PY_MINOR=8
-        - PY_PATCH=3
-        # CMake build directory
-        - AA_CMAKE_DIR="${TRAVIS_BUILD_DIR}/build/temp.win-amd64-$PY_MAJOR.$PY_MINOR/Release"
-        # CMake options
-        - AA_LUA_SUPPORT=OFF
-        - AA_PYTHON_SUPPORT=ON
-        # Path environment variable
-        - PATH=/c/Python$PY_MAJOR$PY_MINOR:/c/Python$PY_MAJOR$PY_MINOR/Scripts:$PATH
-      before_install:
-        - choco install python --version $PY_MAJOR.$PY_MINOR.$PY_PATCH
-        - python -m pip install --upgrade pip
+        - ./config/after_failure.sh
