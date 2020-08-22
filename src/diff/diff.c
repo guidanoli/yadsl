@@ -1,11 +1,11 @@
-#include "diff.h"
+#include <diff/diff.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <math.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 6386)

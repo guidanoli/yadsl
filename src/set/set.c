@@ -1,8 +1,8 @@
-#include "set.h"
+#include <set/set.h>
 
 #include <stdlib.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 // A set is represented by an ordered double-linked list
 // in which each item is an opaque pointer.

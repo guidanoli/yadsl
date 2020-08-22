@@ -1,6 +1,6 @@
-#include "tester.h"
+#include <tester/tester.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdio.h>
 #include <stdarg.h>
 

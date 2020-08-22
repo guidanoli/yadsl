@@ -1,8 +1,8 @@
-#include "dlldefines.h"
+#include <aa/dlldefines.h>
 
 #include "lauxlib.h"
 
-#include "diff.h"
+#include <diff/diff.h>
 
 static int l_diff(lua_State* L) {
     const char* s1 = luaL_checkstring(L, 1);

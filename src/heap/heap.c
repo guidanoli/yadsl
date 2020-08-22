@@ -1,9 +1,9 @@
-#include "heap.h"
+#include <heap/heap.h>
 
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 struct Heap
 {

@@ -1,10 +1,10 @@
-#include "stack.h"
+#include <stack/stack.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "tester.h"
+#include <tester/tester.h>
 
 #define matches(a, b) (strcmp(a, b) == 0)
 

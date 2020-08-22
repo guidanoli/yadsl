@@ -1,7 +1,7 @@
-#include "hashmap.h"
+#include <hashmap/hashmap.h>
 
-#include "tester.h"
-#include "testerutils.h"
+#include <tester/tester.h>
+#include <testerutils/testerutils.h>
 
 const char *TesterHelpStrings[] = {
 	"This is the hashmap test module",

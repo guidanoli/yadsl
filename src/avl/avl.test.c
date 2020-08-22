@@ -1,10 +1,10 @@
-#include "avl.h"
+#include <avl/avl.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdlib.h>
 #include <assert.h>
 
-#include "tester.h"
+#include <tester/tester.h>
 
 #define matches(a,b) (strcmp(a,b) == 0)
 
@@ -25,7 +25,7 @@ const char *TesterHelpStrings[] = {
 };
 
 char buffer[BUFSIZ];
-AVLTreeHandle *pTree;
+aa_AVLTreeHandle *pTree;
 TesterReturnValue cbReturnValue;
 int first, last;
 
@@ -74,7 +74,7 @@ TesterReturnValue TesterInitCallback()
 	return TESTER_OK;
 }
 
-TesterReturnValue convert(AVLTreeRet returnId)
+TesterReturnValue convert(aa_AVLTreeRet returnId)
 {
 	switch (returnId) {
 	case AA_AVLTREE_RET_OK:
@@ -96,9 +96,9 @@ int getYesOrNoFromString(const char *str)
 
 TesterReturnValue TesterParseCallback(const char *command)
 {
-	AVLTreeRet returnId = AA_AVLTREE_RET_OK;
+	aa_AVLTreeRet returnId = AA_AVLTREE_RET_OK;
 	if matches(command, "new") {
-		AVLTreeHandle *newTree;
+		aa_AVLTreeHandle *newTree;
 		returnId = aa_avltree_tree_create(cmp_objs_func, &pTree, free, &newTree);
 		if (!returnId) {
 			aa_avltree_destroy(pTree);

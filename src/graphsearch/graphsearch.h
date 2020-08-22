@@ -1,7 +1,7 @@
 #ifndef __GRAPH_SEARCH_H__
 #define __GRAPH_SEARCH_H__
 
-#include "graph.h"
+#include <graph/graph.h>
 
 //
 //     ______                 __   _____                      __  

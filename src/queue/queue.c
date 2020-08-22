@@ -1,8 +1,8 @@
-#include "queue.h"
+#include <queue/queue.h>
 
 #include <stdlib.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 struct QueueItem
 {

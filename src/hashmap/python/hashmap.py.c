@@ -1,9 +1,9 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include "pydefines.h"
+#include <aa/pydefines.h>
 
-#include "hashmap.h"
+#include <hashmap/hashmap.h>
 
 typedef struct {
     PyObject_HEAD

@@ -1,12 +1,12 @@
-#include "graph.h"
-#include "graphio.h"
-#include "graphsearch.h"
+#include <graph/graph.h>
+#include <graphio/graphio.h>
+#include <graphsearch/graphsearch.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdlib.h>
 
-#include "tester.h"
-#include "testerutils.h"
+#include <tester/tester.h>
+#include <testerutils/testerutils.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)

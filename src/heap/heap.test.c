@@ -1,9 +1,9 @@
-#include "heap.h"
+#include <heap/heap.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdlib.h>
 
-#include "tester.h"
+#include <tester/tester.h>
 
 #define matches(a, b) (!strcmp(a,b))
 

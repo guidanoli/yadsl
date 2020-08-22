@@ -12,7 +12,7 @@ typedef enum
     /* Could not allocate memory */
     AA_AVLTREE_RET_MEMORY,
 }
-AVLTreeRet;
+aa_AVLTreeRet;
 
 typedef enum
 {
@@ -25,16 +25,16 @@ typedef enum
     /* Post-order */
     AA_AVLTREE_TRAVERSE_POST_ORDER,
 }
-AVLTreeTraversalOrder;
+aa_AVLTreeTraversalOrder;
 
 /* AVL tree handle */
-typedef void AVLTreeHandle;
+typedef void aa_AVLTreeHandle;
 
 /* AVL tree object (user data) */
-typedef void AVLTreeObject;
+typedef void aa_AVLTreeObject;
 
 /* AVL tree object comparison function user argument */
-typedef void AVLTreeCmpObjsArg;
+typedef void aa_AVLTreeCmpObjsArg;
 
 /* AVL tree object comparison function
 
@@ -45,19 +45,19 @@ typedef void AVLTreeCmpObjsArg;
      * zero, then obj1 == obj2
      * a negative number, then obj1 < obj2
 */
-typedef int (*AVLTreeCmpObjsFunc)(AVLTreeObject*, AVLTreeObject*, AVLTreeCmpObjsArg*);
+typedef int (*aa_AVLTreeCmpObjsFunc)(aa_AVLTreeObject*, aa_AVLTreeObject*, aa_AVLTreeCmpObjsArg*);
 
 /* AVL tree object freeing function
 
    Called for every object in the tree upon destruction
 */
-typedef void (*AVLTreeFreeObjFunc)(AVLTreeObject*);
+typedef void (*aa_AVLTreeFreeObjFunc)(aa_AVLTreeObject*);
 
 /* AVL tree visiting function user argument */
-typedef void AVLTreeVisitObjArg;
+typedef void aa_AVLTreeVisitObjArg;
 
 /* AVL tree visiting function return type */
-typedef void AVLTreeVisitObjRet;
+typedef void aa_AVLTreeVisitObjRet;
 
 /* AVL tree visiting function
 
@@ -67,7 +67,7 @@ typedef void AVLTreeVisitObjRet;
       * zero, then visitation continues
       * non-zero, then visitation stops
 */
-typedef AVLTreeVisitObjRet* (*AVLTreeVisitObjFunc)(AVLTreeObject*, AVLTreeVisitObjArg*);
+typedef aa_AVLTreeVisitObjRet* (*aa_AVLTreeVisitObjFunc)(aa_AVLTreeObject*, aa_AVLTreeVisitObjArg*);
 
 /* Create an empty tree
 
@@ -80,11 +80,11 @@ typedef AVLTreeVisitObjRet* (*AVLTreeVisitObjFunc)(AVLTreeObject*, AVLTreeVisitO
      * OK - *tree_ptr now points to the newly created tree
      * MEMORY
 */
-AVLTreeRet aa_avltree_tree_create(
-    AVLTreeCmpObjsFunc cmp_objs_func,
-    AVLTreeCmpObjsArg *cmp_objs_arg,
-    AVLTreeFreeObjFunc free_obj_func,
-    AVLTreeHandle **tree_ptr);
+aa_AVLTreeRet aa_avltree_tree_create(
+    aa_AVLTreeCmpObjsFunc cmp_objs_func,
+    aa_AVLTreeCmpObjsArg *cmp_objs_arg,
+    aa_AVLTreeFreeObjFunc free_obj_func,
+    aa_AVLTreeHandle **tree_ptr);
 
 /* Insert object in tree
 
@@ -95,9 +95,9 @@ AVLTreeRet aa_avltree_tree_create(
      * OK - if *exists_ptr == 0, then the object was inserted
      * MEMORY
 */
-AVLTreeRet aa_avltree_object_insert(
-    AVLTreeHandle *tree,
-    AVLTreeObject *object,
+aa_AVLTreeRet aa_avltree_object_insert(
+    aa_AVLTreeHandle *tree,
+    aa_AVLTreeObject *object,
     int *exists_ptr);
 
 /* Search for object in tree
@@ -108,9 +108,9 @@ AVLTreeRet aa_avltree_object_insert(
    Returns:
      * OK - if *exists_ptr == 0, then the object is not in the tree
 */
-AVLTreeRet aa_avltree_object_search(
-    AVLTreeHandle *tree,
-    AVLTreeObject *object,
+aa_AVLTreeRet aa_avltree_object_search(
+    aa_AVLTreeHandle *tree,
+    aa_AVLTreeObject *object,
     int *exists_ptr);
 
 /* Delete object from tree
@@ -121,9 +121,9 @@ AVLTreeRet aa_avltree_object_search(
    Returns:
      * OK - if *exists_ptr == 1, then the object was removed
 */
-AVLTreeRet aa_avltree_object_remove(
-    AVLTreeHandle* tree,
-    AVLTreeObject* object,
+aa_AVLTreeRet aa_avltree_object_remove(
+    aa_AVLTreeHandle* tree,
+    aa_AVLTreeObject* object,
     int* exists_ptr);
 
 /* Traverse tree in-order
@@ -135,13 +135,13 @@ AVLTreeRet aa_avltree_object_remove(
    Returns:
      * OK - *visit_ret_ptr points to the last value returned by visit_func
 */
-AVLTreeRet aa_avltree_tree_traverse(
-    AVLTreeHandle *tree,
-    AVLTreeVisitObjFunc visit_func,
-    AVLTreeVisitObjArg *visit_arg,
-    AVLTreeVisitObjRet **visit_ret_ptr);
+aa_AVLTreeRet aa_avltree_tree_traverse(
+    aa_AVLTreeHandle *tree,
+    aa_AVLTreeVisitObjFunc visit_func,
+    aa_AVLTreeVisitObjArg *visit_arg,
+    aa_AVLTreeVisitObjRet **visit_ret_ptr);
 
 /* Destroy tree and its objects, passing them to the free function */
-void aa_avltree_destroy(AVLTreeHandle *tree);
+void aa_avltree_destroy(aa_AVLTreeHandle *tree);
 
 #endif

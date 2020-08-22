@@ -1,8 +1,8 @@
-#include "testerutils.h"
+#include <testerutils/testerutils.h>
 
 #include <stdlib.h>
 
-#include "tester.h"
+#include <tester/tester.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)

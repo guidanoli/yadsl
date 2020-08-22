@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "diff.h"
+#include <diff/diff.h>
 
 PyDoc_STRVAR(_diff__doc__,
 "diff(s1 : str, s2 : str, /) -> float\n"

@@ -54,7 +54,7 @@ function(add_aa_library target)
     
     add_library(${target} ${OPTS_SOURCES})
     safe_target_link_libraries(${target} aa memdb)
-    target_include_directories(${target} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    target_include_directories(${target} PUBLIC ${AA_SOURCE_DIR})
     
     invert_boolean("OPTS_FPIC" OPTS_STATIC)
         

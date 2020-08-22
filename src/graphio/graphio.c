@@ -1,11 +1,11 @@
-#include "graphio.h"
+#include <graphio/graphio.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <assert.h>
 #include <stdlib.h>
 
-#include "map.h"
-#include "memdb.h"
+#include <map/map.h>
+#include <memdb/memdb.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)

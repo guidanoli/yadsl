@@ -1,11 +1,11 @@
-#include "queue.h"
+#include <queue/queue.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tester.h"
-#include "testerutils.h"
+#include <tester/tester.h>
+#include <testerutils/testerutils.h>
 
 const char *TesterHelpStrings[] = {
 	"This is the queue test module",

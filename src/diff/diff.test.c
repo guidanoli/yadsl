@@ -1,9 +1,9 @@
-#include "diff.h"
+#include <diff/diff.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdio.h>
 
-#include "tester.h"
+#include <tester/tester.h>
 
 const char *TesterHelpStrings[] = {
 	"/diff X Y    saves the difference between X and Y in slot A",

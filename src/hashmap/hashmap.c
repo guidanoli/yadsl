@@ -1,9 +1,9 @@
-#include "hashmap.h"
+#include <hashmap/hashmap.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdlib.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 struct Entry
 {

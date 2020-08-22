@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "graph.h"
+#include <graph/graph.h>
 
 //
 //     ______                 __    ________ 

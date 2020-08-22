@@ -1,10 +1,10 @@
-#include "map.h"
+#include <map/map.h>
 
 #include <stdlib.h>
 #include <assert.h>
 
-#include "set.h"
-#include "memdb.h"
+#include <set/set.h>
+#include <memdb/memdb.h>
 
 struct Entry
 {

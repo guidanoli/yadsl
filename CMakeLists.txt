@@ -15,6 +15,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Add cmake scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
+set(AA_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    CACHE INTERNAL "AA source directory")
+
 # Add 'add_library' function
 include(addLibrary)
 

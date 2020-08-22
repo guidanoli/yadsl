@@ -1,10 +1,10 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include "pydefines.h"
+#include <aa/pydefines.h>
 
-#include "heap.h"
-#include "memdb.h"
+#include <heap/heap.h>
+#include <memdb/memdb.h>
 
 //
 // Objects

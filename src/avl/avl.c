@@ -1,10 +1,10 @@
-#include "avl.h"
+#include <avl/avl.h>
 
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 /**** Macros ****/
 
@@ -59,7 +59,7 @@ typedef struct AVLTreeNode
     int height; // 2^INT_MAX nodes
 
     /* AVL tree node object */
-    AVLTreeObject *object;
+    aa_AVLTreeObject *object;
 }
 /* AVL tree node */
 AVLTreeNode;
@@ -70,20 +70,20 @@ typedef struct
     AVLTreeNode *root;
 
     /* AVL tree object comparison function */
-    AVLTreeCmpObjsFunc cmp_objs_func;
+    aa_AVLTreeCmpObjsFunc cmp_objs_func;
 
     /* AVL tree object comparison function user argument */
-    AVLTreeCmpObjsArg *cmp_objs_arg;
+    aa_AVLTreeCmpObjsArg *cmp_objs_arg;
 
     /* AVL tree object freeing function */
-    AVLTreeFreeObjFunc free_object_func;
+    aa_AVLTreeFreeObjFunc free_object_func;
 }
 /* AVL tree */
 AVLTree;
 
 /**** Internal functions declarations ****/
 
-static AVLTreeNode* aa_avltree_node_create_internal(AVLTreeObject* object);
+static AVLTreeNode* aa_avltree_node_create_internal(aa_AVLTreeObject* object);
 
 static AVLTreeNode* aa_avltree_subtree_left_rotate_internal(AVLTreeNode* x);
 
@@ -99,19 +99,19 @@ static AVLTreeNode* aa_avltree_subtree_node_insert_internal(
 
 static int aa_avltree_subtree_node_search_internal(
     AVLTree* tree,
-    AVLTreeObject* object,
+    aa_AVLTreeObject* object,
     AVLTreeNode* node);
 
-static AVLTreeVisitObjRet* aa_avltree_subtree_traverse_internal(
+static aa_AVLTreeVisitObjRet* aa_avltree_subtree_traverse_internal(
     AVLTreeNode* node,
-    AVLTreeVisitObjFunc visit_func,
-    AVLTreeVisitObjArg* visit_arg);
+    aa_AVLTreeVisitObjFunc visit_func,
+    aa_AVLTreeVisitObjArg* visit_arg);
 
 static AVLTreeNode* aa_avltree_subtree_get_min_node_internal(AVLTreeNode* node);
 
 static AVLTreeNode* aa_avltree_subtree_node_remove_internal(
     AVLTree* tree,
-    AVLTreeObject* object,
+    aa_AVLTreeObject* object,
     AVLTreeNode* x,
     int free_obj /* = 1 */,
     int* exists_ptr);
@@ -122,11 +122,11 @@ static void aa_avltree_subtree_destroy_internal(
 
 /**** External functions definitions ****/
 
-AVLTreeRet aa_avltree_tree_create(
-    AVLTreeCmpObjsFunc cmp_objs_func,
-    AVLTreeCmpObjsArg *cmp_objs_arg,
-    AVLTreeFreeObjFunc free_object_func,
-    AVLTreeHandle **tree_handle_ptr)
+aa_AVLTreeRet aa_avltree_tree_create(
+    aa_AVLTreeCmpObjsFunc cmp_objs_func,
+    aa_AVLTreeCmpObjsArg *cmp_objs_arg,
+    aa_AVLTreeFreeObjFunc free_object_func,
+    aa_AVLTreeHandle **tree_handle_ptr)
 {
     AVLTree *tree = malloc(sizeof *tree);
     if (tree == NULL)
@@ -139,9 +139,9 @@ AVLTreeRet aa_avltree_tree_create(
     return AA_AVLTREE_RET_OK;
 }
 
-AVLTreeRet aa_avltree_object_insert(
-    AVLTreeHandle* tree_handle,
-    AVLTreeObject* object,
+aa_AVLTreeRet aa_avltree_object_insert(
+    aa_AVLTreeHandle* tree_handle,
+    aa_AVLTreeObject* object,
     int* exists_ptr)
 {
     int exists = 0;
@@ -157,9 +157,9 @@ AVLTreeRet aa_avltree_object_insert(
     return AA_AVLTREE_RET_OK;
 }
 
-AVLTreeRet aa_avltree_object_search(
-    AVLTreeHandle *tree_handle,
-    AVLTreeObject *object,
+aa_AVLTreeRet aa_avltree_object_search(
+    aa_AVLTreeHandle *tree_handle,
+    aa_AVLTreeObject *object,
     int *exists_ptr)
 {
     AVLTree* tree = (AVLTree*) tree_handle;
@@ -169,22 +169,22 @@ AVLTreeRet aa_avltree_object_search(
     return AA_AVLTREE_RET_OK;
 }
 
-AVLTreeRet aa_avltree_tree_traverse(
-    AVLTreeHandle *tree_handle,
-    AVLTreeVisitObjFunc visit_func,
-    AVLTreeVisitObjArg *visit_arg,
-    AVLTreeVisitObjRet **visit_ret_ptr)
+aa_AVLTreeRet aa_avltree_tree_traverse(
+    aa_AVLTreeHandle *tree_handle,
+    aa_AVLTreeVisitObjFunc visit_func,
+    aa_AVLTreeVisitObjArg *visit_arg,
+    aa_AVLTreeVisitObjRet **visit_ret_ptr)
 {
     AVLTree* tree = (AVLTree*) tree_handle;
-    AVLTreeVisitObjRet *ret = aa_avltree_subtree_traverse_internal(tree->root, visit_func, visit_arg);
+    aa_AVLTreeVisitObjRet *ret = aa_avltree_subtree_traverse_internal(tree->root, visit_func, visit_arg);
     if (visit_ret_ptr)
         *visit_ret_ptr = ret;
     return AA_AVLTREE_RET_OK;
 }
 
-AVLTreeRet aa_avltree_object_remove(
-    AVLTreeHandle *tree_handle,
-    AVLTreeObject *object,
+aa_AVLTreeRet aa_avltree_object_remove(
+    aa_AVLTreeHandle *tree_handle,
+    aa_AVLTreeObject *object,
     int *exists_ptr)
 {
     if (exists_ptr)
@@ -194,7 +194,7 @@ AVLTreeRet aa_avltree_object_remove(
     return AA_AVLTREE_RET_OK;
 }
 
-void aa_avltree_destroy(AVLTreeHandle *tree_handle)
+void aa_avltree_destroy(aa_AVLTreeHandle *tree_handle)
 {
     if (tree_handle == NULL)
         return;
@@ -213,7 +213,7 @@ void aa_avltree_destroy(AVLTreeHandle *tree_handle)
    Returns:
      * pointer to node or NULL, if could not allocate memory
 */
-AVLTreeNode *aa_avltree_node_create_internal(AVLTreeObject *object)
+AVLTreeNode *aa_avltree_node_create_internal(aa_AVLTreeObject *object)
 {
     AVLTreeNode *node = malloc(sizeof *node);
     if (node) {
@@ -405,7 +405,7 @@ AVLTreeNode *aa_avltree_subtree_node_insert_internal(
 */
 int aa_avltree_subtree_node_search_internal(
     AVLTree *tree,
-    AVLTreeObject *object,
+    aa_AVLTreeObject *object,
     AVLTreeNode *node)
 {
     int cmp;
@@ -434,7 +434,7 @@ int aa_avltree_subtree_node_search_internal(
 */
 AVLTreeNode *aa_avltree_subtree_node_remove_internal(
     AVLTree *tree,
-    AVLTreeObject *object,
+    aa_AVLTreeObject *object,
     AVLTreeNode *x,
     int free_obj /* = 1 */,
     int *exists_ptr)
@@ -504,12 +504,12 @@ AVLTreeNode *aa_avltree_subtree_node_remove_internal(
    Returns:
      * first value returned by visit_func, or 0, if never
 */
-AVLTreeVisitObjRet *aa_avltree_subtree_traverse_internal(
+aa_AVLTreeVisitObjRet *aa_avltree_subtree_traverse_internal(
     AVLTreeNode *node,
-    AVLTreeVisitObjFunc visit_func,
-    AVLTreeVisitObjArg *visit_arg)
+    aa_AVLTreeVisitObjFunc visit_func,
+    aa_AVLTreeVisitObjArg *visit_arg)
 {
-    AVLTreeVisitObjRet *ret;
+    aa_AVLTreeVisitObjRet *ret;
     if (node == NULL)
         return NULL;
     if (ret = aa_avltree_subtree_traverse_internal(node->left, visit_func, visit_arg))

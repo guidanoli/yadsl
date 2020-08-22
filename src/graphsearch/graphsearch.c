@@ -1,10 +1,10 @@
-#include "graphsearch.h"
+#include <graphsearch/graphsearch.h>
 
 #include <assert.h>
 #include <stdlib.h>
 
-#include "queue.h"
-#include "memdb.h"
+#include <queue/queue.h>
+#include <memdb/memdb.h>
 
 #ifdef _DEBUG
 #include <stdio.h>

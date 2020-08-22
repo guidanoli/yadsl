@@ -1,9 +1,9 @@
-#include "testerutils.h"
+#include <testerutils/testerutils.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tester.h"
+#include <tester/tester.h>
 
 const char *TesterHelpStrings[] = {
 	"This is the testerutils test module",

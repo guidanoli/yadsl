@@ -1,11 +1,11 @@
-#include "set.h"
+#include <set/set.h>
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "tester.h"
-#include "testerutils.h"
+#include <tester/tester.h>
+#include <testerutils/testerutils.h>
 
 /* Help */
 

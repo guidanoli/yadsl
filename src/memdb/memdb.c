@@ -1,10 +1,10 @@
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
 
 #define _MEMDB_INTERNAL
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)

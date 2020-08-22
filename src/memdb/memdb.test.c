@@ -1,4 +1,4 @@
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdio.h>
 
 // Force debug being set on
@@ -6,13 +6,13 @@
 #define _DEBUG
 #define _PSEUDO_DEBUG
 #endif
-#include "memdb.h"
+#include <memdb/memdb.h>
 #ifdef _PSEUDO_DEBUG
 #undef _DEBUG
 #undef _PSEUDO_DEBUG
 #endif
 
-#include "tester.h"
+#include <tester/tester.h>
 
 #define matches(a,b) (strcmp(a,b) == 0)
 

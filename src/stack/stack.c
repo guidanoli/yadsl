@@ -1,8 +1,8 @@
-#include "stack.h"
+#include <stack/stack.h>
 
 #include <stdlib.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 struct StackItem
 {

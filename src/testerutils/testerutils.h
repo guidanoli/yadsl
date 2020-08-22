@@ -12,7 +12,7 @@
 // serialization and deserialization of variables.
 //
 
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stdio.h>
 
 // Macro for comparing two strings in an if statement

@@ -1,11 +1,11 @@
-#include "graph.h"
+#include <graph/graph.h>
 
 #include <assert.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "set.h"
-#include "memdb.h"
+#include <set/set.h>
+#include <memdb/memdb.h>
 
 /*******************************************************************************
 * Graph data structure invariants

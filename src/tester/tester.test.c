@@ -1,8 +1,8 @@
-#include "posixstring.h"
+#include <aa/posixstring.h>
 #include <stddef.h>
 #include <stdio.h>
 
-#include "tester.h"
+#include <tester/tester.h>
 
 #define matches(command, str) (strcmp(command, str) == 0)
 

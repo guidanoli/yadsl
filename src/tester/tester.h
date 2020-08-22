@@ -74,7 +74,7 @@
 
 #include <stddef.h>
 
-#include "memdb.h"
+#include <memdb/memdb.h>
 
 /**
 * Enumeration of tester return values.

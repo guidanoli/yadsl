@@ -1,10 +1,10 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include "pydefines.h"
+#include <aa/pydefines.h>
 
-#include "avl.h"
-#include "memdb.h"
+#include <avl/avl.h>
+#include <memdb/memdb.h>
 
 //
 // Objects
@@ -13,10 +13,10 @@
 typedef struct
 {
 	PyObject_HEAD
-	AVLTreeHandle *ob_tree;
+	aa_AVLTreeHandle *ob_tree;
 	PyObject *ob_func;
 	unsigned char lock : 1;
-} AVLObject;
+} aa_AVLTreePythonObject;
 
 //
 // Exceptions
@@ -46,7 +46,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-_DEFINE_EXCEPTION_FUNCTIONS(AVLTreeHandle, exceptions)
+_DEFINE_EXCEPTION_FUNCTIONS(aa_AVLTreePythonObject, exceptions)
 
 //
 // Callbacks
@@ -62,9 +62,9 @@ static int
 cmpCallback(void *obj1, void *obj2, void *cmp_objs_arg)
 {
 	int result = 1;
-	AVLObject *ho;
+	aa_AVLTreePythonObject *ho;
 	PyObject *callable;
-	ho = (AVLObject *) cmp_objs_arg;
+	ho = (aa_AVLTreePythonObject *) cmp_objs_arg;
 	if (callable = ho->ob_func) {
 		PyObject *args = NULL, *resultObj = NULL, *zero = NULL;
 		if ((args = PyTuple_Pack(2, obj1, obj2)) == NULL)
@@ -141,7 +141,7 @@ exit2:
 
 struct _visit_cb_arg
 {
-	AVLObject *ao; /* avl object */
+	aa_AVLTreePythonObject *ao; /* avl object */
 	PyObject *func; /* callable object */
 };
 
@@ -178,8 +178,8 @@ void *visitCallback(void *object, void *cmp_objs_arg)
 static PyObject *
 AVL_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-	AVLObject *self;
-	self = (AVLObject *) type->tp_alloc(type, 0);
+	aa_AVLTreePythonObject *self;
+	self = (aa_AVLTreePythonObject *) type->tp_alloc(type, 0);
 	if (self != NULL) {
 		self->ob_tree = NULL;
 		self->ob_func = NULL;
@@ -201,7 +201,7 @@ PyDoc_STRVAR(_AVL_init__doc__,
 "\t> 0, if o1 > o2\n");
 
 static int
-AVL_init(AVLObject *self, PyObject *args, PyObject *kw)
+AVL_init(aa_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *callbackObj = NULL;
 	static char *keywords[] = { "f", NULL };
@@ -231,7 +231,7 @@ AVL_init(AVLObject *self, PyObject *args, PyObject *kw)
 }
 
 static void
-AVL_dealloc(AVLObject *self)
+AVL_dealloc(aa_AVLTreePythonObject *self)
 {
 	if (self->ob_tree)
 		aa_avltree_destroy(self->ob_tree);
@@ -248,11 +248,11 @@ PyDoc_STRVAR(_AVL_add__doc__,
 "Returns whether it was added or not.");
 
 static PyObject *
-AVL_add(AVLObject *self, PyObject *obj)
+AVL_add(aa_AVLTreePythonObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_AVLTreeHandle_throw_error(PyExc_Lock);
+		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	switch (aa_avltree_object_insert(self->ob_tree, obj, &exists)) {
@@ -280,11 +280,11 @@ PyDoc_STRVAR(_AVL_remove__doc__,
 "Remove object from tree.");
 
 static PyObject *
-AVL_remove(AVLObject *self, PyObject *obj)
+AVL_remove(aa_AVLTreePythonObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_AVLTreeHandle_throw_error(PyExc_Lock);
+		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	switch (aa_avltree_object_remove(self->ob_tree, obj, &exists)) {
@@ -306,11 +306,11 @@ PyDoc_STRVAR(_AVL_contains__doc__,
 "Check whether tree contains object.");
 
 static PyObject *
-AVL_contains(AVLObject *self, PyObject *obj)
+AVL_contains(aa_AVLTreePythonObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_AVLTreeHandle_throw_error(PyExc_Lock);
+		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	switch (aa_avltree_object_search(self->ob_tree, obj, &exists)) {
@@ -334,12 +334,12 @@ PyDoc_STRVAR(_AVL_iterate__doc__,
 "returned value of iterate. Else, None is returned.");
 
 static PyObject *
-AVL_iterate(AVLObject *self, PyObject *obj)
+AVL_iterate(aa_AVLTreePythonObject *self, PyObject *obj)
 {
 	struct _visit_cb_arg cmp_objs_arg;
 	void *ret = NULL;
 	if (self->lock) {
-		_AVLTreeHandle_throw_error(PyExc_Lock);
+		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	if (!PyCallable_Check(obj)) {
@@ -417,7 +417,7 @@ PyMethodDef AVL_methods[] = {
 static PyTypeObject AVLType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	.tp_name = "pyavl.AVL",
-	.tp_basicsize = sizeof(AVLObject),
+	.tp_basicsize = sizeof(aa_AVLTreePythonObject),
 	.tp_itemsize = 0,
 	.tp_dealloc = (destructor) AVL_dealloc,
 	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
