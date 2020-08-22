@@ -54,10 +54,6 @@ Along with a parameter there might be one or more tags associated:
 
 **DISCLAIMER:** A parameter cannot be NULL unless otherwise said so.
 
-# Creating a new project
-
-If you wish to create a new project following the pattern of the already existing ones, you may use the `add_new_project.py` script located on the `config` directory.
-
 ## Python modules
 
 Some modules have Python bindings, which comprehend each a source file (`module.py.c`) and a test file (`module_test.py`), as well as a `CMakeLists.txt` file. They are always contained inside the `python` folder of the corresponding C module.
@@ -124,3 +120,7 @@ source luatest.sh
 set LUA=lua54
 luatest
 ```
+
+## Creating a new project
+
+If you wish to create a new project following the pattern of the already existing ones, you may use the `add_new_project.py` script located on the `config` directory.
