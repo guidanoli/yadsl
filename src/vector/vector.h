@@ -17,7 +17,7 @@ typedef void yadsl_VectorHandle; /**< Vector handle */
  * @param size vector initial size (number of elements)
  * @return newly created vector or NULL if could not allocate memory
 */
-yadsl_VectorHandle *yadsl_vector_create(size_t dtype_size, size_t size);
+yadsl_VectorHandle *yadsl_vector_create(size_t dtype, size_t size);
 
 /**
  * @brief Get vector element count

@@ -1,11 +1,22 @@
-Yet Another Data Structures Library
-===================================
+yadsl --- Yet Another Data Structures Library
+=============================================
 
 .. toctree::
+   :maxdepth: 1
+   
+   about
+   install
+
+.. toctree::
+   :glob:
+   :caption: Data Structures
    :maxdepth: 2
-   :caption: Contents:
+   
+   ds/*
 
-Docs
-====
-
-.. doxygenfunction:: yadsl_vector_create
+.. toctree::
+   :glob:
+   :caption: Algorithms
+   :maxdepth: 2
+   
+   algs/*
