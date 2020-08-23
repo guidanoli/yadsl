@@ -1,4 +1,4 @@
-# yadsl - Yet Another Data Structure Library
+# yadsl - Yet Another Data Structures Library
 [![Build Status](https://travis-ci.com/guidanoli/yadsl.svg?branch=master)](https://travis-ci.com/guidanoli/yadsl)
 
 This is a repository for toy projects that sparked from the Analysis of Algorithms (INF1721) lectures given by Eduardo Sany Laber, professor at PUC-Rio. I hope it comes to any help to you. Feel free to contribute to the repository too.
