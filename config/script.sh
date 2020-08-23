@@ -5,11 +5,11 @@ build_and_run_c_tests() {
 	
 	args=()
 	if [[ -n "$PYENV_VERSION" ]]; then
-		args+=( "-DAA_PYTHON_SUPPORT=ON" )
+		args+=( "-DYADSL_PYTHON_SUPPORT=ON" )
 		args+=( "-DPYTHON_EXECUTABLE=$(pyenv which python)" )
 	fi
 	if [[ -n "$LUA_VERSION" ]]; then
-		args+=( "-DAA_LUA_SUPPORT=ON" )
+		args+=( "-DYADSL_LUA_SUPPORT=ON" )
 	fi
 	
 	mkdir -p build_$config

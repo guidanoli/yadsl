@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.0)
-project(aa)
+project(yadsl)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-option(AA_BUILD_TESTS "Build unit tests" ON)
-option(AA_PYTHON_SUPPORT "Build Python C extension modules" OFF)
-option(AA_LUA_SUPPORT "Build Lua C bindings" OFF)
+option(YADSL_BUILD_TESTS "Build unit tests" ON)
+option(YADSL_PYTHON_SUPPORT "Build Python C extension modules" OFF)
+option(YADSL_LUA_SUPPORT "Build Lua C bindings" OFF)
 
 # Allow hierarchical solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -15,17 +15,17 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Add cmake scripts
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-set(AA_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    CACHE INTERNAL "AA source directory")
+set(YADSL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    CACHE INTERNAL "YADSL source directory")
 
 # Add 'add_library' function
 include(addLibrary)
 
-if(AA_BUILD_TESTS)
+if(YADSL_BUILD_TESTS)
 	enable_testing()
 endif()
 
-if(AA_PYTHON_SUPPORT)
+if(YADSL_PYTHON_SUPPORT)
 	if(NOT PYTHON_EXECUTABLE)
 		# Find Python interpreter
 		set(Python_FIND_VIRTUALENV FIRST)
@@ -51,7 +51,7 @@ if(AA_PYTHON_SUPPORT)
 	include(addPythonModule)
 endif()
 
-if (AA_LUA_SUPPORT)
+if (YADSL_LUA_SUPPORT)
 	find_package(Lua 5.0 REQUIRED MODULE)
 
 	# Add 'add_lua_module' function

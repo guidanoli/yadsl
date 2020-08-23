@@ -12,6 +12,7 @@ function(add_lua_module target modulename)
 			LINKER_LANGUAGE C
 	)
 	target_include_directories(${target} PUBLIC ${LUA_INCLUDE_DIR})
+	# On Windows, it is required to link to the Lua libraries
 	if(WIN32)
 		target_link_libraries(${target} ${LUA_LIBRARIES})
 	endif()

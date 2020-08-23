@@ -1,7 +1,7 @@
-# Analysis of Algorithms (INF1721)
-[![Build Status](https://travis-ci.com/guidanoli/aa.svg?branch=master)](https://travis-ci.com/guidanoli/aa)
+# yadsl - Yet Another Data Structure Library
+[![Build Status](https://travis-ci.com/guidanoli/yadsl.svg?branch=master)](https://travis-ci.com/guidanoli/yadsl)
 
-This is a repository for toy projects that sparked from the lectures given by Eduardo Sany Laber, professor at PUC-Rio. I hope it comes to any help to you. Feel free to contribute to the repository too.
+This is a repository for toy projects that sparked from the Analysis of Algorithms (INF1721) lectures given by Eduardo Sany Laber, professor at PUC-Rio. I hope it comes to any help to you. Feel free to contribute to the repository too.
 
 ## C Modules
 
@@ -21,7 +21,7 @@ cmake --build . --config=<CONFIG>
 or, alternatively, you can use the `setup.py` script. You can use environment variables to control your options too.
 
 ```sh
-export AA_PYTHON_SUPPORT=ON
+export YADSL_PYTHON_SUPPORT=ON
 python setup.py install
 ```
 
@@ -86,22 +86,22 @@ Some modules have Lua bindings, which comprehend each a source file (`module.lua
 
 ### Compilation
 
-Run the `setup.py` script, with the environment variable `AA_LUA_SUPPORT` set to `ON`.
-If you don't want to generate the python bindings, just set `AA_PYTHON_SUPPORT` to `OFF`.
+Run the `setup.py` script, with the environment variable `YADSL_LUA_SUPPORT` set to `ON`.
+If you don't want to generate the python bindings, just set `YADSL_PYTHON_SUPPORT` to `OFF`.
 
 #### POSIX
 
 ```sh
-export AA_LUA_SUPPORT=ON
-export AA_PYTHON_SUPPORT=OFF
+export YADSL_LUA_SUPPORT=ON
+export YADSL_PYTHON_SUPPORT=OFF
 python setup.py install
 ```
 
 #### Windows
 
 ```dos
-set AA_LUA_SUPPORT=ON
-set AA_PYTHON_SUPPORT=OFF
+set YADSL_LUA_SUPPORT=ON
+set YADSL_PYTHON_SUPPORT=OFF
 python setup.py install
 ```
 

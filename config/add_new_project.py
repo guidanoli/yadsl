@@ -45,10 +45,10 @@ class File(BaseFileEntity):
     def make(self, *args, **kwargs):
         prj = kwargs['name']
         file_path = (
-            kwargs['path']      # C:/aa/src/?
-            / self.name         # C:/aa/src/?/?.h
-            .__str__()          # C:\aa\src\?\?.h
-            .replace('?', prj)  # C:\aa\src\prj\prj.h
+            kwargs['path']      # C:/yadsl/src/?
+            / self.name         # C:/yadsl/src/?/?.h
+            .__str__()          # C:\yadsl\src\?\?.h
+            .replace('?', prj)  # C:\yadsl\src\prj\prj.h
         )
         mode = 'a' if self.append else 'w'
         with open(file_path, mode) as f:

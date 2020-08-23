@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <aa/pydefines.h>
+#include <yadsl/pydefines.h>
 
 #include <graph/graph.h>
 

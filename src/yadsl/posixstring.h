@@ -1,5 +1,5 @@
-#ifndef _AA_POSIXSTRING_H_
-#define _AA_POSIXSTRING_H_
+#ifndef _YADSL_POSIXSTRING_H_
+#define _YADSL_POSIXSTRING_H_
 
 // Definitions for including POSIX string definitions
 // Include this instead of <string.h>

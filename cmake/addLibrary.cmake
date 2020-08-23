@@ -34,13 +34,13 @@ macro(invert_boolean varName varValue)
   do_ternary(${varName} ${varValue} FALSE TRUE)
 endmacro()
 
-# Adds library for aa (wrapper around add_library)
+# Adds library for yadsl (wrapper around add_library)
 #
-# add_aa_library(target [TEST] [LUA] [PYTHON] [STATIC]
+# add_yadsl_library(target [TEST] [LUA] [PYTHON] [STATIC]
 #                SOURCES src1 [src2 ...]
 #                TEST_LINKS tgt1 [tgt2 ...])
 #
-function(add_aa_library target)
+function(add_yadsl_library target)
     set(options TEST PYTHON LUA STATIC)
     set(oneValueArgs)
     set(multiValueArgs SOURCES TEST_LINKS)
@@ -53,8 +53,8 @@ function(add_aa_library target)
     endif()
     
     add_library(${target} ${OPTS_SOURCES})
-    safe_target_link_libraries(${target} aa memdb)
-    target_include_directories(${target} PUBLIC ${AA_SOURCE_DIR})
+    safe_target_link_libraries(${target} yadsl memdb)
+    target_include_directories(${target} PUBLIC ${YADSL_SOURCE_DIR})
     
     invert_boolean("OPTS_FPIC" OPTS_STATIC)
         
@@ -65,17 +65,17 @@ function(add_aa_library target)
     include(moveLibraries)
 	move_target_library(${target})
     
-    if(${OPTS_TEST} AND ${AA_BUILD_TESTS})
+    if(${OPTS_TEST} AND ${YADSL_BUILD_TESTS})
         list(APPEND OPTS_TEST_LINKS "${target};testerutils")
         add_tester_module("${target}test" SOURCES "${target}.test.c" LINKS ${OPTS_TEST_LINKS})
         add_tester_scripts("${target}test" SOURCES "${target}.script")
     endif()
 
-    if(${OPTS_PYTHON} AND ${AA_PYTHON_SUPPORT})
+    if(${OPTS_PYTHON} AND ${YADSL_PYTHON_SUPPORT})
         add_subdirectory(python)
     endif()
     
-    if (${OPTS_LUA} AND ${AA_LUA_SUPPORT})
+    if (${OPTS_LUA} AND ${YADSL_LUA_SUPPORT})
         add_subdirectory(lua)
     endif()
 endfunction()

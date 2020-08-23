@@ -1,5 +1,5 @@
-#ifndef _AA_PYDEFINES_H_
-#define _AA_PYDEFINES_H_
+#ifndef _YADSL_PYDEFINES_H_
+#define _YADSL_PYDEFINES_H_
 
 // Python definitions header file
 // Make sure to include this after including the Python headers

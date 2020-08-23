@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <aa/pydefines.h>
+#include <yadsl/pydefines.h>
 
 #include <avl/avl.h>
 #include <memdb/memdb.h>
@@ -13,10 +13,10 @@
 typedef struct
 {
 	PyObject_HEAD
-	aa_AVLTreeHandle *ob_tree;
+	yadsl_AVLTreeHandle *ob_tree;
 	PyObject *ob_func;
 	unsigned char lock : 1;
-} aa_AVLTreePythonObject;
+} yadsl_AVLTreePythonObject;
 
 //
 // Exceptions
@@ -46,7 +46,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-_DEFINE_EXCEPTION_FUNCTIONS(aa_AVLTreePythonObject, exceptions)
+_DEFINE_EXCEPTION_FUNCTIONS(yadsl_AVLTreePythonObject, exceptions)
 
 //
 // Callbacks
@@ -62,9 +62,9 @@ static int
 cmpCallback(void *obj1, void *obj2, void *cmp_objs_arg)
 {
 	int result = 1;
-	aa_AVLTreePythonObject *ho;
+	yadsl_AVLTreePythonObject *ho;
 	PyObject *callable;
-	ho = (aa_AVLTreePythonObject *) cmp_objs_arg;
+	ho = (yadsl_AVLTreePythonObject *) cmp_objs_arg;
 	if (callable = ho->ob_func) {
 		PyObject *args = NULL, *resultObj = NULL, *zero = NULL;
 		if ((args = PyTuple_Pack(2, obj1, obj2)) == NULL)
@@ -141,7 +141,7 @@ exit2:
 
 struct _visit_cb_arg
 {
-	aa_AVLTreePythonObject *ao; /* avl object */
+	yadsl_AVLTreePythonObject *ao; /* avl object */
 	PyObject *func; /* callable object */
 };
 
@@ -178,8 +178,8 @@ void *visitCallback(void *object, void *cmp_objs_arg)
 static PyObject *
 AVL_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-	aa_AVLTreePythonObject *self;
-	self = (aa_AVLTreePythonObject *) type->tp_alloc(type, 0);
+	yadsl_AVLTreePythonObject *self;
+	self = (yadsl_AVLTreePythonObject *) type->tp_alloc(type, 0);
 	if (self != NULL) {
 		self->ob_tree = NULL;
 		self->ob_func = NULL;
@@ -201,7 +201,7 @@ PyDoc_STRVAR(_AVL_init__doc__,
 "\t> 0, if o1 > o2\n");
 
 static int
-AVL_init(aa_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
+AVL_init(yadsl_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *callbackObj = NULL;
 	static char *keywords[] = { "f", NULL };
@@ -215,10 +215,10 @@ AVL_init(aa_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 			return -1;
 		}
 	}
-	switch (aa_avltree_tree_create(cmpCallback, self, decRefCallback, &self->ob_tree)) {
-	case AA_AVLTREE_RET_OK:
+	switch (yadsl_avltree_tree_create(cmpCallback, self, decRefCallback, &self->ob_tree)) {
+	case YADSL_AVLTREE_RET_OK:
 		break;
-	case AA_AVLTREE_RET_MEMORY:
+	case YADSL_AVLTREE_RET_MEMORY:
 		PyErr_SetString(PyExc_MemoryError, "Could not create avl tree");
 		return -1;
 	default:
@@ -231,10 +231,10 @@ AVL_init(aa_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 }
 
 static void
-AVL_dealloc(aa_AVLTreePythonObject *self)
+AVL_dealloc(yadsl_AVLTreePythonObject *self)
 {
 	if (self->ob_tree)
-		aa_avltree_destroy(self->ob_tree);
+		yadsl_avltree_destroy(self->ob_tree);
 	_memdb_dump();
 	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
@@ -248,22 +248,22 @@ PyDoc_STRVAR(_AVL_add__doc__,
 "Returns whether it was added or not.");
 
 static PyObject *
-AVL_add(aa_AVLTreePythonObject *self, PyObject *obj)
+AVL_add(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
+		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (aa_avltree_object_insert(self->ob_tree, obj, &exists)) {
-	case AA_AVLTREE_RET_OK:
+	switch (yadsl_avltree_object_insert(self->ob_tree, obj, &exists)) {
+	case YADSL_AVLTREE_RET_OK:
 		_memdb_dump();
 		if (!exists)
 			Py_INCREF(obj);
 		if (PyErr_Occurred())
 			return NULL;
 		return PyBool_FromLong(!exists);
-	case AA_AVLTREE_RET_MEMORY:
+	case YADSL_AVLTREE_RET_MEMORY:
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not allocate memory for newly added item in tree");
 		break;
@@ -280,15 +280,15 @@ PyDoc_STRVAR(_AVL_remove__doc__,
 "Remove object from tree.");
 
 static PyObject *
-AVL_remove(aa_AVLTreePythonObject *self, PyObject *obj)
+AVL_remove(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
+		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (aa_avltree_object_remove(self->ob_tree, obj, &exists)) {
-	case AA_AVLTREE_RET_OK:
+	switch (yadsl_avltree_object_remove(self->ob_tree, obj, &exists)) {
+	case YADSL_AVLTREE_RET_OK:
 		_memdb_dump();
 		if (PyErr_Occurred())
 			return NULL;
@@ -306,15 +306,15 @@ PyDoc_STRVAR(_AVL_contains__doc__,
 "Check whether tree contains object.");
 
 static PyObject *
-AVL_contains(aa_AVLTreePythonObject *self, PyObject *obj)
+AVL_contains(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
 	int exists;
 	if (self->lock) {
-		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
+		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (aa_avltree_object_search(self->ob_tree, obj, &exists)) {
-	case AA_AVLTREE_RET_OK:
+	switch (yadsl_avltree_object_search(self->ob_tree, obj, &exists)) {
+	case YADSL_AVLTREE_RET_OK:
 		if (PyErr_Occurred())
 			return NULL;
 		return PyBool_FromLong(exists);
@@ -334,12 +334,12 @@ PyDoc_STRVAR(_AVL_iterate__doc__,
 "returned value of iterate. Else, None is returned.");
 
 static PyObject *
-AVL_iterate(aa_AVLTreePythonObject *self, PyObject *obj)
+AVL_iterate(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
 	struct _visit_cb_arg cmp_objs_arg;
 	void *ret = NULL;
 	if (self->lock) {
-		_aa_AVLTreePythonObject_throw_error(PyExc_Lock);
+		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	if (!PyCallable_Check(obj)) {
@@ -349,8 +349,8 @@ AVL_iterate(aa_AVLTreePythonObject *self, PyObject *obj)
 	}
 	cmp_objs_arg.ao = self;
 	cmp_objs_arg.func = obj;
-	switch (aa_avltree_tree_traverse(self->ob_tree, visitCallback, &cmp_objs_arg, &ret)) {
-	case AA_AVLTREE_RET_OK:
+	switch (yadsl_avltree_tree_traverse(self->ob_tree, visitCallback, &cmp_objs_arg, &ret)) {
+	case YADSL_AVLTREE_RET_OK:
 		_memdb_dump();
 		if (PyErr_Occurred())
 			goto exit;
@@ -417,7 +417,7 @@ PyMethodDef AVL_methods[] = {
 static PyTypeObject AVLType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	.tp_name = "pyavl.AVL",
-	.tp_basicsize = sizeof(aa_AVLTreePythonObject),
+	.tp_basicsize = sizeof(yadsl_AVLTreePythonObject),
 	.tp_itemsize = 0,
 	.tp_dealloc = (destructor) AVL_dealloc,
 	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,

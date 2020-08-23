@@ -1,2 +1,2 @@
-add_aa_library(vector
+add_yadsl_library(vector
     SOURCES vector.c vector.h)

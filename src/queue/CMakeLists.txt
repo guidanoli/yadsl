@@ -1,2 +1,2 @@
-add_aa_library(queue TEST PYTHON
+add_yadsl_library(queue TEST PYTHON
     SOURCES queue.c queue.h)

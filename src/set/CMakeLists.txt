@@ -1,2 +1,2 @@
-add_aa_library(set TEST
+add_yadsl_library(set TEST
     SOURCES set.c set.h)

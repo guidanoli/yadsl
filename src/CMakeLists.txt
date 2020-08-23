@@ -1,5 +1,5 @@
 # Meta-modules
-add_subdirectory(aa)
+add_subdirectory(yadsl)
 add_subdirectory(tester)
 add_subdirectory(testerutils)
 add_subdirectory(memdb)

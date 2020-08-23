@@ -1,9 +1,9 @@
-add_aa_library(tester STATIC
+add_yadsl_library(tester STATIC
     SOURCES tester.c tester.h)
 
 # Makes tester tools visible to global scope and allows tools to
 # be included by other projects too.
-if(AA_BUILD_TESTS)
+if(YADSL_BUILD_TESTS)
 	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/tools")
 	include(testerTools)
 	

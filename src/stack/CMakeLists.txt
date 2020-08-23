@@ -1,2 +1,2 @@
-add_aa_library(stack TEST PYTHON
+add_yadsl_library(stack TEST PYTHON
     SOURCES stack.c stack.h)

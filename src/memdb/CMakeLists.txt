@@ -1,2 +1,2 @@
-add_aa_library(memdb TEST
+add_yadsl_library(memdb TEST
     SOURCES memdb.c memdb.h)

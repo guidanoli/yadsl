@@ -1,5 +1,5 @@
-#ifndef _AA_DLLDEFINES_H_
-#define _AA_DLLDEFINES_H_
+#ifndef _YADSL_DLLDEFINES_H_
+#define _YADSL_DLLDEFINES_H_
 
 // DLL definitions for exporting and importing functions
 
