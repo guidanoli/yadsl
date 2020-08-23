@@ -6,6 +6,7 @@ yadsl --- Yet Another Data Structures Library
    
    about
    install
+   depends
 
 .. toctree::
    :glob:
