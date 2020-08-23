@@ -47,108 +47,102 @@
 
 /**** Structs ****/
 
-typedef struct AVLTreeNode
+/** AVL subtree */
+typedef struct yadsl_AVLSubtree
 {
-    /* Left AVL tree node */
-    struct AVLTreeNode *left;
-
-    /* Right AVL tree node */
-    struct AVLTreeNode *right;
-
-    /* AVL tree node height */
-    int height;
-
-    /* AVL tree node object */
-    yadsl_AVLTreeObject *object;
+    struct yadsl_AVLSubtree *left;  /**< Left AVL subtree */
+    struct yadsl_AVLSubtree *right; /**< Right AVL subtree */
+    int height;                     /**< AVL subtree height */
+    yadsl_AVLTreeObject *object;    /**< Subtree root object */
 }
-/* AVL tree node */
-AVLTreeNode;
+yadsl_AVLSubtree;
 
+/** AVL tree */
 typedef struct
 {
-    /* AVL tree root node */
-    AVLTreeNode *root;
-
-    /* AVL tree object comparison function */
-    yadsl_AVLTreeCmpObjsFunc cmp_objs_func;
-
-    /* AVL tree object comparison function user argument */
-    yadsl_AVLTreeCmpObjsArg *cmp_objs_arg;
-
-    /* AVL tree object freeing function */
-    yadsl_AVLTreeFreeObjFunc free_object_func;
+    yadsl_AVLSubtree *root;                 /**< AVL tree root */
+    yadsl_AVLTreeCmpObjsFunc cmp_objs_func; /**< AVL tree object comparison function */
+    yadsl_AVLTreeCmpObjsArg *cmp_objs_arg;  /**< AVL tree object comparison function user argument */
+    yadsl_AVLTreeFreeObjFunc free_obj_func; /**< AVL tree object freeing function */
 }
-/* AVL tree */
-AVLTree;
+yadsl_AVLTree;
 
 /**** Internal functions declarations ****/
 
-static AVLTreeNode* yadsl_avltree_node_create_internal(yadsl_AVLTreeObject* object);
+static yadsl_AVLSubtree* yadsl_avltree_node_create_internal(yadsl_AVLTreeObject* object);
 
-static AVLTreeNode* yadsl_avltree_subtree_left_rotate_internal(AVLTreeNode* x);
+static yadsl_AVLSubtree* yadsl_avltree_subtree_left_rotate_internal(yadsl_AVLSubtree* x);
 
-static AVLTreeNode* yadsl_avltree_subtree_right_rotate_internal(AVLTreeNode* x);
+static yadsl_AVLSubtree* yadsl_avltree_subtree_right_rotate_internal(yadsl_AVLSubtree* x);
 
-static AVLTreeNode* yadsl_avl_subtree_rebalance_internal(AVLTreeNode* x);
+static yadsl_AVLSubtree* yadsl_avl_subtree_rebalance_internal(yadsl_AVLSubtree* x);
 
-static AVLTreeNode* yadsl_avltree_subtree_node_insert_internal(
-    AVLTree* tree,
-    AVLTreeNode* x,
-    AVLTreeNode* node,
-    int* has_duplicate_ptr);
+static yadsl_AVLSubtree* yadsl_avltree_subtree_node_insert_internal(
+    yadsl_AVLTree* tree,
+    yadsl_AVLSubtree* x,
+    yadsl_AVLSubtree* node,
+    bool* has_duplicate_ptr);
 
-static int yadsl_avltree_subtree_node_search_internal(
-    AVLTree* tree,
+static bool yadsl_avltree_subtree_node_search_internal(
+    yadsl_AVLTree* tree,
     yadsl_AVLTreeObject* object,
-    AVLTreeNode* node);
+    yadsl_AVLSubtree* node);
 
-static yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_internal(
-    AVLTreeNode* node,
+static yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_post_internal(
+    yadsl_AVLSubtree* node,
     yadsl_AVLTreeVisitObjFunc visit_func,
     yadsl_AVLTreeVisitObjArg* visit_arg);
 
-static AVLTreeNode* yadsl_avltree_subtree_get_min_node_internal(AVLTreeNode* node);
+static yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_in_internal(
+    yadsl_AVLSubtree* node,
+    yadsl_AVLTreeVisitObjFunc visit_func,
+    yadsl_AVLTreeVisitObjArg* visit_arg);
 
-static AVLTreeNode* yadsl_avltree_subtree_node_remove_internal(
-    AVLTree* tree,
+static yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_pre_internal(
+    yadsl_AVLSubtree* node,
+    yadsl_AVLTreeVisitObjFunc visit_func,
+    yadsl_AVLTreeVisitObjArg* visit_arg);
+
+static yadsl_AVLSubtree* yadsl_avltree_subtree_get_min_node_internal(yadsl_AVLSubtree* node);
+
+static yadsl_AVLSubtree* yadsl_avltree_subtree_node_remove_internal(
+    yadsl_AVLTree* tree,
     yadsl_AVLTreeObject* object,
-    AVLTreeNode* x,
-    int free_obj /* = 1 */,
-    int* exists_ptr);
+    yadsl_AVLSubtree* x,
+    bool free_obj /* = true */,
+    bool* exists_ptr);
 
 static void yadsl_avltree_subtree_destroy_internal(
-    AVLTree* tree,
-    AVLTreeNode * x);
+    yadsl_AVLTree* tree,
+    yadsl_AVLSubtree * x);
 
 /**** External functions definitions ****/
 
-yadsl_AVLTreeRet yadsl_avltree_tree_create(
+yadsl_AVLTreeHandle* yadsl_avltree_tree_create(
     yadsl_AVLTreeCmpObjsFunc cmp_objs_func,
     yadsl_AVLTreeCmpObjsArg *cmp_objs_arg,
-    yadsl_AVLTreeFreeObjFunc free_object_func,
-    yadsl_AVLTreeHandle **tree_handle_ptr)
+    yadsl_AVLTreeFreeObjFunc free_obj_func)
 {
-    AVLTree *tree = malloc(sizeof *tree);
-    if (tree == NULL)
-        return YADSL_AVLTREE_RET_MEMORY;
-    tree->root = NULL;
-    tree->cmp_objs_func = cmp_objs_func;
-    tree->free_object_func = free_object_func;
-    tree->cmp_objs_arg = cmp_objs_arg;
-    *tree_handle_ptr = tree;
-    return YADSL_AVLTREE_RET_OK;
+    yadsl_AVLTree *tree = malloc(sizeof *tree);
+    if (tree) {
+        tree->root = NULL;
+        tree->cmp_objs_func = cmp_objs_func;
+        tree->free_obj_func = free_obj_func;
+        tree->cmp_objs_arg = cmp_objs_arg;
+    }
+    return tree;
 }
 
 yadsl_AVLTreeRet yadsl_avltree_object_insert(
     yadsl_AVLTreeHandle* tree_handle,
     yadsl_AVLTreeObject* object,
-    int* exists_ptr)
+    bool* exists_ptr)
 {
-    int exists = 0;
-    AVLTreeNode *node = yadsl_avltree_node_create_internal(object);
+    bool exists = false;
+    yadsl_AVLSubtree *node = yadsl_avltree_node_create_internal(object);
     if (node == NULL)
         return YADSL_AVLTREE_RET_MEMORY;
-    AVLTree* tree = (AVLTree*) tree_handle;
+    yadsl_AVLTree* tree = (yadsl_AVLTree*) tree_handle;
     tree->root = yadsl_avltree_subtree_node_insert_internal(tree, tree->root, node, &exists);
     if (exists)
         free(node);
@@ -160,10 +154,10 @@ yadsl_AVLTreeRet yadsl_avltree_object_insert(
 yadsl_AVLTreeRet yadsl_avltree_object_search(
     yadsl_AVLTreeHandle *tree_handle,
     yadsl_AVLTreeObject *object,
-    int *exists_ptr)
+    bool *exists_ptr)
 {
-    AVLTree* tree = (AVLTree*) tree_handle;
-    int exists = yadsl_avltree_subtree_node_search_internal(tree, object, tree->root);
+    yadsl_AVLTree* tree = (yadsl_AVLTree*) tree_handle;
+    bool exists = yadsl_avltree_subtree_node_search_internal(tree, object, tree->root);
     if (exists_ptr)
         *exists_ptr = exists;
     return YADSL_AVLTREE_RET_OK;
@@ -171,12 +165,26 @@ yadsl_AVLTreeRet yadsl_avltree_object_search(
 
 yadsl_AVLTreeRet yadsl_avltree_tree_traverse(
     yadsl_AVLTreeHandle *tree_handle,
+    yadsl_AVLTreeVisitingOrder visit_order,
     yadsl_AVLTreeVisitObjFunc visit_func,
     yadsl_AVLTreeVisitObjArg *visit_arg,
     yadsl_AVLTreeVisitObjRet **visit_ret_ptr)
 {
-    AVLTree* tree = (AVLTree*) tree_handle;
-    yadsl_AVLTreeVisitObjRet *ret = yadsl_avltree_subtree_traverse_internal(tree->root, visit_func, visit_arg);
+    yadsl_AVLTree* tree = (yadsl_AVLTree*) tree_handle;
+    yadsl_AVLTreeVisitObjRet* ret;
+    switch (visit_order) {
+    case YADSL_AVLTREE_VISITING_PRE_ORDER:
+        ret = yadsl_avltree_subtree_traverse_pre_internal(tree->root, visit_func, visit_arg);
+        break;
+    case YADSL_AVLTREE_VISITING_IN_ORDER:
+        ret = yadsl_avltree_subtree_traverse_in_internal(tree->root, visit_func, visit_arg);
+        break;
+    case YADSL_AVLTREE_VISITING_POST_ORDER:
+        ret = yadsl_avltree_subtree_traverse_post_internal(tree->root, visit_func, visit_arg);
+        break;
+    default:
+        return YADSL_AVLTREE_RET_PARAM;
+    }
     if (visit_ret_ptr)
         *visit_ret_ptr = ret;
     return YADSL_AVLTREE_RET_OK;
@@ -185,12 +193,12 @@ yadsl_AVLTreeRet yadsl_avltree_tree_traverse(
 yadsl_AVLTreeRet yadsl_avltree_object_remove(
     yadsl_AVLTreeHandle *tree_handle,
     yadsl_AVLTreeObject *object,
-    int *exists_ptr)
+    bool *exists_ptr)
 {
     if (exists_ptr)
-        *exists_ptr = 0;
-    AVLTree* tree = (AVLTree*) tree_handle;
-    tree->root = yadsl_avltree_subtree_node_remove_internal(tree, object, tree->root, 1, exists_ptr);
+        *exists_ptr = false;
+    yadsl_AVLTree* tree = (yadsl_AVLTree*) tree_handle;
+    tree->root = yadsl_avltree_subtree_node_remove_internal(tree, object, tree->root, true, exists_ptr);
     return YADSL_AVLTREE_RET_OK;
 }
 
@@ -198,7 +206,7 @@ void yadsl_avltree_destroy(yadsl_AVLTreeHandle *tree_handle)
 {
     if (tree_handle == NULL)
         return;
-    AVLTree* tree = (AVLTree*) tree_handle;
+    yadsl_AVLTree* tree = (yadsl_AVLTree*) tree_handle;
     yadsl_avltree_subtree_destroy_internal(tree, tree->root);
     free(tree);
 }
@@ -210,9 +218,9 @@ void yadsl_avltree_destroy(yadsl_AVLTreeHandle *tree_handle)
  * @param object - object to be stored in node
  * @return pointer to node or NULL, if could nto allocate memory
 */
-AVLTreeNode *yadsl_avltree_node_create_internal(yadsl_AVLTreeObject *object)
+yadsl_AVLSubtree *yadsl_avltree_node_create_internal(yadsl_AVLTreeObject *object)
 {
-    AVLTreeNode *node = malloc(sizeof *node);
+    yadsl_AVLSubtree *node = malloc(sizeof *node);
     if (node) {
         node->height = 1;
         node->left = NULL;
@@ -222,25 +230,24 @@ AVLTreeNode *yadsl_avltree_node_create_internal(yadsl_AVLTreeObject *object)
     return node;
 }
 
-/*
-      |                   |
-      x                   y
-     / \                 / \
-   T1   y      ==>      x   T3
-       / \             / \
-     T2   T3         T1   T2
-*/
-
 /**
  * @brief Left-rotate a subtree around its root
  * @param x - subtree root before rotation
  * @attention assumes x->left != NULL
  * @return subtree root after rotation
 */
-AVLTreeNode *yadsl_avltree_subtree_left_rotate_internal(AVLTreeNode *x)
+yadsl_AVLSubtree *yadsl_avltree_subtree_left_rotate_internal(yadsl_AVLSubtree *x)
 {
-    AVLTreeNode *y = x->right;
-    AVLTreeNode *T2 = y->left;
+    yadsl_AVLSubtree *y = x->right;
+    yadsl_AVLSubtree *T2 = y->left;
+    /**
+     *       |                   |
+     *       x                   y
+     *      / \                 / \
+     *    T1   y      ==>      x   T3
+     *        / \             / \
+     *      T2   T3         T1   T2
+    */
     x->right = T2;
     y->left = x;
     update_height(x);
@@ -248,26 +255,24 @@ AVLTreeNode *yadsl_avltree_subtree_left_rotate_internal(AVLTreeNode *x)
     return y;
 }
 
-/* Right-rotate a subtree around its root
-
-        |                   |
-        x                   y
-       / \                 / \
-      y   T3      ==>    T1   x
-     / \                     / \
-   T1   T2                 T2   T3
-
-   Parameters:
-     * x - subtree root before rotation
-           [!] assumes x->right != NULL
-
-   Returns:
-     * subtree root after rotation
+/**
+ * @brief Right-rotate a subtree around its root
+ * @param x subtree root before rotation
+ * @attention assumes x->right != NULL
+ * @return subtree root after rotation
 */
-AVLTreeNode *yadsl_avltree_subtree_right_rotate_internal(AVLTreeNode *x)
+yadsl_AVLSubtree *yadsl_avltree_subtree_right_rotate_internal(yadsl_AVLSubtree *x)
 {
-    AVLTreeNode *y = x->left;
-    AVLTreeNode *T2 = y->right;
+    yadsl_AVLSubtree *y = x->left;
+    yadsl_AVLSubtree *T2 = y->right;
+    /**
+     *        |                   |
+     *        x                   y
+     *       / \                 / \
+     *      y   T3      ==>    T1   x
+     *     / \                     / \
+     *   T1   T2                 T2   T3
+    */
     x->left = T2;
     y->right = x;
     update_height(x);
@@ -275,15 +280,12 @@ AVLTreeNode *yadsl_avltree_subtree_right_rotate_internal(AVLTreeNode *x)
     return y;
 }
 
-/* Balance subtree
-
-   Parameters:
-     * x - subtree root before balancing
-
-   Returns:
-     * subtree root after balancing
+/**
+ * @brief Balance subtree
+ * @param x subtree root before balancing
+ * @return subtree root after balancing
 */
-AVLTreeNode *yadsl_avl_subtree_rebalance_internal(AVLTreeNode *x)
+yadsl_AVLSubtree *yadsl_avl_subtree_rebalance_internal(yadsl_AVLSubtree *x)
 {
     int balance;
     if (x == NULL)
@@ -361,21 +363,19 @@ AVLTreeNode *yadsl_avl_subtree_rebalance_internal(AVLTreeNode *x)
     return x;
 }
 
-/* Insert node in subtree
-
-   Parameters:
-     * x - subtree root before insertion
-     * node - node to be inserted
-
-   Returns:
-     * subtree root after insertion
-     * if *has_duplicate_ptr == 1, then subtree has duplicate of node
+/**
+ * @brief Insert node in subtree
+ * @param tree tree where node will be inserted
+ * @param x subtree root before insertion
+ * @param node node to be inserted
+ * @param has_duplicate_ptr whether subtree already has a duplicate
+ * @return subtree root after insertion
 */
-AVLTreeNode *yadsl_avltree_subtree_node_insert_internal(
-    AVLTree *tree,
-    AVLTreeNode *x,
-    AVLTreeNode *node,
-    int *has_duplicate_ptr)
+yadsl_AVLSubtree *yadsl_avltree_subtree_node_insert_internal(
+    yadsl_AVLTree *tree,
+    yadsl_AVLSubtree *x,
+    yadsl_AVLSubtree *node,
+    bool *has_duplicate_ptr)
 {
     int cmp;
     if (x == NULL)
@@ -399,30 +399,28 @@ AVLTreeNode *yadsl_avltree_subtree_node_insert_internal(
         x->right = yadsl_avltree_subtree_node_insert_internal(tree, x->right, node, has_duplicate_ptr);
     } else {
         /* Duplicate object */
-        *has_duplicate_ptr = 1;
+        *has_duplicate_ptr = true;
     }
     if (*has_duplicate_ptr)
         return x;
     return yadsl_avl_subtree_rebalance_internal(x);
 }
 
-/* Search for node containing object in subtree
-
-   Parameters:
-     * object - object to be searched
-     * node - subtree root
-
-   Returns:
-     * boolean indicating whether node was found
+/**
+ * @brief Search for node containing object in subtree
+ * @param tree tree from whose nodes the object will be searched
+ * @param object object to be searched
+ * @param node subtree root
+ * @return whether node was found or not
 */
-int yadsl_avltree_subtree_node_search_internal(
-    AVLTree *tree,
+bool yadsl_avltree_subtree_node_search_internal(
+    yadsl_AVLTree *tree,
     yadsl_AVLTreeObject *object,
-    AVLTreeNode *node)
+    yadsl_AVLSubtree *node)
 {
     int cmp;
     if (node == NULL)
-        return 0;
+        return false;
     check_invariants(node);
     cmp = compare_objects(object, node->object, tree);
     if (cmp < 0)
@@ -430,26 +428,25 @@ int yadsl_avltree_subtree_node_search_internal(
     else if (cmp > 0)
         return yadsl_avltree_subtree_node_search_internal(tree, object, node->right);
     else
-        return 1;
+        return true;
 }
 
-/* Delete node containing object from subtree
-
-   Parameters:
-     * object - object to be deleted
-     * x - subtree root before removal
-     * free_obj - whether to free object or not
-                  Hint: unless you know what you're doing, pass 1.
-   Returns:
-     * subtree root after removal
-     * if *exists_ptr == 1, then node was removed
+/**
+ * @brief Remove node containing object from subtree
+ * @param tree tree from where node will be removed
+ * @param object object to be deleted
+ * @param x subtree root before removal
+ * @param free_obj whether to free object or not (Hint: unles you know what
+ * you are doing, pass true).
+ * @param exists_ptr whether node existed or not
+ * @return subtree root after removal
 */
-AVLTreeNode *yadsl_avltree_subtree_node_remove_internal(
-    AVLTree *tree,
+yadsl_AVLSubtree *yadsl_avltree_subtree_node_remove_internal(
+    yadsl_AVLTree *tree,
     yadsl_AVLTreeObject *object,
-    AVLTreeNode *x,
-    int free_obj /* = 1 */,
-    int *exists_ptr)
+    yadsl_AVLSubtree *x,
+    bool free_obj /* = true */,
+    bool *exists_ptr)
 {
     if (x == NULL)
         return NULL;
@@ -471,9 +468,9 @@ AVLTreeNode *yadsl_avltree_subtree_node_remove_internal(
          */
         x->right = yadsl_avltree_subtree_node_remove_internal(tree, object, x->right, free_obj, exists_ptr);
     } else {
-        AVLTreeNode *retnode;
+        yadsl_AVLSubtree *retnode;
         if (exists_ptr)
-            *exists_ptr = 1;
+            *exists_ptr = true;
         if (x->left == NULL && x->right == NULL) {
             /**
              *   |            |
@@ -505,12 +502,12 @@ AVLTreeNode *yadsl_avltree_subtree_node_remove_internal(
              * T1   T2     T1   T2-min(T2)
              */
             retnode = yadsl_avltree_subtree_get_min_node_internal(x->right);
-            retnode->right = yadsl_avltree_subtree_node_remove_internal(tree, retnode->object, x->right, 0, exists_ptr);
+            retnode->right = yadsl_avltree_subtree_node_remove_internal(tree, retnode->object, x->right, false, exists_ptr);
             retnode->left = x->left;
         }
         if (free_obj) {
-            if (tree->free_object_func)
-                tree->free_object_func(x->object);
+            if (tree->free_obj_func)
+                tree->free_obj_func(x->object);
             free(x);
         }
         x = retnode;
@@ -518,65 +515,109 @@ AVLTreeNode *yadsl_avltree_subtree_node_remove_internal(
     return yadsl_avl_subtree_rebalance_internal(x);
 }
 
-/* Traverse subtree in-order
-
-   Parameters:
-     * node - subtree root
-     * visit_func - visitation function
-     * visit_arg - argument passed to visit_func
-
-   Returns:
-     * first value returned by visit_func, or 0, if never
+/**
+ * @brief Traverse subtree pre-order
+ * @param node subtree root
+ * @param visit_func visitation function
+ * @param visit_arg argument passed to visit_func
+ * @return first value returned by visit_func, or 0 if it was never called
 */
-yadsl_AVLTreeVisitObjRet *yadsl_avltree_subtree_traverse_internal(
-    AVLTreeNode *node,
+yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_pre_internal(
+    yadsl_AVLSubtree* node,
+    yadsl_AVLTreeVisitObjFunc visit_func,
+    yadsl_AVLTreeVisitObjArg* visit_arg)
+{
+    yadsl_AVLTreeVisitObjRet* ret;
+    if (node == NULL)
+        return NULL;
+    check_invariants(node);
+    if (visit_func && (ret = visit_func(node->object, visit_arg)))
+        return ret;
+    if (ret = yadsl_avltree_subtree_traverse_in_internal(node->left, visit_func, visit_arg))
+        return ret;
+    if (ret = yadsl_avltree_subtree_traverse_in_internal(node->right, visit_func, visit_arg))
+        return ret;
+    return NULL;
+}
+
+/**
+ * @brief Traverse subtree in-order
+ * @param node subtree root
+ * @param visit_func visitation function
+ * @param visit_arg argument passed to visit_func
+ * @return first value returned by visit_func, or 0 if it was never called
+*/
+yadsl_AVLTreeVisitObjRet *yadsl_avltree_subtree_traverse_in_internal(
+    yadsl_AVLSubtree *node,
     yadsl_AVLTreeVisitObjFunc visit_func,
     yadsl_AVLTreeVisitObjArg *visit_arg)
 {
     yadsl_AVLTreeVisitObjRet *ret;
     if (node == NULL)
         return NULL;
-    if (ret = yadsl_avltree_subtree_traverse_internal(node->left, visit_func, visit_arg))
+    if (ret = yadsl_avltree_subtree_traverse_in_internal(node->left, visit_func, visit_arg))
         return ret;
     check_invariants(node);
     if (visit_func && (ret = visit_func(node->object, visit_arg)))
         return ret;
-    if (ret = yadsl_avltree_subtree_traverse_internal(node->right, visit_func, visit_arg))
+    if (ret = yadsl_avltree_subtree_traverse_in_internal(node->right, visit_func, visit_arg))
         return ret;
     return NULL;
 }
 
-/* Get subtree minimum node
-
-   Parameters:
-     * node - subtree root
-       [!] assumes node != NULL
-
-   Returns:
-     * subtree minimum node
+/**
+ * @brief Traverse subtree post-order
+ * @param node subtree root
+ * @param visit_func visitation function
+ * @param visit_arg argument passed to visit_func
+ * @return first value returned by visit_func, or 0 if it was never called
 */
-AVLTreeNode *yadsl_avltree_subtree_get_min_node_internal(AVLTreeNode *node)
+yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_post_internal(
+    yadsl_AVLSubtree* node,
+    yadsl_AVLTreeVisitObjFunc visit_func,
+    yadsl_AVLTreeVisitObjArg* visit_arg)
+{
+    yadsl_AVLTreeVisitObjRet* ret;
+    if (node == NULL)
+        return NULL;
+    if (ret = yadsl_avltree_subtree_traverse_in_internal(node->left, visit_func, visit_arg))
+        return ret;
+    if (ret = yadsl_avltree_subtree_traverse_in_internal(node->right, visit_func, visit_arg))
+        return ret;
+    check_invariants(node);
+    if (visit_func && (ret = visit_func(node->object, visit_arg)))
+        return ret;
+    return NULL;
+}
+
+/**
+ * @brief Get subtree minimum node
+ * @param node subtree root
+ * @attention assumes node != NULL
+ * @return subtree minimum node
+*/
+yadsl_AVLSubtree *yadsl_avltree_subtree_get_min_node_internal(yadsl_AVLSubtree *node)
 {
     for (; node->left; node = node->left);
     return node;
 }
 
-/* Destroy subtree
-
-   Parameters:
-     * x - subtree root
+/**
+ * @brief Destroy subtree
+ * @param tree tree containing x
+ * @param x subtree root
 */
 void yadsl_avltree_subtree_destroy_internal(
-    AVLTree *tree,
-    AVLTreeNode *x)
+    yadsl_AVLTree *tree,
+    yadsl_AVLSubtree *x)
 {
-    AVLTreeNode *left, *right;
+    yadsl_AVLSubtree *left, *right;
     if (x == NULL)
         return;
     left = x->left;
     right = x->right;
-    if (tree->free_object_func)
-        tree->free_object_func(x->object);
+    if (tree->free_obj_func)
+        tree->free_obj_func(x->object);
     free(x);
     yadsl_avltree_subtree_destroy_internal(tree, left);
     yadsl_avltree_subtree_destroy_internal(tree, right);

@@ -13,13 +13,19 @@
 //
 
 #include <yadsl/posixstring.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 // Macro for comparing two strings in an if statement
 // Usage: if matches(command, "create") { ... }
 
+#ifndef matches
 #define matches(a, b) (!strcmp(a, b))
+#endif /* matches */
+
+#ifndef nmatches
 #define nmatches(a, b) (strcmp(a, b))
+#endif /* nmatches */
 
 //  ============================ ===================================== 
 //   TesterUtilsSerializeString            Serializes string           
@@ -47,6 +53,6 @@ char *TesterUtilsDeserializeString(FILE *file);
 //  ============================ =================================== 
 //  [!] Returns boolean value. If neither YES or NO, NO is assumed.
 
-int TesterGetYesOrNoFromString(const char *string);
+bool TesterUtilsGetYesOrNoFromString(const char *string);
 
 #endif

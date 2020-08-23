@@ -185,7 +185,7 @@ Heap_dealloc(HeapObject *self)
 {
 	if (self->ob_heap)
 		heapDestroy(self->ob_heap);
-	_memdb_dump();
+	yadsl_memdb_dump();
 	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }

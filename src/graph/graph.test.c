@@ -208,7 +208,7 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		int actual, expected;
 		if (TesterParseArguments("ss", buffer, buffer2) != 2)
 			return TESTER_ARGUMENT;
-		expected = TesterGetYesOrNoFromString(buffer2);
+		expected = TesterUtilsGetYesOrNoFromString(buffer2);
 		graphId = graphContainsVertex(pGraph, buffer, &actual);
 		if (graphId == GRAPH_OK && actual != expected)
 			return TESTER_RETURN;
@@ -228,7 +228,7 @@ static TesterReturnValue parseGraphCommands(const char *command)
 		int actual, expected;
 		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
 			return TESTER_ARGUMENT;
-		expected = TesterGetYesOrNoFromString(buffer3);
+		expected = TesterUtilsGetYesOrNoFromString(buffer3);
 		graphId = graphContainsEdge(pGraph, buffer, buffer2, &actual);
 		if (graphId == GRAPH_OK && actual != expected)
 			return TESTER_RETURN;

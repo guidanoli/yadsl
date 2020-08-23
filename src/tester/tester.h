@@ -152,7 +152,8 @@ extern TesterReturnValue TesterExitCallback();
 * | float  | f                | float *        |
 * | int    | i                | int *          |
 * | long   | l                | long *         |
-* | char * | s                | char *         |
+* | char   | c                | char *         |
+* | char * | s                | char * buffer  |
 * | size_t | z                | size_t *       |
 * +--------+------------------+----------------+
 *
@@ -170,6 +171,24 @@ extern TesterReturnValue TesterExitCallback();
 *   ignoring separation characters.
 */
 int TesterParseArguments(const char *format, ...);
+
+/**
+ * Get size of accepted data type by Tester
+ * Returns 0 if dtype is invalid.
+*/
+size_t TesterGetDataTypeSize(char dtype);
+
+/**
+ * Check if the arguments of type identified by the 'dtype' are equal.
+ * Returns 0 if and only if they are equal.
+*/
+int TesterCompare(char dtype, const void* expected, const void* obtained);
+
+/**
+ * Copy data from source to destination, where source has
+ * data type 'dtype'.
+*/
+void TesterCopy(char dtype, const void* source, void* destination);
 
 /**
 * Create an external value for an specific error.

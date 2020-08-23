@@ -100,12 +100,12 @@ static _memdb_enum _memdb_remove(void *_mem)
 	return MEM_NOT_FOUND;
 }
 
-int _memdb_contains(void *_mem)
+int yadsl_memdb_contains(void *_mem)
 {
 	return _memdb_get(_mem) != NULL;
 }
 
-void _memdb_clear_list()
+void yadsl_memdb_clear_list()
 {
 	struct _memdb_node *node = list, *next = NULL;
 	if (listsize)
@@ -121,17 +121,17 @@ void _memdb_clear_list()
 	listsize = 0;
 }
 
-size_t _memdb_list_size()
+size_t yadsl_memdb_list_size()
 {
 	return listsize;
 }
 
-int _memdb_error_occurred()
+int yadsl_memdb_error_occurred()
 {
 	return error_occurred;
 }
 
-void _memdb_free(void *_mem)
+void yadsl_memdb_free(void *_mem)
 {
 	if (_memdb_remove(_mem) == MEM_NOT_FOUND) {
 		_memdb_log("Freeing block (%p) not in list.", _mem);
@@ -140,12 +140,12 @@ void _memdb_free(void *_mem)
 	free(_mem);
 }
 
-void _memdb_set_logger(FILE *fp)
+void yadsl_memdb_set_logger(FILE *fp)
 {
 	log_fp = fp;
 }
 
-void *_memdb_malloc(size_t _size, const char *file, const int line)
+void *yadsl_memdb_malloc(size_t _size, const char *file, const int line)
 {
 	void *_mem = malloc(_size);
 	if (_mem) {
@@ -166,7 +166,7 @@ void *_memdb_malloc(size_t _size, const char *file, const int line)
 	return _mem;
 }
 
-void *_memdb_realloc(void *_mem, size_t _size, const char *file, const int line)
+void *yadsl_memdb_realloc(void *_mem, size_t _size, const char *file, const int line)
 {
 	void *_new_mem = realloc(_mem, _size);
 	if (_new_mem) {
@@ -190,7 +190,7 @@ void *_memdb_realloc(void *_mem, size_t _size, const char *file, const int line)
 	return _new_mem;
 }
 
-void *_memdb_calloc(size_t _cnt, size_t _size, const char *file, const int line)
+void *yadsl_memdb_calloc(size_t _cnt, size_t _size, const char *file, const int line)
 {
 	void *_mem = calloc(_cnt, _size);
 	if (_mem) {
@@ -211,7 +211,7 @@ void *_memdb_calloc(size_t _cnt, size_t _size, const char *file, const int line)
 	return _mem;
 }
 
-char *_memdb_strdup(const char *_str, const char *file, const int line)
+char *yadsl_memdb_strdup(const char *_str, const char *file, const int line)
 {
 	char *_dup = strdup(_str);
 	if (_dup) {

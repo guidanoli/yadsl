@@ -12,6 +12,7 @@
 // STATIC VARIABLES DECLARATIONS
 ////////////////////////////////////////////////////////////////////////////////
 
+static const char* char_f[] =   { "%c", NULL };
 static const char *float_f[] =  { "%f", "%g", "%e", NULL };
 static const char *int_f[] =    { "%d", "%u", NULL };
 static const char *long_f[] =   { "%l", "%lu", NULL };
@@ -63,20 +64,50 @@ int main(int argc, char **argv)
 	FILE *logger = NULL;
 	if (hasflag(argc, argv, "/LOG")) {
 		logger = fopen("memdb.log", "w");
-		_memdb_set_logger(logger);
+		yadsl_memdb_set_logger(logger);
 	}
 	ret = _TesterMain(argc, argv);
 	exitReturn = TesterExitCallback();
 	if (ret == TESTER_OK)
 		ret = exitReturn;
 	if (ret == TESTER_OK &&
-		(_memdb_list_size() || _memdb_error_occurred()))
+		(yadsl_memdb_list_size() || yadsl_memdb_error_occurred()))
 		ret = TESTER_MEMLEAK;
 	_TesterPrintReturnValueInfo(ret);
-	_memdb_clear_list();
-	_memdb_set_logger(NULL);
+	yadsl_memdb_clear_list();
+	yadsl_memdb_set_logger(NULL);
 	if (logger) fclose(logger);
 	return ret;
+}
+
+size_t TesterGetDataTypeSize(char dtype)
+{
+	switch (dtype) {
+	case 'c':
+		return sizeof(char);
+	case 'i':
+		return sizeof(int);
+	case 'f':
+		return sizeof(float);
+	case 'l':
+		return sizeof(long);
+	case 's':
+		return sizeof(char*);
+	case 'z':
+		return sizeof(size_t);
+	default:
+		return 0;
+	}
+}
+
+int TesterCompare(char dtype, const void* expected, const void* obtained)
+{
+	return memcmp(expected, obtained, TesterGetDataTypeSize(dtype));
+}
+
+void TesterCopy(char dtype, const void* source, void* destination)
+{
+	memcpy(destination, source, TesterGetDataTypeSize(dtype));
 }
 
 int TesterParseArguments(const char *format, ...)
@@ -91,6 +122,13 @@ int TesterParseArguments(const char *format, ...)
 	for (; *format != '\0'; ++format, ++argc) {
 		int parsingError = 0;
 		switch (*format) {
+		case 'c':
+			if (!(arg = va_arg(va, char *))) {
+				parsingError = 1;
+				break;
+			}
+			parsingError = _TesterParseArgFormat(char_f, arg, &inc);
+			break;
 		case 'f':
 			if (!(arg = va_arg(va, float *))) {
 				parsingError = 1;

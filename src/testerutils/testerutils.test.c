@@ -54,14 +54,14 @@ TesterReturnValue TesterParseCallback(const char *command)
 		int yes;
 		if (TesterParseArguments("s", buffer1) != 1)
 			return TESTER_ARGUMENT;
-		yes = TesterGetYesOrNoFromString(buffer1);
+		yes = TesterUtilsGetYesOrNoFromString(buffer1);
 		if (!yes)
 			return TESTER_RETURN;
 	} else if matches(command, "no") {
 		int yes;
 		if (TesterParseArguments("s", buffer1) != 1)
 			return TESTER_ARGUMENT;
-		yes = TesterGetYesOrNoFromString(buffer1);
+		yes = TesterUtilsGetYesOrNoFromString(buffer1);
 		if (yes)
 			return TESTER_RETURN;
 	} else {

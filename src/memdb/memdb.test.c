@@ -84,11 +84,11 @@ TesterReturnValue TesterParseCallback(const char *command)
         size_t actual, expected;
         if (TesterParseArguments("z", &expected) != 1)
             return TESTER_ARGUMENT;
-        actual = _memdb_list_size();
+        actual = yadsl_memdb_list_size();
         if (actual != expected)
             return TESTER_RETURN;
     } else if matches(command, "clear") {
-        _memdb_clear_list();
+        yadsl_memdb_clear_list();
     } else if matches(command, "contains") {
         size_t idx;
         int expected, actual;
@@ -100,7 +100,7 @@ TesterReturnValue TesterParseCallback(const char *command)
         if (!expected && !matches(buffer, "NO"))
             TesterLog("Expected \"YES\" or \"NO\", but got \"%s\" instead."
                 " (assumed NO)", buffer);
-        actual = _memdb_contains(mem_array[idx]);
+        actual = yadsl_memdb_contains(mem_array[idx]);
         if (actual != expected)
             return TESTER_RETURN;
     } else {

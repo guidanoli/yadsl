@@ -1,12 +1,10 @@
 #include <avl/avl.h>
 
-#include <yadsl/posixstring.h>
 #include <stdlib.h>
 #include <assert.h>
 
 #include <tester/tester.h>
-
-#define matches(a,b) (strcmp(a,b) == 0)
+#include <testerutils/testerutils.h>
 
 const char *TesterHelpStrings[] = {
 	"This is the avl test module",
@@ -29,13 +27,13 @@ yadsl_AVLTreeHandle *pTree;
 TesterReturnValue cbReturnValue;
 int first, last;
 
-int cmp_objs_func(void *obj1, void *obj2, void *cmp_objs_arg)
+static int cmp_objs_func(void *obj1, void *obj2, void *cmp_objs_arg)
 {
 	assert(cmp_objs_arg == &pTree);
 	return *((int *) obj1) - *((int *) obj2);
 }
 
-void *visit_cb_range(void *object, void *cmp_objs_arg)
+static void *visit_cb_range(void *object, void *cmp_objs_arg)
 {
 	int curr;
 	assert(object);
@@ -51,7 +49,7 @@ void *visit_cb_range(void *object, void *cmp_objs_arg)
 	return 0;
 }
 
-void *visit_cb(void *object, void *cmp_objs_arg)
+static void *visit_cb(void *object, void *cmp_objs_arg)
 {
 	int actual, expected;
 	assert(object);
@@ -69,7 +67,7 @@ void *visit_cb(void *object, void *cmp_objs_arg)
 
 TesterReturnValue TesterInitCallback()
 {
-	if (yadsl_avltree_tree_create(cmp_objs_func, &pTree, free, &pTree))
+	if (!(pTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, free)))
 		return TESTER_MALLOC;
 	return TESTER_OK;
 }
@@ -86,44 +84,39 @@ TesterReturnValue convert(yadsl_AVLTreeRet returnId)
 	}
 }
 
-int getYesOrNoFromString(const char *str)
-{
-	int yes = matches(str, "YES");
-	if (!yes && !matches(str, "NO"))
-		TesterLog("Expected YES or NO, but got %s. Assumed NO.", str);
-	return yes;
-}
-
 TesterReturnValue TesterParseCallback(const char *command)
 {
 	yadsl_AVLTreeRet returnId = YADSL_AVLTREE_RET_OK;
 	if matches(command, "new") {
 		yadsl_AVLTreeHandle *newTree;
-		returnId = yadsl_avltree_tree_create(cmp_objs_func, &pTree, free, &newTree);
-		if (!returnId) {
+		if (!(newTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, free))) {
+			return TESTER_MALLOC;
+		} else {
 			yadsl_avltree_destroy(pTree);
 			pTree = newTree;
 		}
 	} else if matches(command, "insert") {
-		int *pNumber, actual, expected;
+		int* pNumber;
+		bool actual, expected;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
 			return TESTER_MALLOC;
 		if (TesterParseArguments("is", pNumber, buffer) != 2)
 			return TESTER_ARGUMENT;
-		expected = !getYesOrNoFromString(buffer);
+		expected = !TesterUtilsGetYesOrNoFromString(buffer);
 		returnId = yadsl_avltree_object_insert(pTree, pNumber, &actual);
 		if (returnId || actual)
 			free(pNumber);
 		if (!returnId && actual != expected)
 			return TESTER_RETURN;
 	} else if matches(command, "insert*") {
-		int first, last, expected, actual;
+		int first, last;
+		bool expected, actual;
 		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
 			return TESTER_ARGUMENT;
-		expected = !getYesOrNoFromString(buffer);
+		expected = !TesterUtilsGetYesOrNoFromString(buffer);
 		do {
-			int *pNumber;
+			int* pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
 				return TESTER_MALLOC;
@@ -141,7 +134,8 @@ TesterReturnValue TesterParseCallback(const char *command)
 				--first;
 		} while (first != last);
 	} else if matches(command, "contains") {
-		int actual, expected, *pNumber;
+		int *pNumber;
+		bool actual, expected;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
 			return TESTER_MALLOC;
@@ -155,14 +149,15 @@ TesterReturnValue TesterParseCallback(const char *command)
 		if (!returnId && actual != expected)
 			return TESTER_RETURN;
 	} else if matches(command, "contains*") {
-		int first, last, expected, actual;
+		int first, last;
+		bool expected, actual;
 		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
 			return TESTER_ARGUMENT;
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
 			TesterLog("Expected YES or NO, but got %s. Assumed NO.", buffer);
 		do {
-			int *pNumber;
+			int* pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
 				return TESTER_MALLOC;
@@ -180,33 +175,35 @@ TesterReturnValue TesterParseCallback(const char *command)
 		} while (first != last);
 	} else if matches(command, "traverse") {
 		cbReturnValue = YADSL_AVLTREE_RET_OK;
-		returnId = yadsl_avltree_tree_traverse(pTree, visit_cb, &pTree, NULL);
+		returnId = yadsl_avltree_tree_traverse(pTree, YADSL_AVLTREE_VISITING_IN_ORDER, visit_cb, &pTree, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
 	} else if matches(command, "traverse*") {
 		cbReturnValue = YADSL_AVLTREE_RET_OK;
 		if (TesterParseArguments("ii", &first, &last) != 2)
 			return TESTER_ARGUMENT;
-		returnId = yadsl_avltree_tree_traverse(pTree, visit_cb_range, &pTree, NULL);
+		returnId = yadsl_avltree_tree_traverse(pTree, YADSL_AVLTREE_VISITING_IN_ORDER, visit_cb_range, &pTree, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
 	} else if matches(command, "delete") {
-		int *pNumber, expected, actual;
+		int* pNumber;
+		bool expected, actual;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
 			return TESTER_MALLOC;
 		if (TesterParseArguments("is", pNumber, buffer) != 2)
 			return TESTER_ARGUMENT;
-		expected = getYesOrNoFromString(buffer);
+		expected = TesterUtilsGetYesOrNoFromString(buffer);
 		returnId = yadsl_avltree_object_remove(pTree, pNumber, &actual);
 		free(pNumber);
 		if (!returnId && actual != expected)
 			return TESTER_RETURN;
 	} else if matches(command, "delete*") {
-		int first, last, expected, actual;
+		int first, last;
+		bool expected, actual;
 		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
 			return TESTER_ARGUMENT;
-		expected = getYesOrNoFromString(buffer);
+		expected = TesterUtilsGetYesOrNoFromString(buffer);
 		do {
 			int *pNumber;
 			pNumber = malloc(sizeof(int));

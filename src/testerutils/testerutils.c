@@ -35,9 +35,9 @@ char *TesterUtilsDeserializeString(FILE *fp)
 	return string;
 }
 
-int TesterGetYesOrNoFromString(const char *string)
+bool TesterUtilsGetYesOrNoFromString(const char *string)
 {
-	int yes = matches(string, "YES");
+	bool yes = matches(string, "YES");
 	if (!yes && !matches(string, "NO"))
 		TesterLog("Expected YES or NO. Got '%s'. Assumed NO.", string);
 	return yes;

@@ -85,7 +85,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 		int expected, actual;
 		if (TesterParseArguments("s", arg) != 1)
 			return TESTER_ARGUMENT;
-		expected = TesterGetYesOrNoFromString(arg);
+		expected = TesterUtilsGetYesOrNoFromString(arg);
 		if (savedStr == NULL)
 			TesterLog("Found no variable saved. Checking if contains NULL.");
 		setId = setContainsItem(pSet, savedStr);
@@ -101,7 +101,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 			return TESTER_ARGUMENT;
 		if ((temp = strdup(buffer)) == NULL)
 			return TESTER_MALLOC;
-		expected = TesterGetYesOrNoFromString(arg);
+		expected = TesterUtilsGetYesOrNoFromString(arg);
 		setId = setFilterItem(pSet, filterItem, temp, &foundStr);
 		free(temp);
 		actual = (setId == SET_OK);

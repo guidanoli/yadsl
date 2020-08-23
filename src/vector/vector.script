@@ -1,0 +1,71 @@
+# Create an integer vector of size 10
+
+/new i 10
+/size 10
+/destroy
+
+# Create a character vector of size 10
+
+/new c 10
+/size 10
+/destroy
+
+# Create a size type vector of size 10
+
+/new z 10
+/size 10
+/destroy
+
+# Create an integer vector of size 10 and resize it
+
+/new i 10
+/resize 20
+/size 20
+/resize 1
+/size 1
+/destroy
+
+# Set and get element at index 0
+
+/new i 10
+/set 0 123
+/get 0 123
+/destroy
+
+# Set and get elements from other indices
+
+/new i 3
+/set 0 0
+/set 1 2
+/set 2 4
+/get 0 0
+/get 1 2
+/get 2 4
+/destroy
+
+# Set and get after resizing
+
+/new i 3
+/set 0 0
+/set 1 2
+/set 2 4
+/resize 10
+/get 0 0
+/get 1 2
+/get 2 4
+/set 5 10
+/get 5 10
+/destroy
+
+# Empty vector
+
+/new i 0
+/size 0
+/destroy
+
+# Resize to size 0
+
+/new i 10
+/resize 0
+/resize 10
+/destroy

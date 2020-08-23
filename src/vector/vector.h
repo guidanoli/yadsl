@@ -1,39 +1,53 @@
 #ifndef __YADSL_VECTOR_H__
 #define __YADSL_VECTOR_H__
 
-/* Implementation of resizable vector
-   Version 0.0 */
-
 #include <stddef.h>
 
-typedef enum
-{
-	/* All went well */
-	yadsl_VECTOR_RET_OK = 0,
-
-	/* Could not allocate memory */
-	yadsl_VECTOR_RET_MEMORY,
-}
-yadsl_VectorRetID;
-
-typedef void yadsl_VectorHandle;
-
-/* Create a vector
-
-   Parameters:
-     * initial_size - vector initial size
-
-   Returns:
-     * OK - *vector_ptr now points to the newly created vector
-	 * MEMORY
+/**
+ * \defgroup vector Vector
+ * @brief Resizable vector
+ * @{
 */
-yadsl_VectorRetID yadsl_vector_create(
-	size_t initial_size,
-	yadsl_VectorHandle** vector_ptr);
 
-/* Destroy a vector
-   
+typedef void yadsl_VectorHandle; /**< Vector handle */
+
+/**
+ * @brief Creates a vector
+ * @param dtype data type size (`sizeof(int)`, for example)
+ * @param size vector initial size (number of elements)
+ * @return newly created vector or NULL if could not allocate memory
+*/
+yadsl_VectorHandle *yadsl_vector_create(size_t dtype_size, size_t size);
+
+/**
+ * @brief Get vector element count
+ * @param vector 
+ * @return element count in vector
+*/
+size_t yadsl_vector_size(yadsl_VectorHandle* vector);
+
+/**
+ * @brief Get pointer at a given index
+ * @param vector
+ * @param index
+ * @return pointer to data at index
+*/
+void* yadsl_vector_at(yadsl_VectorHandle* vector, size_t index);
+
+/**
+ * @brief Resize vector
+ * @param vector 
+ * @param new_size new element count
+ * @return new vector
+*/
+yadsl_VectorHandle* yadsl_vector_resize(yadsl_VectorHandle* vector, size_t new_size);
+
+/**
+ * @brief Destroy a vector
+ * @param vector vector to be destroyed
 */
 void yadsl_vector_destroy(yadsl_VectorHandle* vector);
+
+/** }@ */
 
 #endif

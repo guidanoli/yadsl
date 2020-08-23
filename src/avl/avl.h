@@ -1,9 +1,11 @@
 #ifndef __YADSL_AVL_H__
 #define __YADSL_AVL_H__
 
+#include <stdbool.h>
+
 /**
  * \defgroup avl AVL tree
- * AVL tree with explicit heights
+ * @brief AVL tree with explicit heights
  * @{
 */
 
@@ -14,19 +16,20 @@ typedef enum
 {
     YADSL_AVLTREE_RET_OK = 0, /**< All went well */
     YADSL_AVLTREE_RET_MEMORY, /**< Could not allocate memory */
+    YADSL_AVLTREE_RET_PARAM   /**< Invalid parameter */
 }
 yadsl_AVLTreeRet;
 
 /**
- * @brief Type of traversing in AVL trees
+ * @brief Order of visiting in AVL trees
 */
 typedef enum
 {
-    YADSL_AVLTREE_TRAVERSE_PRE_ORDER, /**< Pre-order */
-    YADSL_AVLTREE_TRAVERSE_IN_ORDER, /**< In-order */
-    YADSL_AVLTREE_TRAVERSE_POST_ORDER, /**< Post-order */
+    YADSL_AVLTREE_VISITING_PRE_ORDER, /**< Pre-order */
+    YADSL_AVLTREE_VISITING_IN_ORDER, /**< In-order */
+    YADSL_AVLTREE_VISITING_POST_ORDER, /**< Post-order */
 }
-yadsl_AVLTreeTraversalOrder;
+yadsl_AVLTreeVisitingOrder;
 
 typedef void yadsl_AVLTreeHandle; /**< AVL tree handle */
 typedef void yadsl_AVLTreeObject; /**< AVL tree object (user data) */
@@ -37,7 +40,7 @@ typedef void yadsl_AVLTreeCmpObjsArg; /**< AVL tree object comparison function u
  * @param obj1 first object
  * @param obj2 second object
  * @param arg user argument
- * @result an integer *n*, where...
+ * @return an integer *n*, where...
  * * *n* > 0 if obj1 > obj2
  * * *n* = 0 if obj1 = obj2
  * * *n* < 0 if obj1 < obj2
@@ -57,7 +60,7 @@ typedef void yadsl_AVLTreeVisitObjRet; /**< AVL tree visiting function return ty
  * @brief AVL tree visiting function
  * @param obj object
  * @param arg user argument
- * @result a value that, if equal to zero, interrupts visitation
+ * @return a value that, if equal to zero, interrupts visitation
 */
 typedef yadsl_AVLTreeVisitObjRet* (*yadsl_AVLTreeVisitObjFunc)(yadsl_AVLTreeObject *obj, yadsl_AVLTreeVisitObjArg *arg);
 
@@ -66,68 +69,67 @@ typedef yadsl_AVLTreeVisitObjRet* (*yadsl_AVLTreeVisitObjFunc)(yadsl_AVLTreeObje
  * @param cmp_objs_func tree object comparison function
  * @param cmp_objs_arg argument passed to cmp_objs_func
  * @param free_obj_func tree object freeing function
- * @param tree_ptr pointer to new tree
- * @result
- * * ::YADSL_AVLTREE_RET_OK, and *tree_ptr is updated
- * * ::YADSL_AVLTREE_RET_MEMORY
+ * @return newly created tree or NULL if could not allocate memory
 */
-yadsl_AVLTreeRet yadsl_avltree_tree_create(
+yadsl_AVLTreeHandle* yadsl_avltree_tree_create(
     yadsl_AVLTreeCmpObjsFunc cmp_objs_func,
     yadsl_AVLTreeCmpObjsArg *cmp_objs_arg,
-    yadsl_AVLTreeFreeObjFunc free_obj_func,
-    yadsl_AVLTreeHandle **tree_ptr);
+    yadsl_AVLTreeFreeObjFunc free_obj_func);
 
 /**
  * @brief Insert object in tree
  * @param tree tree where object will be inserted
  * @param object object to be inserted
  * @param exists_ptr whether object exists or not
- * @result
+ * @return
  * * ::YADSL_AVLTREE_RET_OK, and object is inserted in tree
  * * ::YADSL_AVLTREE_RET_MEMORY
 */
 yadsl_AVLTreeRet yadsl_avltree_object_insert(
     yadsl_AVLTreeHandle *tree,
     yadsl_AVLTreeObject *object,
-    int *exists_ptr);
+    bool *exists_ptr);
 
 /**
  * @brief Search for object in tree
  * @param tree tree where object will be searched
  * @param object object to be searched
  * @param exists_ptr whether object exists or not
- * @result
+ * @return
  * * ::YADSL_AVLTREE_RET_OK, and *exist_ptr is updated
 */
 yadsl_AVLTreeRet yadsl_avltree_object_search(
     yadsl_AVLTreeHandle *tree,
     yadsl_AVLTreeObject *object,
-    int *exists_ptr);
+    bool *exists_ptr);
 
 /**
  * @brief Remove object from tree
  * @param tree tree where object will be removed from
  * @param object object to be removed
  * @param exists_ptr whether object existed or not
- * @result
+ * @return
  * * ::YADSL_AVLTREE_RET_OK, and *exists_ptr is updated
 */
 yadsl_AVLTreeRet yadsl_avltree_object_remove(
     yadsl_AVLTreeHandle* tree,
     yadsl_AVLTreeObject* object,
-    int* exists_ptr);
+    bool* exists_ptr);
 
 /**
  * @brief Traverses tree in-order calling user function for each object
  * @param tree tree to be traversed
+ * @param visit_order visiting order
  * @param visit_func function called for each object
- * @param visit_arg argument passed to ::visit_func
+ * @param visit_arg argument passed to visit_func
  * @param visit_ret_ptr pointer to last value returned by visit_func
  * @return
- * * ::YADSL_AVLTREE_RETURN_OK, and *visit_ret_ptr is updated
+ * * ::YADSL_AVLTREE_RET_OK, and *visit_ret_ptr is updated
+ * * ::YADSL_AVLTREE_RET_PARAM, if visit_order is invalid
 */
 yadsl_AVLTreeRet yadsl_avltree_tree_traverse(
     yadsl_AVLTreeHandle *tree,
+    yadsl_AVLTreeVisitingOrder visit_order,
     yadsl_AVLTreeVisitObjFunc visit_func,
     yadsl_AVLTreeVisitObjArg *visit_arg,
     yadsl_AVLTreeVisitObjRet **visit_ret_ptr);

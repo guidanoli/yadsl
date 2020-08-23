@@ -62,7 +62,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 			free(keyStr);
 			return TESTER_MALLOC;
 		}
-		expected = TesterGetYesOrNoFromString(yn);
+		expected = TesterUtilsGetYesOrNoFromString(yn);
 		mapId = mapPutEntry(pMap, keyStr, valStr, &actual, &temp);
 		if (actual) {
 			free(keyStr);

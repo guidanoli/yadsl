@@ -58,7 +58,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 		int expected, obtained;
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_ARGUMENT;
-		expected = TesterGetYesOrNoFromString(buffer);
+		expected = TesterUtilsGetYesOrNoFromString(buffer);
 		queueId = queueIsEmpty(pQueue, &obtained);
 		if (queueId == QUEUE_OK && expected != obtained)
 			return TESTER_RETURN;

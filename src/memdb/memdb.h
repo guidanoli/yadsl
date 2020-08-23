@@ -25,37 +25,37 @@
 #include <stdio.h>
 
 // Get size of list of allocated data
-size_t _memdb_list_size();
+size_t yadsl_memdb_list_size();
 
 // Check if data is allocated in list
-int _memdb_contains(void *_mem);
+int yadsl_memdb_contains(void *_mem);
 
 // Check if any error occurred
-int _memdb_error_occurred();
+int yadsl_memdb_error_occurred();
 
 // Clear list of allocated data
-void _memdb_clear_list();
+void yadsl_memdb_clear_list();
 
 // Set logging output or NULL to reset
-void _memdb_set_logger(FILE *fp);
+void yadsl_memdb_set_logger(FILE *fp);
 
 // Overwritten (de)allocation functions
-void _memdb_free(void *mem);
-void *_memdb_malloc(size_t size, const char *file, const int line);
-void *_memdb_realloc(void *mem, size_t size, const char *file, const int line);
-void *_memdb_calloc(size_t cnt, size_t size, const char *file, const int line);
-char *_memdb_strdup(const char *str, const char *file, const int line);
+void yadsl_memdb_free(void *mem);
+void *yadsl_memdb_malloc(size_t size, const char *file, const int line);
+void *yadsl_memdb_realloc(void *mem, size_t size, const char *file, const int line);
+void *yadsl_memdb_calloc(size_t cnt, size_t size, const char *file, const int line);
+char *yadsl_memdb_strdup(const char *str, const char *file, const int line);
 
 #ifndef _MEMDB_INTERNAL
 #  ifndef _DEBUG
-#    define _memdb_dump() ((void) 0)
+#    define yadsl_memdb_dump() ((void) 0)
 #  else
-#    define _memdb_dump() printf("MEMDB: %zu items in list\n", _memdb_list_size())
-#    define free _memdb_free
-#    define malloc(_size) _memdb_malloc(_size, __FILE__, __LINE__)
-#    define realloc(_mem, _size) _memdb_realloc(_mem, _size, __FILE__, __LINE__)
-#    define calloc(_cnt, _size) _memdb_calloc(_cnt, _size, __FILE__, __LINE__)
-#    define strdup(_str) _memdb_strdup(_str, __FILE__, __LINE__)
+#    define yadsl_memdb_dump() printf("MEMDB: %zu items in list\n", yadsl_memdb_list_size())
+#    define free yadsl_memdb_free
+#    define malloc(_size) yadsl_memdb_malloc(_size, __FILE__, __LINE__)
+#    define realloc(_mem, _size) yadsl_memdb_realloc(_mem, _size, __FILE__, __LINE__)
+#    define calloc(_cnt, _size) yadsl_memdb_calloc(_cnt, _size, __FILE__, __LINE__)
+#    define strdup(_str) yadsl_memdb_strdup(_str, __FILE__, __LINE__)
 #  endif /* _DEBUG */
 #endif /* _MEMDB_INTERNAL */
 

@@ -215,18 +215,13 @@ AVL_init(yadsl_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 			return -1;
 		}
 	}
-	switch (yadsl_avltree_tree_create(cmpCallback, self, decRefCallback, &self->ob_tree)) {
-	case YADSL_AVLTREE_RET_OK:
-		break;
-	case YADSL_AVLTREE_RET_MEMORY:
+	if (!(self->ob_tree = yadsl_avltree_tree_create(cmpCallback, self, decRefCallback))) {
 		PyErr_SetString(PyExc_MemoryError, "Could not create avl tree");
 		return -1;
-	default:
-		Py_UNREACHABLE();
 	}
 	self->ob_func = callbackObj;
 	Py_XINCREF(callbackObj);
-	_memdb_dump();
+	yadsl_memdb_dump();
 	return 0;
 }
 
@@ -235,7 +230,7 @@ AVL_dealloc(yadsl_AVLTreePythonObject *self)
 {
 	if (self->ob_tree)
 		yadsl_avltree_destroy(self->ob_tree);
-	_memdb_dump();
+	yadsl_memdb_dump();
 	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
@@ -250,14 +245,14 @@ PyDoc_STRVAR(_AVL_add__doc__,
 static PyObject *
 AVL_add(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
-	int exists;
+	bool exists;
 	if (self->lock) {
 		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	switch (yadsl_avltree_object_insert(self->ob_tree, obj, &exists)) {
 	case YADSL_AVLTREE_RET_OK:
-		_memdb_dump();
+		yadsl_memdb_dump();
 		if (!exists)
 			Py_INCREF(obj);
 		if (PyErr_Occurred())
@@ -282,14 +277,14 @@ PyDoc_STRVAR(_AVL_remove__doc__,
 static PyObject *
 AVL_remove(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
-	int exists;
+	bool exists;
 	if (self->lock) {
 		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
 	switch (yadsl_avltree_object_remove(self->ob_tree, obj, &exists)) {
 	case YADSL_AVLTREE_RET_OK:
-		_memdb_dump();
+		yadsl_memdb_dump();
 		if (PyErr_Occurred())
 			return NULL;
 		Py_RETURN_NONE;
@@ -308,7 +303,7 @@ PyDoc_STRVAR(_AVL_contains__doc__,
 static PyObject *
 AVL_contains(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
-	int exists;
+	bool exists;
 	if (self->lock) {
 		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
@@ -349,9 +344,9 @@ AVL_iterate(yadsl_AVLTreePythonObject *self, PyObject *obj)
 	}
 	cmp_objs_arg.ao = self;
 	cmp_objs_arg.func = obj;
-	switch (yadsl_avltree_tree_traverse(self->ob_tree, visitCallback, &cmp_objs_arg, &ret)) {
+	switch (yadsl_avltree_tree_traverse(self->ob_tree, YADSL_AVLTREE_VISITING_IN_ORDER, visitCallback, &cmp_objs_arg, &ret)) {
 	case YADSL_AVLTREE_RET_OK:
-		_memdb_dump();
+		yadsl_memdb_dump();
 		if (PyErr_Occurred())
 			goto exit;
 		if (ret == NULL)
