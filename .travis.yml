@@ -6,6 +6,7 @@ compiler:
 branches:
         only:
                 - master
+                - dev
                 - /^travis.*$/
 cache:
         - pip
