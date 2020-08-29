@@ -14,37 +14,29 @@
 
 /* Help */
 
-const char *TesterHelpStrings[] = {
+const char* TesterHelpStrings[] = {
 	"This is an interactive module of the graph library",
 	"You will interact with the same graph object at all times",
 	"A directed graph is already created from the start",
 	"The registered actions are the following:",
 	"",
 	"Graph commands:",
-	"/create [DIRECTED/UNDIRECTED]          create new graph",
-	"/isdirected [YES/NO]                   check if graph is directed",
-	"/vertexcount <expected>                get graph vertex count",
-	"/nextvertex <expected vertex>          get next vertex in graph",
-	"/prevvertex <expected vertex>          get previous vertex in graph",
-	"/outdegree <vertex> <expected>         get vertex out degree",
-	"/indegree <vertex> <expected>          get vertex in degree",
-	"/degree <vertex> <expected>            get vertex (total) degree",
-	"/nextinneighbour <vertex> <nb> <edge>  get next vertex in-neighbour",
-	"/nextoutneighbour <vertex> <nb> <edge> get next vertex out-neighbour",
-	"/nextneighbour <vertex> <nb> <edge>    get next vertex neighbour",
-	"/previnneighbour <vertex> <nb> <edge>  get previous vertex in-neighbour",
-	"/prevoutneighbour <vertex> <nb> <edge> get previous vertex out-neighbour",
-	"/prevneighbour <vertex> <nb> <edge>    get previous vertex neighbour",
-	"/containsvertex <vertex> [YES/NO]      check if graph contains vertex",
-	"/addvertex <vertex>                    add vertex to graph",
-	"/removevertex <vertex>                 remove vertex from graph",
-	"/containsedge <u> <v> [YES/NO]         check if graph contains edge",
-	"/addedge <u> <v> <edge>                add edge to graph",
-	"/getedge <u> <v> <edge>                get edge from graph",
-	"/removeedege <u> <v>                   remove edge uv",
-	"/setvertexflag <u> <flag>              set vertex flag",
-	"/setallflags <flag>                    set flag of all vertices",
-	"/getvertexflag <u> <expected>          get vertex flag",
+	"/create [DIRECTED/UNDIRECTED]                           create new graph",
+	"/isdirected [YES/NO]                                    check if graph is directed",
+	"/vertexcount <expected>                                 get graph vertex count",
+	"/ivertices <iter-dir> <expected>                        iterate through vertices",
+	"/degree <vertex> <edge-dir> <expected>                  get vertex degree",
+	"/ineighbours <vertex> <iter-dir> <edge-dir> <nb> <edge> iterate through neighbours",
+	"/containsvertex <vertex> [YES/NO]                       check if graph contains vertex",
+	"/addvertex <vertex>                                     add vertex to graph",
+	"/removevertex <vertex>                                  remove vertex from graph",
+	"/containsedge <u> <v> [YES/NO]                          check if graph contains edge",
+	"/addedge <u> <v> <edge>                                 add edge to graph",
+	"/getedge <u> <v> <edge>                                 get edge from graph",
+	"/removeedege <u> <v>                                    remove edge uv",
+	"/setvertexflag <u> <flag>                               set vertex flag",
+	"/setallflags <flag>                                     set flag of all vertices",
+	"/getvertexflag <u> <expected>                           get vertex flag",
 	"",
 	"Graph IO commands:",
 	"/write <filename>                      write graph to file",
@@ -60,215 +52,160 @@ const char *TesterHelpStrings[] = {
 
 /* Graph */
 
-static Graph *pGraph = NULL;
-static char buffer[BUFSIZ], buffer2[BUFSIZ], buffer3[BUFSIZ];
+static yadsl_GraphHandle* pGraph = NULL;
+static char buffer[BUFSIZ], buffer2[BUFSIZ], buffer3[BUFSIZ],
+buffer4[BUFSIZ], buffer5[BUFSIZ];
 
-static int _cmpStrings(void *a, void *b);
-static int _readString(FILE *fp, void **ppVertex);
-static int _writeString(FILE *fp, void *v);
+static int _cmpStrings(void* a, void* b);
+static int _readString(FILE* fp, void** ppVertex);
+static int _writeString(FILE* fp, void* v);
 
-static TesterReturnValue convertRet(GraphRet graphId);
+static bool parseEdgeDirection(const char* buffer, yadsl_GraphEdgeDirection* edge_direction_ptr);
+static bool parseIterationDirection(const char* buffer, yadsl_GraphIterationDirection* iteration_direction_ptr);
+
+static TesterReturnValue convertRet(yadsl_GraphReturnCondition graphId);
 static TesterReturnValue convertIoRet(GraphIoRet graphIoId);
 static TesterReturnValue convertSearchRet(GraphSearchRet graphSearchId);
 
 TesterReturnValue TesterInitCallback()
 {
-	GraphRet graphId;
-	if (graphId = graphCreate(&pGraph, 1,
-		_cmpStrings, free,
-		_cmpStrings, free))
-		return convertRet(graphId);
-	return TESTER_OK;
+	pGraph = yadsl_graph_create(1, _cmpStrings, free, _cmpStrings, free);
+	return pGraph ? TESTER_OK : TESTER_MALLOC;
 }
 
-static TesterReturnValue parseGraphCommands(const char *command)
+static TesterReturnValue parseGraphCommands(const char* command)
 {
-	GraphRet graphId = GRAPH_OK;
+	yadsl_GraphReturnCondition graphId = YADSL_GRAPH_RET_COND_OK;
 	if matches(command, "create") {
-		Graph *temp;
-		int isDirected;
+		int is_directed;
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_ARGUMENT;
-		isDirected = matches(buffer, "DIRECTED");
-		graphId = graphCreate(&temp, isDirected, _cmpStrings, free,
-			_cmpStrings, free);
-		if (graphId == GRAPH_OK) {
-			graphDestroy(pGraph);
+		is_directed = matches(buffer, "DIRECTED");
+		yadsl_GraphHandle* temp = yadsl_graph_create(
+			is_directed, _cmpStrings, free, _cmpStrings, free);
+		if (temp) {
+			yadsl_graph_destroy(pGraph);
 			pGraph = temp;
+		} else {
+			return TESTER_MALLOC;
 		}
 	} else if matches(command, "isdirected") {
-		int actual, expected;
+		bool actual, expected;
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_ARGUMENT;
 		expected = matches(buffer, "YES");
-		graphId = graphIsDirected(pGraph, &actual);
-		if (graphId == GRAPH_OK && expected != actual)
+		graphId = yadsl_graph_is_directed_check(pGraph, &actual);
+		if (graphId == YADSL_GRAPH_RET_COND_OK && expected != actual)
 			return TESTER_RETURN;
 	} else if matches(command, "vertexcount") {
 		size_t actual, expected;
 		if (TesterParseArguments("z", &expected) != 1)
 			return TESTER_ARGUMENT;
-		graphId = graphGetNumberOfVertices(pGraph, &actual);
-		if (graphId == GRAPH_OK && expected != actual)
+		graphId = yadsl_graph_vertex_count_get(pGraph, &actual);
+		if (graphId == YADSL_GRAPH_RET_COND_OK && expected != actual)
 			return TESTER_RETURN;
-	} else if matches(command, "nextvertex") {
-		char *vertex;
-		if (TesterParseArguments("s", buffer) != 1)
+	} else if matches(command, "ivertices") {
+		char* vertex;
+		yadsl_GraphIterationDirection iteration_direction;
+		if (TesterParseArguments("ss", buffer, buffer2) != 2)
 			return TESTER_ARGUMENT;
-		graphId = graphGetNextVertex(pGraph, &vertex);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(buffer, vertex))
+		if (!parseIterationDirection(buffer, &iteration_direction))
+			return TESTER_ARGUMENT;
+		graphId = yadsl_graph_vertex_iter(pGraph, iteration_direction, &vertex);
+		if (graphId == YADSL_GRAPH_RET_COND_OK) {
+			if (nmatches(buffer2, vertex))
 				return TESTER_RETURN;
 		}
-	} else if matches(command, "prevvertex") {
-		char *vertex;
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
-		graphId = graphGetPreviousVertex(pGraph, &vertex);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(buffer, vertex))
-				return TESTER_RETURN;
-		}
-	} else if matches(command, "outdegree") {
-		size_t actual, expected;
-		if (TesterParseArguments("sz", buffer, &expected) != 2)
-			return TESTER_ARGUMENT;
-		graphId = graphGetVertexOutDegree(pGraph, buffer, &actual);
-		if (graphId == GRAPH_OK && expected != actual)
-			return TESTER_RETURN;
-	} else if matches(command, "indegree") {
-		size_t actual, expected;
-		if (TesterParseArguments("sz", buffer, &expected) != 2)
-			return TESTER_ARGUMENT;
-		graphId = graphGetVertexInDegree(pGraph, buffer, &actual);
-		if (graphId == GRAPH_OK && expected != actual)
-			return TESTER_RETURN;
 	} else if matches(command, "degree") {
 		size_t actual, expected;
-		if (TesterParseArguments("sz", buffer, &expected) != 2)
+		yadsl_GraphEdgeDirection edge_direction;
+		if (TesterParseArguments("ssz", buffer, buffer2, &expected) != 3)
 			return TESTER_ARGUMENT;
-		graphId = graphGetVertexDegree(pGraph, buffer, &actual);
-		if (graphId == GRAPH_OK && expected != actual)
+		if (!parseEdgeDirection(buffer2, &edge_direction))
+			return TESTER_ARGUMENT;
+		graphId = yadsl_graph_vertex_degree_get(pGraph, buffer, edge_direction, &actual);
+		if (graphId == YADSL_GRAPH_RET_COND_OK && expected != actual)
 			return TESTER_RETURN;
-	} else if matches(command, "nextneighbour") {
-		char *v, *uv;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+	} else if matches(command, "ineighbours") {
+		char* v, * uv;
+		yadsl_GraphIterationDirection iteration_direction;
+		yadsl_GraphEdgeDirection edge_direction;
+		if (TesterParseArguments("sssss", buffer, buffer2, buffer3, buffer4, buffer5) != 5)
 			return TESTER_ARGUMENT;
-		graphId = graphGetNextNeighbour(pGraph, buffer, &v, &uv);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(v, buffer2) || nmatches(uv, buffer3))
-				return TESTER_RETURN;
-		}
-	} else if matches(command, "nextinneighbour") {
-		char *v, *uv;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+		if (!parseIterationDirection(buffer2, &iteration_direction))
 			return TESTER_ARGUMENT;
-		graphId = graphGetNextInNeighbour(pGraph, buffer, &v, &uv);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(v, buffer2) || nmatches(uv, buffer3))
-				return TESTER_RETURN;
-		}
-	} else if matches(command, "nextoutneighbour") {
-		char *v, *uv;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
+		if (!parseEdgeDirection(buffer3, &edge_direction))
 			return TESTER_ARGUMENT;
-		graphId = graphGetNextOutNeighbour(pGraph, buffer, &v, &uv);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(v, buffer2) || nmatches(uv, buffer3))
-				return TESTER_RETURN;
-		}
-	} else if matches(command, "prevneighbour") {
-		char *v, *uv;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
-			return TESTER_ARGUMENT;
-		graphId = graphGetPreviousNeighbour(pGraph, buffer, &v, &uv);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(v, buffer2) || nmatches(uv, buffer3))
-				return TESTER_RETURN;
-		}
-	} else if matches(command, "previnneighbour") {
-		char *v, *uv;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
-			return TESTER_ARGUMENT;
-		graphId = graphGetPreviousInNeighbour(pGraph, buffer, &v, &uv);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(v, buffer2) || nmatches(uv, buffer3))
-				return TESTER_RETURN;
-		}
-	} else if matches(command, "prevoutneighbour") {
-		char *v, *uv;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
-			return TESTER_ARGUMENT;
-		graphId = graphGetPreviousOutNeighbour(pGraph, buffer, &v, &uv);
-		if (graphId == GRAPH_OK) {
-			if (nmatches(v, buffer2) || nmatches(uv, buffer3))
+		graphId = yadsl_graph_vertex_nb_iter(pGraph, buffer, edge_direction, iteration_direction, &v, &uv);
+		if (graphId == YADSL_GRAPH_RET_COND_OK) {
+			if (nmatches(v, buffer4) || nmatches(uv, buffer5))
 				return TESTER_RETURN;
 		}
 	} else if matches(command, "containsvertex") {
-		int actual, expected;
+		bool actual, expected;
 		if (TesterParseArguments("ss", buffer, buffer2) != 2)
 			return TESTER_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer2);
-		graphId = graphContainsVertex(pGraph, buffer, &actual);
-		if (graphId == GRAPH_OK && actual != expected)
+		graphId = yadsl_graph_vertex_exists_check(pGraph, buffer, &actual);
+		if (graphId == YADSL_GRAPH_RET_COND_OK && actual != expected)
 			return TESTER_RETURN;
 	} else if matches(command, "addvertex") {
-		char *vertex;
+		char* vertex;
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_ARGUMENT;
 		if ((vertex = strdup(buffer)) == NULL)
 			return TESTER_MALLOC;
-		if (graphId = graphAddVertex(pGraph, vertex))
+		if (graphId = yadsl_graph_vertex_add(pGraph, vertex))
 			free(vertex);
 	} else if matches(command, "removevertex") {
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_ARGUMENT;
-		graphId = graphRemoveVertex(pGraph, buffer);
+		graphId = yadsl_graph_vertex_remove(pGraph, buffer);
 	} else if matches(command, "containsedge") {
-		int actual, expected;
+		bool actual, expected;
 		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
 			return TESTER_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer3);
-		graphId = graphContainsEdge(pGraph, buffer, buffer2, &actual);
-		if (graphId == GRAPH_OK && actual != expected)
+		graphId = yadsl_graph_edge_exists_check(pGraph, buffer, buffer2, &actual);
+		if (graphId == YADSL_GRAPH_RET_COND_OK && actual != expected)
 			return TESTER_RETURN;
 	} else if matches(command, "addedge") {
-		char *edge;
+		char* edge;
 		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
 			return TESTER_ARGUMENT;
 		if ((edge = strdup(buffer3)) == NULL)
 			return TESTER_MALLOC;
-		if (graphId = graphAddEdge(pGraph, buffer, buffer2, edge))
+		if (graphId = yadsl_graph_edge_add(pGraph, buffer, buffer2, edge))
 			free(edge);
 	} else if matches(command, "getedge") {
-		char *actual;
+		char* actual;
 		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
 			return TESTER_ARGUMENT;
-		graphId = graphGetEdge(pGraph, buffer, buffer2, &actual);
-		if (graphId == GRAPH_OK) {
+		graphId = yadsl_graph_edge_get(pGraph, buffer, buffer2, &actual);
+		if (graphId == YADSL_GRAPH_RET_COND_OK) {
 			if (nmatches(actual, buffer3))
 				return TESTER_RETURN;
 		}
 	} else if matches(command, "removeedge") {
 		if (TesterParseArguments("ss", buffer, buffer2) != 2)
 			return TESTER_ARGUMENT;
-		graphId = graphRemoveEdge(pGraph, buffer, buffer2);
+		graphId = yadsl_graph_edge_remove(pGraph, buffer, buffer2);
 	} else if matches(command, "setvertexflag") {
 		int flag;
 		if (TesterParseArguments("si", buffer, &flag) != 2)
 			return TESTER_ARGUMENT;
-		graphId = graphSetVertexFlag(pGraph, buffer, flag);
+		graphId = yadsl_graph_vertex_flag_set(pGraph, buffer, flag);
 	} else if matches(command, "setallflags") {
 		int flag;
 		if (TesterParseArguments("i", &flag) != 1)
 			return TESTER_ARGUMENT;
-		graphId = graphSetAllVerticesFlags(pGraph, flag);
+		graphId = yadsl_graph_vertex_flag_set_all(pGraph, flag);
 	} else if matches(command, "getvertexflag") {
 		int actual, expected;
 		if (TesterParseArguments("si", buffer, &expected) != 2)
 			return TESTER_ARGUMENT;
-		graphId = graphGetVertexFlag(pGraph, buffer, &actual);
-		if (graphId == GRAPH_OK && actual != expected)
+		graphId = yadsl_graph_vertex_flag_get(pGraph, buffer, &actual);
+		if (graphId == YADSL_GRAPH_RET_COND_OK && actual != expected)
 			return TESTER_RETURN;
 	} else {
 		return TESTER_COUNT;
@@ -276,10 +213,10 @@ static TesterReturnValue parseGraphCommands(const char *command)
 	return convertRet(graphId);
 }
 
-static TesterReturnValue parseGraphIoCommands(const char *command)
+static TesterReturnValue parseGraphIoCommands(const char* command)
 {
 	GraphIoRet graphIoId = GRAPH_IO_OK;
-	FILE *fp;
+	FILE* fp;
 	if matches(command, "write") {
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_ARGUMENT;
@@ -289,7 +226,7 @@ static TesterReturnValue parseGraphIoCommands(const char *command)
 		graphIoId = graphWrite(pGraph, fp, _writeString, _writeString);
 		fclose(fp);
 	} else if matches(command, "read") {
-		Graph *temp;
+		yadsl_GraphHandle* temp;
 		if (TesterParseArguments("s", buffer) != 1)
 			return TESTER_ARGUMENT;
 		fp = fopen(buffer, "r");
@@ -298,7 +235,7 @@ static TesterReturnValue parseGraphIoCommands(const char *command)
 		graphIoId = graphRead(&temp, fp, _readString, _readString,
 			_cmpStrings, free, _cmpStrings, free);
 		if (graphIoId == GRAPH_IO_OK) {
-			graphDestroy(pGraph);
+			yadsl_graph_destroy(pGraph);
 			pGraph = temp;
 		}
 		fclose(fp);
@@ -308,18 +245,18 @@ static TesterReturnValue parseGraphIoCommands(const char *command)
 	return convertIoRet(graphIoId);
 }
 
-static void visitVertexCallback(void *vertex)
+static void visitVertexCallback(void* vertex)
 {
-	printf("%s was visited\n", (char *) vertex);
+	printf("%s was visited\n", (char*) vertex);
 }
 
-static void visitEdgeCallback(void *source, void *edge, void *dest)
+static void visitEdgeCallback(void* source, void* edge, void* dest)
 {
 	printf("%s was visited (%s -> %s)\n",
-		(char *) edge, (char *) source, (char *) dest);
+		(char*) edge, (char*) source, (char*) dest);
 }
 
-static TesterReturnValue parseGraphSearchCommands(const char *command)
+static TesterReturnValue parseGraphSearchCommands(const char* command)
 {
 	GraphSearchRet graphSearchId = GRAPH_SEARCH_OK;
 	int flag;
@@ -348,7 +285,7 @@ static TesterReturnValue parseGraphSearchCommands(const char *command)
 // Here the TESTER_COUNT is being used as a flag to indicate that
 // the command is not of a certain type, since it is never used truly for
 // testing purposes.
-TesterReturnValue TesterParseCallback(const char *command)
+TesterReturnValue TesterParseCallback(const char* command)
 {
 	TesterReturnValue ret;
 	if ((ret = parseGraphCommands(command))
@@ -365,7 +302,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 
 TesterReturnValue TesterExitCallback()
 {
-	if (pGraph) graphDestroy(pGraph);
+	if (pGraph) yadsl_graph_destroy(pGraph);
 #ifdef _DEBUG
 	if (getGraphSearchNodeRefCount())
 		return TESTER_MEMLEAK;
@@ -373,38 +310,40 @@ TesterReturnValue TesterExitCallback()
 	return TESTER_OK;
 }
 
-static int _cmpStrings(void *a, void *b)
+static int _cmpStrings(void* a, void* b)
 {
-	return matches((char *) a, (char *) b);
+	return matches((char*) a, (char*) b);
 }
 
-static int _readString(FILE *fp, void **ppVertex)
+static int _readString(FILE* fp, void** ppVertex)
 {
 	return ((*ppVertex = TesterUtilsDeserializeString(fp)) == NULL);
 }
 
-static int _writeString(FILE *fp, void *v)
+static int _writeString(FILE* fp, void* v)
 {
-	return TesterUtilsSerializeString(fp, (char *) v);
+	return TesterUtilsSerializeString(fp, (char*) v);
 }
 
-static TesterReturnValue convertRet(GraphRet graphId)
+static TesterReturnValue convertRet(yadsl_GraphReturnCondition graphId)
 {
 	switch (graphId) {
-	case GRAPH_OK:
+	case YADSL_GRAPH_RET_COND_OK:
 		return TESTER_OK;
-	case GRAPH_EMPTY:
+	case YADSL_GRAPH_RET_COND_EMPTY:
 		return TesterExternalReturnValue("empty");
-	case GRAPH_CONTAINS_VERTEX:
+	case YADSL_GRAPH_RET_COND_CONTAINS_VERTEX:
 		return TesterExternalReturnValue("contains vertex");
-	case GRAPH_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
 		return TesterExternalReturnValue("does not contain vertex");
-	case GRAPH_CONTAINS_EDGE:
+	case YADSL_GRAPH_RET_COND_CONTAINS_EDGE:
 		return TesterExternalReturnValue("contains edge");
-	case GRAPH_DOES_NOT_CONTAIN_EDGE:
+	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE:
 		return TesterExternalReturnValue("does not contain edge");
-	case GRAPH_MEMORY:
+	case YADSL_GRAPH_RET_COND_MEMORY:
 		return TesterExternalReturnValue("memory");
+	case YADSL_GRAPH_RET_COND_PARAMETER:
+		return TesterExternalReturnValue("parameter");
 	default:
 		return TesterExternalReturnValue("unknown");
 	}
@@ -446,4 +385,32 @@ static TesterReturnValue convertSearchRet(GraphSearchRet graphSearchId)
 	default:
 		return TesterExternalReturnValue("unknown");
 	}
+}
+
+bool parseEdgeDirection(const char* buffer, yadsl_GraphEdgeDirection* edge_direction_ptr)
+{
+	if matches(buffer, "in") {
+		*edge_direction_ptr = YADSL_GRAPH_EDGE_DIR_IN;
+	} else if matches(buffer, "out") {
+		*edge_direction_ptr = YADSL_GRAPH_EDGE_DIR_OUT;
+	} else if matches(buffer, "both") {
+		*edge_direction_ptr = YADSL_GRAPH_EDGE_DIR_BOTH;
+	} else {
+		TesterLog("Unknown edge direction \"%s\"", buffer);
+		return false;
+	}
+	return true;
+}
+
+bool parseIterationDirection(const char* buffer, yadsl_GraphIterationDirection* iteration_direction_ptr)
+{
+	if matches(buffer, "next") {
+		*iteration_direction_ptr = YADSL_GRAPH_ITER_DIR_NEXT;
+	} else if matches(buffer, "previous") {
+		*iteration_direction_ptr = YADSL_GRAPH_ITER_DIR_PREVIOUS;
+	} else {
+		TesterLog("Unknown iteration direction \"%s\"", buffer);
+		return false;
+	}
+	return true;
 }

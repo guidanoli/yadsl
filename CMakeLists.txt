@@ -20,8 +20,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 set(YADSL_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src"
     CACHE INTERNAL "YADSL source directory")
 
-# Add 'add_library' function
-include(addLibrary)
+# Add 'add_yadsl_library' function
+include(AddYADSLLibrary)
 
 if(YADSL_BUILD_TESTS)
 	enable_testing()
@@ -50,14 +50,14 @@ if(YADSL_PYTHON_SUPPORT)
 	endif()
 	
 	# Add 'add_python_module' function
-	include(addPythonModule)
+	include(AddPythonModule)
 endif()
 
 if (YADSL_LUA_SUPPORT)
 	find_package(Lua 5.0 REQUIRED MODULE)
 
 	# Add 'add_lua_module' function
-	include(addLuaModule)
+	include(AddLuaModule)
 endif()
 
 if (YADSL_GENERATE_DOCS)

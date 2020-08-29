@@ -12,37 +12,37 @@
 /removevertex X
 /catch "does not contain vertex"
 
-/nextvertex X
+/ivertices next X
 /catch empty
 
-/prevvertex X
+/ivertices previous X
 /catch empty
 
-/outdegree X 0
+/degree X out 0
 /catch "does not contain vertex"
 
-/indegree X 0
+/degree X in 0
 /catch "does not contain vertex"
 
-/degree X 0
+/degree X both 0
 /catch "does not contain vertex"
 
-/nextinneighbour V N E
+/ineighbours V next in N E
 /catch "does not contain vertex"
 
-/nextoutneighbour V N E
+/ineighbours V next out N E
 /catch "does not contain vertex"
 
-/nextneighbour V N E
+/ineighbours V next both N E
 /catch "does not contain vertex"
 
-/previnneighbour V N E
+/ineighbours V previous in N E
 /catch "does not contain vertex"
 
-/prevoutneighbour V N E
+/ineighbours V previous out N E
 /catch "does not contain vertex"
 
-/prevneighbour V N E
+/ineighbours V previous both N E
 /catch "does not contain vertex"
 
 /containsvertex V NO
@@ -73,37 +73,37 @@
 /removevertex X
 /catch "does not contain vertex"
 
-/nextvertex X
+/ivertices next X
 /catch empty
 
-/prevvertex X
+/ivertices previous X
 /catch empty
 
-/outdegree X 0
+/degree X out 0
 /catch "does not contain vertex"
 
-/indegree X 0
+/degree X in 0
 /catch "does not contain vertex"
 
-/degree X 0
+/degree X both 0
 /catch "does not contain vertex"
 
-/nextinneighbour V N E
+/ineighbours V next in N E
 /catch "does not contain vertex"
 
-/nextoutneighbour V N E
+/ineighbours V next out N E
 /catch "does not contain vertex"
 
-/nextneighbour V N E
+/ineighbours V next both N E
 /catch "does not contain vertex"
 
-/previnneighbour V N E
+/ineighbours V previous in N E
 /catch "does not contain vertex"
 
-/prevoutneighbour V N E
+/ineighbours V previous out N E
 /catch "does not contain vertex"
 
-/prevneighbour V N E
+/ineighbours V previous both N E
 /catch "does not contain vertex"
 
 /containsvertex V NO
@@ -132,26 +132,26 @@
 # Checking if vertex was added
 /vertexcount 1
 /containsvertex V YES
-/nextvertex V
-/prevvertex V
+/ivertices next V
+/ivertices previous V
 
 # Checking vertex degrees
-/indegree V 0
-/outdegree V 0
-/degree V 0
+/degree V in 0
+/degree V out 0
+/degree V both 0
 
 # Checking vertex neighbours
-/nextinneighbour V N E
+/ineighbours V next in N E
 /catch "does not contain edge"
-/nextoutneighbour V N E
+/ineighbours V next out N E
 /catch "does not contain edge"
-/nextneighbour V N E
+/ineighbours V next both N E
 /catch "does not contain edge"
-/previnneighbour V N E
+/ineighbours V previous in N E
 /catch "does not contain edge"
-/prevoutneighbour V N E
+/ineighbours V previous out N E
 /catch "does not contain edge"
-/prevneighbour V N E
+/ineighbours V previous both N E
 /catch "does not contain edge"
 
 # Try removing edge VV
@@ -179,14 +179,14 @@
 /getedge V V E
 
 # Checking neighbourhood
-/nextinneighbour V V E
-/nextoutneighbour V V E
-/nextneighbour V V E
-/nextneighbour V V E
-/previnneighbour V V E
-/prevoutneighbour V V E
-/prevneighbour V V E
-/prevneighbour V V E
+/ineighbours V next in V E
+/ineighbours V next out V E
+/ineighbours V next both V E
+/ineighbours V next both V E
+/ineighbours V previous in V E
+/ineighbours V previous out V E
+/ineighbours V previous both V E
+/ineighbours V previous both V E
 
 # Try adding same vertex
 /addvertex V
@@ -214,26 +214,26 @@
 # Checking if vertex was added
 /vertexcount 1
 /containsvertex V YES
-/nextvertex V
-/prevvertex V
+/ivertices next V
+/ivertices previous V
 
 # Checking vertex degrees
-/indegree V 0
-/outdegree V 0
-/degree V 0
+/degree V in 0
+/degree V out 0
+/degree V both 0
 
 # Checking vertex neighbours
-/nextinneighbour V N E
+/ineighbours V next in N E
 /catch "does not contain edge"
-/nextoutneighbour V N E
+/ineighbours V next out N E
 /catch "does not contain edge"
-/nextneighbour V N E
+/ineighbours V next both N E
 /catch "does not contain edge"
-/previnneighbour V N E
+/ineighbours V previous in N E
 /catch "does not contain edge"
-/prevoutneighbour V N E
+/ineighbours V previous out N E
 /catch "does not contain edge"
-/prevneighbour V N E
+/ineighbours V previous both N E
 /catch "does not contain edge"
 
 # Try removing edge VV
@@ -261,14 +261,14 @@
 /getedge V V E
 
 # Checking neighbourhood
-/nextinneighbour V V E
-/nextoutneighbour V V E
-/nextneighbour V V E
-/nextneighbour V V E
-/previnneighbour V V E
-/prevoutneighbour V V E
-/prevneighbour V V E
-/prevneighbour V V E
+/ineighbours V next in V E
+/ineighbours V next out V E
+/ineighbours V next both V E
+/ineighbours V next both V E
+/ineighbours V previous in V E
+/ineighbours V previous out V E
+/ineighbours V previous both V E
+/ineighbours V previous both V E
 
 # Try adding same vertex
 /addvertex V

@@ -5,19 +5,12 @@ yadsl --- Yet Another Data Structures Library
    :maxdepth: 1
    
    about
-   install
    depends
+   install
 
 .. toctree::
    :glob:
-   :caption: Data Structures
+   :caption: Contents
    :maxdepth: 2
    
-   ds/*
-
-.. toctree::
-   :glob:
-   :caption: Algorithms
-   :maxdepth: 2
-   
-   algs/*
+   contents/*

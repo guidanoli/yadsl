@@ -38,7 +38,7 @@ GraphSearchRet;
 //  [!] GRAPH_SEARCH_VERTEX_ALREADY_VISITED
 //  [!] GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX
 
-GraphSearchRet graphDFS(Graph *pGraph,
+GraphSearchRet graphDFS(yadsl_GraphHandle *pGraph,
 	void *initialVertex,
 	int visitedFlag,
 	void (*visitVertexCallback)(void *vertex),
@@ -57,7 +57,7 @@ GraphSearchRet graphDFS(Graph *pGraph,
 //  [!] GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX
 //  [!] GRAPH_SEARCH_MEMORY
 
-GraphSearchRet graphBFS(Graph *pGraph,
+GraphSearchRet graphBFS(yadsl_GraphHandle *pGraph,
 	void *initialVertex,
 	int visitedFlag,
 	void (*visitVertexCallback)(void *vertex),

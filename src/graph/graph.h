@@ -1,339 +1,346 @@
-#ifndef __GRAPH_H__
-#define __GRAPH_H__
+#ifndef __YADSL_GRAPH_RET_COND_H__
+#define __YADSL_GRAPH_RET_COND_H__
 
-//
-//     ______                 __
-//    / ____/________ _____  / /_
-//   / / __/ ___/ __ `/ __ \/ __ \
-//  / /_/ / /  / /_/ / /_/ / / / /
-//  \____/_/   \__,_/ .___/_/ /_/
-//                 /_/
-//
-//  A Graph starts with no vertices and, therefore, no edges.
-// You are able to add and remove vertices and edges, check
-// if vertices and edges are contained in graph, iterate through
-// vertices and vertex neighbours (in, out or all), obtain
-// vertex count, vertex degrees (in, out or total), and set/get
-// flags set to vertices (for searches in graph, coloring...)
-//
-// HINTS
-// -----
-//
-//  Undirected graphs store edges differently than directed
-// graphs, but still, in such way that functions that relate to
-// in or out neighbours will provide diferent edges, for every
-// vertex on a graph. That's why it can be used for serialization.
-//
+/**
+ * \defgroup graph Graph
+ * @brief Generic graph (directed or undirected)
+ * 
+ * A Graph starts with no vertices and, therefore, no edges.
+ * You are able to add and remove vertices and edges, check
+ * if vertices and edges are contained in graph, iterate through
+ * vertices and vertex neighbours (in, out or total), obtain
+ * vertex count, vertex degrees (in, out or total), and set/get
+ * flags in vertices (for searches in graph, coloring...)
+ * 
+ * Undirected graphs store edges differently than directed
+ * graphs, but still, in such way that functions that relate to
+ * in or out neighbours will provide diferent edges, for every
+ * vertex on a graph. That's why it can be used for serialization.
+ * 
+ * @{
+*/
 
-typedef enum
-{
-	GRAPH_OK = 0,
-	GRAPH_EMPTY,
-	GRAPH_CONTAINS_VERTEX,
-	GRAPH_DOES_NOT_CONTAIN_VERTEX,
-	GRAPH_CONTAINS_EDGE,
-	GRAPH_DOES_NOT_CONTAIN_EDGE,
-	GRAPH_MEMORY,
-}
-GraphRet;
-
-typedef struct Graph Graph;
-
+#include <stdbool.h>
 #include <stddef.h>
 
-//  ============= ============================================
-//   graphCreate            Create an empty graph          
-//  ============= ============================================
-//   ppGraph       (ret) pointer to graph                
-//   cmpVertices   (opt) comparison function between vertices  
-//   cmpEdges      (opt) comparison function between edges     
-//   freeVertex    (opt) deallocation function for vertices    
-//   freeEdge      (opt) deallocation function for edges       
-//  ============= ============================================
-//  [!] GRAPH_MEMORY
+/**
+ * @brief Return condition of Graph functions
+*/
+typedef enum
+{
+	YADSL_GRAPH_RET_COND_OK = 0, /**< All went ok */
+	YADSL_GRAPH_RET_COND_EMPTY, /**< Graph is empty */
+	YADSL_GRAPH_RET_COND_CONTAINS_VERTEX, /**< Graph (already) contains vertex */
+	YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX, /**< Graph does not contain vertex */
+	YADSL_GRAPH_RET_COND_CONTAINS_EDGE, /**< Graph (already) contains edge */
+	YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE, /**< Graph does not contain edge*/
+	YADSL_GRAPH_RET_COND_MEMORY, /**< Could not allocate memory */
+	YADSL_GRAPH_RET_COND_PARAMETER, /**< Invalid parameter */
+}
+yadsl_GraphReturnCondition;
 
-GraphRet graphCreate(Graph **ppGraph,
-	int isDirected,
-	int (*cmpVertices)(void *a, void *b),
-	void (*freeVertex)(void *v),
-	int (*cmpEdges)(void *a, void *b),
-	void (*freeEdge)(void *e));
+/**
+ * @brief Iteration direction of Graph iterator functions
+*/
+typedef enum
+{
+	YADSL_GRAPH_ITER_DIR_NEXT, /**< Iterate to next element */
+	YADSL_GRAPH_ITER_DIR_PREVIOUS, /**< Iterate to previous element */
+}
+yadsl_GraphIterationDirection;
 
-//  ================= ======================================== 
-//   graphIsDirected   Check whether graph is directed or not  
-//  ================= ======================================== 
-//   pGraph            pointer to graph                        
-//   pIsDirected       (ret) whether graph is directed or not  
-//  ================= ======================================== 
+/**
+ * @brief Edge direction
+*/
+typedef enum
+{
+	YADSL_GRAPH_EDGE_DIR_NONE = 0, /**< No direction */
+	YADSL_GRAPH_EDGE_DIR_IN = 1 << 0, /**< In direction */
+	YADSL_GRAPH_EDGE_DIR_OUT = 1 << 1, /**< Out direction */
+	YADSL_GRAPH_EDGE_DIR_BOTH = (1 << 0) | (1 << 1), /** Both directions */
+}
+yadsl_GraphEdgeDirection;
 
-GraphRet graphIsDirected(Graph *pGraph, int *pIsDirected);
+typedef void yadsl_GraphHandle; /**< Graph handle */
+typedef void yadsl_GraphVertexObject; /**< Graph vertex object (user data) */
+typedef void yadsl_GraphEdgeObject; /**< Graph edge object (user data) */
+typedef int yadsl_GraphVertexFlag; /**< Graph vertex flag (for colouring, searches...) */
 
-//  ========================== ================================= 
-//   graphGetNumberOfVertices   Get number of vertices in graph  
-//  ========================== ================================= 
-//   pGraph                     pointer to graph                 
-//   pNumberOfVertices          (ret) number of vertices         
-//  ========================== ================================= 
+/**
+ * @brief Graph vertex object comparison function
+ * @param obj1 first object
+ * @param obj2 second object
+ * @return an integer *n*, where...
+ * * *n* > 0 if obj1 > obj2
+ * * *n* = 0 if obj1 = obj2
+ * * *n* < 0 if obj1 < obj2
+*/
+typedef int (*yadsl_GraphCmpVertexObjsFunc)(yadsl_GraphVertexObject* obj1, yadsl_GraphVertexObject* obj2);
 
-GraphRet graphGetNumberOfVertices(Graph *pGraph, size_t *pNumberOfVertices);
+/**
+ * @brief Graph vertex object freeing function
+ * @param obj object
+*/
+typedef void (*yadsl_GraphFreeVertexObjFunc)(yadsl_GraphVertexObject* obj);
 
-//  ==================== ================================= 
-//   graphGetNextVertex   Get next vertex (loops)
-//  ==================== ================================= 
-//   pGraph               pointer to graph                 
-//   pNextVertex          (ret) next vertex                
-//  ==================== ================================= 
-//  [!] GRAPH_EMPTY
+/**
+ * @brief Graph edge object comparison function
+ * @param obj1 first object
+ * @param obj2 second object
+ * @return an integer *n*, where...
+ * * *n* > 0 if obj1 > obj2
+ * * *n* = 0 if obj1 = obj2
+ * * *n* < 0 if obj1 < obj2
+*/
+typedef int (*yadsl_GraphCmpEdgeObjsFunc)(yadsl_GraphEdgeObject* obj1, yadsl_GraphEdgeObject* obj2);
 
-GraphRet graphGetNextVertex(Graph *pGraph, void **pNextVertex);
+/**
+ * @brief Graph edge object freeing function
+ * @param obj object
+*/
+typedef void (*yadsl_GraphFreeEdgeObjFunc)(yadsl_GraphEdgeObject* obj);
 
-//  ======================== ============================= 
-//   graphGetPreviousVertex   Get previous vertex (loops)  
-//  ======================== ============================= 
-//   pGraph                   pointer to graph             
-//   pPreviousVertex          (ret) previous vertex        
-//  ======================== ============================= 
-//  [!] GRAPH_EMPTY
+/**
+ * @brief Create an empty graph
+ * @param is_directed whether the graph is directed or not
+ * @param cmp_vertices_func vertex object comparison function
+ * @param free_vertex_func vertex object freeing function
+ * @param cmp_edges_func edge object comparison function
+ * @param free_edge_func edge object freeing function
+ * @return newly created graph or NULL if could not allocate enough memory
+*/
+yadsl_GraphHandle* yadsl_graph_create(
+	bool is_directed,
+	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func,
+	yadsl_GraphFreeVertexObjFunc free_vertex_func,
+	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func);
 
-GraphRet graphGetPreviousVertex(Graph *pGraph, void **pPreviousVertex);
+/**
+ * @brief Check whether graph is directed or not
+ * @param graph graph
+ * @param is_directed_ptr whether graph is directed or not
+ * @return ::YADSL_GRAPH_RET_COND_OK, and *is_directed_ptr is updated
+*/
+yadsl_GraphReturnCondition yadsl_graph_is_directed_check(
+	yadsl_GraphHandle *graph,
+	bool *is_directed_ptr);
 
-//  ========================= ========================= 
-//   graphGetVertexOutDegree    Get vertex out degree   
-//  ========================= ========================= 
-//   pGraph                    pointer to graph         
-//   vertex                    graph vertex             
-//   pOutDegree                (ret) vertex out degree  
-//  ========================= ========================= 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+/**
+ * @brief Get number of vertices in graph
+ * @param graph graph
+ * @param pNumberOfVertices number of vertices
+ * @return ::YADSL_GRAPH_RET_COND_OK, and *vertex_cnt_ptr is updated
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_count_get(
+	yadsl_GraphHandle *graph,
+	size_t *vertex_cnt_ptr);
 
-GraphRet graphGetVertexOutDegree(Graph *pGraph,
-	void *vertex, size_t *pOutDegree);
+/**
+ * @brief Iterate through vertex (cycles through all)
+ * @param graph graph
+ * @param iter_direction iteration direction
+ * @param vertex_ptr current vertex
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and *vertex_ptr is updated
+ * * ::YADSL_GRAPH_RET_COND_PARAMETER
+ * * ::YADSL_GRAPH_RET_COND_EMPTY
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_iter(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphIterationDirection iter_direction,
+	yadsl_GraphVertexObject** vertex_ptr);
 
-//  ======================== ======================== 
-//   graphGetVertexInDegree    Get vertex in degree   
-//  ======================== ======================== 
-//   pGraph                   pointer to graph        
-//   vertex                   graph vertex            
-//   pInDegree                (ret) vertex in degree  
-//  ======================== ======================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+/**
+ * @brief Get vertex degree
+ * @param graph graph
+ * @param vertex vertex
+ * @param edge_direction degree type (sum of in edges, out edges or both)
+ * @param degree_ptr vertex degree
+ * @return
+ * * ::YASDL_GRAPH_RET_COND_OK, and *degree_ptr is updated
+ * * ::YASDL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_degree_get(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* vertex,
+	yadsl_GraphEdgeDirection edge_direction,
+	size_t* degree_ptr);
 
-GraphRet graphGetVertexInDegree(Graph *pGraph,
-	void *vertex, size_t *pInDegree);
+/**
+ * @brief Iterate through neighbour of a given vertex
+ * @param graph graph
+ * @param vertex vertex
+ * @param edge_direction edge direction
+ * @param iter_direction iteration direction
+ * @param nb_ptr neighbour of vertex
+ * @param edge_ptr edge between vertex and its neighbour
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and *nb_ptr and *edge_ptr are updated
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE
+ * * ::YADSL_GRAPH_RET_COND_PARAMETER
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_nb_iter(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* vertex,
+	yadsl_GraphEdgeDirection edge_direction,
+	yadsl_GraphIterationDirection iter_direction,
+	yadsl_GraphVertexObject** nb_ptr,
+	yadsl_GraphEdgeObject** edge_ptr);
 
-//  ======================== =========================== 
-//   graphGetVertexInDegree   Get vertex (total) degree  
-//  ======================== =========================== 
-//   pGraph                   pointer to graph           
-//   vertex                   graph vertex               
-//   pDegree                  (ret) vertex degree        
-//  ======================== =========================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
+/**
+ * @brief Check whether vertex exists in a graph or not
+ * @param graph graph
+ * @param vertex vertex
+ * @param contains_ptr whether vertex exists in graph or not
+ * @return ::YADSL_GRAPH_RET_COND_ON, and *contains_ptr is updated
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_exists_check(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject *vertex,
+	bool *contains_ptr);
 
-GraphRet graphGetVertexDegree(Graph *pGraph,
-	void *vertex, size_t *pDegree);
+/**
+ * @brief Add vertex to graph
+ * @param graph graph
+ * @param vertex vertex
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and vertex is added
+ * * ::YADSL_GRAPH_RET_COND_CONTAINS_VERTEX (if vertex was already added)
+ * * ::YADSL_GRAPH_RET_COND_MEMORY
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_add(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject* vertex);
 
-//  ======================= ============================================= 
-//   graphGetNextNeighbour       Get next neighbour of a given vertex       
-//  ======================= ============================================= 
-//   pGraph                  pointer to graph                             
-//   vertex                  graph vertex                                 
-//   pNextNeighbour          (ret) next neighbour of vertex               
-//   pEdge                   (ret) edge between vertex and its neighbour  
-//  ======================= ============================================= 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+/**
+ * @brief Remove vertex from graph
+ * @param graph graph
+ * @param vertex vertex
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and vertex is removed
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_remove(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject* vertex);
 
-GraphRet graphGetNextNeighbour(Graph *pGraph,
-	void *vertex, void **pNextNeighbour, void **pEdge);
+/**
+ * @brief Check if edge exists in a graph or not
+ * @param graph graph
+ * @param u edge source (if directed)
+ * @param v edge destination (if directed)
+ * @param contains_ptr whether edge exists in graph or not
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and *contains_ptr is updated
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+*/
+yadsl_GraphReturnCondition yadsl_graph_edge_exists_check(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject *u,
+	yadsl_GraphVertexObject *v,
+	bool *contains_ptr);
 
-//  =========================== ============================================= 
-//   graphGetPreviousNeighbour     Get previous neighbour of a given vertex     
-//  =========================== ============================================= 
-//   pGraph                      pointer to graph                             
-//   vertex                      graph vertex                                 
-//   pPreviousNeighbour          (ret) previous neighbour of vertex           
-//   pEdge                       (ret) edge between vertex and its neighbour  
-//  =========================== ============================================= 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+/**
+ * @brief Add edge to graph
+ * @param graph graph
+ * @param u edge source (if directed)
+ * @param v edge destination (if directed)
+ * @param uv edge connecting u and v
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and edge is added
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_COND_CONTAINS_EDGE
+ * * ::YADSL_GRAPH_RET_COND_MEMORY
+ * @attention on success, this function may alter the state of the neighbour
+ * iterator functions such as ::yadsl_graph_vertex_nb_total_next_get_internal
+*/
+yadsl_GraphReturnCondition yadsl_graph_edge_add(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject *u,
+	yadsl_GraphVertexObject *v,
+	yadsl_GraphEdgeObject *uv);
 
-GraphRet graphGetPreviousNeighbour(Graph *pGraph,
-	void *u, void **pV, void **uv);
+/**
+ * @brief Get edge between two vertices in a graph
+ * @param graph graph
+ * @param u edge source (if directed)
+ * @param v edge destination (if directed)
+ * @param uv_ptr edge between u and v
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and *uv_ptr is updated
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE
+*/
+yadsl_GraphReturnCondition yadsl_graph_edge_get(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphVertexObject* v,
+	yadsl_GraphEdgeObject** uv_ptr);
 
-//  ========================= ============================================= 
-//   graphGetNextInNeighbour     Get next in neighbour of a given vertex    
-//  ========================= ============================================= 
-//   pGraph                    pointer to graph                             
-//   vertex                    graph vertex                                 
-//   pNextInNeighbour          (ret) next in neighbour of vertex            
-//   pEdge                     (ret) edge between vertex and its neighbour  
-//  ========================= ============================================= 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+/**
+ * @brief Remove edge between u and v from graph
+ * @param graph graph
+ * @param u edge source (if directed)
+ * @param v edge destination (if directed)
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and edge is removed
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE
+ * @attention on success, this function may alter the state of the neighbour
+ * iterator functions such as ::yadsl_graph_vertex_nb_total_next_get_internal
+*/
+yadsl_GraphReturnCondition yadsl_graph_edge_remove(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphVertexObject* v);
 
-GraphRet graphGetNextInNeighbour(Graph *pGraph,
-	void *vertex, void **pNextInNeighbour, void **pEdge);
+/**
+ * @brief Get flag associated with vertex in graph
+ * @param graph graph
+ * @param v vertex
+ * @param flag_ptr flag associated with vertex in graph
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and *flag_ptr is updated
+ * * ::YASDL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_flag_get(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject* v,
+	yadsl_GraphVertexFlag *flag_ptr);
 
-//  ============================= ============================================= 
-//   graphGetPreviousInNeighbour   Get previous in neighbour of a given vertex  
-//  ============================= ============================================= 
-//   pGraph                        pointer to graph                             
-//   vertex                        graph vertex                                 
-//   pPreviousInNeighbour          (ret) previous in neighbour of vertex        
-//   pEdge                         (ret) edge between vertex and its neighbour  
-//  ============================= ============================================= 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+/**
+ * @brief Set flag associated with vertex in graph
+ * @param graph graph
+ * @param v vertex
+ * @param flag new flag associated with vertex in graph
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and flag is associated with vertex
+ * * ::YASDL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_flag_set(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject* v,
+	yadsl_GraphVertexFlag flag);
 
-GraphRet graphGetPreviousInNeighbour(Graph *pGraph,
-	void *vertex, void **pPreviousInNeighbour, void **pEdge);
+/**
+ * @brief Set flag associated with all vertices in graph
+ * @param graph graph
+ * @param flag new flag
+ * @return
+ * * ::YADSL_GRAPH_RET_COND_OK, and flag is associated with all vertives
+*/
+yadsl_GraphReturnCondition yadsl_graph_vertex_flag_set_all(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexFlag flag);
 
-//  ========================== ============================================= 
-//   graphGetNextOutNeighbour    Get next out neighbour of a given vertex    
-//  ========================== ============================================= 
-//   pGraph                     pointer to graph                             
-//   vertex                     graph vertex                                 
-//   pNextOutNeighbour          (ret) next out neighbour of vertex           
-//   pEdge                      (ret) edge between vertex and its neighbour  
-//  ========================== ============================================= 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
+/**
+ * @brief Destroys graph
+ * @param graph graph
+*/
+void yadsl_graph_destroy(yadsl_GraphHandle *graph);
 
-GraphRet graphGetNextOutNeighbour(Graph *pGraph,
-	void *vertex, void **pNextOutNeighbour, void **pEdge);
-
-//  ============================== ============================================= 
-//   graphGetPreviousOutNeighbour   Get previous out neighbour of a vertex  
-//  ============================== ============================================= 
-//   pGraph                         pointer to graph                              
-//   vertex                         graph vertex                                  
-//   pPreviousOutNeighbour          (ret) previous out neighbour of vertex        
-//   pEdge                          (ret) edge between vertex and its neighbour   
-//  ============================== ============================================= 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
-
-GraphRet graphGetPreviousOutNeighbour(Graph *pGraph,
-	void *vertex, void **pPreviousOutNeighbour, void **pEdge);
-
-//  ===================== ============================================ 
-//   graphContainsVertex   Check whether graph contains vertex or not  
-//  ===================== ============================================ 
-//   pGraph                pointer to graph                            
-//   vertex                graph vertex                                
-//   pContains             (ret) whether graph contains vertex or not  
-//  ===================== ============================================ 
-
-GraphRet graphContainsVertex(Graph *pGraph, void *vertex, int *pContains);
-
-//  ================ ===================== 
-//   graphAddVertex   Add vertex to graph  
-//  ================ ===================== 
-//   pGraph           pointer to graph     
-//   vertex           graph vertex         
-//  ================ ===================== 
-//  [!] GRAPH_CONTAINS_VERTEX
-//  [!] GRAPH_MEMORY
-
-GraphRet graphAddVertex(Graph *pGraph, void *vertex);
-
-//  =================== ======================== 
-//   graphRemoveVertex   Remove vertex to graph  
-//  =================== ======================== 
-//   pGraph              pointer to graph        
-//   vertex              graph vertex            
-//  =================== ======================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-
-GraphRet graphRemoveVertex(Graph *pGraph, void *vertex);
-
-//  =================== ========================================== 
-//   graphContainsEdge   Check whether graph contains edge or not  
-//  =================== ========================================== 
-//   pGraph              pointer to graph                          
-//   u, v                graph vertices                            
-//   pContains           (ret) whether graph contains edge or not  
-//  =================== ========================================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-
-GraphRet graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains);
-
-//  ============== ====================== 
-//   graphAddEdge    Add edge to graph    
-//  ============== ====================== 
-//   pGraph         pointer to graph      
-//   u, v           graph vertices        
-//   uv             edge between u and v  
-//  ============== ====================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_CONTAINS_EDGE
-//  [!] GRAPH_MEMORY
-//  [!] Alters the state of the neighbour iterator functions
-
-GraphRet graphAddEdge(Graph *pGraph, void *u, void *v, void *uv);
-
-//  ============== =========================================== 
-//   graphGetEdge   Obtain edge between two vertices in graph  
-//  ============== =========================================== 
-//   pGraph         pointer to graph                           
-//   u, v           graph vertices                             
-//   pEdge          (ret) edge between u and v                 
-//  ============== =========================================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
-
-GraphRet graphGetEdge(Graph *pGraph, void *u, void *v, void **pEdge);
-
-//  ================= ======================== 
-//   graphRemoveEdge   Remove edge from graph  
-//  ================= ======================== 
-//   pGraph            pointer to graph        
-//   u, v              graph vertices          
-//  ================= ======================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-//  [!] GRAPH_DOES_NOT_CONTAIN_EDGE
-//  [!] Alters the state of the neighbour iterator functions
-
-GraphRet graphRemoveEdge(Graph *pGraph, void *u, void *v);
-
-//  ==================== ======================================== 
-//   graphGetVertexFlag   Get flag associated to vertex in graph  
-//  ==================== ======================================== 
-//   pGraph               pointer to graph                        
-//   vertex               graph vertex                            
-//   pFlag                (ret) flag associated to vertex         
-//  ==================== ======================================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-
-GraphRet graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag);
-
-//  ==================== ======================================== 
-//   graphSetVertexFlag   Set flag associated to vertex in graph  
-//  ==================== ======================================== 
-//   pGraph               pointer to graph                        
-//   vertex               graph vertex                            
-//   flag                 flag to be associated to vertex         
-//  ==================== ======================================== 
-//  [!] GRAPH_DOES_NOT_CONTAIN_VERTEX
-
-GraphRet graphSetVertexFlag(Graph *pGraph, void *v, int flag);
-
-//  ========================= ======================================= 
-//   graphSetAllVerticesFlag    Sets flag to all vertices in graph    
-//  ========================= ======================================= 
-//   pGraph                    pointer to graph                       
-//   flag                      flag to be associated to all vertices  
-//  ========================= ======================================= 
-
-GraphRet graphSetAllVerticesFlags(Graph *pGraph, int flag);
-
-//  ============== ========================================= 
-//   graphDestroy   Deallocates graph structure from memory  
-//  ============== ========================================= 
-//   pGraph         pointer to graph                         
-//  ============== ========================================= 
-
-void graphDestroy(Graph *pGraph);
+/** }@ */
 
 #endif

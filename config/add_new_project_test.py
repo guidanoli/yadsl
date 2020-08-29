@@ -37,6 +37,11 @@ import pytest
         ['a', '-b', '--cd', 'd', '--e=0', '--f=g', 'True'],
         ['a', 'd', True], {'b': True, 'cd': True, 'e': 0, 'f': 'g'}
     ),
+    (
+        # Previously initialized keyword arguments
+        ['--e', '--f=10', '--g=e', '--h=f'],
+        [], {'e': True, 'f': 10, 'g': 'e', 'h': 'f'}
+    ),
 ])
 def test_process_argv(argv, args, kwargs):
     assert m.process_argv(argv) == (args, kwargs)

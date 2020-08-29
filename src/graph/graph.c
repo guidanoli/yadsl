@@ -11,711 +11,824 @@
 * Graph data structure invariants
 ********************************************************************************
 *
-* I) Given (GraphEdge *) e and (GraphVertex *) u
-* e->pSource points to u, iff u->outEdges contain e
-* e->pDestination points to u, iff u->inEdges contain e
+* I) Given an edge e and vertex u, it is always true that:
+* - e->source points to u, iff u->out_edges contain e
+* - e->destination points to u, iff u->in_edges contain e
 *
-* II) If the graph is undirected, an edge always comes from the GraphVertex of
-* smallest address to the one with largest address.
+* II) If the graph is undirected, an edge always comes from the vertex
+* of smallest address to the one with largest address.
 *
 * III) The ownership of the set cursors are given to specific functions:
-* 	- Graph::vertexSet -> graphGet*Vertex
-* 	- GraphVertex::outEdges -> graphGet*Neighbour / graphGet*OutNeighbour
-* 	- GraphVertex::inEdge -> graphGet*Neighbour / graphGet*InNeighbour
-*   Where * stands for either 'Next' or 'Previous'
+* 	- yadsl_Graph::vertex_set -> yadsl_graph_get_*_vertex
+* 	- yadsl_GraphVertex::out_edges -> yasdl_graph_get_*_total_nb_iter /
+*                                     yadsl_graph_get_*_out_nb_iter
+* 	- yasdl_GraphVertex::inEdge -> yasdl_graph_get_*_total_nb_iter /
+*                                  yadsl_graph_get_*_in_nb_iter
+*   Where * stands for either 'next' or 'previous'
 *
-* IV) GraphVertex::inEdgesToIterate must always be in between 0 and the
+* IV) yadsl_GraphVertex::in_edges_to_iterate must always be in between 0 and the
 * number of edges from which the vertex is DESTINATION
 *
-* V) GraphVertex::outEdgesToIterate must always be in between 0 and the
+* V) yadsl_GraphVertex::out_edges_to_iterate must always be in between 0 and the
 * number of edges from which the vertex is SOURCE
 *
-* VI) GraphVertex::outEdgesToIterate must never be lower than
-* GraphVertex::inEdgesToIterate.
+* VI) yadsl_GraphVertex::out_edges_to_iterate must never be lower than
+* yadsl_GraphVertex::in_edges_to_iterate.
 *
 *******************************************************************************/
 
-struct Graph
+typedef struct
 {
-	int isDirected; /* whether graph is directed or not */
-	Set *vertexSet; /* set of struct GraphVertex */
-	int (*cmpVertices)(void *a, void *b); /* compares GraphVertex::item */
-	int (*cmpEdges)(void *a, void *b); /* compares GraphEdge::item */
-	void (*freeVertex)(void *v); /* frees GraphVertex::item */
-	void (*freeEdge)(void *e); /* frees GraphEdge::item */
-};
+	bool is_directed; /**< whether graph is directed or not */
+	Set *vertex_set; /**< set of yadsl_GraphVertex */
+	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func; /**< compares yadsl_GraphVertex::item */
+	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func; /**< compares yadsl_GraphEdge::item */
+	yadsl_GraphFreeVertexObjFunc free_vertex_func; /**< frees yadsl_GraphVertex::item */
+	yadsl_GraphFreeEdgeObjFunc free_edge_func; /**< frees yadsl_GraphEdge::item */
+}
+yadsl_Graph;
 
-struct GraphVertex
+typedef struct
 {
-	void *item; /* generic portion of vertex */
-	int flag; /* flag (for dfs, bfs, coloring...) */
-	Set *outEdges; /* edges from which the vertex is SOURCE */
-	Set *inEdges; /* edges from which the vertex is DESTINATION */
-	size_t outEdgesToIterate; /* counter for graphGet*Neighbour */
-	size_t inEdgesToIterate; /* counter for graphGet*Neighbour */
-};
+	yadsl_GraphVertexObject* item; /**< generic portion of vertex */
+	yadsl_GraphVertexFlag flag; /**< flag (for dfs, bfs, coloring...) */
+	Set* out_edges; /**< edges from which the vertex is SOURCE */
+	Set* in_edges; /**< edges from which the vertex is DESTINATION */
+	size_t out_edges_to_iterate; /**< counter for graphGet*Neighbour */
+	size_t in_edges_to_iterate; /**< counter for graphGet*Neighbour */
+}
+yadsl_GraphVertex;
 
-struct GraphEdge
+typedef struct
 {
-	void *item; /* generic portion of edge */
-	struct GraphVertex *pSource; /* vertex from which the edge comes from */
-	struct GraphVertex *pDestination; /* vertex to with the edge goes to */
-};
+	yadsl_GraphEdgeObject *item; /**< generic portion of edge */
+	yadsl_GraphVertex* source; /**< vertex from which the edge comes from */
+	yadsl_GraphVertex* destination; /**< vertex to with the edge goes to */
+}
+yadsl_GraphEdge;
 
   /**********************************/
  /*  Private functions prototypes  */
 /**********************************/
 
 ///////////////////////////////////////////////
-// Parameter for _cmpVertexItem
+// Parameter for yadsl_GraphVertexItemCmpParam
 // item         - vertex 
-// cmpVertices  - comparison function
+// cmp_vertices_func  - comparison function
 //				  between vertices
 ///////////////////////////////////////////////
-struct _cmpVertexItemParam
+
+typedef struct
 {
-	void *item;
-	int (*cmpVertices)(void *a, void *b);
-};
+	yadsl_GraphVertexObject *item;
+	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func;
+}
+yadsl_GraphVertexItemCmpParam;
 
 ///////////////////////////////////////////////
 // Callbacks
 ///////////////////////////////////////////////
-static int _cmpEdgeDestination(struct GraphEdge *pEdge,
-	struct GraphVertex *pDestination);
-static int _cmpVertexItem(struct GraphVertex *pVertex,
-	struct _cmpVertexItemParam *par);
-static void _freeVertex(struct GraphVertex *pVertex, struct Graph *pGraph);
-static void _freeInEdge(struct GraphEdge *pEdge, void (*freeEdge)(void *e));
-static void _freeOutEdge(struct GraphEdge *pEdge, void (*freeEdge)(void *e));
-static int _setVertexFlag(struct GraphVertex *pVertex, int *flag);
+
+static int yadsl_graph_edge_dest_compare_internal(
+	yadsl_GraphEdge *edge,
+	yadsl_GraphVertex *destination);
+
+static int yadsl_graph_vertex_item_compare_internal(
+	yadsl_GraphVertex *vertex,
+	yadsl_GraphVertexItemCmpParam *par);
+
+static void yadsl_graph_vertex_free_internal(
+	yadsl_GraphVertex *vertex,
+	yadsl_Graph *graph);
+
+static void yadsl_graph_vertex_in_free_internal(
+	yadsl_GraphEdge *edge,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func);
+
+static void yadsl_graph_vertex_out_free_internal(
+	yadsl_GraphEdge *edge,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func);
+
+static int yadsl_graph_vertex_flag_set_internal(
+	yadsl_GraphVertex *vertex,
+	yadsl_GraphVertexFlag *flag);
 
 ///////////////////////////////////////////////
 // Internal use
 ///////////////////////////////////////////////
-static void _resetAdjListCounters(struct GraphVertex *pVertex, int orientation);
-static void _cycleSetCursor(Set *pSet, void **pValue, int orientation);
 
-GraphRet _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv, int direction, int orientation);
+static yadsl_GraphReturnCondition yadsl_graph_vertex_nb_total_next_get_internal(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	yadsl_GraphVertexObject** next_nb_ptr,
+	yadsl_GraphEdgeObject** edge_ptr);
 
-static GraphRet _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
-	struct GraphVertex *pVertexV, struct GraphVertex **ppSource,
-	struct GraphVertex **ppDestination, struct GraphEdge **ppEdgeUV);
+static yadsl_GraphReturnCondition yadsl_graph_vertex_nb_total_prev_get_internal(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	yadsl_GraphVertexObject** previous_nb_ptr,
+	yadsl_GraphEdgeObject** edge_ptr);
 
-#define _parseVertices(...) __parseVertices(__VA_ARGS__, NULL, NULL)
-static GraphRet __parseVertices(Graph *pGraph, void *item,
-	struct GraphVertex **ppVertex, ...);
+static void yadsl_graph_adj_list_counters_reset_internal(
+	yadsl_GraphVertex *vertex,
+	int orientation);
+
+static yadsl_GraphReturnCondition yadsl_graph_set_cursor_cycle_internal(
+	Set* set,
+	void** value_ptr,
+	yadsl_GraphIterationDirection iter_direction);
+
+static yadsl_GraphReturnCondition yadsl_graph_vertex_nb_get_internal(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphEdgeDirection edge_direction,
+	yadsl_GraphIterationDirection iter_direction,
+	yadsl_GraphVertexObject** v_ptr,
+	yadsl_GraphEdgeObject** uv_ptr);
+
+static yadsl_GraphReturnCondition yadsl_graph_edge_find_internal(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertex *u_vertex,
+	yadsl_GraphVertex *v_vertex,
+	yadsl_GraphVertex **source_ptr,
+	yadsl_GraphVertex **destination_ptr,
+	yadsl_GraphEdge **uv_edge_ptr);
+
+#define YADSL_GRAPH_VERTICES_FIND(...) \
+yadsl_graph_vertices_find_internal(__VA_ARGS__, NULL, NULL)
+
+static yadsl_GraphReturnCondition yadsl_graph_vertices_find_internal(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject *item,
+	yadsl_GraphVertex **vertex_ptr, ...);
 
   /**********************/
  /*  Public functions  */
 /**********************/
 
-GraphRet graphCreate(Graph **ppGraph,
-	int isDirected,
-	int (*cmpVertices)(void *a, void *b),
-	void (*freeVertex)(void *v),
-	int (*cmpEdges)(void *a, void *b),
-	void (*freeEdge)(void *e))
+yadsl_GraphHandle* yadsl_graph_create(
+	bool is_directed,
+	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func,
+	yadsl_GraphFreeVertexObjFunc free_vertex_func,
+	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func)
 {
-	struct Graph *pGraph;
-	pGraph = malloc(sizeof(struct Graph));
-	if (pGraph == NULL)
-		return GRAPH_MEMORY;
-	if (setCreate(&pGraph->vertexSet)) {
-		free(pGraph);
-		return GRAPH_MEMORY;
+	yadsl_Graph *graph = malloc(sizeof(*graph));
+	if (graph) {
+		if (setCreate(&graph->vertex_set)) {
+			free(graph);
+			return NULL;
+		}
+		graph->is_directed = is_directed;
+		graph->free_vertex_func = free_vertex_func;
+		graph->free_edge_func = free_edge_func;
+		graph->cmp_vertices_func = cmp_vertices_func;
+		graph->cmp_edges_func = cmp_edges_func;
 	}
-	pGraph->isDirected = isDirected;
-	pGraph->freeVertex = freeVertex;
-	pGraph->freeEdge = freeEdge;
-	pGraph->cmpVertices = cmpVertices;
-	pGraph->cmpEdges = cmpEdges;
-	*ppGraph = pGraph;
-	return GRAPH_OK;
+	return graph;
 }
 
-GraphRet graphGetNumberOfVertices(Graph *pGraph, size_t *pSize)
+yadsl_GraphReturnCondition yadsl_graph_vertex_count_get(
+	yadsl_GraphHandle *graph,
+	size_t *size_ptr)
 {
 	size_t temp;
-	if (setGetSize(pGraph->vertexSet, &temp)) assert(0);
-	*pSize = temp;
-	return GRAPH_OK;
+	if (setGetSize(((yadsl_Graph*) graph)->vertex_set, &temp))
+		assert(0);
+	*size_ptr = temp;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphGetNextVertex(Graph *pGraph, void **pV)
+yadsl_GraphReturnCondition yadsl_graph_vertex_iter(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphIterationDirection iter_direction,
+	yadsl_GraphVertexObject** curr_ptr)
 {
-	SetRet setId;
-	struct GraphVertex *pVertex = NULL;
-	if (setId = setGetCurrentItem(pGraph->vertexSet, &pVertex)) {
-		assert(setId == SET_EMPTY);
-		return GRAPH_EMPTY;
-	}
-	if (setId = setNextItem(pGraph->vertexSet)) {
-		assert(setId == SET_OUT_OF_BOUNDS);
-		if (setFirstItem(pGraph->vertexSet)) assert(0);
-	}
-	*pV = pVertex->item;
-	return GRAPH_OK;
-
+	size_t vertex_count;
+	yadsl_GraphVertex* vertex;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	Set* vertex_set = ((yadsl_Graph*) graph)->vertex_set;
+	if (setGetSize(vertex_set, &vertex_count))
+		assert(0);
+	if (vertex_count == 0)
+		return YADSL_GRAPH_RET_COND_EMPTY;
+	if (graph_ret_cond = yadsl_graph_set_cursor_cycle_internal(vertex_set, &vertex, iter_direction))
+		return graph_ret_cond;
+	*curr_ptr = vertex->item;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphGetPreviousVertex(Graph *pGraph, void **pV)
+yadsl_GraphReturnCondition yadsl_graph_is_directed_check(
+	yadsl_GraphHandle* graph,
+	bool* is_directed_ptr)
 {
-	SetRet setId;
-	struct GraphVertex *pVertex = NULL;
-	if (setId = setGetCurrentItem(pGraph->vertexSet, &pVertex)) {
-		assert(setId == SET_EMPTY);
-		return GRAPH_EMPTY;
-	}
-	if (setId = setPreviousItem(pGraph->vertexSet)) {
-		assert(setId == SET_OUT_OF_BOUNDS);
-		if (setLastItem(pGraph->vertexSet)) assert(0);
-	}
-	*pV = pVertex->item;
-	return GRAPH_OK;
-
+	*is_directed_ptr = ((yadsl_Graph *) graph)->is_directed;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphIsDirected(Graph *pGraph, int *pIsDirected)
+yadsl_GraphReturnCondition yadsl_graph_vertex_exists_check(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	bool* contains_ptr)
 {
-	*pIsDirected = pGraph->isDirected;
-	return GRAPH_OK;
-}
-
-GraphRet graphContainsVertex(Graph *pGraph, void *v, int *pContains)
-{
-	void *p; // does nothing with p
-	struct _cmpVertexItemParam par = { v, pGraph->cmpVertices };
-	switch (setFilterItem(pGraph->vertexSet, _cmpVertexItem, &par, &p)) {
+	void* p; // does nothing with p
+	yadsl_GraphVertexItemCmpParam par;
+	par.item = curr;
+	par.cmp_vertices_func = ((yadsl_Graph*) graph)->cmp_vertices_func;
+	switch (setFilterItem(((yadsl_Graph*) graph)->vertex_set, yadsl_graph_vertex_item_compare_internal, &par, &p)) {
 	case SET_OK:
-		*pContains = 1;
+		*contains_ptr = 1;
 		break;
 	case SET_DOES_NOT_CONTAIN:
-		*pContains = 0;
+		*contains_ptr = 0;
 		break;
 	default:
 		assert(0);
 	}
-	return GRAPH_OK;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphAddVertex(Graph *pGraph, void *v)
+yadsl_GraphReturnCondition yadsl_graph_vertex_add(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr)
 {
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
-	SetRet setId;
-	int containsVertex;
-	if (graphId = graphContainsVertex(pGraph, v, &containsVertex))
-		return graphId;
-	if (containsVertex)
-		return GRAPH_CONTAINS_VERTEX;
-	pVertex = malloc(sizeof(struct GraphVertex));
-	if (pVertex == NULL)
-		return GRAPH_MEMORY;
-	pVertex->item = v;
-	pVertex->flag = 0;
-	pVertex->inEdgesToIterate = 0;
-	pVertex->outEdgesToIterate = 0;
-	if (setCreate(&pVertex->inEdges)) {
-		free(pVertex);
-		return GRAPH_MEMORY;
+	yadsl_GraphVertex *vertex;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	SetRet set_ret_cond;
+	bool contains_vertex;
+	if (graph_ret_cond = yadsl_graph_vertex_exists_check(graph, curr, &contains_vertex))
+		return graph_ret_cond;
+	if (contains_vertex)
+		return YADSL_GRAPH_RET_COND_CONTAINS_VERTEX;
+	vertex = malloc(sizeof(yadsl_GraphVertex));
+	if (vertex == NULL)
+		return YADSL_GRAPH_RET_COND_MEMORY;
+	vertex->item = curr;
+	vertex->flag = 0;
+	vertex->in_edges_to_iterate = 0;
+	vertex->out_edges_to_iterate = 0;
+	if (setCreate(&vertex->in_edges)) {
+		free(vertex);
+		return YADSL_GRAPH_RET_COND_MEMORY;
 	}
-	if (setCreate(&pVertex->outEdges)) {
-		setDestroy(pVertex->inEdges);
-		free(pVertex);
-		return GRAPH_MEMORY;
+	if (setCreate(&vertex->out_edges)) {
+		setDestroy(vertex->in_edges);
+		free(vertex);
+		return YADSL_GRAPH_RET_COND_MEMORY;
 	}
-	if (setId = setAddItem(pGraph->vertexSet, pVertex)) {
-		setDestroy(pVertex->inEdges);
-		setDestroy(pVertex->outEdges);
-		free(pVertex);
-		assert(setId == SET_MEMORY);
-		return GRAPH_MEMORY;
+	if (set_ret_cond = setAddItem(((yadsl_Graph *) graph)->vertex_set, vertex)) {
+		setDestroy(vertex->in_edges);
+		setDestroy(vertex->out_edges);
+		free(vertex);
+		assert(set_ret_cond == SET_MEMORY);
+		return YADSL_GRAPH_RET_COND_MEMORY;
 	}
-	return GRAPH_OK;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphRemoveVertex(Graph *pGraph, void *v)
+yadsl_GraphReturnCondition yadsl_graph_vertex_remove(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr)
 {
-	struct GraphVertex *pVertex = NULL;
-	GraphRet graphId;
-	if (graphId = _parseVertices(pGraph, v, &pVertex))
-		return graphId;
-	if (setRemoveItem(pGraph->vertexSet, pVertex)) assert(0);
-	_freeVertex(pVertex, pGraph);
-	return GRAPH_OK;
+	yadsl_GraphVertex *vertex = NULL;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
+		return graph_ret_cond;
+	if (setRemoveItem(((yadsl_Graph*) graph)->vertex_set, vertex)) assert(0);
+	yadsl_graph_vertex_free_internal(vertex, graph);
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphAddEdge(Graph *pGraph, void *u, void *v, void *uv)
+yadsl_GraphReturnCondition yadsl_graph_edge_add(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphVertexObject* v,
+	yadsl_GraphEdgeObject* uv)
 {
-	struct GraphVertex *pVertexU = NULL, *pVertexV = NULL;
-	struct GraphEdge *pEdgeUV = NULL;
-	GraphRet graphId;
-	SetRet setId;
-	int containsEdge;
-	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
-		return graphId;
-	if (graphContainsEdge(pGraph, u, v, &containsEdge)) assert(0);
-	if (containsEdge)
-		return GRAPH_CONTAINS_EDGE;
-	pEdgeUV = malloc(sizeof(struct GraphEdge));
-	if (pEdgeUV == NULL)
-		return GRAPH_MEMORY;
-	pEdgeUV->item = uv;
-	if (pGraph->isDirected) {
-		pEdgeUV->pSource = pVertexU;
-		pEdgeUV->pDestination = pVertexV;
+	yadsl_GraphVertex *u_vertex = NULL, *v_vertex = NULL;
+	yadsl_GraphEdge *uv_edge = NULL;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	SetRet set_ret_cond;
+	bool contains_edge;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
+		return graph_ret_cond;
+	if (yadsl_graph_edge_exists_check(graph, u, v, &contains_edge))
+		assert(0);
+	if (contains_edge)
+		return YADSL_GRAPH_RET_COND_CONTAINS_EDGE;
+	uv_edge = malloc(sizeof(yadsl_GraphEdge));
+	if (uv_edge == NULL)
+		return YADSL_GRAPH_RET_COND_MEMORY;
+	uv_edge->item = uv;
+	if (((yadsl_Graph*) graph)->is_directed) {
+		uv_edge->source = u_vertex;
+		uv_edge->destination = v_vertex;
 	} else {
-		pEdgeUV->pSource = pVertexU < pVertexV ? pVertexU : pVertexV;
-		pEdgeUV->pDestination = pVertexU < pVertexV ? pVertexV : pVertexU;
+		uv_edge->source = u_vertex < v_vertex ? u_vertex : v_vertex;
+		uv_edge->destination = u_vertex < v_vertex ? v_vertex : u_vertex;
 	}
-	assert(pEdgeUV->pSource != NULL);
-	if (setId = setAddItem(pEdgeUV->pSource->outEdges, pEdgeUV)) {
-		free(pEdgeUV);
-		assert(setId == SET_MEMORY);
-		return GRAPH_MEMORY;
+	assert(uv_edge->source != NULL);
+	if (set_ret_cond = setAddItem(uv_edge->source->out_edges, uv_edge)) {
+		free(uv_edge);
+		assert(set_ret_cond == SET_MEMORY);
+		return YADSL_GRAPH_RET_COND_MEMORY;
 	}
-	_resetAdjListCounters(pEdgeUV->pSource, 1);
-	assert(pEdgeUV->pDestination != NULL);
-	if (setId = setAddItem(pEdgeUV->pDestination->inEdges, pEdgeUV)) {
-		if (setRemoveItem(pEdgeUV->pSource->outEdges, pEdgeUV)) assert(0);
-		free(pEdgeUV);
-		assert(setId == SET_MEMORY);
-		return GRAPH_MEMORY;
+	yadsl_graph_adj_list_counters_reset_internal(uv_edge->source, 1);
+	assert(uv_edge->destination != NULL);
+	if (set_ret_cond = setAddItem(uv_edge->destination->in_edges, uv_edge)) {
+		if (setRemoveItem(uv_edge->source->out_edges, uv_edge)) assert(0);
+		free(uv_edge);
+		assert(set_ret_cond == SET_MEMORY);
+		return YADSL_GRAPH_RET_COND_MEMORY;
 	}
-	_resetAdjListCounters(pEdgeUV->pDestination, 1);
-	return GRAPH_OK;
+	yadsl_graph_adj_list_counters_reset_internal(uv_edge->destination, 1);
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphContainsEdge(Graph *pGraph, void *u, void *v, int *pContains)
+yadsl_GraphReturnCondition yadsl_graph_edge_exists_check(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphVertexObject* v,
+	bool* contains_ptr)
 {
-	struct GraphVertex *pVertexU = NULL, *pVertexV = NULL;
-	GraphRet graphId;
-	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
-		return graphId;
-	switch (_parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, NULL)) {
-	case GRAPH_OK:
-		*pContains = 1;
+	yadsl_GraphVertex *u_vertex = NULL, *v_vertex = NULL;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
+		return graph_ret_cond;
+	switch (yadsl_graph_edge_find_internal(graph, u_vertex, v_vertex, NULL, NULL, NULL)) {
+	case YADSL_GRAPH_RET_COND_OK:
+		*contains_ptr = 1;
 		break;
-	case GRAPH_DOES_NOT_CONTAIN_EDGE:
-		*pContains = 0;
+	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE:
+		*contains_ptr = 0;
 		break;
 	default:
 		assert(0);
 	}
-	return GRAPH_OK;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphRemoveEdge(Graph *pGraph, void *u, void *v)
+yadsl_GraphReturnCondition yadsl_graph_edge_remove(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphVertexObject* v)
 {
-	struct GraphVertex *pVertexU = NULL, *pVertexV = NULL,
-		*pSource = NULL, *pDestination = NULL;
-	struct GraphEdge *pEdgeUV = NULL;
-	GraphRet graphId;
-	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
-		return graphId;
-	if (graphId = _parseEdge(pGraph, pVertexU, pVertexV, &pSource,
-		&pDestination, &pEdgeUV))
-		return graphId;
-	if (setRemoveItem(pSource->outEdges, pEdgeUV)) assert(0);
-	_resetAdjListCounters(pSource, 1);
-	if (setRemoveItem(pDestination->inEdges, pEdgeUV)) assert(0);
-	_resetAdjListCounters(pDestination, 1);
-	if (pGraph->freeEdge)
-		pGraph->freeEdge(pEdgeUV->item);
-	free(pEdgeUV);
-	return GRAPH_OK;
+	yadsl_GraphVertex *u_vertex = NULL, *v_vertex = NULL,
+		*source = NULL, *destination = NULL;
+	yadsl_GraphEdge *uv_edge = NULL;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
+		return graph_ret_cond;
+	if (graph_ret_cond = yadsl_graph_edge_find_internal(graph, u_vertex, v_vertex, &source,
+		&destination, &uv_edge))
+		return graph_ret_cond;
+	if (setRemoveItem(source->out_edges, uv_edge)) assert(0);
+	yadsl_graph_adj_list_counters_reset_internal(source, 1);
+	if (setRemoveItem(destination->in_edges, uv_edge)) assert(0);
+	yadsl_graph_adj_list_counters_reset_internal(destination, 1);
+	if (((yadsl_Graph *) graph)->free_edge_func)
+		((yadsl_Graph*) graph)->free_edge_func(uv_edge->item);
+	free(uv_edge);
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphGetEdge(Graph *pGraph, void *u, void *v, void **uv)
+yadsl_GraphReturnCondition yadsl_graph_edge_get(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphVertexObject* v,
+	yadsl_GraphEdgeObject** uv_ptr)
 {
-	struct GraphVertex *pVertexU, *pVertexV;
-	struct GraphEdge *temp;
-	GraphRet graphId;
-	if (graphId = _parseVertices(pGraph, u, &pVertexU, v, &pVertexV))
-		return graphId;
-	if (graphId = _parseEdge(pGraph, pVertexU, pVertexV, NULL, NULL, &temp))
-		return graphId;
-	*uv = temp->item;
-	return GRAPH_OK;
+	yadsl_GraphVertex *u_vertex, *v_vertex;
+	yadsl_GraphEdge *temp;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
+		return graph_ret_cond;
+	if (graph_ret_cond = yadsl_graph_edge_find_internal(graph, u_vertex, v_vertex, NULL, NULL, &temp))
+		return graph_ret_cond;
+	*uv_ptr = temp->item;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphGetVertexOutDegree(Graph *pGraph, void *v,
-	size_t *pOut)
+yadsl_GraphReturnCondition yadsl_graph_vertex_degree_get(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	yadsl_GraphEdgeDirection edge_direction,
+	size_t* degree_ptr)
 {
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
-	size_t temp;
-	if (graphId = _parseVertices(pGraph, v, &pVertex))
-		return graphId;
-	if (setGetSize(pVertex->outEdges, &temp)) assert(0);
-	*pOut = temp;
-	return GRAPH_OK;
-}
-
-GraphRet graphGetVertexInDegree(Graph *pGraph, void *v,
-	size_t *pIn)
-{
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
-	size_t temp;
-	if (graphId = _parseVertices(pGraph, v, &pVertex))
-		return graphId;
-	if (setGetSize(pVertex->inEdges, &temp)) assert(0);
-	*pIn = temp;
-	return GRAPH_OK;
-}
-
-GraphRet graphGetVertexDegree(Graph *pGraph, void *v,
-	size_t *pDegree)
-{
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
+	yadsl_GraphVertex* vertex;
+	yadsl_GraphReturnCondition graph_ret_cond;
 	size_t in, out;
-	if (graphId = _parseVertices(pGraph, v, &pVertex))
-		return graphId;
-	if (setGetSize(pVertex->inEdges, &in)) assert(0);
-	if (setGetSize(pVertex->outEdges, &out)) assert(0);
-	*pDegree = in + out;
-	return GRAPH_OK;
-}
-
-GraphRet graphGetNextNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv)
-{
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
-	size_t inSize, outSize;
-	struct GraphEdge *temp;
-	if (graphId = _parseVertices(pGraph, u, &pVertex))
-		return graphId;
-	if (setGetSize(pVertex->inEdges, &inSize)) assert(0);
-	if (setGetSize(pVertex->outEdges, &outSize)) assert(0);
-	if (inSize == 0 && outSize == 0)
-		return GRAPH_DOES_NOT_CONTAIN_EDGE;
-	if (inSize == 0) {
-		// thus, outSize > 0
-		_cycleSetCursor(pVertex->outEdges, &temp, 1);
-	} else if (outSize == 0) {
-		// thus, inSize > 0
-		_cycleSetCursor(pVertex->inEdges, &temp, 1);
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
+		return graph_ret_cond;
+	if (edge_direction & YADSL_GRAPH_EDGE_DIR_IN) {
+		if (setGetSize(vertex->in_edges, &in))
+			assert(0);
 	} else {
-		// thus, both are > 0
-		if (pVertex->inEdgesToIterate == 0 &&
-			pVertex->outEdgesToIterate == 0) {
-			_resetAdjListCounters(pVertex, 1);
-			goto flag;
-		} else if (pVertex->inEdgesToIterate == 0) {
-			// thus, outEdgesIterated > 0
-			_cycleSetCursor(pVertex->outEdges, &temp, 1);
-			--pVertex->outEdgesToIterate;
-		} else {
-		flag:
-			// thus, inEdgesToIterate > 0
-			_cycleSetCursor(pVertex->inEdges, &temp, 1);
-			--pVertex->inEdgesToIterate;
-		}
+		in = 0;
 	}
-	*pV = temp->pDestination == pVertex ?
-		temp->pSource->item : temp->pDestination->item;
-	*uv = temp->item;
-	return GRAPH_OK;
-}
-
-GraphRet graphGetPreviousNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv)
-{
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
-	size_t inSize, outSize;
-	struct GraphEdge *temp;
-	if (graphId = _parseVertices(pGraph, u, &pVertex))
-		return graphId;
-	if (setGetSize(pVertex->inEdges, &inSize)) assert(0);
-	if (setGetSize(pVertex->outEdges, &outSize)) assert(0);
-	if (inSize == 0 && outSize == 0)
-		return GRAPH_DOES_NOT_CONTAIN_EDGE;
-	if (inSize == 0) {
-		// thus, outSize > 0
-		_cycleSetCursor(pVertex->outEdges, &temp, -1);
-	} else if (outSize == 0) {
-		// thus, inSize > 0
-		_cycleSetCursor(pVertex->inEdges, &temp, -1);
+	if (edge_direction & YADSL_GRAPH_EDGE_DIR_OUT) {
+		if (setGetSize(vertex->out_edges, &out))
+			assert(0);
 	} else {
-		// thus, both are > 0
-		if (pVertex->inEdgesToIterate == inSize) {
-			_resetAdjListCounters(pVertex, -1);
-			goto flag;
-		} else if (pVertex->outEdgesToIterate == outSize) {
-			// thus, inEdgesToIterate < inSize
-			_cycleSetCursor(pVertex->inEdges, &temp, -1);
-			++pVertex->inEdgesToIterate;
-		} else {
-		flag:
-			// thus, outEdgesToIterate < outSize
-			_cycleSetCursor(pVertex->outEdges, &temp, -1);
-			++pVertex->outEdgesToIterate;
-		}
+		out = 0;
 	}
-	*pV = temp->pDestination == pVertex ?
-		temp->pSource->item : temp->pDestination->item;
-	*uv = temp->item;
-	return GRAPH_OK;
+	*degree_ptr = in + out;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphGetNextInNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv)
+yadsl_GraphReturnCondition yadsl_graph_vertex_nb_iter(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* vertex,
+	yadsl_GraphEdgeDirection edge_direction,
+	yadsl_GraphIterationDirection iter_direction,
+	yadsl_GraphVertexObject** nb_ptr,
+	yadsl_GraphEdgeObject** edge_ptr)
 {
-	return _graphGetNeighbour(pGraph, u, pV, uv, 1, 1);
+	if (edge_direction == YADSL_GRAPH_EDGE_DIR_BOTH) {
+		switch (iter_direction) {
+		case YADSL_GRAPH_ITER_DIR_NEXT:
+			return yadsl_graph_vertex_nb_total_next_get_internal(
+				graph, vertex, nb_ptr, edge_ptr);
+		case YADSL_GRAPH_ITER_DIR_PREVIOUS:
+			return yadsl_graph_vertex_nb_total_prev_get_internal(
+				graph, vertex, nb_ptr, edge_ptr);
+		default:
+			return YADSL_GRAPH_RET_COND_PARAMETER;
+		}
+	} else {
+		return yadsl_graph_vertex_nb_get_internal(
+			graph, vertex, edge_direction, iter_direction, nb_ptr, edge_ptr);
+	}
 }
 
-GraphRet graphGetPreviousInNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv)
+yadsl_GraphReturnCondition yadsl_graph_vertex_flag_get(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	yadsl_GraphVertexFlag* flag_ptr)
 {
-	return _graphGetNeighbour(pGraph, u, pV, uv, 1, -1);
+	yadsl_GraphVertex *vertex;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
+		return graph_ret_cond;
+	*flag_ptr = vertex->flag;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphGetNextOutNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv)
+yadsl_GraphReturnCondition yadsl_graph_vertex_flag_set(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	yadsl_GraphVertexFlag flag)
 {
-	return _graphGetNeighbour(pGraph, u, pV, uv, -1, 1);
+	yadsl_GraphVertex *vertex;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
+		return graph_ret_cond;
+	vertex->flag = flag;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-GraphRet graphGetPreviousOutNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv)
-{
-	return _graphGetNeighbour(pGraph, u, pV, uv, -1, -1);
-}
-
-GraphRet graphGetVertexFlag(Graph *pGraph, void *v, int *pFlag)
-{
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
-	if (graphId = _parseVertices(pGraph, v, &pVertex))
-		return graphId;
-	*pFlag = pVertex->flag;
-	return GRAPH_OK;
-}
-
-GraphRet graphSetVertexFlag(Graph *pGraph, void *v, int flag)
-{
-	struct GraphVertex *pVertex;
-	GraphRet graphId;
-	if (graphId = _parseVertices(pGraph, v, &pVertex))
-		return graphId;
-	pVertex->flag = flag;
-	return GRAPH_OK;
-}
-
-GraphRet graphSetAllVerticesFlags(Graph *pGraph, int flag)
+yadsl_GraphReturnCondition yadsl_graph_vertex_flag_set_all(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexFlag flag)
 {
 	void *temp;
-	if(setFilterItem(pGraph->vertexSet, _setVertexFlag, &flag, &temp)
-		!= SET_DOES_NOT_CONTAIN) // _setVertexFlag only returns 0
+	if(setFilterItem(((yadsl_Graph*) graph)->vertex_set, yadsl_graph_vertex_flag_set_internal, &flag, &temp)
+		!= SET_DOES_NOT_CONTAIN) // yadsl_graph_vertex_flag_set_internal only returns 0
 		assert(0);
-	return GRAPH_OK;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
-void graphDestroy(Graph *pGraph)
+void yadsl_graph_destroy(yadsl_GraphHandle *graph)
 {
-	if (pGraph == NULL)
+	if (graph == NULL)
 		return;
-	setDestroyDeep(pGraph->vertexSet, _freeVertex, pGraph);
-	free(pGraph);
+	setDestroyDeep(((yadsl_Graph*) graph)->vertex_set, yadsl_graph_vertex_free_internal, graph);
+	free(graph);
 }
 
   /**************************************/
  /*  Private functions implementation  */
 /**************************************/
 
-// Cycle set cursor (when reaches end, go to first)
-// orientation = 1 (next) or -1 (previous)
-// If an error occurs, returns 1, else 0.
-// [!] Assumes set is not empty!
-static void _cycleSetCursor(Set *pSet, void **pValue, int orientation)
+yadsl_GraphReturnCondition yadsl_graph_vertex_nb_total_next_get_internal(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	yadsl_GraphVertexObject** next_nb_ptr,
+	yadsl_GraphEdgeObject** edge_ptr)
 {
-	SetRet setId;
-	SetRet (*cycleFunc)(Set *);
-	SetRet (*resetFunc)(Set *);
-	void *temp;
-	assert(orientation == 1 || orientation == -1);
-	cycleFunc = orientation == 1 ? setNextItem : setPreviousItem;
-	resetFunc = orientation == 1 ? setFirstItem : setLastItem;
-	if (setGetCurrentItem(pSet, &temp)) assert(0);
-	if (setId = cycleFunc(pSet)) {
-		assert(setId == SET_OUT_OF_BOUNDS);
-		if (resetFunc(pSet)) assert(0);
+	yadsl_GraphVertex* vertex;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	size_t in_size, out_size;
+	yadsl_GraphEdge* temp;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
+		return graph_ret_cond;
+	if (setGetSize(vertex->in_edges, &in_size)) assert(0);
+	if (setGetSize(vertex->out_edges, &out_size)) assert(0);
+	if (in_size == 0 && out_size == 0)
+		return YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE;
+	if (in_size == 0) {
+		// thus, out_size > 0
+		yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+	} else if (out_size == 0) {
+		// thus, in_size > 0
+		yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+	} else {
+		// thus, both are > 0
+		if (vertex->in_edges_to_iterate == 0 &&
+			vertex->out_edges_to_iterate == 0) {
+			yadsl_graph_adj_list_counters_reset_internal(vertex, 1);
+			goto flag;
+		} else if (vertex->in_edges_to_iterate == 0) {
+			// thus, outEdgesIterated > 0
+			yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+			--vertex->out_edges_to_iterate;
+		} else {
+		flag:
+			// thus, in_edges_to_iterate > 0
+			yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+			--vertex->in_edges_to_iterate;
+		}
 	}
-	*pValue = temp;
+	*next_nb_ptr = temp->destination == vertex ?
+		temp->source->item : temp->destination->item;
+	*edge_ptr = temp->item;
+	return YADSL_GRAPH_RET_COND_OK;
+}
+
+yadsl_GraphReturnCondition yadsl_graph_vertex_nb_total_prev_get_internal(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* curr,
+	yadsl_GraphVertexObject** previous_nb_ptr,
+	yadsl_GraphEdgeObject** edge_ptr)
+{
+	yadsl_GraphVertex* vertex;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	size_t in_size, out_size;
+	yadsl_GraphEdge* temp;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
+		return graph_ret_cond;
+	if (setGetSize(vertex->in_edges, &in_size)) assert(0);
+	if (setGetSize(vertex->out_edges, &out_size)) assert(0);
+	if (in_size == 0 && out_size == 0)
+		return YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE;
+	if (in_size == 0) {
+		// thus, out_size > 0
+		if (yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+			assert(0);
+	} else if (out_size == 0) {
+		// thus, in_size > 0
+		if (yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+			assert(0);
+	} else {
+		// thus, both are > 0
+		if (vertex->in_edges_to_iterate == in_size) {
+			yadsl_graph_adj_list_counters_reset_internal(vertex, -1);
+			goto flag;
+		} else if (vertex->out_edges_to_iterate == out_size) {
+			// thus, in_edges_to_iterate < in_size
+			if (yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+				assert(0);
+			++vertex->in_edges_to_iterate;
+		} else {
+		flag:
+			// thus, out_edges_to_iterate < out_size
+			if (yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+				assert(0);
+			++vertex->out_edges_to_iterate;
+		}
+	}
+	*previous_nb_ptr = temp->destination == vertex ?
+		temp->source->item : temp->destination->item;
+	*edge_ptr = temp->item;
+	return YADSL_GRAPH_RET_COND_OK;
+}
+
+// Cycle set cursor (when reaches end, go to first)
+// [!] Assumes set is not empty!
+yadsl_GraphReturnCondition yadsl_graph_set_cursor_cycle_internal(
+	Set *set,
+	void **value_ptr,
+	yadsl_GraphIterationDirection iter_direction)
+{
+	SetRet set_ret_cond;
+	SetRet (*cycle_func)(Set *);
+	SetRet (*reset_func)(Set *);
+	void *temp;
+	switch (iter_direction) {
+	case YADSL_GRAPH_ITER_DIR_NEXT:
+		cycle_func = setNextItem;
+		reset_func = setFirstItem;
+		break;
+	case YADSL_GRAPH_ITER_DIR_PREVIOUS:
+		cycle_func = setPreviousItem;
+		reset_func = setLastItem;
+		break;
+	default:
+		return YADSL_GRAPH_RET_COND_PARAMETER;
+	}
+	if (setGetCurrentItem(set, &temp)) assert(0);
+	if (set_ret_cond = cycle_func(set)) {
+		assert(set_ret_cond == SET_OUT_OF_BOUNDS);
+		if (reset_func(set)) assert(0);
+	}
+	*value_ptr = temp;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
 // Reset set cursors (due to getNeighbour contract)
-static void _resetAdjListCounters(struct GraphVertex *pVertex, int orientation)
+void yadsl_graph_adj_list_counters_reset_internal(
+	yadsl_GraphVertex *vertex,
+	int orientation)
 {
 	assert(orientation == 1 || orientation == -1);
 	if (orientation == 1) {
-		setFirstItem(pVertex->inEdges);
-		setFirstItem(pVertex->outEdges);
-		setGetSize(pVertex->inEdges, &pVertex->inEdgesToIterate);
-		setGetSize(pVertex->outEdges, &pVertex->outEdgesToIterate);
+		setFirstItem(vertex->in_edges);
+		setFirstItem(vertex->out_edges);
+		setGetSize(vertex->in_edges, &vertex->in_edges_to_iterate);
+		setGetSize(vertex->out_edges, &vertex->out_edges_to_iterate);
 	} else {
-		setLastItem(pVertex->inEdges);
-		setLastItem(pVertex->outEdges);
-		pVertex->inEdgesToIterate = 0;
-		pVertex->outEdgesToIterate = 0;
+		setLastItem(vertex->in_edges);
+		setLastItem(vertex->out_edges);
+		vertex->in_edges_to_iterate = 0;
+		vertex->out_edges_to_iterate = 0;
 	}
 }
 
 // Compares destination from edge and the one provided
-static int _cmpEdgeDestination(struct GraphEdge *pEdge,
-	struct GraphVertex *pDestination)
+int yadsl_graph_edge_dest_compare_internal(
+	yadsl_GraphEdge *edge_ptr,
+	yadsl_GraphVertex *destination)
 {
-	return pEdge->pDestination == pDestination;
+	return edge_ptr->destination == destination;
 }
 
 // Compares item from graph vertex struct and item
-static int _cmpVertexItem(struct GraphVertex *pVertex,
-	struct _cmpVertexItemParam *par)
+int yadsl_graph_vertex_item_compare_internal(
+	yadsl_GraphVertex *vertex,
+	yadsl_GraphVertexItemCmpParam *par)
 {
-	if (par->cmpVertices)
-		return par->cmpVertices(par->item, pVertex->item);
-	return pVertex->item == par->item;
+	if (par->cmp_vertices_func)
+		return par->cmp_vertices_func(par->item, vertex->item);
+	return vertex->item == par->item;
 }
 
-// Called by setlib while removing pVertex from pGraph->vertexSet
-static void _freeVertex(struct GraphVertex *pVertex, struct Graph *pGraph)
+// Called by setlib while removing vertex from graph->vertex_set
+void yadsl_graph_vertex_free_internal(
+	yadsl_GraphVertex *vertex,
+	yadsl_Graph *graph)
 {
-	if (pGraph->freeVertex)
-		pGraph->freeVertex(pVertex->item);
-	setDestroyDeep(pVertex->inEdges, _freeInEdge, pGraph->freeEdge);
-	setDestroyDeep(pVertex->outEdges, _freeOutEdge, pGraph->freeEdge);
-	free(pVertex);
+	if (graph->free_vertex_func)
+		graph->free_vertex_func(vertex->item);
+	setDestroyDeep(vertex->in_edges, yadsl_graph_vertex_in_free_internal, graph->free_edge_func);
+	setDestroyDeep(vertex->out_edges, yadsl_graph_vertex_out_free_internal, graph->free_edge_func);
+	free(vertex);
 }
 
-// Called by setlib while removing pEdge from pEdge->pDestination->inEdges
-static void _freeInEdge(struct GraphEdge *pEdge, void (*freeEdge)(void *e))
+// Called by setlib while removing edge from edge->destination->in_edges
+void yadsl_graph_vertex_in_free_internal(
+	yadsl_GraphEdge *edge_ptr,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func)
 {
-	setRemoveItem(pEdge->pSource->outEdges, pEdge);
-	if (freeEdge)
-		freeEdge(pEdge->item);
-	free(pEdge);
+	setRemoveItem(edge_ptr->source->out_edges, edge_ptr);
+	if (free_edge_func)
+		free_edge_func(edge_ptr->item);
+	free(edge_ptr);
 }
 
-// Called by setlib while removing pEdge from pEdge->pSource->outEdges
-static void _freeOutEdge(struct GraphEdge *pEdge, void (*freeEdge)(void *e))
+// Called by setlib while removing edge from edge->source->out_edges
+void yadsl_graph_vertex_out_free_internal(
+	yadsl_GraphEdge *edge_ptr,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func)
 {
-	setRemoveItem(pEdge->pDestination->inEdges, pEdge);
-	if (freeEdge)
-		freeEdge(pEdge->item);
-	free(pEdge);
+	setRemoveItem(edge_ptr->destination->in_edges, edge_ptr);
+	if (free_edge_func)
+		free_edge_func(edge_ptr->item);
+	free(edge_ptr);
 }
 
-// Retrieves the edge uv through the vertices u and v
-// ppSource, ppDestination and ppEdgeUV are optional and
+// Retrieves the edge uv through the vertices u and vertex
+// source_ptr, destination_ptr and uv_edge_ptr are optional and
 // NULL can be parsed without a problem.
 // Possible errors:
 // GRAPH_INVALID_PARAMETER
-//	- "pGraph" is NULL
-//	- "pVertexU" is NULL
-//	- "pVertexV" is NULL
+//	- "graph" is NULL
+//	- "u_vertex" is NULL
+//	- "v_vertex" is NULL
 // GRAPH_DOES_NOT_CONTAIN_EDGE
-static GraphRet _parseEdge(Graph *pGraph, struct GraphVertex *pVertexU,
-	struct GraphVertex *pVertexV, struct GraphVertex **ppSource,
-	struct GraphVertex **ppDestination, struct GraphEdge **ppEdgeUV)
+yadsl_GraphReturnCondition yadsl_graph_edge_find_internal(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertex *u_vertex,
+	yadsl_GraphVertex *v_vertex,
+	yadsl_GraphVertex **source_ptr,
+	yadsl_GraphVertex **destination_ptr,
+	yadsl_GraphEdge **uv_edge_ptr)
 {
-	struct GraphVertex *pSource, *pDestination;
-	struct GraphEdge *pEdgeUV;
-	SetRet setId;
-	pSource = (pGraph->isDirected || pVertexU < pVertexV) ?
-		pVertexU : pVertexV;
-	pDestination = pVertexU == pSource ? pVertexV : pVertexU;
-	setId = setFilterItem(
-		pSource->outEdges,   /* pSet */
-		_cmpEdgeDestination, /* func */
-		pDestination,        /* arg */
-		&pEdgeUV);           /* pItem */
-	switch (setId) {
+	yadsl_GraphVertex *source, *destination;
+	yadsl_GraphEdge *uv_edge;
+	SetRet set_ret_cond;
+	source = (((yadsl_Graph*) graph)->is_directed || u_vertex < v_vertex) ?
+		u_vertex : v_vertex;
+	destination = u_vertex == source ? v_vertex : u_vertex;
+	set_ret_cond = setFilterItem(
+		source->out_edges,   /* set */
+		yadsl_graph_edge_dest_compare_internal, /* func */
+		destination,        /* arg */
+		&uv_edge);           /* item_ptr */
+	switch (set_ret_cond) {
 	case SET_OK:
-		if (ppSource) *ppSource = pSource;
-		if (ppDestination) *ppDestination = pDestination;
-		if (ppEdgeUV) *ppEdgeUV = pEdgeUV;
+		if (source_ptr) *source_ptr = source;
+		if (destination_ptr) *destination_ptr = destination;
+		if (uv_edge_ptr) *uv_edge_ptr = uv_edge;
 		break;
 	case SET_DOES_NOT_CONTAIN:
-		return GRAPH_DOES_NOT_CONTAIN_EDGE;
+		return YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE;
 	default:
 		assert(0);
 	}
-	return GRAPH_OK;;
+	return YADSL_GRAPH_RET_COND_OK;;
 }
 
 // Retrieves the vertices through the items contained in them.
-// The item and ppVertex arguments must be alternated, and end with two NULLs:
-// __parseVertices(pGrpah, u, &pU, v, &pV, w, &pW, NULL, NULL);
-// The macro with only one '_' already does the above requirement.
-// Does not alter the vertexSet cursor pointer, only the current pointer,
+// The item and curr_ptr arguments must be alternated, and end with two NULLs:
+// yadsl_graph_vertices_find_internal(graph, u, &u_vertex_ptr, v, &v_vertex_ptr, w, &w_vertex_ptr, NULL, NULL);
+// The macro YADSL_GRAPH_RET_COND_VERTICES_FIND already adds the trailing two NULLs.
+// Does not alter the vertex_set cursor pointer, only the current pointer,
 // which is of internal use, and doesn't interfeer with NextVertex iteration.
 // Possible errors:
 // GRAPH_INVALID_PARAMETER
-//  - "pGraph" is NULL
-//  - "ppVertex" is NULL
+//  - "graph" is NULL
+//  - "curr_ptr" is NULL
 // GRAPH_DOES_NOT_CONTAIN_VERTEX
-static GraphRet __parseVertices(Graph *pGraph, void *item,
-	struct GraphVertex **ppVertex, ...)
+yadsl_GraphReturnCondition yadsl_graph_vertices_find_internal(
+	yadsl_GraphHandle *graph,
+	yadsl_GraphVertexObject *item,
+	yadsl_GraphVertex **vertex_ptr, ...)
 {
-	SetRet setId;
+	SetRet set_ret_cond;
 	va_list va;
-	struct _cmpVertexItemParam param;
+	yadsl_GraphVertexItemCmpParam param;
 	param.item = item;
-	param.cmpVertices = pGraph->cmpVertices;
-	va_start(va, ppVertex);
+	param.cmp_vertices_func = ((yadsl_Graph*) graph)->cmp_vertices_func;
+	va_start(va, vertex_ptr);
 	do {
-		if (setId = setFilterItem(
-			pGraph->vertexSet, /* pSet */
-			_cmpVertexItem,    /* func */
-			&param,            /* arg */
-			ppVertex)) {       /* pItem */
+		if (set_ret_cond = setFilterItem(
+			((yadsl_Graph*) graph)->vertex_set,        /* set */
+			yadsl_graph_vertex_item_compare_internal,  /* func */
+			&param,                                    /* arg */
+			vertex_ptr)) {                               /* item_ptr */
 			va_end(va);
-			assert(setId == SET_DOES_NOT_CONTAIN);
-			return GRAPH_DOES_NOT_CONTAIN_VERTEX;
+			assert(set_ret_cond == SET_DOES_NOT_CONTAIN);
+			return YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX;
 		}
-		param.item = va_arg(va, void *);
-		if (!(ppVertex = va_arg(va, struct GraphVertex **)))
+		param.item = va_arg(va, yadsl_GraphVertexObject*);
+		if (!(vertex_ptr = va_arg(va, yadsl_GraphVertex **)))
 			break; /* sentinel */
 	} while (1);
 	va_end(va);
-	return GRAPH_OK;
+	return YADSL_GRAPH_RET_COND_OK;
 }
 
 // set vertex flag to *flag
-static int _setVertexFlag(struct GraphVertex *pVertex, int *flag)
+int yadsl_graph_vertex_flag_set_internal(
+	yadsl_GraphVertex *vertex,
+	yadsl_GraphVertexFlag *flag)
 {
-	pVertex->flag = *flag;
+	vertex->flag = *flag;
 	return 0;
 }
 
 // Generic function for obtaining neighbour of a defined edge set
-// direction = 1 for inEdges, -1 for outEdges
-// orientation = 1 for Next, -1 for Previous
-// The other parameters are the same of graphGet(1)(2)Neighbour,
-// where (1) is in {'Next', 'Previous'} and (2) is in {'In', 'Out'}.
-GraphRet _graphGetNeighbour(Graph *pGraph, void *u, void **pV,
-	void **uv, int direction, int orientation)
+yadsl_GraphReturnCondition yadsl_graph_vertex_nb_get_internal(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* u,
+	yadsl_GraphEdgeDirection edge_direction,
+	yadsl_GraphIterationDirection iter_direction,
+	yadsl_GraphVertexObject** v_ptr,
+	yadsl_GraphEdgeObject ** uv_ptr)
 {
-	struct GraphVertex *pVertex;
-	Set *pSet;
-	GraphRet graphId;
-	size_t setSize;
-	struct GraphEdge *temp;
-	if (graphId = _parseVertices(pGraph, u, &pVertex))
-		return graphId;
-	assert(direction == 1 || direction == -1);
-	pSet = direction == 1 ? pVertex->inEdges : pVertex->outEdges;
-	if (setGetSize(pSet, &setSize)) assert(0);
-	if (setSize == 0)
-		return GRAPH_DOES_NOT_CONTAIN_EDGE;
-	_cycleSetCursor(pSet, &temp, orientation);
-	*pV = direction == 1 ? temp->pSource->item : temp->pDestination->item;
-	*uv = temp->item;
-	return GRAPH_OK;
+	yadsl_GraphVertex *vertex;
+	Set *set;
+	yadsl_GraphReturnCondition graph_ret_cond;
+	size_t set_size;
+	yadsl_GraphEdge *temp;
+	if (graph_ret_cond = YADSL_GRAPH_VERTICES_FIND(graph, u, &vertex))
+		return graph_ret_cond;
+	switch (edge_direction) {
+	case YADSL_GRAPH_EDGE_DIR_IN:
+		set = vertex->in_edges;
+		break;
+	case YADSL_GRAPH_EDGE_DIR_OUT:
+		set = vertex->out_edges;
+		break;
+	default:
+		return YADSL_GRAPH_RET_COND_PARAMETER;
+	}
+	if (setGetSize(set, &set_size)) assert(0);
+	if (set_size == 0)
+		return YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE;
+	if (graph_ret_cond = yadsl_graph_set_cursor_cycle_internal(set, &temp, iter_direction))
+		return graph_ret_cond;
+	*v_ptr = edge_direction == YADSL_GRAPH_EDGE_DIR_IN ? temp->source->item : temp->destination->item;
+	*uv_ptr = temp->item;
+	return YADSL_GRAPH_RET_COND_OK;
 }

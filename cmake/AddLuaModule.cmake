@@ -18,6 +18,6 @@ function(add_lua_module target modulename)
 	endif()
 	set_target_properties(${target} PROPERTIES FOLDER lua)
 	
-	include(moveLibraries)
-	move_target_library(${target})
+	include(CopyTargetFileDirectory)
+	copy_target_file_directory(${target})
 endfunction()

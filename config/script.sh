@@ -22,14 +22,14 @@ build_and_run_c_tests() {
 
 run_python_tests() {
 	if [[ -n "$PYENV_VERSION" ]]; then
-		export PYTHONPATH=$PWD/lib64
+		export PYTHONPATH=$PWD/lib64:$PYTHONPATH
 		pytest -s
 	fi
 }
 
 run_lua_tests() {
 	if [[ -n "$LUA_VERSION" ]]; then
-		export LUA_CPATH=$PWD/lib64/?.so
+		export LUA_CPATH=$PWD/lib64/?.so:$LUA_CPATH
 		echo "*** Running Lua tests"
 		total=0
 		failed=0

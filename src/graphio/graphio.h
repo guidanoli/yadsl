@@ -56,7 +56,7 @@ GraphIoRet;
 //  [!] GRAPH_IO_WRITING_FAILURE: Specific serialization failed
 //  [!] GRAPH_IO_MEMORY
 
-GraphIoRet graphWrite(Graph *pGraph, FILE *fp,
+GraphIoRet graphWrite(yadsl_GraphHandle *pGraph, FILE *fp,
 	int (*writeVertex)(FILE *fp, void *v),
 	int (*writeEdge)(FILE *fp, void *e));
 
@@ -67,10 +67,10 @@ GraphIoRet graphWrite(Graph *pGraph, FILE *fp,
 //   fp            pointer to file to be read             
 //   readVertex    vertex deserialization function        
 //   readEdge      edge deserialization function          
-//   cmpVertices   vertex comparison function             
-//   cmpEdges      edge comparison function               
-//   freeVertex    vertex deallocation function           
-//   freeEdge      edge deallocation function             
+//   cmp_vertices_func   vertex comparison function             
+//   cmp_edges_func      edge comparison function               
+//   free_vertex_func    vertex deallocation function           
+//   free_edge_func      edge deallocation function             
 //  ============= ======================================= 
 //  [!] GRAPH_IO_FILE_ERROR: Could not read file
 //  [!] GRAPH_IO_SAME_CREATION: Vertex deserialized twice
@@ -79,12 +79,12 @@ GraphIoRet graphWrite(Graph *pGraph, FILE *fp,
 //  [!] GRAPH_IO_CORRUPTED_FILE_FORMAT: File format is corrupted
 //  [!] GRAPH_IO_MEMORY
 
-GraphIoRet graphRead(Graph **ppGraph, FILE *fp,
+GraphIoRet graphRead(yadsl_GraphHandle **ppGraph, FILE *fp,
 	int (*readVertex)(FILE *fp, void **ppVertex),
 	int (*readEdge)(FILE *fp, void **ppEdge),
-	int (*cmpVertices)(void *a, void *b),
-	void (*freeVertex)(void *v),
-	int (*cmpEdges)(void *a, void *b),
-	void (*freeEdge)(void *e));
+	int (*cmp_vertices_func)(void *a, void *b),
+	void (*free_vertex_func)(void *v),
+	int (*cmp_edges_func)(void *a, void *b),
+	void (*free_edge_func)(void *e));
 
 #endif

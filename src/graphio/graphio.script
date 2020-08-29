@@ -34,7 +34,7 @@
 /read d-one.graph
 
 /vertexcount 1
-/degree V 0
+/degree V both 0
 /containsvertex V YES
 
 ## Undirected
@@ -47,7 +47,7 @@
 /read u-one.graph
 
 /vertexcount 1
-/degree V 0
+/degree V both 0
 /containsvertex V YES
 
 ### Many vertices
@@ -67,9 +67,9 @@
 /containsvertex A YES
 /containsvertex B YES
 /containsvertex C YES
-/degree A 0
-/degree B 0
-/degree C 0
+/degree A both 0
+/degree B both 0
+/degree C both 0
 
 ## Undirected
 
@@ -86,9 +86,9 @@
 /containsvertex A YES
 /containsvertex B YES
 /containsvertex C YES
-/degree A 0
-/degree B 0
-/degree C 0
+/degree A both 0
+/degree B both 0
+/degree C both 0
 
 ### Loop
 
@@ -136,9 +136,9 @@
 /vertexcount 3
 /getedge A B AB
 /getedge B C BC
-/degree A 1
-/degree B 2
-/degree C 1
+/degree A both 1
+/degree B both 2
+/degree C both 1
 
 ## Undirected
 
@@ -158,9 +158,9 @@
 /getedge B A AB
 /getedge B C BC
 /getedge C B BC
-/degree A 1
-/degree B 2
-/degree C 1
+/degree A both 1
+/degree B both 2
+/degree C both 1
 
 ### Flags
 
@@ -183,9 +183,9 @@
 /vertexcount 3
 /getedge A B AB
 /getedge B C BC
-/degree A 1
-/degree B 2
-/degree C 1
+/degree A both 1
+/degree B both 2
+/degree C both 1
 /getvertexflag A 1
 /getvertexflag B 2
 /getvertexflag C 3
@@ -211,9 +211,9 @@
 /getedge B A AB
 /getedge B C BC
 /getedge C B BC
-/degree A 1
-/degree B 2
-/degree C 1
+/degree A both 1
+/degree B both 2
+/degree C both 1
 /getvertexflag A 1
 /getvertexflag B 2
 /getvertexflag C 3

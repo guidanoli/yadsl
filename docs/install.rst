@@ -1,7 +1,7 @@
 Installation
 ============
 
-Follow the steps in order to install YADSL on your machine.
+Follow the steps in order to install **yadsl** on your machine.
 
 Step 1: Get CMake
 -----------------

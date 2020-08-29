@@ -45,7 +45,7 @@ typedef void yadsl_AVLTreeCmpObjsArg; /**< AVL tree object comparison function u
  * * *n* = 0 if obj1 = obj2
  * * *n* < 0 if obj1 < obj2
 */
-typedef int (*yadsl_AVLTreeCmpObjsFunc)(yadsl_AVLTreeObject *o1, yadsl_AVLTreeObject *o2, yadsl_AVLTreeCmpObjsArg *arg);
+typedef int (*yadsl_AVLTreeCmpObjsFunc)(yadsl_AVLTreeObject *obj1, yadsl_AVLTreeObject *obj2, yadsl_AVLTreeCmpObjsArg *arg);
 
 /**
  * @brief AVL tree object freeing function

@@ -62,8 +62,8 @@ function(add_yadsl_library target)
         FOLDER libraries
         POSITION_INDEPENDENT_CODE ${OPTS_FPIC})
     
-    include(moveLibraries)
-	move_target_library(${target})
+    include(CopyTargetFileDirectory)
+	copy_target_file_directory(${target})
     
     if(${OPTS_TEST} AND ${YADSL_BUILD_TESTS})
         list(APPEND OPTS_TEST_LINKS "${target};testerutils")

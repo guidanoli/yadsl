@@ -234,10 +234,10 @@ def main(*args, **kwargs):
 def process_argv(argv):
     '''Process command-line arguments into args and kwargs
 
-    --key=value => ['key'] = eval(value, {}, kwargs)
+    --key=value => ['key'] = eval(value, {}, {})
     --key       => ['key'] = True
     -abc        => ['a'] = ['b'] = ['c'] = True
-    value       => args.append(eval(value, {}, kwargs))
+    value       => args.append(eval(value, {}, {}))
 
     Parameters:
         argv - command line arguments
@@ -254,7 +254,7 @@ def process_argv(argv):
     
     def _eval(exp):
         try:
-            return eval(exp, {}, kwargs)
+            return eval(exp, {}, {})
         except:
             return exp
     
