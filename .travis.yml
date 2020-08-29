@@ -23,6 +23,8 @@ before_install:
 before_script:
         - source config/before_script.sh
 script:
+        - chmod +x config/script.sh
         - ./config/script.sh
 after_failure:
+        - chmod +x config/after_failure.sh
         - ./config/after_failure.sh
