@@ -29,7 +29,7 @@ run_python_tests() {
 
 run_lua_tests() {
 	if [[ -n "$LUA_VERSION" ]]; then
-		export LUA_CPATH=$PWD/lib64/?.so:$LUA_CPATH
+		export LUA_CPATH=$PWD/lib64/?.so
 		echo "*** Running Lua tests"
 		total=0
 		failed=0
