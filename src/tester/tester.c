@@ -292,8 +292,8 @@ static yadsl_TesterRet yadsl_tester_parse_file_internal(FILE *fp)
 					return YADSL_TESTER_RET_COMMAND;
 				}
 			} else {
-				// Unexpected character parsed
-				return YADSL_TESTER_RET_PARSING;
+				// Unexpected token
+				return YADSL_TESTER_RET_TOKEN;
 			}
 		}
 	}
@@ -316,7 +316,7 @@ static void yadsl_tester_load_return_values_internal()
 		{YADSL_TESTER_RET_COMMAND, "command"},
 		{YADSL_TESTER_RET_ARGUMENT, "argument"},
 		{YADSL_TESTER_RET_RETURN, "return"},
-		{YADSL_TESTER_RET_PARSING, "parsing"},
+		{YADSL_TESTER_RET_TOKEN, "token"},
 		{YADSL_TESTER_RET_EXTERNAL, "external"},
 	};
 	for (i = 0; i < sizeof(nativeValues) / sizeof(nativeValues[0]); ++i) {

@@ -1,20 +1,8 @@
-PROJECT_NAME           = "Yet Another Data Structures Library"
-PROJECT_BRIEF          = "A collection of data structures implemented in C"
-PROJECT_LOGO           = docs/logo.png
+# CodeDocs.xyz Configuration File
 
-OUTPUT_DIRECTORY       = doxygen
+DOXYFILE = docs/Doxyfile
 
-INPUT                  = src \
-                         docs
+PROJECT_LOGO = docs/logo.png
 
-OPTIMIZE_OUTPUT_FOR_C  = YES
-
-FILE_PATTERNS          = *.h \
-                         *.md
-
-RECURSIVE              = YES
-
-USE_MDFILE_AS_MAINPAGE = docs/index.md
-
-GENERATE_HTML          = YES
-GENERATE_LATEX         = NO
+INPUT = src \
+        docs

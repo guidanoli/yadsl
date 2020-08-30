@@ -30,7 +30,7 @@ struct _memdb_node
 
 static struct _memdb_node *list = NULL;
 static size_t listsize = 0;
-static int error_occurred = 0;
+static bool error_occurred = false;
 static FILE *log_fp = NULL;
 
 static void _memdb_log(const char *format, ...)
@@ -100,7 +100,7 @@ static _memdb_enum _memdb_remove(void *_mem)
 	return MEM_NOT_FOUND;
 }
 
-int yadsl_memdb_contains(void *_mem)
+bool yadsl_memdb_contains(void *_mem)
 {
 	return _memdb_get(_mem) != NULL;
 }
@@ -126,7 +126,7 @@ size_t yadsl_memdb_list_size()
 	return listsize;
 }
 
-int yadsl_memdb_error_occurred()
+bool yadsl_memdb_error_occurred()
 {
 	return error_occurred;
 }
@@ -135,7 +135,7 @@ void yadsl_memdb_free(void *_mem)
 {
 	if (_memdb_remove(_mem) == MEM_NOT_FOUND) {
 		_memdb_log("Freeing block (%p) not in list.", _mem);
-		error_occurred = 1;
+		error_occurred = true;
 	}
 	free(_mem);
 }

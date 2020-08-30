@@ -1,5 +1,5 @@
-#ifndef __YADSL_TESTER_RET_H__
-#define __YADSL_TESTER_RET_H__
+#ifndef __YADSL_TESTER_H__
+#define __YADSL_TESTER_H__
 
 /**
  * \defgroup tester Tester
@@ -8,9 +8,79 @@
  * This library incorporates the generic part of the testing framework, which
  * reads the test script and parses comands and its arguments.
  * 
+ * Motivation
+ * ----------
+ * Creating individual testers for each module can be a very dull and
+ * error-prone task. It may lead to extra time wasted on debugging the test
+ * module, but not the code itself. Having a single tester framework makes
+ * testing effortless, enjoyable and energetic.
+ * 
+ * Paradigm
+ * --------
+ * Instead of creating a test module entirely from scratch, you should only
+ * write code that is specific to what you're testing, right? That is why you
+ * only need to implement three functions, shown in order of activation.
+ * 
+ * * yadsl_tester_init() - Called **once** to initialize data structures or global variables
+ * * yadsl_tester_parse() - Called **for every command** parsed from the script file
+ * * yadsl_tester_release() - Called **once** at the very end of the testing cycle
+ * 
+ * You may also want to display some helping information if the tester receives
+ * no script file, like what commands are available or how does your test work.
+ * For that, you may also set the following variable:
+ * 
+ * * yadsl_tester_help_strings - an array of strings terminated by `NULL`
+ * 
+ * Scripts
+ * -------
+ * A script file has a very simple grammar, with the following tokens: commands,
+ * arguments and comments. These tokens are separated by spaces, tabs and newlines.
+ * 
+ * * **Commands** are written as / + string, preceding its arguments.
+ * * **Arguments** can be parsed as int, char, float, long, size_t or char *.
+ * * **Comments** are parsed as # + any string until the end of the line.
+ * 
+ * Commands
+ * --------
+ * The tester framework calls the yadsl_tester_parse() for every potential command.
+ * It is the job of this function to parse this string, and requiring more
+ * parameters through yadsl_tester_parse_arguments(), if necessary.
+ * 
+ * Return values
+ * -------------
+ * All of the implementable functions return an enumerator of type yadsl_TesterRet.
+ * If any of these functions, when called, return a value other than ::YADSL_TESTER_RET_OK,
+ * the corresponding cycle is interrupted. In the tester.h header are listed the
+ * called "native" errors. These errors have their string identifiers too, which
+ * are used for error handling, as we will see later on.
+ * 
+ * External return values
+ * ----------------------
+ * You may have noticed that the EXTERNAL return value is the only one that does
+ * not have a string nor a description defined. That is because it is a
+ * polymorphic return value. It can be whatever the user determines at runtime.
+ * Instead of returning this value right away, you ought to call
+ * yadsl_tester_return_external_value(), passing its string as the parameter,
+ * which then returns the enumerator.
+ * 
+ * Error handling
+ * --------------
+ * There is only one way to catch errors raised by yadsl_tester_parse().
+ * It is by calling the /catch command. Following the /catch command should be
+ * the expected error string.
+ * 
+ * Script native commands
+ * ----------------------
+ * ```
+ * /catch <return>
+ *   If <return> is equal to the last value returned, the error is ignored.
+ *
+ * /exit
+ *   Exits tester environment. It is specially useful when on interactive mode.
+ * ```
+ * 
  * Program arguments
  * -----------------
- * 
  * ```
  * Usage
  * -----
@@ -33,12 +103,11 @@
  * ------------
  *   If no arguments are given, a help message will be displayed, if available.
  * ```
- * 
+ *
  * Script grammar
  * --------------
- *
  * The context free language is specified below:
- * 
+ *
  * ```
  * Script -> Line | Script "\n" Line
  * Line -> sep* CmdList sep+ comment sep* | sep* CmdList sep*
@@ -55,9 +124,8 @@
  *
  * Script tokens
  * -------------
- *
  * All the tokens are specified below as regular expressions:
- * 
+ *
  * ```
  * sep = [ \t]
  * comment = #[^\n]*
@@ -65,17 +133,6 @@
  * string_qm = "[^"\n]*"
  * string_wo_qm = [^ \t\n]+
  * %? = identifiers from C standard library
- * ```
- * 
- * Script native commands
- * ----------------------
- *
- * ```
- * /catch <return>
- *   If <return> is equal to the last value returned, the error is ignored.
- *
- * /exit
- *   Exits tester environment. It is specially useful when on interactive mode.
  * ```
  * 
  * @{
@@ -88,23 +145,23 @@
 
 /**
 * @brief Enumeration of tester return values.
-* OBS: YADSL_TESTER_RET_COUNT and YADSL_TESTER_RET_EXTERNAL are
+* OBS: ::YADSL_TESTER_RET_COUNT and ::YADSL_TESTER_RET_EXTERNAL are
 * not meant to be used as return values, since they serve
 * merely for internal purposes.
 */
 typedef enum
 {
-	YADSL_TESTER_RET_OK = 0,
-	YADSL_TESTER_RET_FILE,
-	YADSL_TESTER_RET_MALLOC,
-	YADSL_TESTER_RET_MEMLEAK,
-	YADSL_TESTER_RET_OVERFLOW,
-	YADSL_TESTER_RET_COMMAND,
-	YADSL_TESTER_RET_ARGUMENT,
-	YADSL_TESTER_RET_RETURN,
-	YADSL_TESTER_RET_PARSING,
-	YADSL_TESTER_RET_EXTERNAL,
-	YADSL_TESTER_RET_COUNT,
+	YADSL_TESTER_RET_OK = 0, /**< No errors occurred */
+	YADSL_TESTER_RET_FILE, /**< Failed file operation */
+	YADSL_TESTER_RET_MALLOC, /**< Failed memory allocation */
+	YADSL_TESTER_RET_MEMLEAK, /**< Memory leak detected */
+	YADSL_TESTER_RET_OVERFLOW, /**< Buffer overflow */
+	YADSL_TESTER_RET_COMMAND, /**< Failed command parsing */
+	YADSL_TESTER_RET_ARGUMENT, /**< Failed argument parsing */
+	YADSL_TESTER_RET_TOKEN, /**< Failed token parsing */
+	YADSL_TESTER_RET_RETURN, /**< Unexpected return */
+	YADSL_TESTER_RET_EXTERNAL, /**< External return value */
+	YADSL_TESTER_RET_COUNT, /**< For internal use only */
 }
 yadsl_TesterRet;
 
@@ -141,7 +198,7 @@ extern yadsl_TesterRet yadsl_tester_parse(const char *command);
 
 /**
  * @brief Callback called when yadsl_tester_parse returns
- * a value different from YADSL_TESTER_RET_OK, or after
+ * a value different from ::YADSL_TESTER_RET_OK, or after
  * parsing the whole script, if no errors are thrown.
  * @return status (if not ok, aborts)
 */

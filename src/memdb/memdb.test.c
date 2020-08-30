@@ -13,8 +13,7 @@
 #endif
 
 #include <tester/tester.h>
-
-#define matches(a,b) (strcmp(a,b) == 0)
+#include <testerutils/testerutils.h>
 
 const char *yadsl_tester_help_strings[] = {
     "This is the memdb test module",
@@ -91,15 +90,12 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
         yadsl_memdb_clear_list();
     } else if matches(command, "contains") {
         size_t idx;
-        int expected, actual;
+        bool expected, actual;
         if (yadsl_tester_parse_arguments("zs", &idx, buffer) != 2)
             return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
             return YADSL_TESTER_RET_ARGUMENT;
-        expected = matches(buffer, "YES");
-        if (!expected && !matches(buffer, "NO"))
-            yadsl_tester_log("Expected \"YES\" or \"NO\", but got \"%s\" instead."
-                " (assumed NO)", buffer);
+        expected = TesterUtilsGetYesOrNoFromString(buffer);
         actual = yadsl_memdb_contains(mem_array[idx]);
         if (actual != expected)
             return YADSL_TESTER_RET_RETURN;
