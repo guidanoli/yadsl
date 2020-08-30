@@ -7,7 +7,7 @@
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 
-const char *TesterHelpStrings[] = {
+const char *yadsl_tester_help_strings[] = {
 	"This is the queue test module",
 	"You will be interacting with the same queue at all times",
 	"The available actions are the following:",
@@ -20,31 +20,31 @@ const char *TesterHelpStrings[] = {
 
 static char buffer[BUFSIZ];
 static Queue *pQueue = NULL;
-static TesterReturnValue convertReturnValue(QueueRet queueId);
+static yadsl_TesterRet convertReturnValue(QueueRet queueId);
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
 	if (queueCreate(&pQueue, free))
-		return TESTER_MALLOC;
-	return TESTER_OK;
+		return YADSL_TESTER_RET_MALLOC;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	char *str1, *str2;
 	QueueRet queueId = QUEUE_OK;
 	if matches(command, "queue") {
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		if (queueId = queueQueue(pQueue, str1))
 			free(str1);
 	} else if matches(command, "dequeue") {
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		if (queueId = queueDequeue(pQueue, &str2)) {
 			free(str1);
 		} else {
@@ -52,39 +52,39 @@ TesterReturnValue TesterParseCallback(const char *command)
 			free(str1);
 			free(str2);
 			if (!equal)
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 		}
 	} else if matches(command, "empty") {
 		int expected, obtained;
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer);
 		queueId = queueIsEmpty(pQueue, &obtained);
 		if (queueId == QUEUE_OK && expected != obtained)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else {
-		return TESTER_COMMAND;
+		return YADSL_TESTER_RET_COMMAND;
 	}
 	return convertReturnValue(queueId);
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
 	queueDestroy(pQueue);
 	pQueue = NULL;
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-static TesterReturnValue convertReturnValue(QueueRet queueId)
+static yadsl_TesterRet convertReturnValue(QueueRet queueId)
 {
 	switch (queueId) {
 	case QUEUE_OK:
-		return TESTER_OK;
+		return YADSL_TESTER_RET_OK;
 	case QUEUE_EMPTY:
-		return TesterExternalReturnValue("empty");
+		return yadsl_tester_return_external_value("empty");
 	case QUEUE_MEMORY:
-		return TesterExternalReturnValue("malloc");
+		return yadsl_tester_return_external_value("malloc");
 	default:
-		return TesterExternalReturnValue("unknown");
+		return yadsl_tester_return_external_value("unknown");
 	}
 }

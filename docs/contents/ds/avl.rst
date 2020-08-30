@@ -1,4 +1,0 @@
-AVL tree
-========
-
-.. doxygengroup:: avl

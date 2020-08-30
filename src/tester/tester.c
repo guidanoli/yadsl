@@ -19,39 +19,35 @@ static const char *long_f[] =   { "%l", "%lu", NULL };
 static const char *size_t_f[] = { "%zu", NULL };
 
 static size_t line; // line count
-static const char *externalReturnValueInfo = NULL; // external return value
-static const char *nativeReturnValueInfos[TESTER_COUNT]; // return value
-static char buffer[BUFSIZ] = "", // file line
-command[BUFSIZ] = "", // command string
-sep[BUFSIZ] = "", // separation characters
-temp[BUFSIZ] = ""; // temp. variable
+static const char *external_ret_info = NULL; // external return value
+static const char *tester_ret_infos[YADSL_TESTER_RET_COUNT]; // return value
+
+static char buffer[BUFSIZ]    = "", // file line
+            buffer2[BUFSIZ]   = "", // previous file line
+            command[BUFSIZ]   = "", // command string
+            sep[BUFSIZ]       = "", // separation characters
+            temp[BUFSIZ]      = ""; // temporary variable
+
 static char *cursor = buffer; // buffer cursor
 
 ////////////////////////////////////////////////////////////////////////////////
 // STATIC FUNCTIONS DECLARATIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-static TesterReturnValue _TesterMain(int argc, char **argv);
-static void _TesterLoadReturnValueInfos();
-static TesterReturnValue _TesterParse(FILE *fp);
-static void _TesterPrintCursorPosition(FILE *fp, size_t spacing);
-static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret);
-static int _TesterParseArg(const char *format, void *arg, size_t *inc);
-static int _TesterParseStr(char *arg, size_t *inc);
-static void _TesterPrintReturnValueInfo(TesterReturnValue ret);
-static int _TesterParseArgFormat(const char **format_t, void *arg, size_t *inc);
+static yadsl_TesterRet yadsl_tester_main_internal(int argc, char **argv);
+static void yadsl_tester_load_return_values_internal();
+static yadsl_TesterRet yadsl_tester_parse_file_internal(FILE *fp);
+static void yadsl_tester_print_cursor_position_internal(FILE *fp, size_t spacing);
+static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret);
+static int yadsl_tester_parse_argument_internal(const char *format, void *arg, size_t *inc);
+static int yadsl_tester_parse_string_internal(char *arg, size_t *inc);
+static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret);
+static int yadsl_tester_parse_dtype_internal(const char **format_t, void *arg, size_t *inc);
+static int yadsl_tester_has_flag_internal(int argc, char** argv, const char* flag);
 
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERN FUNCTIONS DEFINITIONS
 ////////////////////////////////////////////////////////////////////////////////
-
-int hasflag(int argc, char **argv, const char *flag)
-{
-	while (argc--)
-		if (strcmp(argv[argc], flag) == 0)
-			return 1;
-	return 0;
-}
 
 /**
 * Usage: <program> [script-path [/LOG] [/I]]
@@ -60,27 +56,27 @@ int hasflag(int argc, char **argv, const char *flag)
 */
 int main(int argc, char **argv)
 {
-	TesterReturnValue exitReturn, ret;
+	yadsl_TesterRet exitReturn, ret;
 	FILE *logger = NULL;
-	if (hasflag(argc, argv, "/LOG")) {
+	if (yadsl_tester_has_flag_internal(argc, argv, "/LOG")) {
 		logger = fopen("memdb.log", "w");
 		yadsl_memdb_set_logger(logger);
 	}
-	ret = _TesterMain(argc, argv);
-	exitReturn = TesterExitCallback();
-	if (ret == TESTER_OK)
+	ret = yadsl_tester_main_internal(argc, argv);
+	exitReturn = yadsl_tester_release();
+	if (ret == YADSL_TESTER_RET_OK)
 		ret = exitReturn;
-	if (ret == TESTER_OK &&
+	if (ret == YADSL_TESTER_RET_OK &&
 		(yadsl_memdb_list_size() || yadsl_memdb_error_occurred()))
-		ret = TESTER_MEMLEAK;
-	_TesterPrintReturnValueInfo(ret);
+		ret = YADSL_TESTER_RET_MEMLEAK;
+	yadsl_tester_print_return_value_info_internal(ret);
 	yadsl_memdb_clear_list();
 	yadsl_memdb_set_logger(NULL);
 	if (logger) fclose(logger);
 	return ret;
 }
 
-size_t TesterGetDataTypeSize(char dtype)
+size_t yadsl_tester_get_dtype_size(char dtype)
 {
 	switch (dtype) {
 	case 'c':
@@ -100,17 +96,17 @@ size_t TesterGetDataTypeSize(char dtype)
 	}
 }
 
-int TesterCompare(char dtype, const void* expected, const void* obtained)
+int yadsl_tester_compare_arguments(char dtype, const void* expected, const void* obtained)
 {
-	return memcmp(expected, obtained, TesterGetDataTypeSize(dtype));
+	return memcmp(expected, obtained, yadsl_tester_get_dtype_size(dtype));
 }
 
-void TesterCopy(char dtype, const void* source, void* destination)
+void yadsl_tester_copy_argument(char dtype, const void* source, void* destination)
 {
-	memcpy(destination, source, TesterGetDataTypeSize(dtype));
+	memcpy(destination, source, yadsl_tester_get_dtype_size(dtype));
 }
 
-int TesterParseArguments(const char *format, ...)
+int yadsl_tester_parse_arguments(const char *format, ...)
 {
 	va_list va;
 	size_t inc = 0;
@@ -127,45 +123,45 @@ int TesterParseArguments(const char *format, ...)
 				parsingError = 1;
 				break;
 			}
-			parsingError = _TesterParseArgFormat(char_f, arg, &inc);
+			parsingError = yadsl_tester_parse_dtype_internal(char_f, arg, &inc);
 			break;
 		case 'f':
 			if (!(arg = va_arg(va, float *))) {
 				parsingError = 1;
 				break;
 			}
-			parsingError = _TesterParseArgFormat(float_f, arg, &inc);
+			parsingError = yadsl_tester_parse_dtype_internal(float_f, arg, &inc);
 			break;
 		case 'i':
 			if (!(arg = va_arg(va, int *))) {
 				parsingError = 1;
 				break;
 			}
-			parsingError = _TesterParseArgFormat(int_f, arg, &inc);
+			parsingError = yadsl_tester_parse_dtype_internal(int_f, arg, &inc);
 			break;
 		case 'l':
 			if (!(arg = va_arg(va, long *))) {
 				parsingError = 1;
 				break;
 			}
-			parsingError = _TesterParseArgFormat(long_f, arg, &inc);
+			parsingError = yadsl_tester_parse_dtype_internal(long_f, arg, &inc);
 			break;
 		case 's':
 			if (!(str = va_arg(va, char *))) {
 				parsingError = 1;
 				break;
 			}
-			parsingError = _TesterParseStr(str, &inc);
+			parsingError = yadsl_tester_parse_string_internal(str, &inc);
 			break;
 		case 'z':
 			if (!(arg = va_arg(va, size_t *))) {
 				parsingError = 1;
 				break;
 			}
-			parsingError = _TesterParseArgFormat(size_t_f, arg, &inc);
+			parsingError = yadsl_tester_parse_dtype_internal(size_t_f, arg, &inc);
 			break;
 		default:
-			fprintf(stderr, "Format character %c unknown.\n", *format);
+			fprintf(stderr, "Unknown format character \"%c\".\n", *format);
 			parsingError = 1;
 			break;
 		}
@@ -179,38 +175,38 @@ int TesterParseArguments(const char *format, ...)
 	return argc;
 }
 
-TesterReturnValue TesterExternalReturnValue(const char *info)
+yadsl_TesterRet yadsl_tester_return_external_value(const char *info)
 {
-	externalReturnValueInfo = info;
-	return TESTER_EXTERNAL;
+	external_ret_info = info;
+	return YADSL_TESTER_RET_EXTERNAL;
 }
 
-void TesterPrintHelpStrings()
+void yadsl_tester_print_help_strings()
 {
-	const char **str = TesterHelpStrings;
+	const char **str = yadsl_tester_help_strings;
 	for (; str && *str; ++str) puts(*str);
 }
 
-const char *TesterGetReturnValueInfo(TesterReturnValue returnValue)
+const char *yadsl_tester_get_return_value_info(yadsl_TesterRet returnValue)
 {
-	if (returnValue >= TESTER_COUNT)
+	if (returnValue < YADSL_TESTER_RET_OK || returnValue >= YADSL_TESTER_RET_COUNT)
 		return "Invalid return value";
-	if (returnValue == TESTER_EXTERNAL)
-		if (externalReturnValueInfo == NULL)
+	if (returnValue == YADSL_TESTER_RET_EXTERNAL)
+		if (external_ret_info == NULL)
 			return "Missing external return value information";
 		else
-			return externalReturnValueInfo;
-	return nativeReturnValueInfos[returnValue];
+			return external_ret_info;
+	return tester_ret_infos[returnValue];
 }
 
-void TesterLog(const char *message, ...)
+void yadsl_tester_log(const char *message, ...)
 {
 	va_list va;
-	size_t spacing = 0, col = cursor - buffer;
+	size_t col = cursor - buffer + 1;
 	va_start(va, message);
-	spacing += fprintf(stdout, "LOG: \"");
-	spacing += vfprintf(stdout, message, va);
-	spacing += fprintf(stdout, "\" (line %zu, col %zu)\n", line, col);
+	fprintf(stdout, "LOG: \"");
+	vfprintf(stdout, message, va);
+	fprintf(stdout, "\" (line %zu, col %zu)\n", line, col);
 	va_end(va);
 }
 
@@ -218,40 +214,45 @@ void TesterLog(const char *message, ...)
 // STATIC FUNCTIONS DEFINITIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-static TesterReturnValue _TesterMain(int argc, char **argv)
+static yadsl_TesterRet yadsl_tester_main_internal(int argc, char **argv)
 {
-	FILE *fp = stdin;
-	TesterReturnValue ret;
+	FILE *fp;
+	yadsl_TesterRet ret;
 	// First, load return value informations
-	_TesterLoadReturnValueInfos();
-	// If no arguments were passed, then print help strings
+	yadsl_tester_load_return_values_internal();
 	if (argc == 1) {
-		TesterPrintHelpStrings();
-		return TESTER_OK;
+		// If no arguments were passed, then print help strings
+		yadsl_tester_print_help_strings();
+		return YADSL_TESTER_RET_OK;
 	}
-	// Open file whose path was passed as argument
-	if (!hasflag(argc, argv, "/I")) {
+	if (yadsl_tester_has_flag_internal(argc, argv, "/I")) {
+		// Use standard input
+		fp = stdin;
+	} else {
+		// Open file whose path was passed as argument
 		fp = fopen(argv[1], "r");
 		if (fp == NULL)
-			return TESTER_FILE;
+			return YADSL_TESTER_RET_FILE;
 	}
 	// Initialize tester
-	if (ret = TesterInitCallback())
+	if (ret = yadsl_tester_init())
 		return ret;
 	// Parse script
-	return _TesterParse(fp);
+	return yadsl_tester_parse_file_internal(fp);
 }
 
-static TesterReturnValue _TesterParse(FILE *fp)
+static yadsl_TesterRet yadsl_tester_parse_file_internal(FILE *fp)
 {
-	TesterReturnValue ret = TESTER_OK;
-	line = 1;
+	yadsl_TesterRet ret = YADSL_TESTER_RET_OK;
+	size_t prev_line = line = 0;
 	// Read a line from the file and store it in a buffer
 	while (fgets(buffer, sizeof(buffer), fp)) {
 		size_t bufflen = strlen(buffer);
-		// Make sure it doesn't overflow
-		if (bufflen == BUFSIZ - 1)
-			return TESTER_OVERFLOW;
+		if (bufflen == sizeof(buffer) - 1)
+			// If the buffer overflows, then quit
+			return YADSL_TESTER_RET_OVERFLOW;
+		// Increment line count
+		++line;
 		// Iterate through the buffer with a cursor
 		for (cursor = buffer; cursor < buffer + bufflen; ++cursor) {
 			if (*cursor == '\t' || *cursor == ' ' || *cursor == '\n')
@@ -265,64 +266,66 @@ static TesterReturnValue _TesterParse(FILE *fp)
 					cursor += strlen(command) + 1;
 					if (strcmp(command, "catch") == 0) {
 						// Check if an error already occurred
-						if (ret = _TesterParseCatchCommand(ret))
+						if (ret = yadsl_tester_parse_catch_command_internal(ret))
 							return ret;
 					} else if (strcmp(command, "exit") == 0) {
 						// Return current status value
 						return ret;
 					} else {
 						if (ret) {
-							fprintf(stderr,
-								"ERROR: Expected /catch command\n");
+							strcpy(buffer, buffer2);
+							cursor = buffer + strlen(buffer);
+							line = prev_line;
 							return ret;
 						}
-#ifdef _VERBOSE
-						printf("Parsing '%s' at line %zu\n", command, line);
-#endif
-						externalReturnValueInfo = NULL;
+						external_ret_info = NULL;
 						// Call the command parser (can move cursor)
-						ret = TesterParseCallback(command);
+						ret = yadsl_tester_parse(command);
+						// Copy command to buffer2
+						strncpy(buffer2, buffer, cursor - buffer);
+						buffer2[cursor - buffer] = '\0';
+						// Save previous line
+						prev_line = line;
 					}
 				} else {
 					// Command does not match regex
-					return TESTER_COMMAND;
+					return YADSL_TESTER_RET_COMMAND;
 				}
 			} else {
-				// Unexpected character
-				return TESTER_ARGUMENT;
+				// Unexpected character parsed
+				return YADSL_TESTER_RET_PARSING;
 			}
 		}
-		// Increase the line counter
-		++line;
 	}
 	return ret;
 }
-static void _TesterLoadReturnValueInfos()
+static void yadsl_tester_load_return_values_internal()
 {
 	struct returnValue
 	{
-		TesterReturnValue value;
+		yadsl_TesterRet value;
 		const char *info;
 	};
 	size_t i;
 	struct returnValue nativeValues[] = {
-		{TESTER_OK, "ok"},
-		{TESTER_FILE, "file"},
-		{TESTER_MALLOC, "malloc"},
-		{TESTER_MEMLEAK, "memleak"},
-		{TESTER_OVERFLOW, "overflow"},
-		{TESTER_COMMAND, "command"},
-		{TESTER_ARGUMENT, "argument"},
-		{TESTER_RETURN, "return"},
-		{TESTER_EXTERNAL, "external"},
+		{YADSL_TESTER_RET_OK, "ok"},
+		{YADSL_TESTER_RET_FILE, "file"},
+		{YADSL_TESTER_RET_MALLOC, "malloc"},
+		{YADSL_TESTER_RET_MEMLEAK, "memleak"},
+		{YADSL_TESTER_RET_OVERFLOW, "overflow"},
+		{YADSL_TESTER_RET_COMMAND, "command"},
+		{YADSL_TESTER_RET_ARGUMENT, "argument"},
+		{YADSL_TESTER_RET_RETURN, "return"},
+		{YADSL_TESTER_RET_PARSING, "parsing"},
+		{YADSL_TESTER_RET_EXTERNAL, "external"},
 	};
 	for (i = 0; i < sizeof(nativeValues) / sizeof(nativeValues[0]); ++i) {
 		struct returnValue retVal = nativeValues[i];
-		nativeReturnValueInfos[retVal.value] = retVal.info;
+		tester_ret_infos[retVal.value] = retVal.info;
 	}
 }
 
-static int _TesterParseArg(const char *format, void *arg, size_t *inc)
+static int yadsl_tester_parse_argument_internal(const char *format, void *arg, size_t *inc)
 {
 	if (arg == NULL) return -1;
 	if (sscanf(cursor + *inc, "%[ \t\n]%[^ \t\n]", sep, temp) != 2)
@@ -333,7 +336,7 @@ static int _TesterParseArg(const char *format, void *arg, size_t *inc)
 	return 0;
 }
 
-static int _TesterParseStr(char *arg, size_t *inc)
+static int yadsl_tester_parse_string_internal(char *arg, size_t *inc)
 {
 	if (arg == NULL) return -1;
 	if (sscanf(cursor + *inc, "%[ \t\n]\"%[^\"]\"", sep, temp) == 2) {
@@ -348,37 +351,39 @@ static int _TesterParseStr(char *arg, size_t *inc)
 	return 0;
 }
 
-static TesterReturnValue _TesterParseCatchCommand(TesterReturnValue ret)
+static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret)
 {
 	char arg[BUFSIZ] = "";
-	if (TesterParseArguments("s", arg) == 1) {
-		if (ret == TESTER_EXTERNAL) {
-			if (externalReturnValueInfo != NULL &&
-				strcmp(externalReturnValueInfo, arg) == 0)
-				return TESTER_OK;
-		} else {
-			if (strcmp(nativeReturnValueInfos[ret], arg) == 0)
-				return TESTER_OK;
+	if (yadsl_tester_parse_arguments("s", arg) == 1) {
+		if (ret == YADSL_TESTER_RET_EXTERNAL) {
+			if (external_ret_info != NULL &&
+				strcmp(external_ret_info, arg) == 0)
+				return YADSL_TESTER_RET_OK;
+		} else if (ret >= YADSL_TESTER_RET_OK && ret < YADSL_TESTER_RET_COUNT) {
+			if (strcmp(tester_ret_infos[ret], arg) == 0)
+				return YADSL_TESTER_RET_OK;
 		}
+	} else {
+		ret = YADSL_TESTER_RET_ARGUMENT;
+		goto jump_print;
 	}
-	fprintf(stderr, "ERROR: Could not catch \"%s\"\n",
-	TesterGetReturnValueInfo(ret));
-	return TESTER_ARGUMENT;
+	fprintf(stderr, "ERROR: Could not catch \"%s\"\n", yadsl_tester_get_return_value_info(ret));
+jump_print:
+	return ret;
 }
 
-static void _TesterPrintReturnValueInfo(TesterReturnValue ret)
+static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret)
 {
 	if (ret) {
-		size_t spacing = fprintf(stderr, "ERROR: \"%s\" ",
-			TesterGetReturnValueInfo(ret));
-		_TesterPrintCursorPosition(stderr, spacing);
+		size_t spacing = fprintf(stderr, "ERROR: \"%s\" ", yadsl_tester_get_return_value_info(ret));
+		yadsl_tester_print_cursor_position_internal(stderr, spacing);
 	}
 }
 
 // Prints the buffer and the cursor current position with an arrow (^)
 // spacing = how many characters have been printed out on the current line
 // HINT: printf-like functions return the number of characters printed out
-static void _TesterPrintCursorPosition(FILE *fp, size_t spacing)
+static void yadsl_tester_print_cursor_position_internal(FILE *fp, size_t spacing)
 {
 	size_t col = cursor - buffer, bufflen = strlen(buffer);
 	if (bufflen == 0) return;
@@ -394,17 +399,24 @@ static void _TesterPrintCursorPosition(FILE *fp, size_t spacing)
 		spacing += col;
 		if (buffer[bufflen - 1] != '\n') fprintf(fp, "\n");
 	}
-	fprintf(fp, "\n");
 	while (spacing--) fprintf(fp, " ");
 	fprintf(fp, "^\n");
 }
 
-static int _TesterParseArgFormat(const char **format_t, void *arg, size_t *inc)
+static int yadsl_tester_parse_dtype_internal(const char **format_t, void *arg, size_t *inc)
 {
 	const char *format;
 	while (format = *(format_t++)) {
-		if (!_TesterParseArg(format, arg, inc))
+		if (!yadsl_tester_parse_argument_internal(format, arg, inc))
 			return 0;
 	}
 	return 1;
+}
+
+int yadsl_tester_has_flag_internal(int argc, char** argv, const char* flag)
+{
+	while (argc--)
+		if (strcmp(argv[argc], flag) == 0)
+			return 1;
+	return 0;
 }

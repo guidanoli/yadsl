@@ -111,20 +111,20 @@ PyDoc_STRVAR(_Graph_add_vertex__doc__,
 static PyObject *
 Graph_add_vertex(GraphObject *self, PyObject *obj)
 {
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	returnId = yadsl_graph_vertex_add(self->ob_graph, obj);
 	if (!returnId)
 		Py_INCREF(obj);
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		Py_RETURN_NONE;
-	case YADSL_GRAPH_RET_COND_CONTAINS_VERTEX:
+	case YADSL_GRAPH_RET_CONTAINS_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex already existed in graph");
 		break;
-	case YADSL_GRAPH_RET_COND_MEMORY:
+	case YADSL_GRAPH_RET_MEMORY:
 		return PyErr_NoMemory();
 	default:
 		Py_UNREACHABLE();
@@ -142,14 +142,14 @@ PyDoc_STRVAR(_Graph_remove_vertex__doc__,
 static PyObject *
 Graph_remove_vertex(GraphObject *self, PyObject *obj)
 {
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	returnId = yadsl_graph_vertex_remove(self->ob_graph, obj);
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		Py_RETURN_NONE;
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
@@ -184,7 +184,7 @@ PyDoc_STRVAR(_Graph_contains_edge__doc__,
 static PyObject *
 Graph_contains_edge(GraphObject *self, PyObject *args)
 {
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	PyObject *u, *v;
 	bool contains;
 	if (!PyArg_ParseTuple(args,
@@ -195,9 +195,9 @@ Graph_contains_edge(GraphObject *self, PyObject *args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		return PyBool_FromLong(contains);
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
@@ -218,7 +218,7 @@ PyDoc_STRVAR(_Graph_add_edge__doc__,
 static PyObject *
 Graph_add_edge(GraphObject *self, PyObject *args)
 {
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	PyObject *u, *v, *uv;
 	if (!PyArg_ParseTuple(args,
 		"OOO:pygraph.Graph.add_edge",
@@ -230,17 +230,17 @@ Graph_add_edge(GraphObject *self, PyObject *args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		Py_RETURN_NONE;
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
-	case YADSL_GRAPH_RET_COND_CONTAINS_EDGE:
+	case YADSL_GRAPH_RET_CONTAINS_EDGE:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Edge already found in graph");
 		break;
-	case YADSL_GRAPH_RET_COND_MEMORY:
+	case YADSL_GRAPH_RET_MEMORY:
 		return PyErr_NoMemory();
 	default:
 		Py_UNREACHABLE();
@@ -258,7 +258,7 @@ PyDoc_STRVAR(_Graph_remove_edge__doc__,
 static PyObject*
 Graph_remove_edge(GraphObject* self, PyObject* args)
 {
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	PyObject *u, *v;
 	if (!PyArg_ParseTuple(args,
 		"OO:pygraph.Graph.remove_edge",
@@ -268,13 +268,13 @@ Graph_remove_edge(GraphObject* self, PyObject* args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		Py_RETURN_NONE;
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Edge not found in graph");
 		break;
@@ -292,7 +292,7 @@ PyDoc_STRVAR(_Graph_get_edge__doc__,
 static PyObject*
 Graph_get_edge(GraphObject* self, PyObject* args)
 {
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	PyObject *u, *v, *uv;
 	if (!PyArg_ParseTuple(args,
 		"OO:pygraph.Graph.remove_edge",
@@ -302,14 +302,14 @@ Graph_get_edge(GraphObject* self, PyObject* args)
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		Py_INCREF(uv);
 		return uv;
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Edge not found in graph");
 		break;
@@ -363,7 +363,7 @@ Graph_neighbours(GraphObject *self, PyObject *args, PyObject *kw)
 {
 	int in = 1, out = 1;
 	size_t size;
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	PyObject *vertex, *tuple = NULL, *subtuple, *neighbour, *edge;
 	yadsl_GraphEdgeDirection edge_direction = YADSL_GRAPH_EDGE_DIR_NONE;
 	static char *keywords[] = { "vertex", "ingoing", "outgoing", NULL };
@@ -379,7 +379,7 @@ Graph_neighbours(GraphObject *self, PyObject *args, PyObject *kw)
 	}
 	if (returnId = yadsl_graph_vertex_degree_get(self->ob_graph, vertex, edge_direction, &size)) {
 		switch (returnId) {
-		case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+		case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 			PyErr_SetString(PyExc_RuntimeError,
 				"Vertex not found in graph");
 			goto exit;
@@ -424,7 +424,7 @@ Graph_degree(GraphObject *self, PyObject *args, PyObject *kw)
 	int in = 1, out = 1;
 	size_t size;
 	PyObject *vertex;
-	yadsl_GraphReturnCondition returnId;
+	yadsl_GraphRet returnId;
 	yadsl_GraphEdgeDirection edge_direction = YADSL_GRAPH_EDGE_DIR_NONE;
 	static char *keywords[] = { "vertex", "ingoing", "outgoing", NULL };
 	if (!PyArg_ParseTupleAndKeywords(args, kw,
@@ -439,7 +439,7 @@ Graph_degree(GraphObject *self, PyObject *args, PyObject *kw)
 	}
 	if (returnId = yadsl_graph_vertex_degree_get(self->ob_graph, vertex, edge_direction, &size)) {
 		switch (returnId) {
-		case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+		case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 			PyErr_SetString(PyExc_RuntimeError,
 				"Vertex not found in graph");
 			goto exit;
@@ -463,9 +463,9 @@ Graph_get_flag(GraphObject *self, PyObject *obj)
 {
 	int flag;
 	switch (yadsl_graph_vertex_flag_get(self->ob_graph, obj, &flag)) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		return PyLong_FromLong(flag);
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;
@@ -489,9 +489,9 @@ Graph_set_flag(GraphObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "Oi:pygraph.Graph.set_flag", &vertex, &flag))
 		return NULL;
 	switch (yadsl_graph_vertex_flag_set(self->ob_graph, vertex, flag)) {
-	case YADSL_GRAPH_RET_COND_OK:
+	case YADSL_GRAPH_RET_OK:
 		Py_RETURN_NONE;
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 		PyErr_SetString(PyExc_RuntimeError,
 			"Vertex not found in graph");
 		break;

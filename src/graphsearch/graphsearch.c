@@ -42,11 +42,11 @@ GraphSearchRet graphDFS(yadsl_GraphHandle *pGraph,
 	void (*visitVertexCallback)(void *vertex),
 	void (*visitEdgeCallback)(void *source, void *edge, void *dest))
 {
-	yadsl_GraphReturnCondition graphId;
+	yadsl_GraphRet graphId;
 	int flag;
 	if (graphId = yadsl_graph_vertex_flag_get(pGraph, initialVertex, &flag)) {
 		switch (graphId) {
-		case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+		case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 			return GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX;
 		default:
 			assert(0);
@@ -69,12 +69,12 @@ GraphSearchRet graphBFS(yadsl_GraphHandle *pGraph,
 {
 	Queue *pBfsQueue;
 	QueueRet queueId;
-	yadsl_GraphReturnCondition graphId;
+	yadsl_GraphRet graphId;
 	GraphSearchRet id;
 	int flag;
 	if (graphId = yadsl_graph_vertex_flag_get(pGraph, initialVertex, &flag)) {
 		switch (graphId) {
-		case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
+		case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
 			return GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX;
 		default:
 			assert(0);

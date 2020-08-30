@@ -1,4 +1,0 @@
-Vector
-======
-
-.. doxygengroup:: vector

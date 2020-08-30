@@ -1,4 +1,5 @@
 lib*/
 build*/
+doxygen/
 *__pycache__/
 *.pytest_cache/

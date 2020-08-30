@@ -8,71 +8,76 @@
 
 char buffer[BUFSIZ];
 
-const char *TesterHelpStrings[] = {
+const char *yadsl_tester_help_strings[] = {
 	"/help                  Prints help strings, just like this one",
 	"/print [s|i|f] <text>  Prints text formated as string, integer or float",
 	"/throw                 Throws custom error",
 	NULL,
 };
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
 	puts("TesterInitCallback called");
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	if matches(command, "help") {
-		TesterPrintHelpStrings();
+		yadsl_tester_print_help_strings();
 	} else if matches(command, "print") {
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (strlen(buffer) != 1)
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		if matches(buffer, "s") {
-			if (TesterParseArguments("s", buffer) != 1)
-				return TESTER_ARGUMENT;
-			printf("String: '%s'\n", buffer);
+			if (yadsl_tester_parse_arguments("s", buffer) != 1)
+				return YADSL_TESTER_RET_ARGUMENT;
+			yadsl_tester_log("String: '%s'", buffer);
 		} else if matches(buffer, "i") {
 			int i;
-			if (TesterParseArguments("i", &i) != 1)
-				return TESTER_ARGUMENT;
-			printf("Integer: '%d'\n", i);
+			if (yadsl_tester_parse_arguments("i", &i) != 1)
+				return YADSL_TESTER_RET_ARGUMENT;
+			yadsl_tester_log("Integer: '%d'", i);
 		} else if matches(buffer, "l") {
 			long l;
-			if (TesterParseArguments("l", &l) != 1)
-				return TESTER_RETURN;
-			printf("Long: '%ld'\n", l);
+			if (yadsl_tester_parse_arguments("l", &l) != 1)
+				return YADSL_TESTER_RET_RETURN;
+			yadsl_tester_log("Long: '%ld'", l);
 		} else if matches(buffer, "f") {
 			float f;
-			if (TesterParseArguments("f", &f) != 1)
-				return TESTER_ARGUMENT;
-			printf("Float: '%f'\n", f);
+			if (yadsl_tester_parse_arguments("f", &f) != 1)
+				return YADSL_TESTER_RET_ARGUMENT;
+			yadsl_tester_log("Float: '%f'", f);
 		} else if matches(buffer, "z") {
 			size_t z;
-			if (TesterParseArguments("z", &z) != 1)
-				return TESTER_ARGUMENT;
-			printf("Size Type: '%zu'\n", z);
+			if (yadsl_tester_parse_arguments("z", &z) != 1)
+				return YADSL_TESTER_RET_ARGUMENT;
+			yadsl_tester_log("Size Type: '%zu'", z);
+		} else if matches(buffer, "c") {
+			char c;
+			if (yadsl_tester_parse_arguments("c", &c) != 1)
+				return YADSL_TESTER_RET_ARGUMENT;
+			yadsl_tester_log("Character: '%c'", c);
 		} else {
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		}
 	} else if matches(command, "log") {
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
-		TesterLog(buffer);
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
+		yadsl_tester_log(buffer);
 	} else if matches(command, "throw") {
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
-		return TesterExternalReturnValue(buffer);
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
+		return yadsl_tester_return_external_value(buffer);
 	} else {
-		return TESTER_COMMAND;
+		return YADSL_TESTER_RET_COMMAND;
 	}
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
 	puts("TesterExitCallback called");
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }

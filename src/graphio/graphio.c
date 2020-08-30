@@ -162,7 +162,7 @@ static GraphIoRet _graphRead(yadsl_GraphHandle *pGraph, void **addressMap,
 	void (*free_edge_func)(void *e))
 {
 	size_t nbCount, i, j, index;
-	yadsl_GraphReturnCondition graphId;
+	yadsl_GraphRet graphId;
 	void *pVertexItem, *pNeighbourItem, *pEdgeItem;
 	for (i = 0; i < vCount; ++i) {
 		void *pPreviousValue = NULL;
@@ -174,9 +174,9 @@ static GraphIoRet _graphRead(yadsl_GraphHandle *pGraph, void **addressMap,
 			if (free_vertex_func)
 				free_vertex_func(pVertexItem);
 			switch (graphId) {
-			case YADSL_GRAPH_RET_COND_MEMORY:
+			case YADSL_GRAPH_RET_MEMORY:
 				return GRAPH_IO_MEMORY;
-			case YADSL_GRAPH_RET_COND_CONTAINS_VERTEX:
+			case YADSL_GRAPH_RET_CONTAINS_VERTEX:
 				return GRAPH_IO_SAME_CREATION;
 			default:
 				assert(0);
@@ -198,9 +198,9 @@ static GraphIoRet _graphRead(yadsl_GraphHandle *pGraph, void **addressMap,
 				if (free_edge_func)
 					free_edge_func(pEdgeItem);
 				switch (graphId) {
-				case YADSL_GRAPH_RET_COND_MEMORY:
+				case YADSL_GRAPH_RET_MEMORY:
 					return GRAPH_IO_MEMORY;
-				case YADSL_GRAPH_RET_COND_CONTAINS_EDGE:
+				case YADSL_GRAPH_RET_CONTAINS_EDGE:
 					return GRAPH_IO_CORRUPTED_FILE_FORMAT;
 				default:
 					assert(0);

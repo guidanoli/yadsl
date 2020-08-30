@@ -1,8 +1,8 @@
 find_package(Doxygen REQUIRED)
-find_package(Sphinx REQUIRED)
 
 # Find all the public headers
 file(GLOB_RECURSE YADSL_HEADERS ${YADSL_SOURCE_DIR}/*.h)
+file(GLOB_RECURSE DOC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.md)
 
 set(DOXYGEN_INPUT_DIR ${PROJECT_SOURCE_DIR}/src)
 set(DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/docs/doxygen)
@@ -16,7 +16,7 @@ configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 # Only regenerate Doxygen when the Doxyfile or public headers change
 file(MAKE_DIRECTORY ${DOXYGEN_OUTPUT_DIR}) #Doxygen won't create this for us
 add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
-                   DEPENDS ${YADSL_HEADERS}
+                   DEPENDS ${YADSL_HEADERS} ${DOC_FILES} ${DOXYFILE_IN}
                    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
                    MAIN_DEPENDENCY ${DOXYFILE_OUT} ${DOXYFILE_IN}
                    COMMENT "Generating documentation with Doxygen"
@@ -25,32 +25,3 @@ add_custom_command(OUTPUT ${DOXYGEN_INDEX_FILE}
 add_custom_target(Doxygen ALL DEPENDS ${DOXYGEN_INDEX_FILE})
 
 set_target_properties(Doxygen PROPERTIES FOLDER docs)
-
-set(SPHINX_SOURCE ${CMAKE_CURRENT_SOURCE_DIR})
-set(SPHINX_BUILD ${CMAKE_CURRENT_BINARY_DIR}/docs/sphinx)
-set(SPHINX_INDEX_FILE ${SPHINX_BUILD}/index.html)
-
-# Find all rst files
-file(GLOB_RECURSE SPHINX_RST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/*.rst)
-
-# Only regenerate Sphinx when:
-# - Doxygen has rerun
-# - Our doc files have been updated
-# - The Sphinx config has been updated
-add_custom_command(OUTPUT ${SPHINX_INDEX_FILE}
-                  DEPENDS ${SPHINX_RST_FILES} ${DOXYGEN_INDEX_FILE}
-                  COMMAND ${SPHINX_EXECUTABLE} -b html
-                  -Dbreathe_projects.yadsl=${DOXYGEN_OUTPUT_DIR}/xml
-                  ${SPHINX_SOURCE} ${SPHINX_BUILD}
-                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                  MAIN_DEPENDENCY ${SPHINX_SOURCE}/conf.py
-                  COMMENT "Generating documentation with Sphinx")
-
-add_custom_target(Sphinx ALL DEPENDS ${SPHINX_INDEX_FILE})
-
-set_target_properties(Sphinx PROPERTIES FOLDER docs)
-
-# Add an install target to install the docs
-include(GNUInstallDirs)
-install(DIRECTORY ${SPHINX_BUILD}
-DESTINATION ${CMAKE_INSTALL_DOCDIR})

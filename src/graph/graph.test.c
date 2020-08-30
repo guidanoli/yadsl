@@ -14,7 +14,7 @@
 
 /* Help */
 
-const char* TesterHelpStrings[] = {
+const char* yadsl_tester_help_strings[] = {
 	"This is an interactive module of the graph library",
 	"You will interact with the same graph object at all times",
 	"A directed graph is already created from the start",
@@ -63,23 +63,23 @@ static int _writeString(FILE* fp, void* v);
 static bool parseEdgeDirection(const char* buffer, yadsl_GraphEdgeDirection* edge_direction_ptr);
 static bool parseIterationDirection(const char* buffer, yadsl_GraphIterationDirection* iteration_direction_ptr);
 
-static TesterReturnValue convertRet(yadsl_GraphReturnCondition graphId);
-static TesterReturnValue convertIoRet(GraphIoRet graphIoId);
-static TesterReturnValue convertSearchRet(GraphSearchRet graphSearchId);
+static yadsl_TesterRet convertRet(yadsl_GraphRet graphId);
+static yadsl_TesterRet convertIoRet(GraphIoRet graphIoId);
+static yadsl_TesterRet convertSearchRet(GraphSearchRet graphSearchId);
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
 	pGraph = yadsl_graph_create(1, _cmpStrings, free, _cmpStrings, free);
-	return pGraph ? TESTER_OK : TESTER_MALLOC;
+	return pGraph ? YADSL_TESTER_RET_OK : YADSL_TESTER_RET_MALLOC;
 }
 
-static TesterReturnValue parseGraphCommands(const char* command)
+static yadsl_TesterRet parseGraphCommands(const char* command)
 {
-	yadsl_GraphReturnCondition graphId = YADSL_GRAPH_RET_COND_OK;
+	yadsl_GraphRet graphId = YADSL_GRAPH_RET_OK;
 	if matches(command, "create") {
 		int is_directed;
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		is_directed = matches(buffer, "DIRECTED");
 		yadsl_GraphHandle* temp = yadsl_graph_create(
 			is_directed, _cmpStrings, free, _cmpStrings, free);
@@ -87,151 +87,151 @@ static TesterReturnValue parseGraphCommands(const char* command)
 			yadsl_graph_destroy(pGraph);
 			pGraph = temp;
 		} else {
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		}
 	} else if matches(command, "isdirected") {
 		bool actual, expected;
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = matches(buffer, "YES");
 		graphId = yadsl_graph_is_directed_check(pGraph, &actual);
-		if (graphId == YADSL_GRAPH_RET_COND_OK && expected != actual)
-			return TESTER_RETURN;
+		if (graphId == YADSL_GRAPH_RET_OK && expected != actual)
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "vertexcount") {
 		size_t actual, expected;
-		if (TesterParseArguments("z", &expected) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("z", &expected) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_count_get(pGraph, &actual);
-		if (graphId == YADSL_GRAPH_RET_COND_OK && expected != actual)
-			return TESTER_RETURN;
+		if (graphId == YADSL_GRAPH_RET_OK && expected != actual)
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "ivertices") {
 		char* vertex;
 		yadsl_GraphIterationDirection iteration_direction;
-		if (TesterParseArguments("ss", buffer, buffer2) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ss", buffer, buffer2) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!parseIterationDirection(buffer, &iteration_direction))
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_iter(pGraph, iteration_direction, &vertex);
-		if (graphId == YADSL_GRAPH_RET_COND_OK) {
+		if (graphId == YADSL_GRAPH_RET_OK) {
 			if (nmatches(buffer2, vertex))
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 		}
 	} else if matches(command, "degree") {
 		size_t actual, expected;
 		yadsl_GraphEdgeDirection edge_direction;
-		if (TesterParseArguments("ssz", buffer, buffer2, &expected) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ssz", buffer, buffer2, &expected) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!parseEdgeDirection(buffer2, &edge_direction))
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_degree_get(pGraph, buffer, edge_direction, &actual);
-		if (graphId == YADSL_GRAPH_RET_COND_OK && expected != actual)
-			return TESTER_RETURN;
+		if (graphId == YADSL_GRAPH_RET_OK && expected != actual)
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "ineighbours") {
 		char* v, * uv;
 		yadsl_GraphIterationDirection iteration_direction;
 		yadsl_GraphEdgeDirection edge_direction;
-		if (TesterParseArguments("sssss", buffer, buffer2, buffer3, buffer4, buffer5) != 5)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("sssss", buffer, buffer2, buffer3, buffer4, buffer5) != 5)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!parseIterationDirection(buffer2, &iteration_direction))
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!parseEdgeDirection(buffer3, &edge_direction))
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_nb_iter(pGraph, buffer, edge_direction, iteration_direction, &v, &uv);
-		if (graphId == YADSL_GRAPH_RET_COND_OK) {
+		if (graphId == YADSL_GRAPH_RET_OK) {
 			if (nmatches(v, buffer4) || nmatches(uv, buffer5))
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 		}
 	} else if matches(command, "containsvertex") {
 		bool actual, expected;
-		if (TesterParseArguments("ss", buffer, buffer2) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ss", buffer, buffer2) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer2);
 		graphId = yadsl_graph_vertex_exists_check(pGraph, buffer, &actual);
-		if (graphId == YADSL_GRAPH_RET_COND_OK && actual != expected)
-			return TESTER_RETURN;
+		if (graphId == YADSL_GRAPH_RET_OK && actual != expected)
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "addvertex") {
 		char* vertex;
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((vertex = strdup(buffer)) == NULL)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		if (graphId = yadsl_graph_vertex_add(pGraph, vertex))
 			free(vertex);
 	} else if matches(command, "removevertex") {
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_remove(pGraph, buffer);
 	} else if matches(command, "containsedge") {
 		bool actual, expected;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("sss", buffer, buffer2, buffer3) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer3);
 		graphId = yadsl_graph_edge_exists_check(pGraph, buffer, buffer2, &actual);
-		if (graphId == YADSL_GRAPH_RET_COND_OK && actual != expected)
-			return TESTER_RETURN;
+		if (graphId == YADSL_GRAPH_RET_OK && actual != expected)
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "addedge") {
 		char* edge;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("sss", buffer, buffer2, buffer3) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((edge = strdup(buffer3)) == NULL)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		if (graphId = yadsl_graph_edge_add(pGraph, buffer, buffer2, edge))
 			free(edge);
 	} else if matches(command, "getedge") {
 		char* actual;
-		if (TesterParseArguments("sss", buffer, buffer2, buffer3) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("sss", buffer, buffer2, buffer3) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_edge_get(pGraph, buffer, buffer2, &actual);
-		if (graphId == YADSL_GRAPH_RET_COND_OK) {
+		if (graphId == YADSL_GRAPH_RET_OK) {
 			if (nmatches(actual, buffer3))
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 		}
 	} else if matches(command, "removeedge") {
-		if (TesterParseArguments("ss", buffer, buffer2) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ss", buffer, buffer2) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_edge_remove(pGraph, buffer, buffer2);
 	} else if matches(command, "setvertexflag") {
 		int flag;
-		if (TesterParseArguments("si", buffer, &flag) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("si", buffer, &flag) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_flag_set(pGraph, buffer, flag);
 	} else if matches(command, "setallflags") {
 		int flag;
-		if (TesterParseArguments("i", &flag) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("i", &flag) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_flag_set_all(pGraph, flag);
 	} else if matches(command, "getvertexflag") {
 		int actual, expected;
-		if (TesterParseArguments("si", buffer, &expected) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("si", buffer, &expected) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphId = yadsl_graph_vertex_flag_get(pGraph, buffer, &actual);
-		if (graphId == YADSL_GRAPH_RET_COND_OK && actual != expected)
-			return TESTER_RETURN;
+		if (graphId == YADSL_GRAPH_RET_OK && actual != expected)
+			return YADSL_TESTER_RET_RETURN;
 	} else {
-		return TESTER_COUNT;
+		return YADSL_TESTER_RET_COUNT;
 	}
 	return convertRet(graphId);
 }
 
-static TesterReturnValue parseGraphIoCommands(const char* command)
+static yadsl_TesterRet parseGraphIoCommands(const char* command)
 {
 	GraphIoRet graphIoId = GRAPH_IO_OK;
 	FILE* fp;
 	if matches(command, "write") {
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		fp = fopen(buffer, "w");
 		if (fp == NULL)
-			return TESTER_FILE;
+			return YADSL_TESTER_RET_FILE;
 		graphIoId = graphWrite(pGraph, fp, _writeString, _writeString);
 		fclose(fp);
 	} else if matches(command, "read") {
 		yadsl_GraphHandle* temp;
-		if (TesterParseArguments("s", buffer) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		fp = fopen(buffer, "r");
 		if (fp == NULL)
-			return TESTER_FILE;
+			return YADSL_TESTER_RET_FILE;
 		graphIoId = graphRead(&temp, fp, _readString, _readString,
 			_cmpStrings, free, _cmpStrings, free);
 		if (graphIoId == GRAPH_IO_OK) {
@@ -240,7 +240,7 @@ static TesterReturnValue parseGraphIoCommands(const char* command)
 		}
 		fclose(fp);
 	} else {
-		return TESTER_COUNT;
+		return YADSL_TESTER_RET_COUNT;
 	}
 	return convertIoRet(graphIoId);
 }
@@ -256,58 +256,58 @@ static void visitEdgeCallback(void* source, void* edge, void* dest)
 		(char*) edge, (char*) source, (char*) dest);
 }
 
-static TesterReturnValue parseGraphSearchCommands(const char* command)
+static yadsl_TesterRet parseGraphSearchCommands(const char* command)
 {
 	GraphSearchRet graphSearchId = GRAPH_SEARCH_OK;
 	int flag;
 	if matches(command, "dfs") {
-		if (TesterParseArguments("si", buffer, &flag) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("si", buffer, &flag) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphSearchId = graphDFS(pGraph,
 			buffer,
 			flag,
 			visitVertexCallback,
 			visitEdgeCallback);
 	} else if matches(command, "bfs") {
-		if (TesterParseArguments("si", buffer, &flag) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("si", buffer, &flag) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		graphSearchId = graphBFS(pGraph,
 			buffer,
 			flag,
 			visitVertexCallback,
 			visitEdgeCallback);
 	} else {
-		return TESTER_COUNT;
+		return YADSL_TESTER_RET_COUNT;
 	}
 	return convertSearchRet(graphSearchId);
 }
 
-// Here the TESTER_COUNT is being used as a flag to indicate that
+// Here the YADSL_TESTER_RET_COUNT is being used as a flag to indicate that
 // the command is not of a certain type, since it is never used truly for
 // testing purposes.
-TesterReturnValue TesterParseCallback(const char* command)
+yadsl_TesterRet yadsl_tester_parse(const char* command)
 {
-	TesterReturnValue ret;
+	yadsl_TesterRet ret;
 	if ((ret = parseGraphCommands(command))
-		!= TESTER_COUNT)
+		!= YADSL_TESTER_RET_COUNT)
 		return ret;
 	if ((ret = parseGraphIoCommands(command))
-		!= TESTER_COUNT)
+		!= YADSL_TESTER_RET_COUNT)
 		return ret;
 	if ((ret = parseGraphSearchCommands(command))
-		!= TESTER_COUNT)
+		!= YADSL_TESTER_RET_COUNT)
 		return ret;
-	return TESTER_COMMAND;
+	return YADSL_TESTER_RET_COMMAND;
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
 	if (pGraph) yadsl_graph_destroy(pGraph);
 #ifdef _DEBUG
 	if (getGraphSearchNodeRefCount())
-		return TESTER_MEMLEAK;
+		return YADSL_TESTER_RET_MEMLEAK;
 #endif
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
 static int _cmpStrings(void* a, void* b)
@@ -325,65 +325,65 @@ static int _writeString(FILE* fp, void* v)
 	return TesterUtilsSerializeString(fp, (char*) v);
 }
 
-static TesterReturnValue convertRet(yadsl_GraphReturnCondition graphId)
+static yadsl_TesterRet convertRet(yadsl_GraphRet graphId)
 {
 	switch (graphId) {
-	case YADSL_GRAPH_RET_COND_OK:
-		return TESTER_OK;
-	case YADSL_GRAPH_RET_COND_EMPTY:
-		return TesterExternalReturnValue("empty");
-	case YADSL_GRAPH_RET_COND_CONTAINS_VERTEX:
-		return TesterExternalReturnValue("contains vertex");
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX:
-		return TesterExternalReturnValue("does not contain vertex");
-	case YADSL_GRAPH_RET_COND_CONTAINS_EDGE:
-		return TesterExternalReturnValue("contains edge");
-	case YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE:
-		return TesterExternalReturnValue("does not contain edge");
-	case YADSL_GRAPH_RET_COND_MEMORY:
-		return TesterExternalReturnValue("memory");
-	case YADSL_GRAPH_RET_COND_PARAMETER:
-		return TesterExternalReturnValue("parameter");
+	case YADSL_GRAPH_RET_OK:
+		return YADSL_TESTER_RET_OK;
+	case YADSL_GRAPH_RET_EMPTY:
+		return yadsl_tester_return_external_value("empty");
+	case YADSL_GRAPH_RET_CONTAINS_VERTEX:
+		return yadsl_tester_return_external_value("contains vertex");
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
+		return yadsl_tester_return_external_value("does not contain vertex");
+	case YADSL_GRAPH_RET_CONTAINS_EDGE:
+		return yadsl_tester_return_external_value("contains edge");
+	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE:
+		return yadsl_tester_return_external_value("does not contain edge");
+	case YADSL_GRAPH_RET_MEMORY:
+		return yadsl_tester_return_external_value("memory");
+	case YADSL_GRAPH_RET_PARAMETER:
+		return yadsl_tester_return_external_value("parameter");
 	default:
-		return TesterExternalReturnValue("unknown");
+		return yadsl_tester_return_external_value("unknown");
 	}
 }
 
-static TesterReturnValue convertIoRet(GraphIoRet graphIoId)
+static yadsl_TesterRet convertIoRet(GraphIoRet graphIoId)
 {
 	switch (graphIoId) {
 	case GRAPH_IO_OK:
-		return TESTER_OK;
+		return YADSL_TESTER_RET_OK;
 	case GRAPH_IO_MEMORY:
-		return TesterExternalReturnValue("memory");
+		return yadsl_tester_return_external_value("memory");
 	case GRAPH_IO_WRITING_FAILURE:
-		return TesterExternalReturnValue("writing failure");
+		return yadsl_tester_return_external_value("writing failure");
 	case GRAPH_IO_CREATION_FAILURE:
-		return TesterExternalReturnValue("creation failure");
+		return yadsl_tester_return_external_value("creation failure");
 	case GRAPH_IO_SAME_CREATION:
-		return TesterExternalReturnValue("same creation");
+		return yadsl_tester_return_external_value("same creation");
 	case GRAPH_IO_FILE_ERROR:
-		return TesterExternalReturnValue("file error");
+		return yadsl_tester_return_external_value("file error");
 	case GRAPH_IO_DEPRECATED_FILE_FORMAT:
-		return TesterExternalReturnValue("deprecated file format");
+		return yadsl_tester_return_external_value("deprecated file format");
 	default:
-		return TesterExternalReturnValue("unknown");
+		return yadsl_tester_return_external_value("unknown");
 	}
 }
 
-static TesterReturnValue convertSearchRet(GraphSearchRet graphSearchId)
+static yadsl_TesterRet convertSearchRet(GraphSearchRet graphSearchId)
 {
 	switch (graphSearchId) {
 	case GRAPH_SEARCH_OK:
-		return TESTER_OK;
+		return YADSL_TESTER_RET_OK;
 	case GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX:
-		return TesterExternalReturnValue("does not contain vertex");
+		return yadsl_tester_return_external_value("does not contain vertex");
 	case GRAPH_SEARCH_VERTEX_ALREADY_VISITED:
-		return TesterExternalReturnValue("vertex already visited");
+		return yadsl_tester_return_external_value("vertex already visited");
 	case GRAPH_SEARCH_MEMORY:
-		return TesterExternalReturnValue("memory");
+		return yadsl_tester_return_external_value("memory");
 	default:
-		return TesterExternalReturnValue("unknown");
+		return yadsl_tester_return_external_value("unknown");
 	}
 }
 
@@ -396,7 +396,7 @@ bool parseEdgeDirection(const char* buffer, yadsl_GraphEdgeDirection* edge_direc
 	} else if matches(buffer, "both") {
 		*edge_direction_ptr = YADSL_GRAPH_EDGE_DIR_BOTH;
 	} else {
-		TesterLog("Unknown edge direction \"%s\"", buffer);
+		yadsl_tester_log("Unknown edge direction \"%s\"", buffer);
 		return false;
 	}
 	return true;
@@ -409,7 +409,7 @@ bool parseIterationDirection(const char* buffer, yadsl_GraphIterationDirection* 
 	} else if matches(buffer, "previous") {
 		*iteration_direction_ptr = YADSL_GRAPH_ITER_DIR_PREVIOUS;
 	} else {
-		TesterLog("Unknown iteration direction \"%s\"", buffer);
+		yadsl_tester_log("Unknown iteration direction \"%s\"", buffer);
 		return false;
 	}
 	return true;
