@@ -12,201 +12,223 @@
 # pragma warning(disable : 4022)
 #endif
 
-#define WRITE(file, format, arg) do { \
+#define YADSL_GRAPH_IO_WRITE(file, format, arg) do { \
 	if (fprintf(file, format, arg) < 0) \
-		return GRAPH_IO_FILE_ERROR; \
+		return YADSL_GRAPH_IO_RET_FILE_ERROR; \
 } while(0)
 
-#define READ(file, format, arg) do { \
-	if (fscanf(fp, " " format " ", arg) != 1) \
-		return GRAPH_IO_FILE_ERROR; \
+#define YADSL_GRAPH_IO_WRITE_NL(file, format, arg) \
+	YADSL_GRAPH_IO_WRITE(file, format "\n", arg)
+
+#define YADSL_GRAPH_IO_READ(file, format, arg) do { \
+	if (fscanf(file, " " format " ", arg) != 1) \
+		return YADSL_GRAPH_IO_RET_FILE_ERROR; \
 } while(0)
 
-#define WRITENL(file, format, arg) \
-	WRITE(file, format "\n", arg)
+#define YADSL_GRAPH_IO_FILE_FORMAT_VERSION 5
 
-#define FILE_FORMAT_VERSION 5
-
-#define VERSION_STR     "VERSION %u"
-#define DIRECTED_STR    "IS_DIRECTED %d"
-#define VCOUNT_STR      "%zu "
-#define VFLAG_STR       " %d "
-#define VERTEX_IDX_STR  "%zu "
-#define NBCOUNT_STR	    "%zu"
-#define NB_IDX_STR      " %zu "
+#define YADSL_GRAPH_IO_VERSION_STR     "VERSION %u"
+#define YADSL_GRAPH_IO_DIRECTED_STR    "IS_DIRECTED %d"
+#define YADSL_GRAPH_IO_VCOUNT_STR      "%zu "
+#define YADSL_GRAPH_IO_VFLAG_STR       " %d "
+#define YADSL_GRAPH_IO_VERTEX_IDX_STR  "%zu "
+#define YADSL_GRAPH_IO_NBCOUNT_STR	   "%zu"
+#define YADSL_GRAPH_IO_NB_IDX_STR      " %zu "
 
 /* Private functions prototypes */
 
-static GraphIoRet _graphWrite(yadsl_GraphHandle *pGraph, FILE *fp,
-	int (*writeVertex)(FILE *fp, void *v),
-	int (*writeEdge)(FILE *fp, void *e),
-	Map *addressMap);
+static yadsl_GraphIoRet yadsl_graph_io_write_internal(
+	yadsl_GraphHandle *graph,
+	FILE *file_ptr,
+	yadsl_GraphIoVertexWriteFunc write_vertex_func,
+	yadsl_GraphIoEdgeWriteFunc write_edge_func,
+	Map *address_map);
 
-static GraphIoRet _graphRead(yadsl_GraphHandle *pGraph, void **addressMap,
-	FILE *fp, size_t vCount, int is_directed,
-	int (*readVertex)(FILE *fp, void **ppVertex),
-	int (*readEdge)(FILE *fp, void **ppEdge),
-	void (*free_vertex_func)(void *v),
-	void (*free_edge_func)(void *e));
+static yadsl_GraphIoRet yadsl_graph_io_read_internal(
+	yadsl_GraphHandle *graph,
+	void **address_map,
+	FILE *file_ptr,
+	size_t vertex_count,
+	int is_directed,
+	yadsl_GraphIoVertexReadFunc read_vertex_func,
+	yadsl_GraphIoEdgeReadFunc read_edge_func,
+	yadsl_GraphFreeVertexObjFunc free_vertex_func,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func);
 
 /* Public functions */
 
-GraphIoRet graphWrite(yadsl_GraphHandle *pGraph, FILE *fp,
-	int (*writeVertex)(FILE *fp, void *v),
-	int (*writeEdge)(FILE *fp, void *e))
+yadsl_GraphIoRet yadsl_graph_io_write(
+	yadsl_GraphHandle * graph,
+	FILE * file_ptr,
+	yadsl_GraphIoVertexWriteFunc write_vertex_func,
+	yadsl_GraphIoEdgeWriteFunc write_edge_func)
 {
-	Map *addressMap;
-	GraphIoRet id;
-	if (mapCreate(&addressMap, NULL, NULL, NULL))
-		return GRAPH_IO_MEMORY;
-	id = _graphWrite(pGraph, fp, writeVertex, writeEdge, addressMap);
-	mapDestroy(addressMap);
-	return id;
+	Map *adress_map;
+	yadsl_GraphIoRet ret;
+	if (mapCreate(&adress_map, NULL, NULL, NULL))
+		return YADSL_GRAPH_IO_RET_MEMORY;
+	ret = yadsl_graph_io_write_internal(graph, file_ptr, write_vertex_func, write_edge_func, adress_map);
+	mapDestroy(adress_map);
+	return ret;
 }
 
-GraphIoRet graphRead(yadsl_GraphHandle **ppGraph, FILE *fp,
-	int (*readVertex)(FILE *fp, void **ppVertex),
-	int (*readEdge)(FILE *fp, void **ppEdge),
-	int (*cmp_vertices_func)(void *a, void *b),
-	void (*free_vertex_func)(void *v),
-	int (*cmp_edges_func)(void *a, void *b),
-	void (*free_edge_func)(void *e))
+yadsl_GraphIoRet yadsl_graph_io_read(
+	FILE* file_ptr,
+	yadsl_GraphIoVertexReadFunc read_vertex_func,
+	yadsl_GraphIoEdgeReadFunc read_edge_func,
+	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func,
+	yadsl_GraphFreeVertexObjFunc free_vertex_func,
+	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func,
+	yadsl_GraphHandle** graph_ptr)
 {
+	yadsl_GraphIoRet ret;
 	unsigned int version;
-	size_t vCount;
-	GraphIoRet id;
+	size_t vertex_count;
 	int is_directed;
-	yadsl_GraphHandle *pGraph = NULL;
-	void **addressMap;
-	READ(fp, VERSION_STR, &version); // Version
-	if (version != FILE_FORMAT_VERSION)
-		return GRAPH_IO_DEPRECATED_FILE_FORMAT;
-	READ(fp, DIRECTED_STR, &is_directed); // Directed
-	READ(fp, VCOUNT_STR, &vCount); // Vertex count
+	yadsl_GraphHandle *graph;
+	void **address_map;
+
+	YADSL_GRAPH_IO_READ(file_ptr, YADSL_GRAPH_IO_VERSION_STR, &version); /* Version */
+	if (version != YADSL_GRAPH_IO_FILE_FORMAT_VERSION)
+		return YADSL_GRAPH_IO_RET_DEPRECATED_FILE_FORMAT;
+	YADSL_GRAPH_IO_READ(file_ptr, YADSL_GRAPH_IO_DIRECTED_STR, &is_directed); /* Directed */
+	YADSL_GRAPH_IO_READ(file_ptr, YADSL_GRAPH_IO_VCOUNT_STR, &vertex_count); /* Vertex count */
+
 	/* Graph to be created */
-	if (!(pGraph = yadsl_graph_create(is_directed, cmp_vertices_func,
-		free_vertex_func, cmp_edges_func, free_edge_func))) {
-		return GRAPH_IO_MEMORY;
-	}
+	if (!(graph = yadsl_graph_create(is_directed, cmp_vertices_func, free_vertex_func, cmp_edges_func, free_edge_func)))
+		return YADSL_GRAPH_IO_RET_MEMORY;
+
 	/* Address map to store vertex items */
-	addressMap = malloc(vCount * sizeof(void *));
-	if (addressMap == NULL) {
-		yadsl_graph_destroy(pGraph);
-		return GRAPH_IO_MEMORY;
+	address_map = malloc(vertex_count * sizeof(void *));
+	if (address_map == NULL) {
+		yadsl_graph_destroy(graph);
+		return YADSL_GRAPH_IO_RET_MEMORY;
 	}
-	id = _graphRead(pGraph, addressMap, fp, vCount, is_directed,
-		readVertex, readEdge, free_vertex_func, free_edge_func);
-	free(addressMap);
-	if (id) {
-		yadsl_graph_destroy(pGraph);
-		return id;
+
+	ret = yadsl_graph_io_read_internal(graph, address_map, file_ptr, vertex_count, is_directed, read_vertex_func, read_edge_func, free_vertex_func, free_edge_func);
+	free(address_map);
+	if (ret) {
+		yadsl_graph_destroy(graph);
+		return ret;
 	}
-	*ppGraph = pGraph;
-	return GRAPH_IO_OK;
+	*graph_ptr = graph;
+	return YADSL_GRAPH_IO_RET_OK;
 }
 
 /* Private functions */
 
-static GraphIoRet _graphWrite(yadsl_GraphHandle *pGraph, FILE *fp,
-	int (*writeVertex)(FILE *fp, void *v),
-	int (*writeEdge)(FILE *fp, void *e),
-	Map *addressMap)
+static yadsl_GraphIoRet yadsl_graph_io_write_internal(
+	yadsl_GraphHandle *graph,
+	FILE *file_ptr,
+	yadsl_GraphIoVertexWriteFunc write_vertex_func,
+	yadsl_GraphIoEdgeWriteFunc write_edge_func,
+	Map *address_map)
 {
 	bool is_directed;
-	MapRet mapId;
-	void *previousValue;
-	size_t vCount, nbCount, i, j, index;
-	void *pVertex, *pNeighbour, *pEdge;
-	if (yadsl_graph_is_directed_check(pGraph, &is_directed)) assert(0);
-	if (yadsl_graph_vertex_count_get(pGraph, &vCount)) assert(0);
-	WRITENL(fp, VERSION_STR, FILE_FORMAT_VERSION); // Version
-	WRITENL(fp, DIRECTED_STR, is_directed); // Type
-	WRITE(fp, VCOUNT_STR, vCount); // Vertex count
-	for (i = 0; i < vCount; ++i) {
+	MapRet map_ret;
+	void *previous_value;
+	size_t vertex_count, nb_count, i, j, index;
+	void *vertex, *nb, *edge;
+
+	if (yadsl_graph_is_directed_check(graph, &is_directed)) assert(0);
+	if (yadsl_graph_vertex_count_get(graph, &vertex_count)) assert(0);
+
+	YADSL_GRAPH_IO_WRITE_NL(file_ptr, YADSL_GRAPH_IO_VERSION_STR, YADSL_GRAPH_IO_FILE_FORMAT_VERSION); /* Version */
+	YADSL_GRAPH_IO_WRITE_NL(file_ptr, YADSL_GRAPH_IO_DIRECTED_STR, is_directed); /* Directed */
+	YADSL_GRAPH_IO_WRITE(file_ptr, YADSL_GRAPH_IO_VCOUNT_STR, vertex_count); /* Vertex count */
+
+	for (i = 0; i < vertex_count; ++i) {
 		int flag, overwrite;
-		if (yadsl_graph_vertex_iter(pGraph, YADSL_GRAPH_ITER_DIR_NEXT, &pVertex)) assert(0);
-		if (mapId = mapPutEntry(addressMap, pVertex, i,
-			&overwrite, &previousValue)) {
+		if (yadsl_graph_vertex_iter(graph, YADSL_GRAPH_ITER_DIR_NEXT, &vertex)) assert(0);
+		if (map_ret = mapPutEntry(address_map, vertex, i, &overwrite, &previous_value)) {
 			assert(!overwrite);
-			return GRAPH_IO_MEMORY;
+			return YADSL_GRAPH_IO_RET_MEMORY;
 		}
-		if (writeVertex(fp, pVertex)) // Vertex item
-			return GRAPH_IO_WRITING_FAILURE;
-		if (yadsl_graph_vertex_flag_get(pGraph, pVertex, &flag)) assert(0);
-		WRITE(fp, VFLAG_STR, flag);
+		if (write_vertex_func(file_ptr, vertex)) /* Vertex item */
+			return YADSL_GRAPH_IO_RET_WRITING_FAILURE;
+		if (yadsl_graph_vertex_flag_get(graph, vertex, &flag)) assert(0);
+		YADSL_GRAPH_IO_WRITE(file_ptr, YADSL_GRAPH_IO_VFLAG_STR, flag);
 	}
-	WRITE(fp, "%c", '\n');
-	for (i = vCount; i; --i) {
-		if (yadsl_graph_vertex_iter(pGraph, YADSL_GRAPH_ITER_DIR_NEXT, &pVertex)) assert(0);
-		if (yadsl_graph_vertex_degree_get(pGraph, pVertex, YADSL_GRAPH_EDGE_DIR_OUT, &nbCount)) assert(0);
-		WRITE(fp, NBCOUNT_STR, nbCount); // Vertex degree
-		for (j = nbCount; j; --j) {
-			if (yadsl_graph_vertex_nb_iter(pGraph, pVertex, YADSL_GRAPH_EDGE_DIR_OUT, YADSL_GRAPH_ITER_DIR_NEXT, &pNeighbour, &pEdge))
+
+	YADSL_GRAPH_IO_WRITE(file_ptr, "%c", '\n');
+	for (i = vertex_count; i; --i) {
+		if (yadsl_graph_vertex_iter(graph, YADSL_GRAPH_ITER_DIR_NEXT, &vertex)) assert(0);
+		if (yadsl_graph_vertex_degree_get(graph, vertex, YADSL_GRAPH_EDGE_DIR_OUT, &nb_count)) assert(0);
+		YADSL_GRAPH_IO_WRITE(file_ptr, YADSL_GRAPH_IO_NBCOUNT_STR, nb_count); /* Vertex degree */
+		for (j = nb_count; j; --j) {
+			if (yadsl_graph_vertex_nb_iter(graph, vertex, YADSL_GRAPH_EDGE_DIR_OUT, YADSL_GRAPH_ITER_DIR_NEXT, &nb, &edge))
 				assert(0);
-			if (mapGetEntry(addressMap, pNeighbour, &previousValue)) assert(0);
-			index = (size_t) previousValue;
-			WRITE(fp, NB_IDX_STR, index); // Neighbour index
-			if (writeEdge(fp, pEdge)) // Edge item
-				return GRAPH_IO_WRITING_FAILURE;
+			if (mapGetEntry(address_map, nb, &previous_value)) assert(0);
+			index = (size_t) previous_value;
+			YADSL_GRAPH_IO_WRITE(file_ptr, YADSL_GRAPH_IO_NB_IDX_STR, index); /* Neighbour index */
+			if (write_edge_func(file_ptr, edge)) /* Edge item */
+				return YADSL_GRAPH_IO_RET_WRITING_FAILURE;
 		}
-		WRITE(fp, "%c", '\n');
+		YADSL_GRAPH_IO_WRITE(file_ptr, "%c", '\n');
 	}
-	return GRAPH_IO_OK;
+	return YADSL_GRAPH_IO_RET_OK;
 }
 
-static GraphIoRet _graphRead(yadsl_GraphHandle *pGraph, void **addressMap,
-	FILE *fp, size_t vCount, int is_directed,
-	int (*readVertex)(FILE *fp, void **ppVertex),
-	int (*readEdge)(FILE *fp, void **ppEdge),
-	void (*free_vertex_func)(void *v),
-	void (*free_edge_func)(void *e))
+static yadsl_GraphIoRet yadsl_graph_io_read_internal(
+	yadsl_GraphHandle *graph,
+	void **address_map,
+	FILE *file_ptr,
+	size_t vertex_count,
+	int is_directed,
+	yadsl_GraphIoVertexReadFunc read_vertex_func,
+	yadsl_GraphIoEdgeReadFunc read_edge_func,
+	yadsl_GraphFreeVertexObjFunc free_vertex_func,
+	yadsl_GraphFreeEdgeObjFunc free_edge_func)
 {
-	size_t nbCount, i, j, index;
-	yadsl_GraphRet graphId;
-	void *pVertexItem, *pNeighbourItem, *pEdgeItem;
-	for (i = 0; i < vCount; ++i) {
+	size_t nb_count, i, j, index;
+	yadsl_GraphRet graph_ret;
+	void *vertex_item, *nb_item, *edge_item;
+
+	for (i = 0; i < vertex_count; ++i) {
 		void *pPreviousValue = NULL;
 		int flag;
-		if (readVertex(fp, &pVertexItem)) // Vertex item
-			return GRAPH_IO_CREATION_FAILURE;
-		addressMap[i] = pVertexItem;
-		if (graphId = yadsl_graph_vertex_add(pGraph, pVertexItem)) {
+		if (read_vertex_func(file_ptr, &vertex_item)) /* Vertex item */
+			return YADSL_GRAPH_IO_RET_CREATION_FAILURE;
+		address_map[i] = vertex_item;
+		if (graph_ret = yadsl_graph_vertex_add(graph, vertex_item)) {
 			if (free_vertex_func)
-				free_vertex_func(pVertexItem);
-			switch (graphId) {
+				free_vertex_func(vertex_item);
+			switch (graph_ret) {
 			case YADSL_GRAPH_RET_MEMORY:
-				return GRAPH_IO_MEMORY;
+				return YADSL_GRAPH_IO_RET_MEMORY;
 			case YADSL_GRAPH_RET_CONTAINS_VERTEX:
-				return GRAPH_IO_SAME_CREATION;
+				return YADSL_GRAPH_IO_RET_SAME_CREATION;
 			default:
 				assert(0);
 			}
 		}
-		READ(fp, VFLAG_STR, &flag);
-		if (yadsl_graph_vertex_flag_set(pGraph, pVertexItem, flag)) assert(0);
+		YADSL_GRAPH_IO_READ(file_ptr, YADSL_GRAPH_IO_VFLAG_STR, &flag);
+		if (yadsl_graph_vertex_flag_set(graph, vertex_item, flag)) assert(0);
 	}
-	for (i = 0; i < vCount; ++i) {
-		pVertexItem = addressMap[i];
-		READ(fp, NBCOUNT_STR, &nbCount); // Vertex degree
-		for (j = 0; j < nbCount; ++j) {
-			READ(fp, NB_IDX_STR, &index); // Neighbour index
-			pNeighbourItem = addressMap[index];
-			if (readEdge(fp, &pEdgeItem)) // Edge item
-				return GRAPH_IO_CREATION_FAILURE;
-			if (graphId = yadsl_graph_edge_add(pGraph, pVertexItem, pNeighbourItem,
-				pEdgeItem)) {
+
+	for (i = 0; i < vertex_count; ++i) {
+		vertex_item = address_map[i];
+		YADSL_GRAPH_IO_READ(file_ptr, YADSL_GRAPH_IO_NBCOUNT_STR, &nb_count); /* Vertex degree */
+		for (j = 0; j < nb_count; ++j) {
+			YADSL_GRAPH_IO_READ(file_ptr, YADSL_GRAPH_IO_NB_IDX_STR, &index); /* Neighbour index */
+			nb_item = address_map[index];
+			if (read_edge_func(file_ptr, &edge_item)) /* Edge item */
+				return YADSL_GRAPH_IO_RET_CREATION_FAILURE;
+			if (graph_ret = yadsl_graph_edge_add(graph, vertex_item, nb_item,
+				edge_item)) {
 				if (free_edge_func)
-					free_edge_func(pEdgeItem);
-				switch (graphId) {
+					free_edge_func(edge_item);
+				switch (graph_ret) {
 				case YADSL_GRAPH_RET_MEMORY:
-					return GRAPH_IO_MEMORY;
+					return YADSL_GRAPH_IO_RET_MEMORY;
 				case YADSL_GRAPH_RET_CONTAINS_EDGE:
-					return GRAPH_IO_CORRUPTED_FILE_FORMAT;
+					return YADSL_GRAPH_IO_RET_CORRUPTED_FILE_FORMAT;
 				default:
 					assert(0);
 				}
 			}
 		}
 	}
-	return GRAPH_IO_OK;
+	return YADSL_GRAPH_IO_RET_OK;
 }
