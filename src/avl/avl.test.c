@@ -6,7 +6,7 @@
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 
-const char *TesterHelpStrings[] = {
+const char *yadsl_tester_help_strings[] = {
 	"This is the avl test module",
 	"A new pTree is already created in the beggining",
 	"",
@@ -24,7 +24,7 @@ const char *TesterHelpStrings[] = {
 
 char buffer[BUFSIZ];
 yadsl_AVLTreeHandle *pTree;
-TesterReturnValue cbReturnValue;
+yadsl_TesterRet cbReturnValue;
 int first, last;
 
 static int cmp_objs_func(void *obj1, void *obj2, void *cmp_objs_arg)
@@ -40,7 +40,7 @@ static void *visit_cb_range(void *object, void *cmp_objs_arg)
 	assert(cmp_objs_arg == &pTree);
 	curr = *((int *) object);
 	if (curr != first)
-		cbReturnValue = TESTER_RETURN;
+		cbReturnValue = YADSL_TESTER_RET_RETURN;
 	else
 		if (first < last)
 			++first;
@@ -55,42 +55,42 @@ static void *visit_cb(void *object, void *cmp_objs_arg)
 	assert(object);
 	assert(cmp_objs_arg == &pTree);
 	actual = *((int *) object);
-	if (TesterParseArguments("i", &expected) != 1) {
+	if (yadsl_tester_parse_arguments("i", &expected) != 1) {
 		if (!cbReturnValue)
-			cbReturnValue = TESTER_ARGUMENT;
+			cbReturnValue = YADSL_TESTER_RET_ARGUMENT;
 		return 0;
 	}
 	if (!cbReturnValue && actual != expected)
-		cbReturnValue = TESTER_RETURN;
+		cbReturnValue = YADSL_TESTER_RET_RETURN;
 	return 0;
 }
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
 	if (!(pTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, free)))
-		return TESTER_MALLOC;
-	return TESTER_OK;
+		return YADSL_TESTER_RET_MALLOC;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue convert(yadsl_AVLTreeRet returnId)
+yadsl_TesterRet convert(yadsl_AVLTreeRet returnId)
 {
 	switch (returnId) {
 	case YADSL_AVLTREE_RET_OK:
-		return TESTER_OK;
+		return YADSL_TESTER_RET_OK;
 	case YADSL_AVLTREE_RET_MEMORY:
-		return TesterExternalReturnValue("memory");
+		return yadsl_tester_return_external_value("memory");
 	default:
-		return TesterExternalReturnValue("unknown");
+		return yadsl_tester_return_external_value("unknown");
 	}
 }
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	yadsl_AVLTreeRet returnId = YADSL_AVLTREE_RET_OK;
 	if matches(command, "new") {
 		yadsl_AVLTreeHandle *newTree;
 		if (!(newTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, free))) {
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		} else {
 			yadsl_avltree_destroy(pTree);
 			pTree = newTree;
@@ -100,26 +100,26 @@ TesterReturnValue TesterParseCallback(const char *command)
 		bool actual, expected;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
-			return TESTER_MALLOC;
-		if (TesterParseArguments("is", pNumber, buffer) != 2)
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_MALLOC;
+		if (yadsl_tester_parse_arguments("is", pNumber, buffer) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = !TesterUtilsGetYesOrNoFromString(buffer);
 		returnId = yadsl_avltree_object_insert(pTree, pNumber, &actual);
 		if (returnId || actual)
 			free(pNumber);
 		if (!returnId && actual != expected)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "insert*") {
 		int first, last;
 		bool expected, actual;
-		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("iis", &first, &last, buffer) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = !TesterUtilsGetYesOrNoFromString(buffer);
 		do {
 			int* pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
-				return TESTER_MALLOC;
+				return YADSL_TESTER_RET_MALLOC;
 			*pNumber = first;
 			returnId = yadsl_avltree_object_insert(pTree, pNumber, &actual);
 			if (returnId || actual) {
@@ -127,7 +127,7 @@ TesterReturnValue TesterParseCallback(const char *command)
 				break;
 			}
 			if (!returnId && actual != expected)
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 			if (first < last)
 				++first;
 			else if (first > last)
@@ -138,36 +138,36 @@ TesterReturnValue TesterParseCallback(const char *command)
 		bool actual, expected;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
-			return TESTER_MALLOC;
-		if (TesterParseArguments("is", pNumber, buffer) != 2)
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_MALLOC;
+		if (yadsl_tester_parse_arguments("is", pNumber, buffer) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
-			TesterLog("Expected YES or NO, but got %s. Assumed NO.", buffer);
+			yadsl_tester_log("Expected YES or NO, but got %s. Assumed NO.", buffer);
 		returnId = yadsl_avltree_object_search(pTree, pNumber, &actual);
 		free(pNumber);
 		if (!returnId && actual != expected)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "contains*") {
 		int first, last;
 		bool expected, actual;
-		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("iis", &first, &last, buffer) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = matches(buffer, "YES");
 		if (!expected && !matches(buffer, "NO"))
-			TesterLog("Expected YES or NO, but got %s. Assumed NO.", buffer);
+			yadsl_tester_log("Expected YES or NO, but got %s. Assumed NO.", buffer);
 		do {
 			int* pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
-				return TESTER_MALLOC;
+				return YADSL_TESTER_RET_MALLOC;
 			*pNumber = first;
 			returnId = yadsl_avltree_object_search(pTree, pNumber, &actual);
 			free(pNumber);
 			if (returnId)
 				break;
 			else if (actual != expected)
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 			if (first < last)
 				++first;
 			else if (first > last)
@@ -180,8 +180,8 @@ TesterReturnValue TesterParseCallback(const char *command)
 			returnId = cbReturnValue;
 	} else if matches(command, "traverse*") {
 		cbReturnValue = YADSL_AVLTREE_RET_OK;
-		if (TesterParseArguments("ii", &first, &last) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ii", &first, &last) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		returnId = yadsl_avltree_tree_traverse(pTree, YADSL_AVLTREE_VISITING_IN_ORDER, visit_cb_range, &pTree, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
@@ -190,47 +190,47 @@ TesterReturnValue TesterParseCallback(const char *command)
 		bool expected, actual;
 		pNumber = malloc(sizeof(int));
 		if (pNumber == NULL)
-			return TESTER_MALLOC;
-		if (TesterParseArguments("is", pNumber, buffer) != 2)
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_MALLOC;
+		if (yadsl_tester_parse_arguments("is", pNumber, buffer) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer);
 		returnId = yadsl_avltree_object_remove(pTree, pNumber, &actual);
 		free(pNumber);
 		if (!returnId && actual != expected)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "delete*") {
 		int first, last;
 		bool expected, actual;
-		if (TesterParseArguments("iis", &first, &last, buffer) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("iis", &first, &last, buffer) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer);
 		do {
 			int *pNumber;
 			pNumber = malloc(sizeof(int));
 			if (pNumber == NULL)
-				return TESTER_MALLOC;
+				return YADSL_TESTER_RET_MALLOC;
 			*pNumber = first;
 			returnId = yadsl_avltree_object_remove(pTree, pNumber, &actual);
 			free(pNumber);
 			if (returnId)
 				break;
 			else if (actual != expected)
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 			if (first < last)
 				++first;
 			else if (first > last)
 				--first;
 		} while (first != last);
 	} else {
-		return TESTER_COMMAND;
+		return YADSL_TESTER_RET_COMMAND;
 	}
 	return convert(returnId);
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
 	if (pTree)
 		yadsl_avltree_destroy(pTree);
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 

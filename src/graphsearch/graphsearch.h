@@ -29,39 +29,39 @@ GraphSearchRet;
 //  ===================== ================================================= 
 //        graphDFS         Visit the graph in a depth-first search fashion  
 //  ===================== ================================================= 
-//   pGraph                pointer to graph                                 
+//   graph                pointer to graph                                 
 //   initialVertex         initial vertex                                   
 //   visitedFlag           value that will be set to visited vertices       
-//   visitVertexCallback   vertex visiting function                         
-//   visitEdgeCallback     edge visiting function                           
+//   visit_vertex_func   vertex visiting function                         
+//   visit_edge_func     edge visiting function                           
 //  ===================== ================================================= 
 //  [!] GRAPH_SEARCH_VERTEX_ALREADY_VISITED
 //  [!] GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX
 
-GraphSearchRet graphDFS(yadsl_GraphHandle *pGraph,
+GraphSearchRet graphDFS(yadsl_GraphHandle *graph,
 	void *initialVertex,
 	int visitedFlag,
-	void (*visitVertexCallback)(void *vertex),
-	void (*visitEdgeCallback)(void *source, void *edge, void *dest));
+	void (*visit_vertex_func)(void *vertex),
+	void (*visit_edge_func)(void *source, void *edge, void *dest));
 
 //  ===================== =================================================== 
 //        graphBFS         Visit the graph in a breadth-first search fashion  
 //  ===================== =================================================== 
-//   pGraph                pointer to graph                                   
+//   graph                pointer to graph                                   
 //   initialVertex         initial vertex                                     
 //   visitedFlag           value that will be set to visited vertices         
-//   visitVertexCallback   vertex visiting function                           
-//   visitEdgeCallback     edge visiting function                             
+//   visit_vertex_func   vertex visiting function                           
+//   visit_edge_func     edge visiting function                             
 //  ===================== =================================================== 
 //  [!] GRAPH_SEARCH_VERTEX_ALREADY_VISITED
 //  [!] GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX
 //  [!] GRAPH_SEARCH_MEMORY
 
-GraphSearchRet graphBFS(yadsl_GraphHandle *pGraph,
+GraphSearchRet graphBFS(yadsl_GraphHandle *graph,
 	void *initialVertex,
 	int visitedFlag,
-	void (*visitVertexCallback)(void *vertex),
-	void (*visitEdgeCallback)(void *source, void *edge, void *dest));
+	void (*visit_vertex_func)(void *vertex),
+	void (*visit_edge_func)(void *source, void *edge, void *dest));
 
 #ifdef _DEBUG
 // For memory leak detection use only!

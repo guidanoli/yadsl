@@ -1,5 +1,5 @@
-#ifndef __YADSL_GRAPH_RET_COND_H__
-#define __YADSL_GRAPH_RET_COND_H__
+#ifndef __YADSL_GRAPH_H__
+#define __YADSL_GRAPH_H__
 
 /**
  * \defgroup graph Graph
@@ -28,16 +28,16 @@
 */
 typedef enum
 {
-	YADSL_GRAPH_RET_COND_OK = 0, /**< All went ok */
-	YADSL_GRAPH_RET_COND_EMPTY, /**< Graph is empty */
-	YADSL_GRAPH_RET_COND_CONTAINS_VERTEX, /**< Graph (already) contains vertex */
-	YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX, /**< Graph does not contain vertex */
-	YADSL_GRAPH_RET_COND_CONTAINS_EDGE, /**< Graph (already) contains edge */
-	YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE, /**< Graph does not contain edge*/
-	YADSL_GRAPH_RET_COND_MEMORY, /**< Could not allocate memory */
-	YADSL_GRAPH_RET_COND_PARAMETER, /**< Invalid parameter */
+	YADSL_GRAPH_RET_OK = 0, /**< All went ok */
+	YADSL_GRAPH_RET_EMPTY, /**< Graph is empty */
+	YADSL_GRAPH_RET_CONTAINS_VERTEX, /**< Graph (already) contains vertex */
+	YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX, /**< Graph does not contain vertex */
+	YADSL_GRAPH_RET_CONTAINS_EDGE, /**< Graph (already) contains edge */
+	YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE, /**< Graph does not contain edge*/
+	YADSL_GRAPH_RET_MEMORY, /**< Could not allocate memory */
+	YADSL_GRAPH_RET_PARAMETER, /**< Invalid parameter */
 }
-yadsl_GraphReturnCondition;
+yadsl_GraphRet;
 
 /**
  * @brief Iteration direction of Graph iterator functions
@@ -120,9 +120,9 @@ yadsl_GraphHandle* yadsl_graph_create(
  * @brief Check whether graph is directed or not
  * @param graph graph
  * @param is_directed_ptr whether graph is directed or not
- * @return ::YADSL_GRAPH_RET_COND_OK, and *is_directed_ptr is updated
+ * @return ::YADSL_GRAPH_RET_OK, and *is_directed_ptr is updated
 */
-yadsl_GraphReturnCondition yadsl_graph_is_directed_check(
+yadsl_GraphRet yadsl_graph_is_directed_check(
 	yadsl_GraphHandle *graph,
 	bool *is_directed_ptr);
 
@@ -130,9 +130,9 @@ yadsl_GraphReturnCondition yadsl_graph_is_directed_check(
  * @brief Get number of vertices in graph
  * @param graph graph
  * @param pNumberOfVertices number of vertices
- * @return ::YADSL_GRAPH_RET_COND_OK, and *vertex_cnt_ptr is updated
+ * @return ::YADSL_GRAPH_RET_OK, and *vertex_cnt_ptr is updated
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_count_get(
+yadsl_GraphRet yadsl_graph_vertex_count_get(
 	yadsl_GraphHandle *graph,
 	size_t *vertex_cnt_ptr);
 
@@ -142,11 +142,11 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_count_get(
  * @param iter_direction iteration direction
  * @param vertex_ptr current vertex
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and *vertex_ptr is updated
- * * ::YADSL_GRAPH_RET_COND_PARAMETER
- * * ::YADSL_GRAPH_RET_COND_EMPTY
+ * * ::YADSL_GRAPH_RET_OK, and *vertex_ptr is updated
+ * * ::YADSL_GRAPH_RET_PARAMETER
+ * * ::YADSL_GRAPH_RET_EMPTY
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_iter(
+yadsl_GraphRet yadsl_graph_vertex_iter(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphIterationDirection iter_direction,
 	yadsl_GraphVertexObject** vertex_ptr);
@@ -161,7 +161,7 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_iter(
  * * ::YASDL_GRAPH_RET_COND_OK, and *degree_ptr is updated
  * * ::YASDL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_degree_get(
+yadsl_GraphRet yadsl_graph_vertex_degree_get(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexObject* vertex,
 	yadsl_GraphEdgeDirection edge_direction,
@@ -176,12 +176,12 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_degree_get(
  * @param nb_ptr neighbour of vertex
  * @param edge_ptr edge between vertex and its neighbour
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and *nb_ptr and *edge_ptr are updated
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE
- * * ::YADSL_GRAPH_RET_COND_PARAMETER
+ * * ::YADSL_GRAPH_RET_OK, and *nb_ptr and *edge_ptr are updated
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE
+ * * ::YADSL_GRAPH_RET_PARAMETER
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_nb_iter(
+yadsl_GraphRet yadsl_graph_vertex_nb_iter(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexObject* vertex,
 	yadsl_GraphEdgeDirection edge_direction,
@@ -194,9 +194,9 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_nb_iter(
  * @param graph graph
  * @param vertex vertex
  * @param contains_ptr whether vertex exists in graph or not
- * @return ::YADSL_GRAPH_RET_COND_ON, and *contains_ptr is updated
+ * @return ::YADSL_GRAPH_RET_ON, and *contains_ptr is updated
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_exists_check(
+yadsl_GraphRet yadsl_graph_vertex_exists_check(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject *vertex,
 	bool *contains_ptr);
@@ -206,11 +206,11 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_exists_check(
  * @param graph graph
  * @param vertex vertex
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and vertex is added
- * * ::YADSL_GRAPH_RET_COND_CONTAINS_VERTEX (if vertex was already added)
- * * ::YADSL_GRAPH_RET_COND_MEMORY
+ * * ::YADSL_GRAPH_RET_OK, and vertex is added
+ * * ::YADSL_GRAPH_RET_CONTAINS_VERTEX (if vertex was already added)
+ * * ::YADSL_GRAPH_RET_MEMORY
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_add(
+yadsl_GraphRet yadsl_graph_vertex_add(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject* vertex);
 
@@ -219,10 +219,10 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_add(
  * @param graph graph
  * @param vertex vertex
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and vertex is removed
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_OK, and vertex is removed
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_remove(
+yadsl_GraphRet yadsl_graph_vertex_remove(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject* vertex);
 
@@ -233,10 +233,10 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_remove(
  * @param v edge destination (if directed)
  * @param contains_ptr whether edge exists in graph or not
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and *contains_ptr is updated
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_OK, and *contains_ptr is updated
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
 */
-yadsl_GraphReturnCondition yadsl_graph_edge_exists_check(
+yadsl_GraphRet yadsl_graph_edge_exists_check(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject *u,
 	yadsl_GraphVertexObject *v,
@@ -249,14 +249,14 @@ yadsl_GraphReturnCondition yadsl_graph_edge_exists_check(
  * @param v edge destination (if directed)
  * @param uv edge connecting u and v
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and edge is added
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
- * * ::YADSL_GRAPH_RET_COND_CONTAINS_EDGE
- * * ::YADSL_GRAPH_RET_COND_MEMORY
+ * * ::YADSL_GRAPH_RET_OK, and edge is added
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_CONTAINS_EDGE
+ * * ::YADSL_GRAPH_RET_MEMORY
  * @attention on success, this function may alter the state of the neighbour
  * iterator functions such as ::yadsl_graph_vertex_nb_total_next_get_internal
 */
-yadsl_GraphReturnCondition yadsl_graph_edge_add(
+yadsl_GraphRet yadsl_graph_edge_add(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject *u,
 	yadsl_GraphVertexObject *v,
@@ -269,11 +269,11 @@ yadsl_GraphReturnCondition yadsl_graph_edge_add(
  * @param v edge destination (if directed)
  * @param uv_ptr edge between u and v
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and *uv_ptr is updated
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE
+ * * ::YADSL_GRAPH_RET_OK, and *uv_ptr is updated
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE
 */
-yadsl_GraphReturnCondition yadsl_graph_edge_get(
+yadsl_GraphRet yadsl_graph_edge_get(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject* u,
 	yadsl_GraphVertexObject* v,
@@ -285,13 +285,13 @@ yadsl_GraphReturnCondition yadsl_graph_edge_get(
  * @param u edge source (if directed)
  * @param v edge destination (if directed)
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and edge is removed
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
- * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_EDGE
+ * * ::YADSL_GRAPH_RET_OK, and edge is removed
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE
  * @attention on success, this function may alter the state of the neighbour
  * iterator functions such as ::yadsl_graph_vertex_nb_total_next_get_internal
 */
-yadsl_GraphReturnCondition yadsl_graph_edge_remove(
+yadsl_GraphRet yadsl_graph_edge_remove(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject* u,
 	yadsl_GraphVertexObject* v);
@@ -302,10 +302,10 @@ yadsl_GraphReturnCondition yadsl_graph_edge_remove(
  * @param v vertex
  * @param flag_ptr flag associated with vertex in graph
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and *flag_ptr is updated
+ * * ::YADSL_GRAPH_RET_OK, and *flag_ptr is updated
  * * ::YASDL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_flag_get(
+yadsl_GraphRet yadsl_graph_vertex_flag_get(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject* v,
 	yadsl_GraphVertexFlag *flag_ptr);
@@ -316,10 +316,10 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_flag_get(
  * @param v vertex
  * @param flag new flag associated with vertex in graph
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and flag is associated with vertex
+ * * ::YADSL_GRAPH_RET_OK, and flag is associated with vertex
  * * ::YASDL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_flag_set(
+yadsl_GraphRet yadsl_graph_vertex_flag_set(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject* v,
 	yadsl_GraphVertexFlag flag);
@@ -329,9 +329,9 @@ yadsl_GraphReturnCondition yadsl_graph_vertex_flag_set(
  * @param graph graph
  * @param flag new flag
  * @return
- * * ::YADSL_GRAPH_RET_COND_OK, and flag is associated with all vertives
+ * * ::YADSL_GRAPH_RET_OK, and flag is associated with all vertives
 */
-yadsl_GraphReturnCondition yadsl_graph_vertex_flag_set_all(
+yadsl_GraphRet yadsl_graph_vertex_flag_set_all(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexFlag flag);
 

@@ -13,10 +13,9 @@
 #endif
 
 #include <tester/tester.h>
+#include <testerutils/testerutils.h>
 
-#define matches(a,b) (strcmp(a,b) == 0)
-
-const char *TesterHelpStrings[] = {
+const char *yadsl_tester_help_strings[] = {
     "This is the memdb test module",
     "Indices go from 0 to 9.",
     "",
@@ -36,81 +35,78 @@ void *mem_array[ARRSIZE];
 
 char buffer[BUFSIZ];
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
-    return TESTER_OK;
+    return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
     if matches(command, "malloc") {
         size_t idx, size;
         void *p;
-        if (TesterParseArguments("zz", &idx, &size) != 2)
-            return TESTER_ARGUMENT;
+        if (yadsl_tester_parse_arguments("zz", &idx, &size) != 2)
+            return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
-            return TESTER_ARGUMENT;
+            return YADSL_TESTER_RET_ARGUMENT;
         if ((p = malloc(size)) == NULL)
-            return TESTER_MALLOC;
+            return YADSL_TESTER_RET_MALLOC;
         mem_array[idx] = p;
     } else if matches(command, "realloc") {
         size_t idx, size;
         void *p;
-        if (TesterParseArguments("zz", &idx, &size) != 2)
-            return TESTER_ARGUMENT;
+        if (yadsl_tester_parse_arguments("zz", &idx, &size) != 2)
+            return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
-            return TESTER_ARGUMENT;
+            return YADSL_TESTER_RET_ARGUMENT;
         if ((p = realloc(mem_array[idx], size)) == NULL)
-            return TESTER_MALLOC;
+            return YADSL_TESTER_RET_MALLOC;
         mem_array[idx] = p;
     } else if matches(command, "calloc") {
         size_t idx, size, count;
         void *p;
-        if (TesterParseArguments("zzz", &idx, &size, &count) != 3)
-            return TESTER_ARGUMENT;
+        if (yadsl_tester_parse_arguments("zzz", &idx, &size, &count) != 3)
+            return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
-            return TESTER_ARGUMENT;
+            return YADSL_TESTER_RET_ARGUMENT;
         if ((p = calloc(count, size)) == NULL)
-            return TESTER_MALLOC;
+            return YADSL_TESTER_RET_MALLOC;
         mem_array[idx] = p;
     } else if matches(command, "free") {
         size_t idx;
-        if (TesterParseArguments("z", &idx) != 1)
-            return TESTER_ARGUMENT;
+        if (yadsl_tester_parse_arguments("z", &idx) != 1)
+            return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
-            return TESTER_ARGUMENT;
+            return YADSL_TESTER_RET_ARGUMENT;
         free(mem_array[idx]);
     } else if matches(command, "size") {
         size_t actual, expected;
-        if (TesterParseArguments("z", &expected) != 1)
-            return TESTER_ARGUMENT;
+        if (yadsl_tester_parse_arguments("z", &expected) != 1)
+            return YADSL_TESTER_RET_ARGUMENT;
         actual = yadsl_memdb_list_size();
         if (actual != expected)
-            return TESTER_RETURN;
+            return YADSL_TESTER_RET_RETURN;
     } else if matches(command, "clear") {
         yadsl_memdb_clear_list();
     } else if matches(command, "contains") {
         size_t idx;
-        int expected, actual;
-        if (TesterParseArguments("zs", &idx, buffer) != 2)
-            return TESTER_ARGUMENT;
+        bool expected, actual;
+        if (yadsl_tester_parse_arguments("zs", &idx, buffer) != 2)
+            return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
-            return TESTER_ARGUMENT;
-        expected = matches(buffer, "YES");
-        if (!expected && !matches(buffer, "NO"))
-            TesterLog("Expected \"YES\" or \"NO\", but got \"%s\" instead."
-                " (assumed NO)", buffer);
+            return YADSL_TESTER_RET_ARGUMENT;
+        expected = TesterUtilsGetYesOrNoFromString(buffer);
         actual = yadsl_memdb_contains(mem_array[idx]);
         if (actual != expected)
-            return TESTER_RETURN;
+            return YADSL_TESTER_RET_RETURN;
     } else {
-        return TESTER_COMMAND;
+        return YADSL_TESTER_RET_COMMAND;
     }
-    return TESTER_OK;
+    return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
-    return TESTER_OK;
+    return YADSL_TESTER_RET_OK;
 }
 

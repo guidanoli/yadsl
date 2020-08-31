@@ -7,7 +7,7 @@
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 
-const char *TesterHelpStrings[] = {
+const char *yadsl_tester_help_strings[] = {
 	"This is an interactive module of the map library",
 	"You interact with a single map object at all times",
 	"",
@@ -23,44 +23,44 @@ const char *TesterHelpStrings[] = {
 static int cmpKeys(void *a, void *b);
 static void freeEntry(void *k, void *v, void *arg);
 
-TesterReturnValue convertReturn(MapRet mapId)
+yadsl_TesterRet convertReturn(MapRet mapId)
 {
 	switch (mapId) {
 	case MAP_OK:
-		return TESTER_OK;
+		return YADSL_TESTER_RET_OK;
 	case MAP_ENTRY_NOT_FOUND:
-		return TesterExternalReturnValue("noentry");
+		return yadsl_tester_return_external_value("noentry");
 	case MAP_MEMORY:
-		return TesterExternalReturnValue("malloc");
+		return yadsl_tester_return_external_value("malloc");
 	default:
-		return TesterExternalReturnValue("unknown");
+		return yadsl_tester_return_external_value("unknown");
 	}
 }
 
 static Map *pMap;
 static char key[BUFSIZ], value[BUFSIZ], yn[BUFSIZ];
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
 	MapRet mapId;
 	if (mapId = mapCreate(&pMap, cmpKeys, freeEntry, NULL))
 		return convertReturn(mapId);
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	MapRet mapId;
 	if matches(command, "put") {
 		char *temp, *keyStr, *valStr;
 		int actual, expected;
-		if (TesterParseArguments("sss", key, value, yn) != 3)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("sss", key, value, yn) != 3)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((keyStr = strdup(key)) == NULL)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		if ((valStr = strdup(value)) == NULL) {
 			free(keyStr);
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		}
 		expected = TesterUtilsGetYesOrNoFromString(yn);
 		mapId = mapPutEntry(pMap, keyStr, valStr, &actual, &temp);
@@ -72,27 +72,27 @@ TesterReturnValue TesterParseCallback(const char *command)
 			free(valStr);
 		}
 		if (!mapId && actual != expected)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "get") {
 		char *temp, *keyStr;
-		if (TesterParseArguments("ss", key, value) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ss", key, value) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((keyStr = strdup(key)) == NULL)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		mapId = mapGetEntry(pMap, keyStr, &temp);
 		free(keyStr);
 		if (mapId == MAP_OK) {
 			if (temp == NULL)
-				TesterLog("Value returned by mapGetEntry is NULL");
+				yadsl_tester_log("Value returned by mapGetEntry is NULL");
 			if (nmatches(value, temp))
-				return TESTER_RETURN;
+				return YADSL_TESTER_RET_RETURN;
 		}
 	} else if matches(command, "remove") {
 		char *temp, *keyStr, *valStr;
-		if (TesterParseArguments("s", key) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", key) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((temp = strdup(key)) == NULL)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		mapId = mapRemoveEntry(pMap, temp, &keyStr, &valStr);
 		free(temp);
 		if (mapId == MAP_OK) {
@@ -101,21 +101,21 @@ TesterReturnValue TesterParseCallback(const char *command)
 		}
 	} else if matches(command, "nentries") {
 		size_t expected, actual;
-		if (TesterParseArguments("z", &expected) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("z", &expected) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		mapId = mapGetNumberOfEntries(pMap, &actual);
 		if (mapId == MAP_OK && actual != expected)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else {
-		return TESTER_COMMAND;
+		return YADSL_TESTER_RET_COMMAND;
 	}
 	return convertReturn(mapId);
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
 	mapDestroy(pMap);
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
 static void freeEntry(void *k, void *v, void *arg)

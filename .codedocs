@@ -1,0 +1,8 @@
+# CodeDocs.xyz Configuration File
+
+DOXYFILE = docs/Doxyfile
+
+PROJECT_LOGO = docs/logo.png
+
+INPUT = src \
+        docs

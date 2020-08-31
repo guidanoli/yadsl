@@ -5,7 +5,7 @@
 
 #include <tester/tester.h>
 
-const char *TesterHelpStrings[] = {
+const char *yadsl_tester_help_strings[] = {
 	"This is the testerutils test module",
 	"/serialize <string> <file>",
 	"/deserialize <string> <file>",
@@ -14,64 +14,64 @@ const char *TesterHelpStrings[] = {
 	NULL,
 };
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
 char buffer1[BUFSIZ], buffer2[BUFSIZ];
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	if matches(command, "serialize") {
 		FILE *file;
 		int ret;
-		if (TesterParseArguments("ss", buffer1, buffer2) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ss", buffer1, buffer2) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((file = fopen(buffer2, "w")) == NULL)
-			return TESTER_FILE;
+			return YADSL_TESTER_RET_FILE;
 		ret = TesterUtilsSerializeString(file, buffer1);
 		fclose(file);
 		if (ret)
-			return TesterExternalReturnValue("serialization error");
+			return yadsl_tester_return_external_value("serialization error");
 	} else if matches(command, "deserialize") {
 		FILE *file;
 		char *string;
 		int matches;
-		if (TesterParseArguments("ss", buffer1, buffer2) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ss", buffer1, buffer2) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if ((file = fopen(buffer2, "r")) == NULL)
-			return TESTER_FILE;
+			return YADSL_TESTER_RET_FILE;
 		string = TesterUtilsDeserializeString(file);
 		fclose(file);
 		if (string == NULL)
-			return TesterExternalReturnValue("deserialization error");
+			return yadsl_tester_return_external_value("deserialization error");
 		matches = matches(buffer1, string);
 		free(string);
 		if (!matches)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "yes") {
 		int yes;
-		if (TesterParseArguments("s", buffer1) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer1) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		yes = TesterUtilsGetYesOrNoFromString(buffer1);
 		if (!yes)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "no") {
 		int yes;
-		if (TesterParseArguments("s", buffer1) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("s", buffer1) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		yes = TesterUtilsGetYesOrNoFromString(buffer1);
 		if (yes)
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else {
-		return TESTER_COMMAND;
+		return YADSL_TESTER_RET_COMMAND;
 	}
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 

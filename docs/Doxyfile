@@ -1,0 +1,35 @@
+PROJECT_NAME           = "Yet Another Data Structures Library"
+PROJECT_NUMBER         = 0.1
+PROJECT_BRIEF          = "A collection of data structures implemented in C"
+PROJECT_LOGO           = logo.png
+
+OUTPUT_DIRECTORY       = ../
+
+CREATE_SUBDIRS         = YES
+
+EXTRACT_ALL            = YES
+
+INPUT                  = ../src \
+                         .
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
+
+FILE_PATTERNS          = *.h \
+                         *.md
+
+REFERENCES_LINK_SOURCE = NO
+
+USE_HTAGS              = NO
+
+VERBATIM_HEADERS       = NO
+
+ALPHABETICAL_INDEX     = NO
+
+GENERATE_TREEVIEW      = YES
+
+RECURSIVE              = YES
+
+USE_MDFILE_AS_MAINPAGE = index.md
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO

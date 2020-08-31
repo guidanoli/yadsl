@@ -39,6 +39,6 @@ bool TesterUtilsGetYesOrNoFromString(const char *string)
 {
 	bool yes = matches(string, "YES");
 	if (!yes && !matches(string, "NO"))
-		TesterLog("Expected YES or NO. Got '%s'. Assumed NO.", string);
+		yadsl_tester_log("Expected YES or NO. Got '%s'. Assumed NO.", string);
 	return yes;
 }

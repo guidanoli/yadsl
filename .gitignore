@@ -1,4 +1,5 @@
 lib*/
 build*/
+html/
 *__pycache__/
 *.pytest_cache/

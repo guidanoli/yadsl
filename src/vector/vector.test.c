@@ -5,7 +5,7 @@
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 
-const char* TesterHelpStrings[] = {
+const char* yadsl_tester_help_strings[] = {
 	"This is the vector test module",
 	"",
 	"Note: <format> is a format characters used by tester",
@@ -24,27 +24,27 @@ const char* TesterHelpStrings[] = {
 yadsl_VectorHandle* vector = NULL;
 char dtype_format;
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterParseCallback(const char* command)
+yadsl_TesterRet yadsl_tester_parse(const char* command)
 {
 	if matches(command, "new") {
 		char format;
 		size_t size;
-		if (TesterParseArguments("cz", &format, &size) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("cz", &format, &size) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		yadsl_VectorHandle* new_vector;
-		size_t dtype_size = TesterGetDataTypeSize(format);
+		size_t dtype_size = yadsl_tester_get_dtype_size(format);
 		if (dtype_size == 0) {
-			TesterLog("Invalid format character %c.", format);
-			return TESTER_ARGUMENT;
+			yadsl_tester_log("Invalid format character %c.", format);
+			return YADSL_TESTER_RET_ARGUMENT;
 		}
 		new_vector = yadsl_vector_create(dtype_size, size);
 		if (!new_vector)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		if (vector)
 			yadsl_vector_destroy(vector);
 		yadsl_memdb_dump();
@@ -52,69 +52,69 @@ TesterReturnValue TesterParseCallback(const char* command)
 		dtype_format = format;
 	} else if matches(command, "get") {
 		size_t index;
-		if (TesterParseArguments("z", &index) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("z", &index) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		const char buf[2] = { dtype_format, '\0' };
-		void* expected = malloc(TesterGetDataTypeSize(dtype_format));
+		void* expected = malloc(yadsl_tester_get_dtype_size(dtype_format));
 		if (!expected)
-			return TESTER_MALLOC;
-		if (TesterParseArguments(buf, expected) != 1) {
+			return YADSL_TESTER_RET_MALLOC;
+		if (yadsl_tester_parse_arguments(buf, expected) != 1) {
 			free(expected);
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		}
 		void* obtained = yadsl_vector_at(vector, index);
-		int neq = TesterCompare(dtype_format, expected, obtained);
+		int neq = yadsl_tester_compare_arguments(dtype_format, expected, obtained);
 		free(expected);
 		if (neq)
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 	} else if matches(command, "set") {
 		size_t index;
-		if (TesterParseArguments("z", &index) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("z", &index) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		const char buf[2] = { dtype_format, '\0' };
-		void* src = malloc(TesterGetDataTypeSize(dtype_format));
+		void* src = malloc(yadsl_tester_get_dtype_size(dtype_format));
 		if (!src)
-			return TESTER_MALLOC;
-		if (TesterParseArguments(buf, src) != 1) {
+			return YADSL_TESTER_RET_MALLOC;
+		if (yadsl_tester_parse_arguments(buf, src) != 1) {
 			free(src);
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 		}
 		void* dest = yadsl_vector_at(vector, index);
-		TesterCopy(dtype_format, src, dest);
+		yadsl_tester_copy_argument(dtype_format, src, dest);
 		free(src);
 	} else if matches(command, "resize") {
 		yadsl_VectorHandle* new_vector;
 		size_t new_size;
-		if (TesterParseArguments("z", &new_size) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("z", &new_size) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		new_vector = yadsl_vector_resize(vector, new_size);
 		if (!new_vector)
-			return TESTER_MALLOC;
+			return YADSL_TESTER_RET_MALLOC;
 		yadsl_memdb_dump();
 		vector = new_vector;
 	} else if matches(command, "size") {
 		size_t expected, obtained;
-		if (TesterParseArguments("z", &expected) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("z", &expected) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		obtained = yadsl_vector_size(vector);
 		if (obtained != expected)
-			return TESTER_ARGUMENT;
+			return YADSL_TESTER_RET_ARGUMENT;
 	} else if matches(command, "destroy") {
 		yadsl_vector_destroy(vector);
 		yadsl_memdb_dump();
 		vector = NULL;
 	} else {
-		return TESTER_COUNT;
+		return YADSL_TESTER_RET_COUNT;
 	}
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
 	if (vector) {
 		yadsl_vector_destroy(vector);
 		yadsl_memdb_dump();
 		vector = NULL;
 	}
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }

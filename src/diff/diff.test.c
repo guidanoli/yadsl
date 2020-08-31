@@ -5,7 +5,7 @@
 
 #include <tester/tester.h>
 
-const char *TesterHelpStrings[] = {
+const char *yadsl_tester_help_strings[] = {
 	"/diff X Y    saves the difference between X and Y in slot A",
 	"/equ B       asserts last value computed is equal to B",
 	"/neq B      asserts last value computed is different from B",
@@ -21,57 +21,57 @@ const char *TesterHelpStrings[] = {
 char X[BUFSIZ], Y[BUFSIZ];
 double val, eax = -1.0; /* Last computed value */
 
-TesterReturnValue TesterInitCallback()
+yadsl_TesterRet yadsl_tester_init()
 {
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	if matches(command, "diff"){
-		if (TesterParseArguments("ss", X, Y) != 2)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("ss", X, Y) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
 		eax = yadsl_utils_diff(X, Y);
 		if (eax == -1.0)
-			return TESTER_MALLOC;
-		TesterLog("diff = %lf", eax);
+			return YADSL_TESTER_RET_MALLOC;
+		yadsl_tester_log("diff = %lf", eax);
 	} else if matches(command, "equ") {
-		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("f", &val) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax == val))
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "neq") {
-		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("f", &val) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax != val))
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "gtr") {
-		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("f", &val) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax > val))
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "lwr") {
-		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("f", &val) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax < val))
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "geq") {
-		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("f", &val) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax >= val))
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else if matches(command, "leq") {
-		if (TesterParseArguments("f", &val) != 1)
-			return TESTER_ARGUMENT;
+		if (yadsl_tester_parse_arguments("f", &val) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax <= val))
-			return TESTER_RETURN;
+			return YADSL_TESTER_RET_RETURN;
 	} else {
-		return TESTER_COMMAND;
+		return YADSL_TESTER_RET_COMMAND;
 	}
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
-	return TESTER_OK;
+	return YADSL_TESTER_RET_OK;
 }
