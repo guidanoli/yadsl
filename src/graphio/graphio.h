@@ -1,14 +1,15 @@
 #ifndef __YADSL_GRAPH_IO_H__
 #define __YADSL_GRAPH_IO_H__
 
-#include <stdio.h>
-
-#include <graph/graph.h>
-
 /**
  * \defgroup graphio Graph I/O
  * @brief Auxiliary module for Graph I/O utilities
+ * @{
 */
+
+#include <stdio.h>
+
+#include <graph/graph.h>
 
 /**
  * @brief Return condition of Graph I/O functions
@@ -92,5 +93,7 @@ yadsl_GraphIoRet yadsl_graph_io_read(
 	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func,
 	yadsl_GraphFreeEdgeObjFunc free_edge_func,
 	yadsl_GraphHandle **graph_ptr);
+
+/** }@ */
 
 #endif

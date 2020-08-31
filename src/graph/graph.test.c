@@ -60,7 +60,7 @@ static bool parse_iteration_direction(const char* buffer, yadsl_GraphIterationDi
 
 static yadsl_TesterRet convert_graph_ret(yadsl_GraphRet graphId);
 static yadsl_TesterRet convert_graph_io_ret(yadsl_GraphIoRet graphIoId);
-static yadsl_TesterRet convert_graph_search_ret(GraphSearchRet graphSearchId);
+static yadsl_TesterRet convert_graph_search_ret(yadsl_GraphSearchRet graphSearchId);
 
 yadsl_TesterRet yadsl_tester_init()
 {
@@ -247,16 +247,16 @@ static void visit_edge_func(void* source, void* edge, void* dest)
 
 static yadsl_TesterRet parse_graph_search_command(const char* command)
 {
-	GraphSearchRet graph_search_ret = GRAPH_SEARCH_OK;
+	yadsl_GraphSearchRet graph_search_ret = YADSL_GRAPH_SEARCH_RET_OK;
 	int flag;
 	if matches(command, "dfs") {
 		if (yadsl_tester_parse_arguments("si", buffer, &flag) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		graph_search_ret = graphDFS(graph, buffer, flag, visit_vertex_func, visit_edge_func);
+		graph_search_ret = yadsl_graph_search_dfs(graph, buffer, flag, visit_vertex_func, visit_edge_func);
 	} else if matches(command, "bfs") {
 		if (yadsl_tester_parse_arguments("si", buffer, &flag) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		graph_search_ret = graphBFS(graph, buffer, flag, visit_vertex_func, visit_edge_func);
+		graph_search_ret = yadsl_graph_search_bfs(graph, buffer, flag, visit_vertex_func, visit_edge_func);
 	} else {
 		return YADSL_TESTER_RET_COUNT;
 	}
@@ -286,7 +286,7 @@ yadsl_TesterRet yadsl_tester_release()
 		yadsl_graph_destroy(graph);
 
 #ifdef _DEBUG
-	if (getGraphSearchNodeRefCount())
+	if (yadsl_graph_search_get_node_ref_count())
 		return YADSL_TESTER_RET_MEMLEAK;
 #endif
 
@@ -354,16 +354,16 @@ yadsl_TesterRet convert_graph_io_ret(yadsl_GraphIoRet graphIoId)
 	}
 }
 
-yadsl_TesterRet convert_graph_search_ret(GraphSearchRet graphSearchId)
+yadsl_TesterRet convert_graph_search_ret(yadsl_GraphSearchRet graphSearchId)
 {
 	switch (graphSearchId) {
-	case GRAPH_SEARCH_OK:
+	case YADSL_GRAPH_SEARCH_RET_OK:
 		return YADSL_TESTER_RET_OK;
-	case GRAPH_SEARCH_DOES_NOT_CONTAIN_VERTEX:
+	case YADSL_GRAPH_SEARCH_RET_DOES_NOT_CONTAIN_VERTEX:
 		return yadsl_tester_return_external_value("does not contain vertex");
-	case GRAPH_SEARCH_VERTEX_ALREADY_VISITED:
+	case YADSL_GRAPH_SEARCH_RET_VERTEX_ALREADY_VISITED:
 		return yadsl_tester_return_external_value("vertex already visited");
-	case GRAPH_SEARCH_MEMORY:
+	case YADSL_GRAPH_SEARCH_RET_MEMORY:
 		return yadsl_tester_return_external_value("memory");
 	default:
 		return yadsl_tester_return_external_value("unknown");
