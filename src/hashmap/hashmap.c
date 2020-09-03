@@ -20,7 +20,7 @@ struct yadsl_HashMapEntryHead_s
 typedef struct
 {
 	struct yadsl_HashMapEntryHead_s** entries;
-	yasdl_HashMapFreeEntryFunc free_entry_func;
+	yadsl_HashMapFreeEntryFunc free_entry_func;
 	yadsl_HashMapSizeExponent size_exponent;
 }
 yadsl_HashMap;
@@ -38,7 +38,7 @@ yadsl_hashmap_get_size_internal(
 yadsl_HashMapHandle*
 yadsl_hashmap_create(
 	yadsl_HashMapSizeExponent size_exponent,
-	yasdl_HashMapFreeEntryFunc free_entry_func)
+	yadsl_HashMapFreeEntryFunc free_entry_func)
 {
 	yadsl_HashMap* hashmap = malloc(sizeof(*hashmap));
 	if (!hashmap)
@@ -94,7 +94,7 @@ fail:
 static void
 yadsl_hashmap_entry_destroy_internal(
 	yadsl_HashMapEntry* entry,
-	yasdl_HashMapFreeEntryFunc free_entry_func)
+	yadsl_HashMapFreeEntryFunc free_entry_func)
 {
 	free_entry_func(entry->key, entry->value);
 	free(entry->key);
@@ -142,7 +142,7 @@ static yadsl_HashMapRet
 yadsl_hashmap_entry_remove_from_list_internal(
 	yadsl_HashMapEntryHead* head,
 	yadsl_HashMapKey key,
-	yasdl_HashMapFreeEntryFunc free_entry_func)
+	yadsl_HashMapFreeEntryFunc free_entry_func)
 {
 	yadsl_HashMapEntry* prev;
 	if (!yadsl_hashmap_entry_exists_in_list_internal(head, key, &prev))
@@ -260,7 +260,7 @@ yadsl_hashmap_print(
 static void
 yadsl_hashmap_entry_head_destroy_internal(
 	yadsl_HashMapEntryHead* head,
-	yasdl_HashMapFreeEntryFunc free_entry_func)
+	yadsl_HashMapFreeEntryFunc free_entry_func)
 {
 	for (yadsl_HashMapEntry* p = head->first; p;) {
 		yadsl_HashMapEntry* next = p->next;

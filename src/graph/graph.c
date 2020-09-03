@@ -20,9 +20,9 @@
 *
 * III) The ownership of the set cursors are given to specific functions:
 * 	- yadsl_Graph::vertex_set -> yadsl_graph_get_*_vertex
-* 	- yadsl_GraphVertex::out_edges -> yasdl_graph_get_*_total_nb_iter /
+* 	- yadsl_GraphVertex::out_edges -> yadsl_graph_get_*_total_nb_iter /
 *                                     yadsl_graph_get_*_out_nb_iter
-* 	- yasdl_GraphVertex::inEdge -> yasdl_graph_get_*_total_nb_iter /
+* 	- yadsl_GraphVertex::inEdge -> yadsl_graph_get_*_total_nb_iter /
 *                                  yadsl_graph_get_*_in_nb_iter
 *   Where * stands for either 'next' or 'previous'
 *

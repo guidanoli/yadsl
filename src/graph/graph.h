@@ -158,8 +158,8 @@ yadsl_GraphRet yadsl_graph_vertex_iter(
  * @param edge_direction degree type (sum of in edges, out edges or both)
  * @param degree_ptr vertex degree
  * @return
- * * ::YASDL_GRAPH_RET_COND_OK, and *degree_ptr is updated
- * * ::YASDL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_COND_OK, and *degree_ptr is updated
+ * * ::YADSL_GRAPH_RET_COND_DOES_NOT_CONTAIN_VERTEX
 */
 yadsl_GraphRet yadsl_graph_vertex_degree_get(
 	yadsl_GraphHandle* graph,
@@ -303,7 +303,7 @@ yadsl_GraphRet yadsl_graph_edge_remove(
  * @param flag_ptr flag associated with vertex in graph
  * @return
  * * ::YADSL_GRAPH_RET_OK, and *flag_ptr is updated
- * * ::YASDL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
 */
 yadsl_GraphRet yadsl_graph_vertex_flag_get(
 	yadsl_GraphHandle *graph,
@@ -317,7 +317,7 @@ yadsl_GraphRet yadsl_graph_vertex_flag_get(
  * @param flag new flag associated with vertex in graph
  * @return
  * * ::YADSL_GRAPH_RET_OK, and flag is associated with vertex
- * * ::YASDL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX
 */
 yadsl_GraphRet yadsl_graph_vertex_flag_set(
 	yadsl_GraphHandle *graph,

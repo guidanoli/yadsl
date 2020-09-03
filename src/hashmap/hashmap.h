@@ -4,6 +4,7 @@
 /**
 * \defgroup hashmap Hash map
 * @brief Hash map that takes strings as keys and generic data as values
+* 
 * @{
 */
 
@@ -30,7 +31,7 @@ typedef void yadsl_HashMapValue; /**< Hash Map value */
  * @param value value associated to entry (you own it)
 */
 typedef void
-(*yasdl_HashMapFreeEntryFunc)(
+(*yadsl_HashMapFreeEntryFunc)(
 	yadsl_HashMapKey key,
 	yadsl_HashMapValue* value);
 
@@ -43,7 +44,7 @@ typedef void
 yadsl_HashMapHandle*
 yadsl_hashmap_create(
 	yadsl_HashMapSizeExponent size_exponent,
-	yasdl_HashMapFreeEntryFunc free_entry_func);
+	yadsl_HashMapFreeEntryFunc free_entry_func);
 
 /**
  * @brief Adds entry to hash map
