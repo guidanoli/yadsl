@@ -53,13 +53,19 @@ typedef void yadsl_HeapObjCmpArg; /**< Argument passed to yadsl_HeapObjCmpFunc *
  * * *n* = 0 if obj1 = obj2
  * * *n* < 0 if obj1 < obj2
 */
-typedef int (*yadsl_HeapObjCmpFunc)(yadsl_HeapObj* obj1, yadsl_HeapObj* obj2, yadsl_HeapObjCmpArg* cmp_objs_arg);
+typedef int
+(*yadsl_HeapObjCmpFunc)(
+	yadsl_HeapObj* obj1,
+	yadsl_HeapObj* obj2,
+	yadsl_HeapObjCmpArg* cmp_objs_arg);
 
 /**
  * @brief Function responsible for freeing objects
  * @param obj object to be freed
 */
-typedef void (*yadsl_HeapObjFreeFunc)(yadsl_HeapObj* obj);
+typedef void
+(*yadsl_HeapObjFreeFunc)(
+	yadsl_HeapObj* obj);
 
 /**
  * @brief Create an empty heap
