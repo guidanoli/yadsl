@@ -5,8 +5,7 @@
 #include <stdio.h>
 
 #include <tester/tester.h>
-
-#define matches(a, b) (strcmp(a, b) == 0)
+#include <testerutils/testerutils.h>
 
 const char *yadsl_tester_help_strings[] = {
 	"This is the stack test module",
@@ -18,7 +17,7 @@ const char *yadsl_tester_help_strings[] = {
 	NULL
 };
 
-static Stack *st;
+static yadsl_StackHandle *st;
 char buffer[BUFSIZ];
 
 yadsl_TesterRet yadsl_tester_init()
@@ -27,14 +26,14 @@ yadsl_TesterRet yadsl_tester_init()
 	return YADSL_TESTER_RET_OK;
 }
 
-yadsl_TesterRet convert(StackRet ret)
+yadsl_TesterRet convert(yadsl_StackRet ret)
 {
 	switch (ret) {
-	case STACK_OK:
+	case YADSL_STACK_RET_OK:
 		return YADSL_TESTER_RET_OK;
-	case STACK_EMPTY:
+	case YADSL_STACK_RET_EMPTY:
 		return yadsl_tester_return_external_value("empty");
-	case STACK_MEMORY:
+	case YADSL_STACK_RET_MEMORY:
 		return yadsl_tester_return_external_value("memory");
 	default:
 		return yadsl_tester_return_external_value("unknown");
@@ -43,11 +42,13 @@ yadsl_TesterRet convert(StackRet ret)
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
-	StackRet ret = STACK_OK;
+	yadsl_StackRet ret = YADSL_STACK_RET_OK;
 	if matches(command, "create") {
-		ret = stackCreate(&st);
+		st = yadsl_stack_create();
+		if (!st)
+			return YADSL_TESTER_RET_MALLOC;
 	} else if matches(command, "destroy") {
-		stackDestroy(st, free);
+		yadsl_stack_destroy(st, free);
 		st = NULL;
 	} else if matches(command, "add") {
 		int num, *num_ptr;
@@ -57,14 +58,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		if (num_ptr == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		*num_ptr = num;
-		ret = stackAdd(st, num_ptr);
+		ret = yadsl_stack_item_add(st, num_ptr);
 		if (ret)
 			free(num_ptr);
 	} else if matches(command, "remove") {
 		int *actual_ptr, expected;
 		if (yadsl_tester_parse_arguments("i", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		ret = stackRemove(st, &actual_ptr);
+		ret = yadsl_stack_item_remove(st, &actual_ptr);
 		if (!ret) {
 			int actual;
 			actual = *actual_ptr;
@@ -73,14 +74,12 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 				return YADSL_TESTER_RET_ARGUMENT;
 		}
 	} else if matches(command, "empty") {
-		int actual, expected;
+		bool actual, expected;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		expected = matches(buffer, "YES");
-		if (!expected && !matches(buffer, "NO"))
-			yadsl_tester_log("Argument wasn't YES nor NO, so 'NO' was assumed.");
-		ret = stackEmpty(st, &actual);
-		if ((ret == STACK_OK || ret == STACK_EMPTY) && (actual != expected))
+		expected = TesterUtilsGetYesOrNoFromString(buffer);
+		ret = yadsl_stack_empty_check(st, &actual);
+		if ((ret == YADSL_STACK_RET_OK || ret == YADSL_STACK_RET_EMPTY) && (actual != expected))
 			return YADSL_TESTER_RET_RETURN;
 	} else {
 		return YADSL_TESTER_RET_COMMAND;
@@ -90,7 +89,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 
 yadsl_TesterRet yadsl_tester_release()
 {
-	if (st) stackDestroy(st, free);
+	if (st) yadsl_stack_destroy(st, free);
 	return YADSL_TESTER_RET_OK;
 }
 

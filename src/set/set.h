@@ -3,7 +3,7 @@
 
 /**
  * \defgroup set Set
- * @brief Generic Set
+ * @brief Generic set
  * 
  * A Set starts empty.
  * You are able to add and remove items (opaque pointers),

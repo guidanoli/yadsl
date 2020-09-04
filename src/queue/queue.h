@@ -32,7 +32,9 @@ typedef void yadsl_QueueItemObj; /**< Queue item object */
  * @brief Function responsible for freeing item
  * @param item queue item
 */
-typedef void (*yadsl_QueueItemFreeFunc)(yadsl_QueueItemObj* item);
+typedef void
+(*yadsl_QueueItemFreeFunc)(
+	yadsl_QueueItemObj* item);
 
 /**
  * @brief Create an empty queue

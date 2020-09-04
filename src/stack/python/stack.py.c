@@ -12,7 +12,7 @@
 typedef struct
 {
 	PyObject_HEAD
-	Stack *ob_stack;
+	yadsl_StackHandle *ob_stack;
 } stack_object;
 
 //
@@ -78,14 +78,9 @@ PyDoc_STRVAR(_stack_init__doc__,
 static int
 _stack_init(stack_object *self, PyObject *Py_UNUSED(ignored))
 {
-	switch (stackCreate(&self->ob_stack)) {
-	case STACK_OK:
-		break;
-	case STACK_MEMORY:
+	if (!(self->ob_stack = yadsl_stack_create())) {
 		PyErr_SetString(PyExc_MemoryError, "Could not create stack");
 		return -1;
-	default:
-		Py_UNREACHABLE();
 	}
 	return 0;
 }
@@ -94,7 +89,7 @@ static void
 _stack_dealloc(stack_object *self)
 {
 	if (self->ob_stack)
-		stackDestroy(self->ob_stack, decRefCallback);
+		yadsl_stack_destroy(self->ob_stack, decRefCallback);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -107,11 +102,11 @@ PyDoc_STRVAR(_stackAdd__doc__,
 static PyObject *
 _stackAdd(stack_object *self, PyObject *obj)
 {
-	switch (stackAdd(self->ob_stack, obj)) {
-	case STACK_OK:
+	switch (yadsl_stack_item_add(self->ob_stack, obj)) {
+	case YADSL_STACK_RET_OK:
 		Py_INCREF(obj);
 		Py_RETURN_NONE;
-	case STACK_MEMORY:
+	case YADSL_STACK_RET_MEMORY:
 		PyErr_SetString(PyExc_MemoryError, "Could not add object to stack");
 		break;
 	default:
@@ -130,11 +125,11 @@ static PyObject *
 _stackRemove(stack_object *self, PyObject *Py_UNUSED(ignored))
 {
 	PyObject *obj = NULL;
-	switch (stackRemove(self->ob_stack, &obj)) {
-	case STACK_OK:
+	switch (yadsl_stack_item_remove(self->ob_stack, &obj)) {
+	case YADSL_STACK_RET_OK:
 		// Borrow reference
 		return obj;
-	case STACK_EMPTY:
+	case YADSL_STACK_RET_EMPTY:
 		_stack_throw_error(PyExc_Empty);
 		break;
 	default:
@@ -152,9 +147,9 @@ PyDoc_STRVAR(_stackEmpty__doc__,
 static PyObject *
 _stackEmpty(stack_object *self, PyObject *Py_UNUSED(ignored))
 {
-	int is_empty = 0;
-	switch (stackEmpty(self->ob_stack, &is_empty)) {
-	case STACK_OK:
+	bool is_empty = 0;
+	switch (yadsl_stack_empty_check(self->ob_stack, &is_empty)) {
+	case YADSL_STACK_RET_OK:
 		return PyBool_FromLong(is_empty);
 	default:
 		Py_UNREACHABLE();
