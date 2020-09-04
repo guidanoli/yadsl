@@ -38,7 +38,7 @@ static yadsl_GraphSearchRet yadsl_graph_search_dfs_internal(
 
 static yadsl_GraphSearchRet yadsl_graph_search_bfs_internal(
 	yadsl_GraphHandle *graph,
-	Queue *bfs_queue,
+	yadsl_QueueHandle *bfs_queue,
 	yadsl_GraphVertexFlag visited_flag,
 	yadsl_GraphVertexObject* vertex,
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
@@ -77,8 +77,7 @@ yadsl_GraphSearchRet yadsl_graph_search_bfs(
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func)
 {
-	Queue* bfs_queue;
-	QueueRet queue_ret;
+	yadsl_QueueHandle* bfs_queue;
 	yadsl_GraphRet graph_ret;
 	yadsl_GraphSearchRet graph_search_ret;
 	yadsl_GraphVertexFlag flag;
@@ -94,14 +93,12 @@ yadsl_GraphSearchRet yadsl_graph_search_bfs(
 	if (flag == visited_flag)
 		return YADSL_GRAPH_SEARCH_RET_VERTEX_ALREADY_VISITED;
 
-	if (queue_ret = queueCreate(&bfs_queue, yadsl_graph_search_free_node_internal)) {
-		assert(queue_ret == QUEUE_MEMORY);
+	if (!(bfs_queue = yadsl_queue_create(yadsl_graph_search_free_node_internal)))
 		return YADSL_GRAPH_SEARCH_RET_MEMORY;
-	}
 
 	graph_search_ret = yadsl_graph_search_bfs_internal(graph, bfs_queue, visited_flag, initial_vertex, visit_vertex_func, visit_edge_func);
 
-	queueDestroy(bfs_queue);
+	yadsl_queue_destroy(bfs_queue);
 	return graph_search_ret;
 }
 
@@ -159,13 +156,13 @@ yadsl_GraphSearchRet yadsl_graph_search_dfs_internal(
 
 static yadsl_GraphSearchRet yadsl_graph_search_add_nb_to_queue_internal(
 	yadsl_GraphHandle* graph,
-	Queue* bfs_queue,
+	yadsl_QueueHandle* bfs_queue,
 	yadsl_GraphVertexFlag visited_flag,
 	yadsl_GraphVertexObject* vertex,
 	yadsl_GraphEdgeDirection edge_direction)
 {
 	yadsl_GraphSearchBFSTreeNode* node;
-	QueueRet queue_ret;
+	yadsl_QueueRet queue_ret;
 	yadsl_GraphVertexObject* nb;
 	yadsl_GraphEdgeObject* edge;
 	size_t degree;
@@ -181,7 +178,7 @@ static yadsl_GraphSearchRet yadsl_graph_search_add_nb_to_queue_internal(
 		node = yadsl_graph_search_allocate_node_internal(vertex, edge, nb);
 		if (node == NULL)
 			return YADSL_GRAPH_SEARCH_RET_MEMORY;
-		if (queue_ret = queueQueue(bfs_queue, node)) {
+		if (queue_ret = yadsl_queue_queue(bfs_queue, node)) {
 			yadsl_graph_search_free_node_internal(node);
 			return YADSL_GRAPH_SEARCH_RET_MEMORY;
 		}
@@ -192,7 +189,7 @@ static yadsl_GraphSearchRet yadsl_graph_search_add_nb_to_queue_internal(
 // Run yadsl_graph_search_bfs_internal on unvisited vertex
 yadsl_GraphSearchRet yadsl_graph_search_bfs_internal(
 	yadsl_GraphHandle* graph,
-	Queue* bfs_queue,
+	yadsl_QueueHandle* bfs_queue,
 	yadsl_GraphVertexFlag visited_flag,
 	yadsl_GraphVertexObject* vertex,
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
@@ -214,7 +211,7 @@ yadsl_GraphSearchRet yadsl_graph_search_bfs_internal(
 		visit_vertex_func(vertex);
 	if (graph_search_ret = yadsl_graph_search_add_nb_to_queue_internal(graph, bfs_queue, visited_flag, vertex, edge_direction))
 		return graph_search_ret;
-	while (queueDequeue(bfs_queue, &node) == QUEUE_OK) {
+	while (yadsl_queue_dequeue(bfs_queue, &node) == YADSL_QUEUE_RET_OK) {
 		if (visit_edge_func)
 			visit_edge_func(node->parent, node->edge, node->child);
 		if (visit_vertex_func)

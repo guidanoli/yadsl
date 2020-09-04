@@ -19,33 +19,34 @@ const char *yadsl_tester_help_strings[] = {
 };
 
 static char buffer[BUFSIZ];
-static Queue *pQueue = NULL;
-static yadsl_TesterRet convertReturnValue(QueueRet queueId);
+static yadsl_QueueHandle *pQueue = NULL;
+static yadsl_TesterRet convertReturnValue(yadsl_QueueRet queueId);
 
 yadsl_TesterRet yadsl_tester_init()
 {
-	if (queueCreate(&pQueue, free))
+	if (pQueue = yadsl_queue_create(free))
+		return YADSL_TESTER_RET_OK;
+	else
 		return YADSL_TESTER_RET_MALLOC;
-	return YADSL_TESTER_RET_OK;
 }
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	char *str1, *str2;
-	QueueRet queueId = QUEUE_OK;
+	yadsl_QueueRet queueId = YADSL_QUEUE_RET_OK;
 	if matches(command, "queue") {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		if (queueId = queueQueue(pQueue, str1))
+		if (queueId = yadsl_queue_queue(pQueue, str1))
 			free(str1);
 	} else if matches(command, "dequeue") {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		if (queueId = queueDequeue(pQueue, &str2)) {
+		if (queueId = yadsl_queue_dequeue(pQueue, &str2)) {
 			free(str1);
 		} else {
 			int equal = matches(str1, str2);
@@ -55,12 +56,12 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 				return YADSL_TESTER_RET_RETURN;
 		}
 	} else if matches(command, "empty") {
-		int expected, obtained;
+		bool expected, obtained;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		expected = TesterUtilsGetYesOrNoFromString(buffer);
-		queueId = queueIsEmpty(pQueue, &obtained);
-		if (queueId == QUEUE_OK && expected != obtained)
+		queueId = yadsl_queue_empty_check(pQueue, &obtained);
+		if (queueId == YADSL_QUEUE_RET_OK && expected != obtained)
 			return YADSL_TESTER_RET_RETURN;
 	} else {
 		return YADSL_TESTER_RET_COMMAND;
@@ -70,19 +71,19 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 
 yadsl_TesterRet yadsl_tester_release()
 {
-	queueDestroy(pQueue);
+	yadsl_queue_destroy(pQueue);
 	pQueue = NULL;
 	return YADSL_TESTER_RET_OK;
 }
 
-static yadsl_TesterRet convertReturnValue(QueueRet queueId)
+static yadsl_TesterRet convertReturnValue(yadsl_QueueRet queueId)
 {
 	switch (queueId) {
-	case QUEUE_OK:
+	case YADSL_QUEUE_RET_OK:
 		return YADSL_TESTER_RET_OK;
-	case QUEUE_EMPTY:
+	case YADSL_QUEUE_RET_EMPTY:
 		return yadsl_tester_return_external_value("empty");
-	case QUEUE_MEMORY:
+	case YADSL_QUEUE_RET_MEMORY:
 		return yadsl_tester_return_external_value("malloc");
 	default:
 		return yadsl_tester_return_external_value("unknown");
