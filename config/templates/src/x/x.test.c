@@ -1,19 +1,21 @@
-#include "tester.h"
-#include "%name%.h"
+#include <%name%/%name%.h>
 
-const char *TesterHelpStrings[] = {0};
+#include <tester/tester.h>
+#include <testerutils/testerutils.h>
 
-TesterReturnValue TesterInitCallback()
+const char *yadsl_tester_help_strings[] = {0};
+
+yadsl_TesterRet yadsl_tester_init()
 {
-    return TESTER_OK;
+    return YADSL_TESTER_RET_OK;
 }
 
-TesterReturnValue TesterParseCallback(const char *command)
+yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
-    return TESTER_COUNT;
+    return YADSL_TESTER_RET_COUNT;
 }
 
-TesterReturnValue TesterExitCallback()
+yadsl_TesterRet yadsl_tester_release()
 {
-    return TESTER_OK;
+    return YADSL_TESTER_RET_OK;
 }

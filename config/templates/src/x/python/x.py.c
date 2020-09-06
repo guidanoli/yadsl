@@ -1,9 +1,9 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include "pydefines.h"
+#include <yadsl/pydefines.h>
 
-#include "%name%.h"
+#include <%name%/%name%.h>
 
 PyMethodDef method_table[] = {
     {NULL, NULL, 0, NULL}
