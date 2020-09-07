@@ -1,5 +1,5 @@
 PROJECT_NAME           = "Yet Another Data Structures Library"
-PROJECT_NUMBER         = 0.1
+PROJECT_NUMBER         = 1.0
 PROJECT_BRIEF          = "A collection of data structures implemented in C"
 PROJECT_LOGO           = logo.png
 
