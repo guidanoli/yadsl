@@ -2,8 +2,8 @@
 #define __YADSL_HASHMAP_H__
 
 /**
-* \defgroup hashmap Hash map
-* @brief Hash map that takes strings as keys and generic data as values
+* \defgroup hashmap Hash Map
+* @brief A hash map that takes strings as keys and generic data as values
 * 
 * @{
 */
@@ -106,6 +106,6 @@ void
 yadsl_hashmap_destroy(
 	yadsl_HashMapHandle* hashmap);
 
-/** }@ */
+/** @} */
 
 #endif

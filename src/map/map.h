@@ -158,6 +158,6 @@ void
 yadsl_map_destroy(
 	yadsl_MapHandle *map);
 
-/** }@ */
+/** @} */
 
 #endif

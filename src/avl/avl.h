@@ -140,6 +140,6 @@ yadsl_AVLTreeRet yadsl_avltree_tree_traverse(
 */
 void yadsl_avltree_destroy(yadsl_AVLTreeHandle *tree);
 
-/** }@ */
+/** @} */
 
 #endif

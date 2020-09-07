@@ -21,7 +21,7 @@ static const struct luaL_Reg luadiff[] = {
         {NULL, NULL}  /* sentinel */
 };
 
-EXPORT int luaopen_luadiff(lua_State* L) {
+YADSL_EXPORT int luaopen_luadiff(lua_State* L) {
     luaL_newlib(L, luadiff);
     return 1;
 }

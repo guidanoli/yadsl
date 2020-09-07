@@ -142,6 +142,6 @@ void
 yadsl_hash_destroy(
 	yadsl_HeapHandle *heap);
 
-/** }@ */
+/** @} */
 
 #endif

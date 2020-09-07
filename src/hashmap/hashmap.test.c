@@ -45,7 +45,7 @@ yadsl_TesterRet yadsl_tester_init()
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	yadsl_HashMapRet ret = YADSL_HASHMAP_RET_OK;
-	if matches(command, "new") {
+	if yadsl_testerutils_match(command, "new") {
 		int exp;
 		if (yadsl_tester_parse_arguments("i", &exp) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -53,7 +53,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		map = yadsl_hashmap_create(4, delfunc);
 		if (map == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-	} else if matches(command, "add") {
+	} else if yadsl_testerutils_match(command, "add") {
 		int val;
 		if (yadsl_tester_parse_arguments("si", key, &val) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -63,11 +63,11 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		*val_ptr = val;
 		if (ret = yadsl_hashmap_entry_add(map, key, val_ptr))
 			free(val_ptr);
-	} else if matches(command, "rmv") {
+	} else if yadsl_testerutils_match(command, "rmv") {
 		if (yadsl_tester_parse_arguments("s", key) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		ret = yadsl_hashmap_entry_remove(map, key);
-	} else if matches(command, "get") {
+	} else if yadsl_testerutils_match(command, "get") {
 		int exp;
 		if (yadsl_tester_parse_arguments("si", key, &exp) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -77,7 +77,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (*obt_ptr != exp)
 				return YADSL_TESTER_RET_RETURN;
 		}
-	} else if matches(command, "print") {
+	} else if yadsl_testerutils_match(command, "print") {
 		yadsl_hashmap_print(map);
 	} else {
 		return YADSL_TESTER_RET_COUNT;

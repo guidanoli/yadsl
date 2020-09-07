@@ -27,7 +27,7 @@ static PyObject *PyExc_Full = NULL;
 static PyObject *PyExc_Lock = NULL;
 static PyObject *PyExc_Shrink = NULL;
 
-_DEFINE_EXCEPTION_METADATA()
+YADSL_PYDEFINES_EXCEPTION_METADATA()
 
 static struct _exception_metadata exceptions[] = {
 	//
@@ -68,7 +68,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-_DEFINE_EXCEPTION_FUNCTIONS(Heap, exceptions)
+YADSL_PYDEFINES_EXCEPTION_FUNCTIONS(Heap, exceptions)
 
 //
 // Callbacks
@@ -393,7 +393,7 @@ PyInit_pyheap(void)
 	m = PyModule_Create(&pyheap_module);
 	if (m == NULL)
 		return NULL;
-	_INIT_EXCEPTION_OBJECTS(m, _exc)
+	YADSL_PYDEFINES_INIT_EXCEPTION_OBJECTS(m, _exc)
 	Py_INCREF(&HeapType);
 	if (PyModule_AddObject(m, "Heap", (PyObject *) &HeapType) < 0) {
 		Py_DECREF(&HeapType);

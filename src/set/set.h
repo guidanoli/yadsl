@@ -74,156 +74,152 @@ typedef void
 	yadsl_SetItemObj* item,
 	yadsl_SetItemFreeArg* arg);
 
-//  =========== ============================ 
-//   setCreate   Create an empty set         
-//  =========== ============================ 
-//   ppSet       (owned ret) pointer to set  
-//  =========== ============================ 
-//  [!] YADSL_SET_RET_MEMORY
-
+/**
+ * @brief Create an empty set
+ * @return newly created set or NULL if could not allocate memory
+*/
 yadsl_SetHandle*
 yadsl_set_create();
 
-//  ================= ======================================== 
-//   setContainsItem   Check whether set contains item or not  
-//  ================= ======================================== 
-//   set              pointer to set                          
-//   item              item to be checked                      
-//  ================= ======================================== 
-//  [!] YADSL_SET_RET_CONTAINS
-//  [!] YADSL_SET_RET_DOES_NOT_CONTAIN
-
+/**
+ * @brief Check whether set contains item or not
+ * @param set set
+ * @param item item to be checked
+ * @return 
+ * * ::YADSL_SET_RET_CONTAINS
+ * * ::YADSL_SET_RET_DOES_NOT_CONTAIN
+*/
 yadsl_SetRet
 yadsl_set_item_contains_check(
 	yadsl_SetHandle *set,
 	void *item);
 
-//  =============== ==================================== 
-//   setFilterItem      Filter item from set             
-//  =============== ==================================== 
-//   set            pointer to set                     
-//   func            filtering function                
-//   arg             (opt) additional argument to func   
-//   pItem           (ret) filtered item                 
-//  =============== ==================================== 
-//  [!] YADSL_SET_RET_DOES_NOT_CONTAIN: no item filtered
-
+/**
+ * @brief Filter item from set
+ * @param set set
+ * @param item_filter_func item filtering function
+ * @param item_filter_arg item filtering function argument
+ * @param item_ptr filtered item
+ * @return
+ * * ::YADSL_SET_RET_OK, and *item_ptr is updated
+ * * ::YADSL_SET_RET_DOES_NOT_CONTAIN
+*/
 yadsl_SetRet yadsl_set_item_filter(
 	yadsl_SetHandle *set,
 	yadsl_SetItemFilterFunc item_filter_func,
 	yadsl_SetItemFilterArg * item_filter_arg,
 	yadsl_SetItemObj **item_ptr);
 
-//  ============ ========================== 
-//   setAddItem   Add item to set           
-//  ============ ========================== 
-//   set         pointer to set           
-//   item         (owned) item to be added  
-//  ============ ========================== 
-//  [!] YADSL_SET_RET_CONTAINS
-//  [!] YADSL_SET_RET_MEMORY
-
+/**
+ * @brief Add item to set
+ * @param set set
+ * @param item item to be added
+ * @return 
+ * * ::YADSL_SET_RET_OK, and item is added
+ * * ::YADSL_SET_RET_CONTAINS
+ * * ::YADSL_SET_RET_MEMORY
+*/
 yadsl_SetRet
 yadsl_set_item_add(
 	yadsl_SetHandle *set,
 	yadsl_SetItemObj *item);
 
-//  =============== ====================== 
-//   setRemoveItem   Remove item from set  
-//  =============== ====================== 
-//   set            pointer to set        
-//   item            item to be removed    
-//  =============== ====================== 
-//  [!] YADSL_SET_RET_DOES_NOT_CONTAIN
-
+/**
+ * @brief Remove item from set
+ * @param set set
+ * @param item item to be removed
+ * @return
+ * * ::YADSL_SET_RET_OK, and item is removed
+ * * ::YADSL_SET_RET_DOES_NOT_CONTAIN
+*/
 yadsl_SetRet
 yadsl_set_item_remove(
 	yadsl_SetHandle *set,
 	yadsl_SetItemObj *item);
 
-//  =================== ========================================== 
-//   setGetCurrentItem   Get item currently pointed by the cursor  
-//  =================== ========================================== 
-//   set                pointer to set                            
-//   pItem               (ret) item pointed by the cursor          
-//  =================== ========================================== 
-//  [!] YADSL_SET_RET_EMPTY
-
+/**
+ * @brief Get item currently pointed by the cursor
+ * @param set set
+ * @param item_ptr item pointed by cursor
+ * @return 
+ * * ::YADSL_SET_RET_OK, and *item_ptr is updated
+ * * ::YADSL_SET_RET_EMPTY
+*/
 yadsl_SetRet
 yadsl_set_cursor_get(
 	yadsl_SetHandle *set,
 	yadsl_SetItemObj **item_ptr);
 
-//  ============ ======================= 
-//   setGetSize    Get set cardinality   
-//  ============ ======================= 
-//   set         pointer to set         
-//   pSize        (ret) set cardinality  
-//  ============ ======================= 
-
+/**
+ * @brief Get set cardinality
+ * @param set set
+ * @param size_ptr set cardinality
+ * @return
+ * * ::YADSL_SET_RET_OK, and *size_ptr is updated
+*/
 yadsl_SetRet
 yadsl_set_size_get(
 	yadsl_SetHandle *set,
 	size_t *size_ptr);
 
-//  ================= ======================================== 
-//   setPreviousItem   Make cursor point to the previous item  
-//  ================= ======================================== 
-//   set              pointer to set                          
-//  ================= ======================================== 
-//  [!] YADSL_SET_RET_EMPTY
-//  [!] YADSL_SET_RET_OUT_OF_BOUNDS: current item is the first in the set
-
+/**
+ * @brief Make cursor point to the previous item
+ * @param set set
+ * @return 
+ * * ::YADSL_SET_RET_OK, and cursor is moved
+ * * ::YADSL_SET_RET_EMPTY
+ * * ::YADSL_SET_RET_OUT_OF_BOUNDS, when current item is the first in the set
+*/
 yadsl_SetRet
 yadsl_set_cursor_previous(
 	yadsl_SetHandle *set);
 
-//  ============= ==================================== 
-//   setNextItem   Make cursor point to the next item  
-//  ============= ==================================== 
-//   set          pointer to set                      
-//  ============= ==================================== 
-//  [!] YADSL_SET_RET_EMPTY
-//  [!] YADSL_SET_RET_OUT_OF_BOUNDS: current item is the last in the set
-
+/**
+ * @brief Make cursor point to the next item
+ * @param set set
+ * @return
+ * * ::YADSL_SET_RET_OK, and cursor is moved
+ * * ::YADSL_SET_RET_EMPTY
+ * * ::YADSL_SET_RET_OUT_OF_BOUNDS, when current item is the last in the set
+*/
 yadsl_SetRet
 yadsl_set_cursor_next(
 	yadsl_SetHandle *set);
 
-//  ============== ===================================== 
-//   setFirstItem   Make cursor point to the first item  
-//  ============== ===================================== 
-//   set           pointer to set                       
-//  ============== ===================================== 
-//  [!] YADSL_SET_RET_EMPTY
-
+/**
+ * @brief Make cursor point to the first item
+ * @param set set
+ * @return
+ * * ::YADSL_SET_RET_OK, and cursor is moved
+ * * ::YADSL_SET_RET_EMPTY
+*/
 yadsl_SetRet
 yadsl_set_cursor_first(
 	yadsl_SetHandle *set);
 
-//  ============= ==================================== 
-//   setLastItem   Make cursor point to the last item  
-//  ============= ==================================== 
-//   set          pointer to set                      
-//  ============= ==================================== 
-//  [!] YADSL_SET_RET_EMPTY
-
+/**
+ * @brief Make cursor point to the last item
+ * @param set set
+ * @return
+ * * ::YADSL_SET_RET_OK, and cursor is moved
+ * * ::YADSL_SET_RET_EMPTY
+*/
 yadsl_SetRet
 yadsl_set_cursor_last(
 	yadsl_SetHandle *set);
 
-//  ============ ======================================== 
-//   setDestroy   Deallocate set and its remaining items  
-//  ============ ======================================== 
-//   set         pointer to set                          
-//   freeItem     item deallocation function              
-//   arg          additional argument passed to freeItem  
-//  ============ ======================================== 
-
+/**
+ * @brief Destroy set and its remaining items
+ * @param set set
+ * @param free_item_func item freeing function
+ * @param free_item_arg item freeing function argument
+*/
 void
 yadsl_set_destroy(
 	yadsl_SetHandle *set,
 	yadsl_SetItemFreeFunc free_item_func,
 	yadsl_SetItemFreeArg *free_item_arg);
+
+/** @} */
 
 #endif

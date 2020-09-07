@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include <tester/tester.h>
+#include <testerutils/testerutils.h>
 
 const char *yadsl_tester_help_strings[] = {
 	"/diff X Y    saves the difference between X and Y in slot A",
@@ -16,8 +17,6 @@ const char *yadsl_tester_help_strings[] = {
 	NULL,
 };
 
-#define matches(a, b) (strcmp(a, b) == 0)
-
 char X[BUFSIZ], Y[BUFSIZ];
 double val, eax = -1.0; /* Last computed value */
 
@@ -28,39 +27,39 @@ yadsl_TesterRet yadsl_tester_init()
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
-	if matches(command, "diff"){
+	if yadsl_testerutils_match(command, "diff"){
 		if (yadsl_tester_parse_arguments("ss", X, Y) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
 		eax = yadsl_utils_diff(X, Y);
 		if (eax == -1.0)
 			return YADSL_TESTER_RET_MALLOC;
 		yadsl_tester_log("diff = %lf", eax);
-	} else if matches(command, "equ") {
+	} else if yadsl_testerutils_match(command, "equ") {
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax == val))
 			return YADSL_TESTER_RET_RETURN;
-	} else if matches(command, "neq") {
+	} else if yadsl_testerutils_match(command, "neq") {
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax != val))
 			return YADSL_TESTER_RET_RETURN;
-	} else if matches(command, "gtr") {
+	} else if yadsl_testerutils_match(command, "gtr") {
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax > val))
 			return YADSL_TESTER_RET_RETURN;
-	} else if matches(command, "lwr") {
+	} else if yadsl_testerutils_match(command, "lwr") {
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax < val))
 			return YADSL_TESTER_RET_RETURN;
-	} else if matches(command, "geq") {
+	} else if yadsl_testerutils_match(command, "geq") {
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax >= val))
 			return YADSL_TESTER_RET_RETURN;
-	} else if matches(command, "leq") {
+	} else if yadsl_testerutils_match(command, "leq") {
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax <= val))

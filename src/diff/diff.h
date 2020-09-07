@@ -18,6 +18,6 @@
 */
 double yadsl_utils_diff(const char *s1, const char *s2);
 
-/** }@ */
+/** @} */
 
 #endif

@@ -48,6 +48,6 @@ yadsl_VectorHandle* yadsl_vector_resize(yadsl_VectorHandle* vector, size_t new_s
 */
 void yadsl_vector_destroy(yadsl_VectorHandle* vector);
 
-/** }@ */
+/** @} */
 
 #endif

@@ -38,8 +38,8 @@ typedef void (*yadsl_GraphSearchEdgeVisitFunc)(yadsl_GraphVertexObject* source, 
 /**
  * @brief Visit the graph in a depth-first search fashion
  * @param graph graph
- * @param initialVertex initial vertex
- * @param visitedFlag value that will be set to visited vertices
+ * @param initial_vertex initial vertex
+ * @param visited_flag value that will be set to visited vertices
  * @param visit_vertex_func vertex visiting function
  * @param visit_edge_func edge visiting function
  * @return
@@ -57,8 +57,8 @@ yadsl_GraphSearchRet yadsl_graph_search_dfs(
 /**
  * @brief Visit the graph in a breadth-first search fashion
  * @param graph graph
- * @param initialVertex initial vertex
- * @param visitedFlag value that will be set to visited vertices
+ * @param initial_vertex initial vertex
+ * @param visited_flag value that will be set to visited vertices
  * @param visit_vertex_func vertex visiting function
  * @param visit_edge_func edge visiting function
  * @return
@@ -85,6 +85,6 @@ int yadsl_graph_search_get_node_ref_count();
 
 #endif
 
-/** }@ */
+/** @} */
 
 #endif

@@ -34,14 +34,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	char *str1, *str2;
 	yadsl_QueueRet queueId = YADSL_QUEUE_RET_OK;
-	if matches(command, "queue") {
+	if yadsl_testerutils_match(command, "queue") {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (queueId = yadsl_queue_queue(pQueue, str1))
 			free(str1);
-	} else if matches(command, "dequeue") {
+	} else if yadsl_testerutils_match(command, "dequeue") {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
@@ -49,17 +49,17 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		if (queueId = yadsl_queue_dequeue(pQueue, &str2)) {
 			free(str1);
 		} else {
-			int equal = matches(str1, str2);
+			int equal = yadsl_testerutils_match(str1, str2);
 			free(str1);
 			free(str2);
 			if (!equal)
 				return YADSL_TESTER_RET_RETURN;
 		}
-	} else if matches(command, "empty") {
+	} else if yadsl_testerutils_match(command, "empty") {
 		bool expected, obtained;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		expected = TesterUtilsGetYesOrNoFromString(buffer);
+		expected = yadsl_testerutils_str_to_bool(buffer);
 		queueId = yadsl_queue_empty_check(pQueue, &obtained);
 		if (queueId == YADSL_QUEUE_RET_OK && expected != obtained)
 			return YADSL_TESTER_RET_RETURN;

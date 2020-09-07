@@ -91,6 +91,6 @@ void
 yadsl_queue_destroy(
 	yadsl_QueueHandle *queue);
 
-/** }@ */
+/** @} */
 
 #endif

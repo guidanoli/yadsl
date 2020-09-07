@@ -94,6 +94,6 @@ yadsl_GraphIoRet yadsl_graph_io_read(
 	yadsl_GraphFreeEdgeObjFunc free_edge_func,
 	yadsl_GraphHandle **graph_ptr);
 
-/** }@ */
+/** @} */
 
 #endif

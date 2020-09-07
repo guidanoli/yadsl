@@ -42,7 +42,7 @@ yadsl_TesterRet yadsl_tester_init()
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
-    if matches(command, "malloc") {
+    if yadsl_testerutils_match(command, "malloc") {
         size_t idx, size;
         void *p;
         if (yadsl_tester_parse_arguments("zz", &idx, &size) != 2)
@@ -52,7 +52,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
         if ((p = malloc(size)) == NULL)
             return YADSL_TESTER_RET_MALLOC;
         mem_array[idx] = p;
-    } else if matches(command, "realloc") {
+    } else if yadsl_testerutils_match(command, "realloc") {
         size_t idx, size;
         void *p;
         if (yadsl_tester_parse_arguments("zz", &idx, &size) != 2)
@@ -62,7 +62,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
         if ((p = realloc(mem_array[idx], size)) == NULL)
             return YADSL_TESTER_RET_MALLOC;
         mem_array[idx] = p;
-    } else if matches(command, "calloc") {
+    } else if yadsl_testerutils_match(command, "calloc") {
         size_t idx, size, count;
         void *p;
         if (yadsl_tester_parse_arguments("zzz", &idx, &size, &count) != 3)
@@ -72,30 +72,30 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
         if ((p = calloc(count, size)) == NULL)
             return YADSL_TESTER_RET_MALLOC;
         mem_array[idx] = p;
-    } else if matches(command, "free") {
+    } else if yadsl_testerutils_match(command, "free") {
         size_t idx;
         if (yadsl_tester_parse_arguments("z", &idx) != 1)
             return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
             return YADSL_TESTER_RET_ARGUMENT;
         free(mem_array[idx]);
-    } else if matches(command, "size") {
+    } else if yadsl_testerutils_match(command, "size") {
         size_t actual, expected;
         if (yadsl_tester_parse_arguments("z", &expected) != 1)
             return YADSL_TESTER_RET_ARGUMENT;
         actual = yadsl_memdb_list_size();
         if (actual != expected)
             return YADSL_TESTER_RET_RETURN;
-    } else if matches(command, "clear") {
+    } else if yadsl_testerutils_match(command, "clear") {
         yadsl_memdb_clear_list();
-    } else if matches(command, "contains") {
+    } else if yadsl_testerutils_match(command, "contains") {
         size_t idx;
         bool expected, actual;
         if (yadsl_tester_parse_arguments("zs", &idx, buffer) != 2)
             return YADSL_TESTER_RET_ARGUMENT;
         if (!_VALID(idx))
             return YADSL_TESTER_RET_ARGUMENT;
-        expected = TesterUtilsGetYesOrNoFromString(buffer);
+        expected = yadsl_testerutils_str_to_bool(buffer);
         actual = yadsl_memdb_contains(mem_array[idx]);
         if (actual != expected)
             return YADSL_TESTER_RET_RETURN;

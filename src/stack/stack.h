@@ -92,6 +92,6 @@ yadsl_stack_destroy(
 	yadsl_StackHandle *stack,
 	yadsl_StackItemFreeFunc free_item_func);
 
-/** }@ */
+/** @} */
 
 #endif
