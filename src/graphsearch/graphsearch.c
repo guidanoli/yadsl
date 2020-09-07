@@ -13,9 +13,9 @@ int nodeRefCount = 0;
 
 typedef struct
 {
-	yadsl_GraphVertexObject *parent;
-	yadsl_GraphEdgeObject *edge;
-	yadsl_GraphVertexObject *child;
+	yadsl_GraphVertexObject* parent;
+	yadsl_GraphEdgeObject* edge;
+	yadsl_GraphVertexObject* child;
 }
 yadsl_GraphSearchBFSTreeNode;
 
@@ -30,15 +30,15 @@ static void yadsl_graphsearch_free_node_internal(
 	yadsl_GraphSearchBFSTreeNode* node);
 
 static yadsl_GraphSearchRet yadsl_graphsearch_dfs_internal(
-	yadsl_GraphHandle *graph,
+	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexFlag visited_flag,
-	yadsl_GraphVertexObject *vertex,
+	yadsl_GraphVertexObject* vertex,
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func);
 
 static yadsl_GraphSearchRet yadsl_graphsearch_bfs_internal(
-	yadsl_GraphHandle *graph,
-	yadsl_QueueHandle *bfs_queue,
+	yadsl_GraphHandle* graph,
+	yadsl_QueueHandle* bfs_queue,
 	yadsl_GraphVertexFlag visited_flag,
 	yadsl_GraphVertexObject* vertex,
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
@@ -113,8 +113,8 @@ yadsl_GraphSearchRet yadsl_graphsearch_dfs_internal(
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func)
 {
 	yadsl_GraphSearchRet graph_search_ret;
-	yadsl_GraphVertexObject *nb;
-	yadsl_GraphEdgeObject *edge;
+	yadsl_GraphVertexObject* nb;
+	yadsl_GraphEdgeObject* edge;
 	size_t degree;
 	bool is_directed;
 	yadsl_GraphVertexFlag flag;
@@ -196,7 +196,7 @@ yadsl_GraphSearchRet yadsl_graphsearch_bfs_internal(
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func)
 {
 	bool is_directed;
-	yadsl_GraphSearchBFSTreeNode *node = NULL;
+	yadsl_GraphSearchBFSTreeNode* node = NULL;
 	yadsl_GraphSearchRet graph_search_ret;
 	yadsl_GraphEdgeDirection edge_direction;
 
@@ -229,7 +229,7 @@ yadsl_GraphSearchBFSTreeNode* yadsl_graphsearch_allocate_node_internal(
 	yadsl_GraphEdgeObject* edge,
 	yadsl_GraphVertexObject* child)
 {
-	yadsl_GraphSearchBFSTreeNode *node = malloc(sizeof(*node));
+	yadsl_GraphSearchBFSTreeNode* node = malloc(sizeof(*node));
 	if (node) {
 		node->parent = parent;
 		node->edge = edge;
@@ -244,7 +244,7 @@ yadsl_GraphSearchBFSTreeNode* yadsl_graphsearch_allocate_node_internal(
 	return node;
 }
 
-void yadsl_graphsearch_free_node_internal(yadsl_GraphSearchBFSTreeNode *node)
+void yadsl_graphsearch_free_node_internal(yadsl_GraphSearchBFSTreeNode* node)
 {
 
 #ifdef _DEBUG

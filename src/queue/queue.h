@@ -4,11 +4,11 @@
 /**
  * \defgroup queue Queue
  * @brief Generic queue
- * 
+ *
  * A Queue starts empty. You can only queue and dequeue items.
  * On destruction, the items still on the queue are deallocated
  * with a function provided upon creation.
- * 
+ *
  * @{
 */
 
@@ -68,7 +68,7 @@ yadsl_queue_queue(
 */
 yadsl_QueueRet
 yadsl_queue_dequeue(
-	yadsl_QueueHandle *queue,
+	yadsl_QueueHandle* queue,
 	yadsl_QueueItemObj** item_ptr);
 
 /**
@@ -80,8 +80,8 @@ yadsl_queue_dequeue(
 */
 yadsl_QueueRet
 yadsl_queue_empty_check(
-	yadsl_QueueHandle *queue,
-	bool *is_empty_ptr);
+	yadsl_QueueHandle* queue,
+	bool* is_empty_ptr);
 
 /**
  * @brief Destroy queue and its remaining items
@@ -89,7 +89,7 @@ yadsl_queue_empty_check(
 */
 void
 yadsl_queue_destroy(
-	yadsl_QueueHandle *queue);
+	yadsl_QueueHandle* queue);
 
 /** @} */
 

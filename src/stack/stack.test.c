@@ -43,14 +43,14 @@ yadsl_TesterRet convert(yadsl_StackRet ret)
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	yadsl_StackRet ret = YADSL_STACK_RET_OK;
-	if yadsl_testerutils_match(command, "create") {
+	if (yadsl_testerutils_match(command, "create")) {
 		st = yadsl_stack_create();
 		if (!st)
 			return YADSL_TESTER_RET_MALLOC;
-	} else if yadsl_testerutils_match(command, "destroy") {
+	} else if (yadsl_testerutils_match(command, "destroy")) {
 		yadsl_stack_destroy(st, free);
 		st = NULL;
-	} else if yadsl_testerutils_match(command, "add") {
+	} else if (yadsl_testerutils_match(command, "add")) {
 		int num, *num_ptr;
 		if (yadsl_tester_parse_arguments("i", &num) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -61,7 +61,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		ret = yadsl_stack_item_add(st, num_ptr);
 		if (ret)
 			free(num_ptr);
-	} else if yadsl_testerutils_match(command, "remove") {
+	} else if (yadsl_testerutils_match(command, "remove")) {
 		int *actual_ptr, expected;
 		if (yadsl_tester_parse_arguments("i", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -73,7 +73,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (expected != actual)
 				return YADSL_TESTER_RET_ARGUMENT;
 		}
-	} else if yadsl_testerutils_match(command, "empty") {
+	} else if (yadsl_testerutils_match(command, "empty")) {
 		bool actual, expected;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;

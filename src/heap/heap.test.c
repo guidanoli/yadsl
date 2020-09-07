@@ -53,7 +53,7 @@ int cmpObjs(void *a, void *b, void *_unused)
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
     yadsl_HeapRet returnId = YADSL_HEAP_RET_OK;
-    if yadsl_testerutils_match(command, "create") {
+    if (yadsl_testerutils_match(command, "create")) {
         size_t size;
         yadsl_HeapHandle *temp;
         if (yadsl_tester_parse_arguments("z", &size) != 1)
@@ -64,7 +64,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
             pHeap = temp;
         else
             return YADSL_TESTER_RET_MALLOC;
-    } else if yadsl_testerutils_match(command, "insert") {
+    } else if (yadsl_testerutils_match(command, "insert")) {
         int obj, *pObj;
         if (yadsl_tester_parse_arguments("i", &obj) != 1)
             return YADSL_TESTER_RET_ARGUMENT;
@@ -75,7 +75,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
         returnId = yadsl_heap_insert(pHeap, pObj);
         if (returnId)
             free(pObj);
-    } else if yadsl_testerutils_match(command, "extract") {
+    } else if (yadsl_testerutils_match(command, "extract")) {
         int *pObj, actual, expected;
         if (yadsl_tester_parse_arguments("i", &expected) != 1)
             return YADSL_TESTER_RET_ARGUMENT;
@@ -86,14 +86,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
             if (actual != expected)
                 return YADSL_TESTER_RET_RETURN;
         }
-    } else if yadsl_testerutils_match(command, "size") {
+    } else if (yadsl_testerutils_match(command, "size")) {
         size_t actual, expected;
         if (yadsl_tester_parse_arguments("z", &expected) != 1)
             return YADSL_TESTER_RET_ARGUMENT;
         returnId = yadsl_heap_size_get(pHeap, &actual);
         if (!returnId && actual != expected)
             return YADSL_TESTER_RET_RETURN;
-    } else if yadsl_testerutils_match(command, "resize") {
+    } else if (yadsl_testerutils_match(command, "resize")) {
         size_t newSize;
         if (yadsl_tester_parse_arguments("z", &newSize) != 1)
             return YADSL_TESTER_RET_ARGUMENT;

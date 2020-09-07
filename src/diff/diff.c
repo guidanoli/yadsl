@@ -16,7 +16,7 @@
 #define DELTA (5.0)
 #define ALPHA (1.0)
 
-static int yadsl_utils_diff_coord_internal(char c, size_t *x, size_t *y)
+static int yadsl_utils_diff_coord_internal(char c, size_t* x, size_t* y)
 {
 	static const char* loc[] = {
 		"\"!@#$%*()_+",
@@ -28,7 +28,7 @@ static int yadsl_utils_diff_coord_internal(char c, size_t *x, size_t *y)
 	size_t i, j;
 	char coff = 'A' - 'a'; // Case offset
 	for (i = 0; i < sizeof(loc) / sizeof(*loc); i++) {
-		const char *line = loc[i];
+		const char* line = loc[i];
 		for (j = 0; j < strlen(line); j++) {
 			char ch = line[j];
 			if (ch == c || (ch >= 'a' && ch <= 'z' && ch == (c + coff))) {
@@ -57,15 +57,15 @@ static double yadsl_utils_diff_alpha_internal(char a, char b)
 		return ALPHA;
 	di = yadsl_utils_diff_modsub_internal(posa[0], posb[0]);
 	dj = yadsl_utils_diff_modsub_internal(posa[1], posb[1]);
-	return sqrt(di*di + dj*dj);
+	return sqrt(di * di + dj * dj);
 }
 
 /**** External functions definitions ****/
 
-double yadsl_utils_diff(const char *s1, const char *s2)
+double yadsl_utils_diff(const char* s1, const char* s2)
 {
 	size_t l1, l2, i, j, k;
-	double v[3], lv, cost = -1.0, *M, *N;
+	double v[3], lv, cost = -1.0, * M, * N;
 	if (!s1 || !s2)
 		goto fail0;
 	l1 = strlen(s1) + 1;

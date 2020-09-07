@@ -34,14 +34,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	char *str1, *str2;
 	yadsl_QueueRet queueId = YADSL_QUEUE_RET_OK;
-	if yadsl_testerutils_match(command, "queue") {
+	if (yadsl_testerutils_match(command, "queue")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (queueId = yadsl_queue_queue(pQueue, str1))
 			free(str1);
-	} else if yadsl_testerutils_match(command, "dequeue") {
+	} else if (yadsl_testerutils_match(command, "dequeue")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = strdup(buffer)) == NULL)
@@ -55,7 +55,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (!equal)
 				return YADSL_TESTER_RET_RETURN;
 		}
-	} else if yadsl_testerutils_match(command, "empty") {
+	} else if (yadsl_testerutils_match(command, "empty")) {
 		bool expected, obtained;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;

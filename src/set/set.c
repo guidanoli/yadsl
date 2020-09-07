@@ -6,19 +6,19 @@
 
 struct yadsl_SetItem_s
 {
-	struct yadsl_SetItem_s *next;
-	struct yadsl_SetItem_s *previous;
-	yadsl_SetItemObj *item;
+	struct yadsl_SetItem_s* next;
+	struct yadsl_SetItem_s* previous;
+	yadsl_SetItemObj* item;
 };
 
 typedef struct yadsl_SetItem_s yadsl_SetItem;
 
 typedef struct
 {
-	yadsl_SetItem *external_cursor;
-	yadsl_SetItem *internal_cursor;
-	yadsl_SetItem *first;
-	yadsl_SetItem *last;
+	yadsl_SetItem* external_cursor;
+	yadsl_SetItem* internal_cursor;
+	yadsl_SetItem* first;
+	yadsl_SetItem* last;
 	size_t size;
 }
 yadsl_Set;
@@ -28,16 +28,16 @@ yadsl_Set;
 
 static yadsl_SetRet
 yadsl_set_item_contains_check_internal(
-	yadsl_SetHandle *set,
-	void *item,
-	yadsl_SetItem **set_item_ptr);
+	yadsl_SetHandle* set,
+	void* item,
+	yadsl_SetItem** set_item_ptr);
 
 // Public functions
 
 yadsl_SetHandle*
 yadsl_set_create()
 {
-	yadsl_Set *set = malloc(sizeof(*set));
+	yadsl_Set* set = malloc(sizeof(*set));
 	if (set) {
 		set->internal_cursor = NULL;
 		set->external_cursor = NULL;
@@ -62,8 +62,8 @@ yadsl_SetRet yadsl_set_item_filter(
 	yadsl_SetItemFilterArg* item_filter_arg,
 	yadsl_SetItemObj** item_ptr)
 {
-	yadsl_SetItem *p;
-	yadsl_Set* set_ = (yadsl_Set *) set;
+	yadsl_SetItem* p;
+	yadsl_Set* set_ = (yadsl_Set*) set;
 	size_t size = set_->size;
 
 	for (
@@ -85,12 +85,12 @@ yadsl_set_item_add(
 	yadsl_SetHandle* set,
 	yadsl_SetItemObj* item)
 {
-	yadsl_SetItem *set_item, *p;
+	yadsl_SetItem* set_item, * p;
 	yadsl_Set* set_ = (yadsl_Set*) set;
 
 	if (yadsl_set_item_contains_check(set, item) == YADSL_SET_RET_CONTAINS)
 		return YADSL_SET_RET_CONTAINS;
-	
+
 	set_item = malloc(sizeof(*set_item));
 	if (set_item == NULL)
 		return YADSL_SET_RET_MEMORY;
@@ -98,7 +98,7 @@ yadsl_set_item_add(
 	set_item->next = NULL;
 	set_item->previous = NULL;
 	set_item->item = item;
-	
+
 	p = set_->internal_cursor;
 	set_->internal_cursor = set_item;
 
@@ -154,7 +154,7 @@ yadsl_set_item_remove(
 	yadsl_SetHandle* set,
 	yadsl_SetItemObj* item)
 {
-	yadsl_SetItem *p;
+	yadsl_SetItem* p;
 	yadsl_Set* set_ = (yadsl_Set*) set;
 
 	if (yadsl_set_item_contains_check_internal(set, item, &p) == YADSL_SET_RET_DOES_NOT_CONTAIN)
@@ -276,7 +276,7 @@ yadsl_set_destroy(
 	yadsl_SetItemFreeFunc free_item_func,
 	yadsl_SetItemFreeArg* free_item_arg)
 {
-	yadsl_SetItem *internal_cursor, *next;
+	yadsl_SetItem* internal_cursor, * next;
 	yadsl_Set* set_ = (yadsl_Set*) set;
 
 	if (set_ == NULL)
@@ -284,7 +284,7 @@ yadsl_set_destroy(
 
 	internal_cursor = set_->first;
 	next = NULL;
-	
+
 	while (internal_cursor != NULL) {
 		if (free_item_func)
 			free_item_func(internal_cursor->item, free_item_arg);
@@ -307,7 +307,7 @@ yadsl_set_item_contains_check_internal(
 	yadsl_SetItem** set_item_ptr)
 {
 	char direction = 0;
-	yadsl_SetItem *p = ((yadsl_Set*) set)->internal_cursor;
+	yadsl_SetItem* p = ((yadsl_Set*) set)->internal_cursor;
 	while (p != NULL) {
 		char current_direction;
 		if (p->item > item) {

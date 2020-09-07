@@ -4,12 +4,12 @@
 /**
  * \defgroup stack Stack
  * @brief Generic stack
- * 
+ *
  * A Stack starts empty. You can add and
  * remove objects (if not empty), and check
  * whether the stack is empty or not.
  * Objects can assume the value NULL (0).
- * 
+ *
  * @{
 */
 
@@ -54,8 +54,8 @@ yadsl_stack_create();
 */
 yadsl_StackRet
 yadsl_stack_item_add(
-	yadsl_StackHandle *stack,
-	yadsl_StackItemObj *object);
+	yadsl_StackHandle* stack,
+	yadsl_StackItemObj* object);
 
 /**
  * @brief Check if stack is empty
@@ -66,8 +66,8 @@ yadsl_stack_item_add(
 */
 yadsl_StackRet
 yadsl_stack_empty_check(
-	yadsl_StackHandle *stack,
-	bool *is_empty_ptr);
+	yadsl_StackHandle* stack,
+	bool* is_empty_ptr);
 
 /**
  * @brief Remove object from stack
@@ -79,8 +79,8 @@ yadsl_stack_empty_check(
 */
 yadsl_StackRet
 yadsl_stack_item_remove(
-	yadsl_StackHandle *stack,
-	yadsl_StackItemObj **object_ptr);
+	yadsl_StackHandle* stack,
+	yadsl_StackItemObj** object_ptr);
 
 /**
  * @brief Destroy stack and its remaining objects
@@ -89,7 +89,7 @@ yadsl_stack_item_remove(
 */
 void
 yadsl_stack_destroy(
-	yadsl_StackHandle *stack,
+	yadsl_StackHandle* stack,
 	yadsl_StackItemFreeFunc free_item_func);
 
 /** @} */

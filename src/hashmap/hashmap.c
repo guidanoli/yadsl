@@ -43,7 +43,7 @@ yadsl_hashmap_create(
 	yadsl_HashMap* hashmap = malloc(sizeof(*hashmap));
 	if (!hashmap)
 		goto fail;
-	
+
 	hashmap->size_exponent = size_exponent;
 	hashmap->free_entry_func = free_entry_func;
 
@@ -127,7 +127,7 @@ yadsl_hashmap_entry_add_in_list_internal(
 {
 	if (yadsl_hashmap_entry_exists_in_list_internal(head, key, NULL))
 		return YADSL_HASHMAP_RET_EXISTS;
-	
+
 	yadsl_HashMapEntry* new_entry = yadsl_hashmap_entry_create_internal(key, value);
 	if (!new_entry)
 		return YADSL_HASHMAP_RET_MEMORY;
@@ -157,7 +157,7 @@ yadsl_hashmap_entry_remove_from_list_internal(
 		yadsl_hashmap_entry_destroy_internal(prev->next, free_entry_func);
 		prev->next = temp;
 	}
-	
+
 	return YADSL_HASHMAP_RET_OK;
 }
 
@@ -174,7 +174,7 @@ yadsl_hashmap_entry_get_value_in_list_internal(
 
 	yadsl_HashMapEntry* entry = prev ? prev->next : head->first;
 	*value_ptr = entry->value;
-	
+
 	return YADSL_HASHMAP_RET_OK;
 }
 

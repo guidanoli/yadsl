@@ -8,5 +8,6 @@ if(YADSL_BUILD_TESTS)
 	include(testerTools)
 	
 	add_tester_module(testertest SOURCES tester.test.c)
+    target_link_libraries(testertest testerutils)
 	add_tester_scripts(testertest SOURCES tester.script)
 endif()

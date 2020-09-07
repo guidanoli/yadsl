@@ -1,5 +1,5 @@
-#ifndef _YADSL_UTILS_DIFF_H_
-#define _YADSL_UTILS_DIFF_H_
+#ifndef __YADSL_UTILS_DIFF_H__
+#define __YADSL_UTILS_DIFF_H__
 
 /**
 * \defgroup utils Utilities
@@ -16,7 +16,10 @@
  * @return the difference between the strings or
  * -1.0 in case it could not allocate enough memory
 */
-double yadsl_utils_diff(const char *s1, const char *s2);
+double
+yadsl_utils_diff(
+	const char* s1,
+	const char* s2);
 
 /** @} */
 

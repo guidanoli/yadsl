@@ -4,13 +4,13 @@
 /**
  * \defgroup set Set
  * @brief Generic set
- * 
+ *
  * A Set starts empty.
  * You are able to add and remove items (opaque pointers),
  * check if items are contained within a set or not,
  * and iterate through them.
  * It makes sure no duplicates are added.
- * 
+ *
  * It does not acquire the ownership of the items it
  * stores and, therefore, does not deallocates them
  * when destroyed.
@@ -26,7 +26,7 @@
  * If the set state is changed while filtering, the function
  * will be recursively. No guarantee is given that the call
  * will terminate.
- * 
+ *
  * @{
 */
 
@@ -85,14 +85,14 @@ yadsl_set_create();
  * @brief Check whether set contains item or not
  * @param set set
  * @param item item to be checked
- * @return 
+ * @return
  * * ::YADSL_SET_RET_CONTAINS
  * * ::YADSL_SET_RET_DOES_NOT_CONTAIN
 */
 yadsl_SetRet
 yadsl_set_item_contains_check(
-	yadsl_SetHandle *set,
-	void *item);
+	yadsl_SetHandle* set,
+	void* item);
 
 /**
  * @brief Filter item from set
@@ -105,24 +105,24 @@ yadsl_set_item_contains_check(
  * * ::YADSL_SET_RET_DOES_NOT_CONTAIN
 */
 yadsl_SetRet yadsl_set_item_filter(
-	yadsl_SetHandle *set,
+	yadsl_SetHandle* set,
 	yadsl_SetItemFilterFunc item_filter_func,
-	yadsl_SetItemFilterArg * item_filter_arg,
-	yadsl_SetItemObj **item_ptr);
+	yadsl_SetItemFilterArg* item_filter_arg,
+	yadsl_SetItemObj** item_ptr);
 
 /**
  * @brief Add item to set
  * @param set set
  * @param item item to be added
- * @return 
+ * @return
  * * ::YADSL_SET_RET_OK, and item is added
  * * ::YADSL_SET_RET_CONTAINS
  * * ::YADSL_SET_RET_MEMORY
 */
 yadsl_SetRet
 yadsl_set_item_add(
-	yadsl_SetHandle *set,
-	yadsl_SetItemObj *item);
+	yadsl_SetHandle* set,
+	yadsl_SetItemObj* item);
 
 /**
  * @brief Remove item from set
@@ -134,21 +134,21 @@ yadsl_set_item_add(
 */
 yadsl_SetRet
 yadsl_set_item_remove(
-	yadsl_SetHandle *set,
-	yadsl_SetItemObj *item);
+	yadsl_SetHandle* set,
+	yadsl_SetItemObj* item);
 
 /**
  * @brief Get item currently pointed by the cursor
  * @param set set
  * @param item_ptr item pointed by cursor
- * @return 
+ * @return
  * * ::YADSL_SET_RET_OK, and *item_ptr is updated
  * * ::YADSL_SET_RET_EMPTY
 */
 yadsl_SetRet
 yadsl_set_cursor_get(
-	yadsl_SetHandle *set,
-	yadsl_SetItemObj **item_ptr);
+	yadsl_SetHandle* set,
+	yadsl_SetItemObj** item_ptr);
 
 /**
  * @brief Get set cardinality
@@ -159,20 +159,20 @@ yadsl_set_cursor_get(
 */
 yadsl_SetRet
 yadsl_set_size_get(
-	yadsl_SetHandle *set,
-	size_t *size_ptr);
+	yadsl_SetHandle* set,
+	size_t* size_ptr);
 
 /**
  * @brief Make cursor point to the previous item
  * @param set set
- * @return 
+ * @return
  * * ::YADSL_SET_RET_OK, and cursor is moved
  * * ::YADSL_SET_RET_EMPTY
  * * ::YADSL_SET_RET_OUT_OF_BOUNDS, when current item is the first in the set
 */
 yadsl_SetRet
 yadsl_set_cursor_previous(
-	yadsl_SetHandle *set);
+	yadsl_SetHandle* set);
 
 /**
  * @brief Make cursor point to the next item
@@ -184,7 +184,7 @@ yadsl_set_cursor_previous(
 */
 yadsl_SetRet
 yadsl_set_cursor_next(
-	yadsl_SetHandle *set);
+	yadsl_SetHandle* set);
 
 /**
  * @brief Make cursor point to the first item
@@ -195,7 +195,7 @@ yadsl_set_cursor_next(
 */
 yadsl_SetRet
 yadsl_set_cursor_first(
-	yadsl_SetHandle *set);
+	yadsl_SetHandle* set);
 
 /**
  * @brief Make cursor point to the last item
@@ -206,7 +206,7 @@ yadsl_set_cursor_first(
 */
 yadsl_SetRet
 yadsl_set_cursor_last(
-	yadsl_SetHandle *set);
+	yadsl_SetHandle* set);
 
 /**
  * @brief Destroy set and its remaining items
@@ -216,9 +216,9 @@ yadsl_set_cursor_last(
 */
 void
 yadsl_set_destroy(
-	yadsl_SetHandle *set,
+	yadsl_SetHandle* set,
 	yadsl_SetItemFreeFunc free_item_func,
-	yadsl_SetItemFreeArg *free_item_arg);
+	yadsl_SetItemFreeArg* free_item_arg);
 
 /** @} */
 

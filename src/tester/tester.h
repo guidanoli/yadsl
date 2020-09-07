@@ -7,45 +7,45 @@
  *
  * This library incorporates the generic part of the testing framework, which
  * reads the test script and parses comands and its arguments.
- * 
+ *
  * Motivation
  * ----------
  * Creating individual testers for each module can be a very dull and
  * error-prone task. It may lead to extra time wasted on debugging the test
  * module, but not the code itself. Having a single tester framework makes
  * testing effortless, enjoyable and energetic.
- * 
+ *
  * Paradigm
  * --------
  * Instead of creating a test module entirely from scratch, you should only
  * write code that is specific to what you're testing, right? That is why you
  * only need to implement three functions, shown in order of activation.
- * 
+ *
  * * yadsl_tester_init() - Called **once** to initialize data structures or global variables
  * * yadsl_tester_parse() - Called **for every command** parsed from the script file
  * * yadsl_tester_release() - Called **once** at the very end of the testing cycle
- * 
+ *
  * You may also want to display some helping information if the tester receives
  * no script file, like what commands are available or how does your test work.
  * For that, you may also set the following variable:
- * 
+ *
  * * yadsl_tester_help_strings - an array of strings terminated by `NULL`
- * 
+ *
  * Scripts
  * -------
  * A script file has a very simple grammar, with the following tokens: commands,
  * arguments and comments. These tokens are separated by spaces, tabs and newlines.
- * 
+ *
  * * **Commands** are written as / + string, preceding its arguments.
  * * **Arguments** can be parsed as int, char, float, long, size_t or char *.
  * * **Comments** are parsed as # + any string until the end of the line.
- * 
+ *
  * Commands
  * --------
  * The tester framework calls the yadsl_tester_parse() for every potential command.
  * It is the job of this function to parse this string, and requiring more
  * parameters through yadsl_tester_parse_arguments(), if necessary.
- * 
+ *
  * Return values
  * -------------
  * All of the implementable functions return an enumerator of type yadsl_TesterRet.
@@ -53,7 +53,7 @@
  * the corresponding cycle is interrupted. In the tester.h header are listed the
  * called "native" errors. These errors have their string identifiers too, which
  * are used for error handling, as we will see later on.
- * 
+ *
  * External return values
  * ----------------------
  * You may have noticed that the EXTERNAL return value is the only one that does
@@ -62,13 +62,13 @@
  * Instead of returning this value right away, you ought to call
  * yadsl_tester_return_external_value(), passing its string as the parameter,
  * which then returns the enumerator.
- * 
+ *
  * Error handling
  * --------------
  * There is only one way to catch errors raised by yadsl_tester_parse().
  * It is by calling the /catch command. Following the /catch command should be
  * the expected error string.
- * 
+ *
  * Script native commands
  * ----------------------
  * ```
@@ -78,7 +78,7 @@
  * /exit
  *   Exits tester environment. It is specially useful when on interactive mode.
  * ```
- * 
+ *
  * Program arguments
  * -----------------
  * ```
@@ -134,7 +134,7 @@
  * string_wo_qm = [^ \t\n]+
  * %? = identifiers from C standard library
  * ```
- * 
+ *
  * @{
 */
 
@@ -178,7 +178,7 @@ yadsl_TesterRet;
  * NULL, necessarily. But, if you do not want
  * this feature, simply assign it to NULL.
 */
-extern const char *yadsl_tester_help_strings[];
+extern const char* yadsl_tester_help_strings[];
 
 /**
  * @brief Callback called after opening the script
@@ -194,7 +194,7 @@ extern yadsl_TesterRet yadsl_tester_init();
  * @param command command name (i.e. without / or separators)
  * @return status (if not ok, and the error is not caught, aborts)
 */
-extern yadsl_TesterRet yadsl_tester_parse(const char *command);
+extern yadsl_TesterRet yadsl_tester_parse(const char* command);
 
 /**
  * @brief Callback called when yadsl_tester_parse returns
@@ -228,7 +228,7 @@ extern yadsl_TesterRet yadsl_tester_release();
  * | size_t | z                | size_t *       |
  * +--------+------------------+----------------+
  * ```
- * 
+ *
  * Following the format string, the argument variables
  * must be passed by reference in the same order and in
  * the appropriate type, as shown on the table above.
@@ -241,19 +241,24 @@ extern yadsl_TesterRet yadsl_tester_release();
  *   a macro defined in the stdio.h header file.
  * - Strings between quotation marks can be parsed too,
  *   allowing separation characters to be ignored.
- * 
+ *
  * @param format format string
  * @param ... pointers to arguments
  * @return number of successfully parsed arguments
 */
-int yadsl_tester_parse_arguments(const char *format, ...);
+int
+yadsl_tester_parse_arguments(
+	const char* format,
+	...);
 
 /**
  * @brief Get size of data type
  * @param dtype data type identifier
  * @return data type size or 0 if dtype is invalid
 */
-size_t yadsl_tester_get_dtype_size(char dtype);
+size_t
+yadsl_tester_get_dtype_size(
+	char dtype);
 
 /**
  * @brief Compare two arguments of same data type
@@ -265,7 +270,11 @@ size_t yadsl_tester_get_dtype_size(char dtype);
  * * > 0 if the first argument is greater
  * * < 0 if the second argument is greater
 */
-int yadsl_tester_compare_arguments(char dtype, const void* expected, const void* obtained);
+int
+yadsl_tester_compare_arguments(
+	char dtype,
+	const void* expected,
+	const void* obtained);
 
 /**
  * @brief Copy an argument from one location to another
@@ -273,53 +282,65 @@ int yadsl_tester_compare_arguments(char dtype, const void* expected, const void*
  * @param source argument being copied
  * @param destination where argument will be copied
 */
-void yadsl_tester_copy_argument(char dtype, const void* source, void* destination);
+void
+yadsl_tester_copy_argument(
+	char dtype,
+	const void* source,
+	void* destination);
 
 /**
  * @brief Create an external value for an specific error.
  * Once called, its return value must be returned by the
  * callback from which it was called.
- * 
+ *
  * Hint
  * ----
  * The external value can be caught by '/catch' too,
  * by providing the same string 'info' as its parameter.
- * 
+ *
  * @param info external value name
  * @return ::YADSL_TESTER_RET_EXTERNAL
 */
-yadsl_TesterRet yadsl_tester_return_external_value(const char *info);
+yadsl_TesterRet
+yadsl_tester_return_external_value(
+	const char* info);
 
 /**
  * @brief Log a message with additional information about current
  * parser state and cursor position, by wrapping fprintf.
- * 
+ *
  * Hint
  * ----
  * Automatically jumps a line.
- * 
+ *
  * @param message format string, similar to fprintf.
  * @param ... varadic arguments, similar to fprintf.
 */
-void yadsl_tester_log(const char *message, ...);
+void
+yadsl_tester_log(
+	const char* message,
+	...);
 
 /**
 * @brief Prints help strings provided in the same
 * way as if no arguments were provided.
 */
-void yadsl_tester_print_help_strings();
+void
+yadsl_tester_print_help_strings();
 
 /**
  * @brief Get further information about return value
- * 
+ *
  * Hint
  * ----
  * If an invalid return value is given, a proper error message is returned.
- * 
+ *
  * @param ret return value
  * @return information about return value or error message, if invalid.
 */
-const char *yadsl_tester_get_return_value_info(yadsl_TesterRet ret);
+const char*
+yadsl_tester_get_return_value_info(
+	yadsl_TesterRet ret);
 
 /** @} */
 

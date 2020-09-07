@@ -21,21 +21,21 @@ _memdb_enum;
 
 struct _memdb_node
 {
-	struct _memdb_node *next;
-	const char *file;
+	struct _memdb_node* next;
+	const char* file;
 	size_t size;
-	void *mem;
+	void* mem;
 	int line;
 };
 
-static struct _memdb_node *list = NULL;
+static struct _memdb_node* list = NULL;
 static size_t listsize = 0;
 static bool error_occurred = false;
-static FILE *log_fp = NULL;
+static FILE* log_fp = NULL;
 
-static void _memdb_log(const char *format, ...)
+static void _memdb_log(const char* format, ...)
 {
-	FILE *fp = log_fp ? log_fp : stderr;
+	FILE* fp = log_fp ? log_fp : stderr;
 	va_list va;
 	va_start(va, format);
 	fprintf(fp, "MEMDB: ");
@@ -44,9 +44,9 @@ static void _memdb_log(const char *format, ...)
 	va_end(va);
 }
 
-static struct _memdb_node *_memdb_get(void *_mem)
+static struct _memdb_node* _memdb_get(void* _mem)
 {
-	struct _memdb_node *node = list;
+	struct _memdb_node* node = list;
 	for (; node; node = node->next) {
 		if (node->mem == _mem)
 			return node;
@@ -54,10 +54,10 @@ static struct _memdb_node *_memdb_get(void *_mem)
 	return NULL;
 }
 
-static _memdb_enum _memdb_add(void *_mem, size_t _size, const char *file,
-	const int line, struct _memdb_node **pCopy)
+static _memdb_enum _memdb_add(void* _mem, size_t _size, const char* file,
+	const int line, struct _memdb_node** pCopy)
 {
-	struct _memdb_node *node;
+	struct _memdb_node* node;
 	if (node = _memdb_get(_mem)) {
 		*pCopy = node;
 		return MEM_COPY;
@@ -78,9 +78,9 @@ static _memdb_enum _memdb_add(void *_mem, size_t _size, const char *file,
 	return MEM_OK;
 }
 
-static _memdb_enum _memdb_remove(void *_mem)
+static _memdb_enum _memdb_remove(void* _mem)
 {
-	struct _memdb_node *node = list, *prev = NULL;
+	struct _memdb_node* node = list, * prev = NULL;
 	for (; node; node = node->next) {
 		if (node->mem == _mem) {
 #ifdef _VERBOSE
@@ -100,14 +100,14 @@ static _memdb_enum _memdb_remove(void *_mem)
 	return MEM_NOT_FOUND;
 }
 
-bool yadsl_memdb_contains(void *_mem)
+bool yadsl_memdb_contains(void* _mem)
 {
 	return _memdb_get(_mem) != NULL;
 }
 
 void yadsl_memdb_clear_list()
 {
-	struct _memdb_node *node = list, *next = NULL;
+	struct _memdb_node* node = list, * next = NULL;
 	if (listsize)
 		_memdb_log("%zu leak(s) in total:", listsize);
 	for (; node; node = next) {
@@ -131,7 +131,7 @@ bool yadsl_memdb_error_occurred()
 	return error_occurred;
 }
 
-void yadsl_memdb_free(void *_mem)
+void yadsl_memdb_free(void* _mem)
 {
 	if (_memdb_remove(_mem) == MEM_NOT_FOUND) {
 		_memdb_log("Freeing block (%p) not in list.", _mem);
@@ -140,16 +140,16 @@ void yadsl_memdb_free(void *_mem)
 	free(_mem);
 }
 
-void yadsl_memdb_set_logger(FILE *fp)
+void yadsl_memdb_set_logger(FILE* fp)
 {
 	log_fp = fp;
 }
 
-void *yadsl_memdb_malloc(size_t _size, const char *file, const int line)
+void* yadsl_memdb_malloc(size_t _size, const char* file, const int line)
 {
-	void *_mem = malloc(_size);
+	void* _mem = malloc(_size);
 	if (_mem) {
-		struct _memdb_node *copy;
+		struct _memdb_node* copy;
 		switch (_memdb_add(_mem, _size, file, line, &copy)) {
 		case MEM_OK:
 			break;
@@ -166,11 +166,11 @@ void *yadsl_memdb_malloc(size_t _size, const char *file, const int line)
 	return _mem;
 }
 
-void *yadsl_memdb_realloc(void *_mem, size_t _size, const char *file, const int line)
+void* yadsl_memdb_realloc(void* _mem, size_t _size, const char* file, const int line)
 {
-	void *_new_mem = realloc(_mem, _size);
+	void* _new_mem = realloc(_mem, _size);
 	if (_new_mem) {
-		struct _memdb_node *copy;
+		struct _memdb_node* copy;
 		_memdb_enum returnId;
 		if (_memdb_remove(_mem)) assert(0);
 		returnId = _memdb_add(_new_mem, _size, file, line, &copy);
@@ -190,11 +190,11 @@ void *yadsl_memdb_realloc(void *_mem, size_t _size, const char *file, const int 
 	return _new_mem;
 }
 
-void *yadsl_memdb_calloc(size_t _cnt, size_t _size, const char *file, const int line)
+void* yadsl_memdb_calloc(size_t _cnt, size_t _size, const char* file, const int line)
 {
-	void *_mem = calloc(_cnt, _size);
+	void* _mem = calloc(_cnt, _size);
 	if (_mem) {
-		struct _memdb_node *copy;
+		struct _memdb_node* copy;
 		switch (_memdb_add(_mem, _cnt * _size, file, line, &copy)) {
 		case MEM_OK:
 			break;
@@ -211,11 +211,11 @@ void *yadsl_memdb_calloc(size_t _cnt, size_t _size, const char *file, const int 
 	return _mem;
 }
 
-char *yadsl_memdb_strdup(const char *_str, const char *file, const int line)
+char* yadsl_memdb_strdup(const char* _str, const char* file, const int line)
 {
-	char *_dup = strdup(_str);
+	char* _dup = strdup(_str);
 	if (_dup) {
-		struct _memdb_node *copy;
+		struct _memdb_node* copy;
 		switch (_memdb_add(_dup, sizeof(_dup), file, line, &copy)) {
 		case MEM_OK:
 			break;

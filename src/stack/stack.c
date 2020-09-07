@@ -6,22 +6,22 @@
 
 struct yadsl_StackItem_s
 {
-	yadsl_StackItemObj *object;
-	struct yadsl_StackItem_s *next;
+	yadsl_StackItemObj* object;
+	struct yadsl_StackItem_s* next;
 };
 
 typedef struct yadsl_StackItem_s yadsl_StackItem;
 
 typedef struct
 {
-	yadsl_StackItem *first;
+	yadsl_StackItem* first;
 }
 yadsl_Stack;
 
 yadsl_StackHandle*
 yadsl_stack_create()
 {
-	yadsl_Stack *stack = malloc(sizeof(*stack));
+	yadsl_Stack* stack = malloc(sizeof(*stack));
 	if (stack)
 		stack->first = NULL;
 	return stack;
@@ -29,10 +29,10 @@ yadsl_stack_create()
 
 static yadsl_StackItem*
 yadsl_stack_item_create_internal(
-	yadsl_StackItemObj *object,
-	yadsl_StackItem *first)
+	yadsl_StackItemObj* object,
+	yadsl_StackItem* first)
 {
-	yadsl_StackItem *item = malloc(sizeof(*item));
+	yadsl_StackItem* item = malloc(sizeof(*item));
 	if (item) {
 		item->object = object;
 		item->next = first;
@@ -45,8 +45,8 @@ yadsl_stack_item_add(
 	yadsl_StackHandle* stack,
 	yadsl_StackItemObj* object)
 {
-	yadsl_Stack* stack_ = (yadsl_Stack *) stack;
-	yadsl_StackItem *item = yadsl_stack_item_create_internal(object, stack_->first);
+	yadsl_Stack* stack_ = (yadsl_Stack*) stack;
+	yadsl_StackItem* item = yadsl_stack_item_create_internal(object, stack_->first);
 	if (item == NULL)
 		return YADSL_STACK_RET_MEMORY;
 	stack_->first = item;
@@ -68,7 +68,7 @@ yadsl_stack_item_remove(
 	yadsl_StackItemObj** object_ptr)
 {
 	yadsl_Stack* stack_ = (yadsl_Stack*) stack;
-	yadsl_StackItem *first = stack_->first;
+	yadsl_StackItem* first = stack_->first;
 	if (first == NULL)
 		return YADSL_STACK_RET_EMPTY;
 	*object_ptr = first->object;
@@ -82,7 +82,7 @@ yadsl_stack_destroy(
 	yadsl_StackHandle* stack,
 	yadsl_StackItemFreeFunc free_item_func)
 {
-	yadsl_StackItem *current, *next;
+	yadsl_StackItem* current, * next;
 	for (current = ((yadsl_Stack*) stack)->first; current; current = next) {
 		next = current->next;
 		if (free_item_func)

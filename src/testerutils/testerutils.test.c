@@ -23,7 +23,7 @@ char buffer1[BUFSIZ], buffer2[BUFSIZ];
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
-	if yadsl_testerutils_match(command, "serialize") {
+	if (yadsl_testerutils_match(command, "serialize")) {
 		FILE *file;
 		int ret;
 		if (yadsl_tester_parse_arguments("ss", buffer1, buffer2) != 2)
@@ -34,7 +34,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		fclose(file);
 		if (ret)
 			return yadsl_tester_return_external_value("serialization error");
-	} else if yadsl_testerutils_match(command, "deserialize") {
+	} else if (yadsl_testerutils_match(command, "deserialize")) {
 		FILE *file;
 		char *string;
 		int matches;
@@ -50,14 +50,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		free(string);
 		if (!matches)
 			return YADSL_TESTER_RET_RETURN;
-	} else if yadsl_testerutils_match(command, "yes") {
+	} else if (yadsl_testerutils_match(command, "yes")) {
 		int yes;
 		if (yadsl_tester_parse_arguments("s", buffer1) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		yes = yadsl_testerutils_str_to_bool(buffer1);
 		if (!yes)
 			return YADSL_TESTER_RET_RETURN;
-	} else if yadsl_testerutils_match(command, "no") {
+	} else if (yadsl_testerutils_match(command, "no")) {
 		int yes;
 		if (yadsl_tester_parse_arguments("s", buffer1) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;

@@ -1,18 +1,35 @@
 #include <testerutils/testerutils.h>
 
+#include <yadsl/posixstring.h>
 #include <stdlib.h>
 
 #include <tester/tester.h>
 
-bool yadsl_testerutils_str_serialize(FILE *fp, const char *string)
+bool
+yadsl_testerutils_match(
+	const char* a,
+	const char* b)
+{
+	return !strcmp(a, b);
+}
+
+bool
+yadsl_testerutils_unmatch(
+	const char* a,
+	const char* b)
+{
+	return strcmp(a, b);
+}
+
+bool yadsl_testerutils_str_serialize(FILE* fp, const char* string)
 {
 	return fprintf(fp, "%zu~%s", strlen(string), string) < 0;
 }
 
-char *yadsl_testerutils_str_deserialize(FILE *fp)
+char* yadsl_testerutils_str_deserialize(FILE* fp)
 {
 	size_t size = 0;
-	char *string;
+	char* string;
 	if (fscanf(fp, "%zu~", &size) != 1)
 		goto fail1;
 	string = malloc(sizeof(char) * (size + 1));
@@ -33,7 +50,7 @@ fail1:
 	return NULL;
 }
 
-bool yadsl_testerutils_str_to_bool(const char *string)
+bool yadsl_testerutils_str_to_bool(const char* string)
 {
 	bool yes = yadsl_testerutils_match(string, "YES");
 	if (!yes && !yadsl_testerutils_match(string, "NO"))

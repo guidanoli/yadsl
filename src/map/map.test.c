@@ -51,7 +51,7 @@ yadsl_TesterRet yadsl_tester_init()
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	yadsl_MapRet mapId;
-	if yadsl_testerutils_match(command, "put") {
+	if (yadsl_testerutils_match(command, "put")) {
 		char *temp, *keyStr, *valStr;
 		bool actual, expected;
 		if (yadsl_tester_parse_arguments("sss", key, value, yn) != 3)
@@ -73,7 +73,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		}
 		if (!mapId && actual != expected)
 			return YADSL_TESTER_RET_RETURN;
-	} else if yadsl_testerutils_match(command, "get") {
+	} else if (yadsl_testerutils_match(command, "get")) {
 		char *temp, *keyStr;
 		if (yadsl_tester_parse_arguments("ss", key, value) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -89,7 +89,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (yadsl_testerutils_unmatch(value, temp))
 				return YADSL_TESTER_RET_RETURN;
 		}
-	} else if yadsl_testerutils_match(command, "remove") {
+	} else if (yadsl_testerutils_match(command, "remove")) {
 		char *temp, *keyStr, *valStr;
 		if (yadsl_tester_parse_arguments("s", key) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -101,7 +101,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			free(keyStr);
 			free(valStr);
 		}
-	} else if yadsl_testerutils_match(command, "nentries") {
+	} else if (yadsl_testerutils_match(command, "nentries")) {
 		size_t expected, actual;
 		if (yadsl_tester_parse_arguments("z", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;

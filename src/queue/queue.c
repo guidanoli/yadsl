@@ -6,8 +6,8 @@
 
 struct yadsl_QueueItem_s
 {
-	struct yadsl_QueueItem_s *previous;
-	yadsl_QueueItemObj *item;
+	struct yadsl_QueueItem_s* previous;
+	yadsl_QueueItemObj* item;
 };
 
 typedef struct yadsl_QueueItem_s yadsl_QueueItem;
@@ -24,7 +24,7 @@ yadsl_QueueHandle*
 yadsl_queue_create(
 	yadsl_QueueItemFreeFunc free_item_func)
 {
-	yadsl_Queue *queue = malloc(sizeof(*queue));
+	yadsl_Queue* queue = malloc(sizeof(*queue));
 	if (queue) {
 		queue->free_item_func = free_item_func;
 		queue->begin = NULL;
@@ -38,8 +38,8 @@ yadsl_queue_queue(
 	yadsl_QueueHandle* queue,
 	yadsl_QueueItemObj* item)
 {
-	yadsl_Queue* queue_ = (yadsl_Queue *) queue;
-	yadsl_QueueItem *queue_item = malloc(sizeof(*queue_item));
+	yadsl_Queue* queue_ = (yadsl_Queue*) queue;
+	yadsl_QueueItem* queue_item = malloc(sizeof(*queue_item));
 	if (queue_item == NULL)
 		return YADSL_QUEUE_RET_MEMORY;
 	queue_item->item = item;
@@ -57,7 +57,7 @@ yadsl_queue_dequeue(
 	yadsl_QueueHandle* queue,
 	yadsl_QueueItemObj** item_ptr)
 {
-	yadsl_QueueItem *new_end;
+	yadsl_QueueItem* new_end;
 	yadsl_Queue* queue_ = (yadsl_Queue*) queue;
 	if (queue_->end == NULL)
 		return YADSL_QUEUE_RET_EMPTY;
@@ -83,7 +83,7 @@ void
 yadsl_queue_destroy(
 	yadsl_QueueHandle* queue)
 {
-	yadsl_QueueItem *current;
+	yadsl_QueueItem* current;
 	yadsl_Queue* queue_ = (yadsl_Queue*) queue;
 	while (current = queue_->end) {
 		queue_->end = current->previous;

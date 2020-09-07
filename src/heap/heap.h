@@ -21,7 +21,7 @@
  * is successfully inserted and looses it if eventually extracted.
  * When destructed, the heap calls an arbitrary free function, given
  * by the caller at time of construction, for every remaining object.
- * 
+ *
  * @{
 */
 
@@ -92,8 +92,8 @@ yadsl_heap_create(
 */
 yadsl_HeapRet
 yadsl_heap_insert(
-	yadsl_HeapHandle *heap,
-	yadsl_HeapObj *object);
+	yadsl_HeapHandle* heap,
+	yadsl_HeapObj* object);
 
 /**
  * @brief Extract object from heap
@@ -105,8 +105,8 @@ yadsl_heap_insert(
 */
 yadsl_HeapRet
 yadsl_heap_extract(
-	yadsl_HeapHandle *heap,
-	yadsl_HeapObj **object_ptr);
+	yadsl_HeapHandle* heap,
+	yadsl_HeapObj** object_ptr);
 
 /**
  * @brief Get heap maximum capacity
@@ -117,21 +117,21 @@ yadsl_heap_extract(
 */
 yadsl_HeapRet
 yadsl_heap_size_get(
-	yadsl_HeapHandle *heap,
-	size_t *size_ptr);
+	yadsl_HeapHandle* heap,
+	size_t* size_ptr);
 
 /**
  * @brief Adjust heap maximum capacity
  * @param heap heap
  * @param new_size heap new maximum capacity
- * @return 
+ * @return
  * * ::YADSL_HEAP_RET_OK, and *new_size is updated
  * * ::YADSL_HEAP_RET_SHRINK
  * * ::YADSL_HEAP_RET_MEMORY
 */
 yadsl_HeapRet
 yadsl_heap_resize(
-	yadsl_HeapHandle *heap,
+	yadsl_HeapHandle* heap,
 	size_t new_size);
 
 /**
@@ -140,7 +140,7 @@ yadsl_heap_resize(
 */
 void
 yadsl_heap_destroy(
-	yadsl_HeapHandle *heap);
+	yadsl_HeapHandle* heap);
 
 /** @} */
 
