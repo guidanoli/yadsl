@@ -1,8 +1,7 @@
 #!/bin/bash
 if [[ -n "$PYENV_VERSION" ]]; then
-	wget https://github.com/praekeltfoundation/travis-pyenv/releases/download/0.4.0/setup-pyenv.sh
 	PYENV_ROOT=
-	source setup-pyenv.sh
+	source config/setup_pyenv.sh
 fi
 if [[ -n "$LUA_VERSION" ]]; then
 	export LUA_DIR=$HOME/.lua/$LUA_VERSION
