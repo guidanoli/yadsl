@@ -1,5 +1,5 @@
-#ifndef __YADSL_GRAPH_IO_H__
-#define __YADSL_GRAPH_IO_H__
+#ifndef __YADSL_GRAPHIO_H__
+#define __YADSL_GRAPHIO_H__
 
 /**
  * \defgroup graphio Graph I/O
@@ -16,14 +16,14 @@
 */
 typedef enum
 {
-	YADSL_GRAPH_IO_RET_OK = 0, /**< All went ok */
-	YADSL_GRAPH_IO_RET_MEMORY, /**< Could not allocate memory */
-	YADSL_GRAPH_IO_RET_WRITING_FAILURE, /**< Specific serialization failed */
-	YADSL_GRAPH_IO_RET_CREATION_FAILURE, /**< Specific deserialization failed */
-	YADSL_GRAPH_IO_RET_SAME_CREATION, /**< Same object deserialized twice */
-	YADSL_GRAPH_IO_RET_FILE_ERROR, /**< Could not write to or read from file */
-	YADSL_GRAPH_IO_RET_DEPRECATED_FILE_FORMAT, /**< File format is incompatible */
-	YADSL_GRAPH_IO_RET_CORRUPTED_FILE_FORMAT, /**< File format is corrupted */
+	YADSL_GRAPHIO_RET_OK = 0, /**< All went ok */
+	YADSL_GRAPHIO_RET_MEMORY, /**< Could not allocate memory */
+	YADSL_GRAPHIO_RET_WRITING_FAILURE, /**< Specific serialization failed */
+	YADSL_GRAPHIO_RET_CREATION_FAILURE, /**< Specific deserialization failed */
+	YADSL_GRAPHIO_RET_SAME_CREATION, /**< Same object deserialized twice */
+	YADSL_GRAPHIO_RET_FILE_ERROR, /**< Could not write to or read from file */
+	YADSL_GRAPHIO_RET_DEPRECATED_FILE_FORMAT, /**< File format is incompatible */
+	YADSL_GRAPHIO_RET_CORRUPTED_FILE_FORMAT, /**< File format is corrupted */
 }
 yadsl_GraphIoRet;
 
@@ -54,12 +54,12 @@ typedef int (*yadsl_GraphIoEdgeReadFunc)(FILE*, yadsl_GraphEdgeObject**);
  * @param write_vertex_func vertex serialization function
  * @param write_edge_func edge serialization function
  * @return
- * * ::YADSL_GRAPH_IO_RET_OK, and file is successfuly written
- * * ::YADSL_GRAPH_IO_RET_FILE_ERROR
- * * ::YADSL_GRAPH_IO_RET_WRITING_FAILURE
- * * ::YADSL_GRAPH_IO_RET_MEMORY
+ * * ::YADSL_GRAPHIO_RET_OK, and file is successfuly written
+ * * ::YADSL_GRAPHIO_RET_FILE_ERROR
+ * * ::YADSL_GRAPHIO_RET_WRITING_FAILURE
+ * * ::YADSL_GRAPHIO_RET_MEMORY
 */
-yadsl_GraphIoRet yadsl_graph_io_write(
+yadsl_GraphIoRet yadsl_graphio_write(
 	yadsl_GraphHandle *graph,
 	FILE *file_ptr,
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
@@ -76,15 +76,15 @@ yadsl_GraphIoRet yadsl_graph_io_write(
  * @param free_edge_func edge freeing function
  * @param graph_ptr pointer to graph
  * @return
- * * ::YADSL_GRAPH_IO_RET_OK, and file is successfuly read and *graph_ptr is updated
- * * ::YADSL_GRAPH_IO_RET_FILE_ERROR
- * * ::YADSL_GRAPH_IO_RET_SAME_CREATION
- * * ::YADSL_GRAPH_IO_RET_CREATION_FAILURE
- * * ::YADSL_GRAPH_IO_RET_DEPRECATED_FILE_FORMAT
- * * ::YADSL_GRAPH_IO_RET_CORRUPTED_FILE_FORMAT
- * * ::YADSL_GRAPH_IO_RET_MEMORY
+ * * ::YADSL_GRAPHIO_RET_OK, and file is successfuly read and *graph_ptr is updated
+ * * ::YADSL_GRAPHIO_RET_FILE_ERROR
+ * * ::YADSL_GRAPHIO_RET_SAME_CREATION
+ * * ::YADSL_GRAPHIO_RET_CREATION_FAILURE
+ * * ::YADSL_GRAPHIO_RET_DEPRECATED_FILE_FORMAT
+ * * ::YADSL_GRAPHIO_RET_CORRUPTED_FILE_FORMAT
+ * * ::YADSL_GRAPHIO_RET_MEMORY
 */
-yadsl_GraphIoRet yadsl_graph_io_read(
+yadsl_GraphIoRet yadsl_graphio_read(
 	FILE *file_ptr,
 	yadsl_GraphIoVertexReadFunc read_vertex_func,
 	yadsl_GraphIoEdgeReadFunc read_edge_func,

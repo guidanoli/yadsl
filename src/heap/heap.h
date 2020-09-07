@@ -139,7 +139,7 @@ yadsl_heap_resize(
  * @param heap heap
 */
 void
-yadsl_hash_destroy(
+yadsl_heap_destroy(
 	yadsl_HeapHandle *heap);
 
 /** @} */
