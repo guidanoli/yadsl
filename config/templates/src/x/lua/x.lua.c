@@ -1,8 +1,8 @@
-#include "dlldefines.h"
-
 #include "lauxlib.h"
 
-#include "%name%.h"
+#include <yadsl/dlldefines.h>
+
+#include <%name%/%name%.h>
 
 static const struct luaL_Reg lua%name%[] = {
     {NULL, NULL}  /* sentinel */

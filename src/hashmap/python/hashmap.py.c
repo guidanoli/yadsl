@@ -7,13 +7,13 @@
 
 typedef struct {
     PyObject_HEAD
-    HashMap* ob_hash_map;
+    yadsl_HashMapHandle* ob_hash_map;
 } HashMapObject;
 
 static void
 HashMap_decRefCallback(const char* key, void* value)
 {
-	Py_DECREF((PyObject *) value);
+	Py_DECREF(value);
 }
 
 static PyObject *
@@ -22,7 +22,7 @@ HashMap_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	HashMapObject *self;
 	self = (HashMapObject *) type->tp_alloc(type, 0);
 	if (self != NULL) {
-		if (hashMapCreate(&self->ob_hash_map, 4, HashMap_decRefCallback)) {
+		if (!(self->ob_hash_map = yadsl_hashmap_create(4, HashMap_decRefCallback))) {
 			Py_DECREF(self);
 			return NULL;
 		}
@@ -33,7 +33,7 @@ HashMap_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 HashMap_dealloc(HashMapObject *self)
 {
-	hashMapDestroy(self->ob_hash_map);
+	yadsl_hashmap_destroy(self->ob_hash_map);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -45,14 +45,14 @@ HashMap_add(HashMapObject *self, PyObject *args, PyObject *kw)
 	if (!PyArg_ParseTuple(args, "sO:HashMap.add", &key, &obj))
 		return NULL;
 	if (obj) {
-		switch (hashMapAddEntry(self->ob_hash_map, key, (void*) obj)) {
-		case HASHMAP_OK:
+		switch (yadsl_hashmap_entry_add(self->ob_hash_map, key, (void*) obj)) {
+		case YADSL_HASHMAP_RET_OK:
 			Py_INCREF(obj);
 			break;
-		case HASHMAP_EXISTS:
+		case YADSL_HASHMAP_RET_EXISTS:
 			PyErr_SetString(PyExc_RuntimeError, "Already existing entry");
 			return NULL; // Throws exception
-		case HASHMAP_MEMORY:
+		case YADSL_HASHMAP_RET_MEMORY:
 			return PyErr_NoMemory();
 		default:
 			Py_UNREACHABLE();
@@ -67,10 +67,10 @@ HashMap_remove(HashMapObject *self, PyObject *args, PyObject *kw)
 	const char* key;
 	if (!PyArg_ParseTuple(args, "s:HashMap.remove", &key))
 		return NULL;
-	switch (hashMapRemoveEntry(self->ob_hash_map, key)) {
-	case HASHMAP_OK:
+	switch (yadsl_hashmap_entry_remove(self->ob_hash_map, key)) {
+	case YADSL_HASHMAP_RET_OK:
 		break;
-	case HASHMAP_DOESNT_EXIST:
+	case YADSL_HASHMAP_RET_DOESNT_EXIST:
 		PyErr_SetString(PyExc_RuntimeError, "Entry doesn't exist");
 		return NULL; // Throws exception
 	default:
@@ -86,11 +86,11 @@ HashMap_get(HashMapObject* self, PyObject* args, PyObject* kw)
 	if (!PyArg_ParseTuple(args, "s:HashMap.get", &key))
 		return NULL;
 	PyObject* obj;
-	switch (hashMapGetEntry(self->ob_hash_map, key, &obj)) {
-	case HASHMAP_OK:
+	switch (yadsl_hashmap_entry_value_get(self->ob_hash_map, key, &obj)) {
+	case YADSL_HASHMAP_RET_OK:
 		Py_INCREF(obj);
 		return obj;
-	case HASHMAP_DOESNT_EXIST:
+	case YADSL_HASHMAP_RET_DOESNT_EXIST:
 		PyErr_SetString(PyExc_RuntimeError, "Entry doesn't exist");
 		return NULL; // Throws exception
 	default:

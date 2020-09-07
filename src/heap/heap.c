@@ -5,154 +5,221 @@
 
 #include <memdb/memdb.h>
 
-struct Heap
+typedef struct
 {
-	void **arr; /* Array representation of binary tree */
-	size_t size; /* Array total size */
-	size_t last; /* Index of rightmost empty position */
-	int (*cmpObjs)(void *obj1, void *obj2, void *arg);
-	void (*freeObj)(void *obj);
-	void *arg;
-};
-
-#define _ROOT 0
-#define _ISROOT(x) (x == _ROOT)
-#define _EXISTS(x, pHeap) (x < pHeap->last)
-#define _LEFT(x) ((x << 1) + 1)
-#define _RIGHT(x) ((x + 1) << 1)
-#define _PARENT(x) ((x - 1) >> 1)
-#define _HAS_CHILD(x, pHeap) (x <= _PARENT(pHeap->last - 1))
-
-void _swap(Heap *pHeap, size_t *a, size_t *b);
-
-int _defaultCmp(void *obj1, void *obj2, void *arg)
-{
-	return obj1 < obj2;
+	yadsl_HeapObj** arr; /**< Array representation of binary tree */
+	size_t size; /**< Array total size */
+	size_t last; /**< Index of rightmost empty position */
+	yadsl_HeapObjCmpFunc cmp_objs_func;
+	yadsl_HeapObjFreeFunc free_obj_func;
+	yadsl_HeapObjCmpArg* cmp_objs_arg;
 }
+yadsl_Heap;
 
-HeapRet heapCreate(Heap **ppHeap, size_t initialSize,
-	int (*cmpObjs)(void *obj1, void *obj2, void *arg),
-	void (*freeObj)(void *obj), void *arg)
+#define YADSL_HEAP_ROOT 0
+#define YADSL_HEAP_IS_ROOT(x) (x == YADSL_HEAP_ROOT)
+#define YADSL_HEAP_EXISTS(x, heap) (x < heap->last)
+#define YADSL_HEAP_LEFT(x) ((x << 1) + 1)
+#define YADSL_HEAP_RIGHT(x) ((x + 1) << 1)
+#define YADSL_HEAP_PARENT(x) ((x - 1) >> 1)
+#define YADSL_HEAP_HAS_CHILD(x, heap) (x <= YADSL_HEAP_PARENT(heap->last - 1))
+
+static void
+yadsl_heap_swap_internal(
+	yadsl_Heap* heap,
+	size_t* a,
+	size_t* b);
+
+static int
+yadsl_heap_default_cmp_objs_func_internal(
+	yadsl_HeapObj* obj1,
+	yadsl_HeapObj* obj2,
+	yadsl_HeapObjCmpArg* arg);
+
+yadsl_HeapHandle*
+yadsl_heap_create(
+	size_t initial_size,
+	yadsl_HeapObjCmpFunc cmp_objs_func,
+	yadsl_HeapObjFreeFunc free_obj_func,
+	yadsl_HeapObjCmpArg* cmp_objs_arg)
 {
-	Heap *pHeap;
-	void **arr;
-	if (initialSize == 0)
-		return HEAP_MEMORY;
-	if (initialSize > SIZE_MAX / sizeof(void *))
-		return HEAP_MEMORY;
-	pHeap = malloc(sizeof(struct Heap));
-	arr = malloc(sizeof(void *) * initialSize);
-	if (pHeap == NULL || arr == NULL) {
-		if (pHeap) free(pHeap);
-		if (arr) free(arr);
-		return HEAP_MEMORY;
+	yadsl_Heap* heap;
+
+	if (initial_size == 0 ||
+		initial_size > SIZE_MAX / sizeof(yadsl_HeapObj*))
+		return NULL;
+
+	heap = malloc(sizeof(*heap));
+	if (!heap)
+		goto fail1;
+
+	heap->arr = malloc(sizeof(*heap->arr) * initial_size);
+	if (!heap->arr)
+		goto fail2;
+
+	heap->last = 0;
+	if (cmp_objs_func) {
+		heap->cmp_objs_func = cmp_objs_func;
+		heap->cmp_objs_arg = cmp_objs_arg;
+	} else {
+		heap->cmp_objs_func = yadsl_heap_default_cmp_objs_func_internal;
 	}
-	pHeap->last = 0;
-	pHeap->arr = arr;
-	pHeap->cmpObjs = cmpObjs ? cmpObjs : _defaultCmp;
-	pHeap->freeObj = freeObj;
-	pHeap->size = initialSize;
-	pHeap->arg = cmpObjs ? arg : NULL;
-	*ppHeap = pHeap;
-	return HEAP_OK;
+	heap->free_obj_func = free_obj_func;
+	heap->size = initial_size;
+
+	return heap;
+fail2:
+	free(heap);
+fail1:
+	return NULL;
 }
 
-HeapRet heapInsert(Heap *pHeap, void *obj)
+yadsl_HeapRet
+yadsl_heap_insert(
+	yadsl_HeapHandle* heap,
+	yadsl_HeapObj* object)
 {
-	void *parentObj;
-	size_t newi, parenti;
-	if (pHeap->last == pHeap->size)
-		return HEAP_FULL;
-	newi = pHeap->last;
-	pHeap->arr[newi] = obj;
-	++pHeap->last;
-	while (!_ISROOT(newi)) {
-		parenti = _PARENT(newi);
-		parentObj = pHeap->arr[parenti];
-		if (pHeap->cmpObjs(obj, parentObj, pHeap->arg))
-			_swap(pHeap, &newi, &parenti);
+	void* object_parent;
+	size_t index, parent_index;
+	yadsl_Heap* heap_ = (yadsl_Heap*) heap;
+
+	if (heap_->last == heap_->size)
+		return YADSL_HEAP_RET_FULL;
+
+	index = heap_->last;
+	heap_->arr[index] = object;
+	++heap_->last;
+
+	while (!YADSL_HEAP_IS_ROOT(index)) {
+		parent_index = YADSL_HEAP_PARENT(index);
+		object_parent = heap_->arr[parent_index];
+		if (heap_->cmp_objs_func(object, object_parent, heap_->cmp_objs_arg))
+			yadsl_heap_swap_internal(heap_, &index, &parent_index);
 		else
 			break;
 	}
-	return HEAP_OK;
+
+	return YADSL_HEAP_RET_OK;
 }
 
-HeapRet heapExtract(Heap *pHeap, void **pObj)
+yadsl_HeapRet
+yadsl_heap_extract(
+	yadsl_HeapHandle* heap,
+	yadsl_HeapObj** object_ptr)
 {
-	size_t obji = _ROOT;
-	void *obj;
-	if (pHeap->last == _ROOT)
-		return HEAP_EMPTY;
-	*pObj = pHeap->arr[_ROOT];
-	obj = pHeap->arr[--pHeap->last];
-	pHeap->arr[_ROOT] = obj;
-	while (_EXISTS(obji, pHeap) && _HAS_CHILD(obji, pHeap)) {
-		size_t lefti = _LEFT(obji), righti = _RIGHT(obji);
-		void *leftobj, *rightobj;
-		if (!_EXISTS(righti, pHeap)) {
-			if (pHeap->cmpObjs(pHeap->arr[lefti], obj, pHeap->arg))
-				_swap(pHeap, &obji, &lefti);
+	size_t index = YADSL_HEAP_ROOT;
+	yadsl_HeapObj* object;
+	yadsl_Heap* heap_ = (yadsl_Heap*) heap;
+
+	if (heap_->last == YADSL_HEAP_ROOT)
+		return YADSL_HEAP_RET_EMPTY;
+
+	*object_ptr = heap_->arr[YADSL_HEAP_ROOT];
+	object = heap_->arr[--heap_->last];
+	heap_->arr[YADSL_HEAP_ROOT] = object;
+
+	while (YADSL_HEAP_EXISTS(index, heap_) && YADSL_HEAP_HAS_CHILD(index, heap_)) {
+		size_t left_index = YADSL_HEAP_LEFT(index);
+		size_t right_index = YADSL_HEAP_RIGHT(index);
+		yadsl_HeapObj* left_object, *right_object;
+
+		if (!YADSL_HEAP_EXISTS(right_index, heap_)) {
+			if (heap_->cmp_objs_func(heap_->arr[left_index], object, heap_->cmp_objs_arg))
+				yadsl_heap_swap_internal(heap_, &index, &left_index);
 			break;
 		}
-		leftobj = pHeap->arr[lefti];
-		rightobj = pHeap->arr[righti];
-		if (pHeap->cmpObjs(obj, leftobj, pHeap->arg) &&
-			pHeap->cmpObjs(obj, rightobj, pHeap->arg))
+
+		left_object = heap_->arr[left_index];
+		right_object = heap_->arr[right_index];
+
+		if (heap_->cmp_objs_func(object, left_object, heap_->cmp_objs_arg) &&
+			heap_->cmp_objs_func(object, right_object, heap_->cmp_objs_arg))
 			break;
-		if (pHeap->cmpObjs(leftobj, rightobj, pHeap->arg))
-			_swap(pHeap, &lefti, &obji);
+		if (heap_->cmp_objs_func(left_object, right_object, heap_->cmp_objs_arg))
+			yadsl_heap_swap_internal(heap_, &left_index, &index);
 		else
-			_swap(pHeap, &righti, &obji);
+			yadsl_heap_swap_internal(heap_, &right_index, &index);
 	}
-	return HEAP_OK;
+
+	return YADSL_HEAP_RET_OK;
 }
 
-HeapRet heapGetSize(Heap *pHeap, size_t *pSize)
+yadsl_HeapRet
+yadsl_heap_size_get(
+	yadsl_HeapHandle* heap,
+	size_t* size_ptr)
 {
-	*pSize = pHeap->size;
-	return HEAP_OK;
+	*size_ptr = ((yadsl_Heap*) heap)->size;
+	return YADSL_HEAP_RET_OK;
 }
 
-HeapRet heapResize(Heap *pHeap, size_t newSize)
+yadsl_HeapRet
+yadsl_heap_resize(
+	yadsl_HeapHandle* heap,
+	size_t new_size)
 {
-	void *new_arr;
-	if (newSize == 0)
-		return HEAP_MEMORY;
-	if (newSize < pHeap->last)
-		return HEAP_SHRINK;
-	if (newSize == pHeap->size)
-		return HEAP_OK;
-	if (newSize > SIZE_MAX / sizeof(void *))
-		return HEAP_MEMORY;
-	new_arr = realloc(pHeap->arr, sizeof(void *) * newSize);
-	if (new_arr == NULL)
-		return HEAP_MEMORY;
-	pHeap->arr = new_arr;
-	pHeap->size = newSize;
-	return HEAP_OK;
+	void* new_arr;
+	yadsl_Heap* heap_ = (yadsl_Heap *) heap;
+
+	if (new_size == 0)
+		return YADSL_HEAP_RET_MEMORY;
+	if (new_size < heap_->last)
+		return YADSL_HEAP_RET_SHRINK;
+	if (new_size == heap_->size)
+		return YADSL_HEAP_RET_OK;
+	if (new_size > SIZE_MAX / sizeof(void*))
+		return YADSL_HEAP_RET_MEMORY;
+
+	new_arr = realloc(heap_->arr, sizeof(void*) * new_size);
+	if (!new_arr)
+		return YADSL_HEAP_RET_MEMORY;
+
+	heap_->arr = new_arr;
+	heap_->size = new_size;
+
+	return YADSL_HEAP_RET_OK;
 }
 
-void heapDestroy(Heap *pHeap)
+void
+yadsl_hash_destroy(
+	yadsl_HeapHandle* heap)
 {
-	if (pHeap == NULL)
+	yadsl_Heap* heap_ = (yadsl_Heap*) heap;
+
+	if (heap_ == NULL)
 		return;
-	if (pHeap->freeObj)
-		while (pHeap->last--)
-			pHeap->freeObj(pHeap->arr[pHeap->last]);
-	free(pHeap->arr);
-	free(pHeap);
+
+	if (heap_->free_obj_func)
+		while (heap_->last--)
+			heap_->free_obj_func(heap_->arr[heap_->last]);
+
+	free(heap_->arr);
+	free(heap_);
 }
 
 // Swaps the objects at indexes a and b
 // and the indexes passed by refference too
 // Makes no safety checks whatsoever
-void _swap(Heap *pHeap, size_t *a, size_t *b)
+void
+yadsl_heap_swap_internal(
+	yadsl_Heap* heap,
+	size_t* a,
+	size_t* b)
 {
-	void *objA = pHeap->arr[*a], *objB = pHeap->arr[*b];
+	void* objA = heap->arr[*a], * objB = heap->arr[*b];
 	size_t temp;
-	pHeap->arr[*a] = objB;
-	pHeap->arr[*b] = objA;
+	heap->arr[*a] = objB;
+	heap->arr[*b] = objA;
 	temp = *a;
 	*a = *b;
 	*b = temp;
+}
+
+int
+yadsl_heap_default_cmp_objs_func_internal(
+	yadsl_HeapObj* obj1,
+	yadsl_HeapObj* obj2,
+	yadsl_HeapObjCmpArg* arg)
+{
+	return obj1 < obj2;
 }

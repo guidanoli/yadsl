@@ -83,6 +83,6 @@ char *yadsl_memdb_strdup(const char *str, const char *file, const int line);
 #  endif /* _DEBUG */
 #endif /* _MEMDB_INTERNAL */
 
-/** }@ */
+/** @} */
 
 #endif

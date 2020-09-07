@@ -6,177 +6,254 @@
 #include <set/set.h>
 #include <memdb/memdb.h>
 
-struct Entry
+typedef struct
 {
-	void *key;
-	void *value;
-};
+	yadsl_MapEntryKey *key;
+	yadsl_MapEntryValue *value;
+}
+yadsl_MapEntry;
 
-struct Map
+typedef struct
 {
-	Set *entrySet;
-	int (*compareKeys)(void *a, void *b);
-	void (*freeEntry)(void *key, void *value, void *arg);
-	void *arg;
-};
+	yadsl_SetHandle *entry_set;
+	yadsl_MapEntryKeyCmpFunc cmp_keys_func;
+	yadsl_MapEntryFreeFunc free_entry_func;
+	yadsl_MapEntryFreeArg *cmp_keys_func_arg;
+	yadsl_MapEntryFreeArg* free_entry_arg;
+}
+yadsl_Map;
 
 /* Private functions prototypes */
 
-struct _cmpEntryKeyParameter
+typedef struct
 {
-	void *key;
-	int (*cmp)(void *a, void *b);
-};
+	yadsl_MapEntryKey *key;
+	yadsl_MapEntryKeyCmpFunc func;
+	yadsl_MapEntryFreeArg *arg;
+}
+yadsl_MapCmpEntryKeyParameter;
 
-struct _freeEntryParameter
+typedef struct
 {
-	void (*freeEntry)(void *key, void *value, void *arg);
-	void *arg;
-};
+	yadsl_MapEntryFreeFunc func;
+	yadsl_MapEntryFreeArg* arg;
+}
+yadsl_MapEntryFreeParameter;
 
-static MapRet _allocateEntry(void *key, void *value,
-	struct Entry **ppEntry);
-static void _freeEntry(struct Entry *pEntry, struct _freeEntryParameter *par);
-static int _cmpEntryKey(struct Entry *pEntry,
-	struct _cmpEntryKeyParameter *par);
-static MapRet _getEntry(Map *pMap, void *key, struct Entry **ppEntry);
+static yadsl_MapEntry*
+yadsl_map_entry_create_internal(
+	yadsl_MapEntryKey *key,
+	yadsl_MapEntryValue *value);
+
+static void
+yadsl_map_entry_destroy_internal(
+	yadsl_MapEntry *entry,
+	yadsl_MapEntryFreeParameter *par);
+
+static bool
+yadsl_map_entry_key_compare_internal(
+	yadsl_MapEntry *entry,
+	yadsl_MapCmpEntryKeyParameter *par);
+
+static yadsl_MapRet
+yadsl_map_entry_get_internal(
+	yadsl_MapHandle *map,
+	yadsl_MapEntryKey *key,
+	yadsl_MapEntry **entry_ptr);
 
 /* Public functions */
 
-MapRet mapCreate(Map **ppMap,
-	int (*compareKeys)(void *a, void *b),
-	void (*freeEntry)(void *key, void *value, void *arg),
-	void *arg)
+yadsl_MapHandle*
+yadsl_map_create(
+	yadsl_MapEntryKeyCmpFunc cmp_keys_func,
+	yadsl_MapEntryFreeFunc free_entry_func,
+	yadsl_MapEntryFreeArg* cmp_keys_func_arg,
+	yadsl_MapEntryFreeArg* free_entry_arg)
 {
-	SetRet setId;
-	Map *pMap = NULL;
-	pMap = malloc(sizeof(struct Map));
-	if (pMap == NULL)
-		return MAP_MEMORY;
-	if (setId = setCreate(&pMap->entrySet)) {
-		free(pMap);
-		assert(setId == SET_MEMORY);
-		return MAP_MEMORY;
-	}
-	pMap->compareKeys = compareKeys;
-	pMap->freeEntry = freeEntry;
-	pMap->arg = arg;
-	*ppMap = pMap;
-	return MAP_OK;
+	yadsl_Map *map = malloc(sizeof(*map));
+	if (!map)
+		goto fail1;
+
+	if (!(map->entry_set = yadsl_set_create()))
+		goto fail2;
+
+	map->cmp_keys_func = cmp_keys_func;
+	map->free_entry_func = free_entry_func;
+	map->cmp_keys_func_arg = cmp_keys_func_arg;
+	map->free_entry_arg = free_entry_arg;
+
+	return map;
+fail2:
+	free(map);
+fail1:
+	return NULL;
 }
 
-MapRet mapPutEntry(Map *pMap, void *key, void *value,
-	int *pOverwritten,
-	void **pPreviousValue)
+yadsl_MapRet
+yadsl_map_entry_add(
+	yadsl_MapHandle* map,
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntryValue* value,
+	bool* overwritten_ptr,
+	yadsl_MapEntryValue** overwritten_value_ptr)
 {
-	MapRet mapId;
-	SetRet setId;
-	struct Entry *pEntry;
-	if (mapId = _getEntry(pMap, key, &pEntry)) {
-		*pOverwritten = 0;
-		if (mapId != MAP_ENTRY_NOT_FOUND)
-			return mapId;
+	yadsl_MapRet map_ret;
+	yadsl_SetRet set_ret;
+	yadsl_MapEntry *entry;
+
+	if (map_ret = yadsl_map_entry_get_internal(map, key, &entry)) {
+		*overwritten_ptr = false;
+		if (map_ret != YADSL_MAP_RET_ENTRY_NOT_FOUND)
+			return map_ret;
 	} else {
-		*pPreviousValue = pEntry->value;
-		*pOverwritten = 1;
-		pEntry->value = value;
-		return MAP_OK;
+		*overwritten_value_ptr = entry->value;
+		*overwritten_ptr = true;
+		entry->value = value;
+		return YADSL_MAP_RET_OK;
 	}
-	if (mapId = _allocateEntry(key, value, &pEntry))
-		return mapId;
-	if (setId = setAddItem(pMap->entrySet, pEntry)) {
-		free(pEntry);
-		assert(setId == SET_MEMORY);
-		return MAP_MEMORY;
+
+	if (!(entry = yadsl_map_entry_create_internal(key, value)))
+		return YADSL_MAP_RET_MEMORY;
+
+	if (set_ret = yadsl_set_item_add(((yadsl_Map*) map)->entry_set, entry)) {
+		free(entry);
+		assert(set_ret == YADSL_SET_RET_MEMORY);
+		return YADSL_MAP_RET_MEMORY;
 	}
-	return MAP_OK;
+
+	return YADSL_MAP_RET_OK;
 }
 
-MapRet mapGetEntry(Map *pMap, void *key, void **pValue)
+yadsl_MapRet
+yadsl_map_entry_get(
+	yadsl_MapHandle* map,
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntryValue** value_ptr)
 {
-	MapRet mapId;
-	struct Entry *pEntry;
-	if (mapId = _getEntry(pMap, key, &pEntry))
-		return mapId;
-	*pValue = pEntry->value;
-	return MAP_OK;
+	yadsl_MapRet map_ret;
+	yadsl_MapEntry *entry;
+
+	if (map_ret = yadsl_map_entry_get_internal(map, key, &entry))
+		return map_ret;
+
+	*value_ptr = entry->value;
+
+	return YADSL_MAP_RET_OK;
 }
 
-MapRet mapRemoveEntry(Map *pMap, void *key, void **pKey, void **pValue)
+yadsl_MapRet
+yadsl_map_entry_remove(
+	yadsl_MapHandle* map,
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntryKey** original_key_ptr,
+	yadsl_MapEntryValue** value_ptr)
 {
-	MapRet mapId;
-	struct Entry *pEntry;
-	void *tempKey, *tempValue;
-	if (mapId = _getEntry(pMap, key, &pEntry))
-		return mapId;
-	tempKey = pEntry->key;
-	tempValue = pEntry->value;
-	if (setRemoveItem(pMap->entrySet, pEntry))
+	yadsl_MapRet map_ret;
+	yadsl_MapEntry *entry;
+	yadsl_MapEntryKey *temp_key;
+	yadsl_MapEntryValue *temp_value;
+
+	if (map_ret = yadsl_map_entry_get_internal(map, key, &entry))
+		return map_ret;
+
+	temp_key = entry->key;
+	temp_value = entry->value;
+
+	if (yadsl_set_item_remove(((yadsl_Map*) map)->entry_set, entry))
 		assert(0);
-	free(pEntry);
-	*pKey = tempKey;
-	*pValue = tempValue;
-	return MAP_OK;
+
+	free(entry);
+
+	*original_key_ptr = temp_key;
+	*value_ptr = temp_value;
+
+	return YADSL_MAP_RET_OK;
 }
 
-MapRet mapGetNumberOfEntries(Map *pMap, size_t *pNum)
+yadsl_MapRet
+yadsl_map_entry_count_get(
+	yadsl_MapHandle* map,
+	size_t* count_ptr)
 {
-	size_t temp;
-	if (setGetSize(pMap->entrySet, &temp))
+	size_t count;
+	if (yadsl_set_size_get(((yadsl_Map*) map)->entry_set, &count))
 		assert(0);
-	*pNum = temp;
-	return MAP_OK;
+	*count_ptr = count;
+	return YADSL_MAP_RET_OK;
 }
 
-void mapDestroy(Map *pMap)
+void
+yadsl_map_destroy(
+	yadsl_MapHandle* map)
 {
-	struct _freeEntryParameter arg;
-	if (pMap == NULL)
+	yadsl_MapEntryFreeParameter cmp_keys_func_arg;
+	yadsl_Map* map_ = (yadsl_Map *) map;
+
+	if (map_ == NULL)
 		return;
-	arg.freeEntry = pMap->freeEntry;
-	arg.arg = pMap->arg;
-	setDestroyDeep(pMap->entrySet, _freeEntry, &arg);
-	free(pMap);
+
+	cmp_keys_func_arg.func = map_->free_entry_func;
+	cmp_keys_func_arg.arg = map_->free_entry_arg;
+	yadsl_set_destroy(map_->entry_set, yadsl_map_entry_destroy_internal, &cmp_keys_func_arg);
+
+	free(map_);
 }
 
 /* Private functions definitions */
 
-static void _freeEntry(struct Entry *pEntry, struct _freeEntryParameter *par)
+void
+yadsl_map_entry_destroy_internal(
+	yadsl_MapEntry* entry,
+	yadsl_MapEntryFreeParameter* par)
 {
-	if (par->freeEntry)
-		par->freeEntry(pEntry->key, pEntry->value, par->arg);
-	free(pEntry);
+	if (par->func)
+		par->func(entry->key, entry->value, par->arg);
+	free(entry);
 }
 
-static int _cmpEntryKey(struct Entry *pEntry,
-	struct _cmpEntryKeyParameter *par)
+bool
+yadsl_map_entry_key_compare_internal(
+	yadsl_MapEntry* entry,
+	yadsl_MapCmpEntryKeyParameter* par)
 {
-	if (par->cmp)
-		return par->cmp(pEntry->key, par->key);
+	if (par->func)
+		return par->func(entry->key, par->key, par->arg);
 	else
-		return pEntry->key == par->key;
+		return entry->key == par->key;
 }
 
-static MapRet _getEntry(Map *pMap, void *key, struct Entry **ppEntry)
+yadsl_MapRet
+yadsl_map_entry_get_internal(
+	yadsl_MapHandle* map,
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntry** entry_ptr)
 {
-	SetRet setId;
-	struct _cmpEntryKeyParameter arg = { key, pMap->compareKeys };
-	if (setId = setFilterItem(pMap->entrySet, _cmpEntryKey, &arg, ppEntry)) {
-		assert(setId == SET_DOES_NOT_CONTAIN);
-		return MAP_ENTRY_NOT_FOUND;
+	yadsl_SetRet set_ret;
+	yadsl_Map* map_ = (yadsl_Map*) map;
+	yadsl_MapCmpEntryKeyParameter cmp_keys_func_arg;
+
+	cmp_keys_func_arg.key = key;
+	cmp_keys_func_arg.func = map_->cmp_keys_func;
+	cmp_keys_func_arg.arg = map_->cmp_keys_func_arg;
+
+	if (set_ret = yadsl_set_item_filter(map_->entry_set, yadsl_map_entry_key_compare_internal, &cmp_keys_func_arg, entry_ptr)) {
+		assert(set_ret == YADSL_SET_RET_DOES_NOT_CONTAIN);
+		return YADSL_MAP_RET_ENTRY_NOT_FOUND;
 	}
-	return MAP_OK;
+
+	return YADSL_MAP_RET_OK;
 }
 
-static MapRet _allocateEntry(void *key, void *value,
-	struct Entry **ppEntry)
+yadsl_MapEntry* yadsl_map_entry_create_internal(
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntryValue* value)
 {
-	struct Entry *pEntry;
-	pEntry = malloc(sizeof(struct Entry));
-	if (pEntry == NULL)
-		return MAP_MEMORY;
-	pEntry->key = key;
-	pEntry->value = value;
-	*ppEntry = pEntry;
-	return MAP_OK;
+	yadsl_MapEntry *entry = malloc(sizeof(*entry));
+	
+	if (entry) {
+		entry->key = key;
+		entry->value = value;
+	}
+
+	return entry;
 }

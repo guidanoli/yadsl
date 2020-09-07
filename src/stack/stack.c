@@ -4,32 +4,35 @@
 
 #include <memdb/memdb.h>
 
-struct StackItem
+struct yadsl_StackItem_s
 {
-	void *object;
-	struct StackItem *next;
+	yadsl_StackItemObj *object;
+	struct yadsl_StackItem_s *next;
 };
 
-struct Stack
-{
-	struct StackItem *first;
-};
+typedef struct yadsl_StackItem_s yadsl_StackItem;
 
-StackRet stackCreate(Stack **ppStack)
+typedef struct
 {
-	Stack *st;
-	st = malloc(sizeof(struct Stack));
-	if (st == NULL)
-		return STACK_MEMORY;
-	st->first = NULL;
-	*ppStack = st;
-	return STACK_OK;
+	yadsl_StackItem *first;
+}
+yadsl_Stack;
+
+yadsl_StackHandle*
+yadsl_stack_create()
+{
+	yadsl_Stack *stack = malloc(sizeof(*stack));
+	if (stack)
+		stack->first = NULL;
+	return stack;
 }
 
-struct StackItem *alloc_item(void *object, struct StackItem *first)
+static yadsl_StackItem*
+yadsl_stack_item_create_internal(
+	yadsl_StackItemObj *object,
+	yadsl_StackItem *first)
 {
-	struct StackItem *item;
-	item = malloc(sizeof(struct StackItem));
+	yadsl_StackItem *item = malloc(sizeof(*item));
 	if (item) {
 		item->object = object;
 		item->next = first;
@@ -37,39 +40,54 @@ struct StackItem *alloc_item(void *object, struct StackItem *first)
 	return item;
 }
 
-StackRet stackAdd(Stack *pStack, void *object)
+yadsl_StackRet
+yadsl_stack_item_add(
+	yadsl_StackHandle* stack,
+	yadsl_StackItemObj* object)
 {
-	struct StackItem *item = alloc_item(object, pStack->first);
-	if (object == NULL)
-		return STACK_MEMORY;
-	pStack->first = item;
-	return STACK_OK;
+	yadsl_Stack* stack_ = (yadsl_Stack *) stack;
+	yadsl_StackItem *item = yadsl_stack_item_create_internal(object, stack_->first);
+	if (item == NULL)
+		return YADSL_STACK_RET_MEMORY;
+	stack_->first = item;
+	return YADSL_STACK_RET_OK;
 }
 
-StackRet stackEmpty(Stack *pStack, int *pIsEmpty)
+yadsl_StackRet
+yadsl_stack_empty_check(
+	yadsl_StackHandle* stack,
+	bool* is_empty_ptr)
 {
-	*pIsEmpty = !pStack->first;
-	return STACK_OK;
+	*is_empty_ptr = ((yadsl_Stack*) stack)->first == NULL;
+	return YADSL_STACK_RET_OK;
 }
 
-StackRet stackRemove(Stack *pStack, void **pObject)
+yadsl_StackRet
+yadsl_stack_item_remove(
+	yadsl_StackHandle* stack,
+	yadsl_StackItemObj** object_ptr)
 {
-	struct StackItem *first = pStack->first;
-	if (!first) return STACK_EMPTY;
-	*pObject = first->object;
-	pStack->first = first->next;
+	yadsl_Stack* stack_ = (yadsl_Stack*) stack;
+	yadsl_StackItem *first = stack_->first;
+	if (first == NULL)
+		return YADSL_STACK_RET_EMPTY;
+	*object_ptr = first->object;
+	stack_->first = first->next;
 	free(first);
-	return STACK_OK;
+	return YADSL_STACK_RET_OK;
 }
 
-void stackDestroy(Stack *pStack, void freeObject(void *))
+void
+yadsl_stack_destroy(
+	yadsl_StackHandle* stack,
+	yadsl_StackItemFreeFunc free_item_func)
 {
-	struct StackItem *current, *next;
-	for (current = pStack->first; current; current = next) {
+	yadsl_StackItem *current, *next;
+	for (current = ((yadsl_Stack*) stack)->first; current; current = next) {
 		next = current->next;
-		if (freeObject)
-			freeObject(current->object);
+		if (free_item_func)
+			free_item_func(current->object);
 		free(current);
 	}
-	free(pStack);
+	free(stack);
 }

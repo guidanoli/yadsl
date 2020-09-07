@@ -1,13 +1,13 @@
 #ifndef __YADSL_AVL_H__
 #define __YADSL_AVL_H__
 
-#include <stdbool.h>
-
 /**
  * \defgroup avl AVL tree
  * @brief AVL tree with explicit heights
  * @{
 */
+
+#include <stdbool.h>
 
 /**
  * @brief Status value returned by AVL tree functions
@@ -140,6 +140,6 @@ yadsl_AVLTreeRet yadsl_avltree_tree_traverse(
 */
 void yadsl_avltree_destroy(yadsl_AVLTreeHandle *tree);
 
-/** }@ */
+/** @} */
 
 #endif

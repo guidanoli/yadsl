@@ -1,58 +1,59 @@
-#ifndef __TESTERUTILS_H__
-#define __TESTERUTILS_H__
+#ifndef __YADSL_TESTERUTILS_H__
+#define __YADSL_TESTERUTILS_H__
 
-//
-//    ______          __            __  ____  _ __    
-//   /_  __/__  _____/ /____  _____/ / / / /_(_) /____
-//    / / / _ \/ ___/ __/ _ \/ ___/ / / / __/ / / ___/
-//   / / /  __(__  ) /_/  __/ /  / /_/ / /_/ / (__  ) 
-//  /_/  \___/____/\__/\___/_/   \____/\__/_/_/____/  
-//                                                    
-// Auxiliary module for Tester utilities such as
-// serialization and deserialization of variables.
-//
+/**
+ * \defgroup testerutils Tester Utilities
+ * @brief Auxiliary module for Tester
+ * 
+ * @{
+*/
 
 #include <yadsl/posixstring.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-// Macro for comparing two strings in an if statement
-// Usage: if matches(command, "create") { ... }
+#ifndef yadsl_testerutils_match
+/**
+ * @brief Check if two strings match
+ * @param a first string
+ * @param b second string
+ * @return whether the two strings match or not
+*/
+#define yadsl_testerutils_match(a, b) (!strcmp(a, b))
+#endif /* yadsl_testerutils_match */
 
-#ifndef matches
-#define matches(a, b) (!strcmp(a, b))
-#endif /* matches */
+#ifndef yadsl_testerutils_unmatch
+/**
+ * @brief Check if two strings don't match
+ * @param a first string
+ * @param b second string
+ * @return whether the two strings don't match
+*/
+#define yadsl_testerutils_unmatch(a, b) (strcmp(a, b))
+#endif /* yadsl_testerutils_unmatch */
 
-#ifndef nmatches
-#define nmatches(a, b) (strcmp(a, b))
-#endif /* nmatches */
+/**
+ * @brief Serializes string to file pointer
+ * @param file file pointer opened in writing mode
+ * @param string string to be serialized
+ * @return true on failure
+*/
+bool yadsl_testerutils_str_serialize(FILE *file, const char *string);
 
-//  ============================ ===================================== 
-//   TesterUtilsSerializeString            Serializes string           
-//  ============================ ===================================== 
-//   file                         File pointer opened in writing mode  
-//   string                       string to be serialized              
-//  ============================ ===================================== 
-//  [!] Returns 0 on success and 1 on failure
+/**
+ * @brief Deserializes string from file pointer
+ * @param file file pointer opened in reading mode
+ * @return serialized string or NULL on failure
+*/
+char *yadsl_testerutils_str_deserialize(FILE *file);
 
-int TesterUtilsSerializeString(FILE *file, const char *string);
+/**
+ * @brief Convert string to bool
+ * @param string string containing YES or NO
+ * @return boolean value. If neigher YES or NO are present, NO is assumed.
+*/
+bool yadsl_testerutils_str_to_bool(const char *string);
 
-//  ============================== ===================================== 
-//   TesterUtilsDeserializeString           Deserializes string          
-//  ============================== ===================================== 
-//   file                           File pointer opened in reading mode  
-//  ============================== ===================================== 
-//  [!] Returns string on success and NULL on failure
-
-char *TesterUtilsDeserializeString(FILE *file);
-
-//  ============================ =================================== 
-//   TesterGetYesOrNoFromString   Obtain boolean value from string   
-//  ============================ =================================== 
-//   string                       string containg YES or NO          
-//  ============================ =================================== 
-//  [!] Returns boolean value. If neither YES or NO, NO is assumed.
-
-bool TesterUtilsGetYesOrNoFromString(const char *string);
+/** @} */
 
 #endif

@@ -13,7 +13,7 @@
 typedef struct
 {
 	PyObject_HEAD
-	Heap *ob_heap;
+	yadsl_HeapHandle *ob_heap;
 	PyObject *ob_func;
 	unsigned char lock : 1;
 } HeapObject;
@@ -27,7 +27,7 @@ static PyObject *PyExc_Full = NULL;
 static PyObject *PyExc_Lock = NULL;
 static PyObject *PyExc_Shrink = NULL;
 
-_DEFINE_EXCEPTION_METADATA()
+YADSL_PYDEFINES_EXCEPTION_METADATA()
 
 static struct _exception_metadata exceptions[] = {
 	//
@@ -68,7 +68,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-_DEFINE_EXCEPTION_FUNCTIONS(Heap, exceptions)
+YADSL_PYDEFINES_EXCEPTION_FUNCTIONS(Heap, exceptions)
 
 //
 // Callbacks
@@ -165,15 +165,9 @@ Heap_init(HeapObject *self, PyObject *args, PyObject *kw)
 			return -1;
 		}
 	}
-	switch (heapCreate(&self->ob_heap, initialSize,
-		cmpCallback, decRefCallback, self)) {
-	case HEAP_OK:
-		break;
-	case HEAP_MEMORY:
+	if (!(self->ob_heap = yadsl_heap_create(initialSize, cmpCallback, decRefCallback, self))) {
 		PyErr_SetString(PyExc_MemoryError, "Could not create heap");
 		return -1;
-	default:
-		Py_UNREACHABLE();
 	}
 	self->ob_func = callbackObj;
 	Py_XINCREF(callbackObj);
@@ -184,7 +178,7 @@ static void
 Heap_dealloc(HeapObject *self)
 {
 	if (self->ob_heap)
-		heapDestroy(self->ob_heap);
+		yadsl_hash_destroy(self->ob_heap);
 	yadsl_memdb_dump();
 	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
@@ -203,13 +197,13 @@ Heap_insert(HeapObject *self, PyObject *obj)
 		_Heap_throw_error(PyExc_Lock);
 		goto exit;
 	}
-	switch (heapInsert(self->ob_heap, obj)) {
-	case HEAP_OK:
+	switch (yadsl_heap_insert(self->ob_heap, obj)) {
+	case YADSL_HEAP_RET_OK:
 		Py_INCREF(obj);
 		if (PyErr_Occurred())
 			goto exit;
 		Py_RETURN_NONE;
-	case HEAP_FULL:
+	case YADSL_HEAP_RET_FULL:
 		_Heap_throw_error(PyExc_Full);
 		break;
 	default:
@@ -228,22 +222,22 @@ PyDoc_STRVAR(_Heap_extract__doc__,
 static PyObject *
 Heap_extract(HeapObject *self, PyObject *Py_UNUSED(ignored))
 {
-	HeapRet returnId;
+	yadsl_HeapRet returnId;
 	PyObject *obj = NULL;
 	if (self->lock) {
 		_Heap_throw_error(PyExc_Lock);
 		goto exit;
 	}
-	returnId = heapExtract(self->ob_heap, &obj);
+	returnId = yadsl_heap_extract(self->ob_heap, &obj);
 	if (PyErr_Occurred()) {
 		Py_XDECREF(obj);
 		goto exit;
 	}
 	switch (returnId) {
-	case HEAP_OK:
+	case YADSL_HEAP_RET_OK:
 		// Borrow reference
 		return obj;
-	case HEAP_EMPTY:
+	case YADSL_HEAP_RET_EMPTY:
 		_Heap_throw_error(PyExc_Empty);
 		break;
 	default:
@@ -263,8 +257,8 @@ static PyObject *
 Heap_size(HeapObject *self, PyObject *Py_UNUSED(ignored))
 {
 	size_t size;
-	switch (heapGetSize(self->ob_heap, &size)) {
-	case HEAP_OK:
+	switch (yadsl_heap_size_get(self->ob_heap, &size)) {
+	case YADSL_HEAP_RET_OK:
 		return PyLong_FromSize_t(size);
 	default:
 		Py_UNREACHABLE();
@@ -298,13 +292,13 @@ Heap_resize(HeapObject *self, PyObject *obj)
 		PyErr_SetString(PyExc_ValueError, "size must not be zero");
 		goto exit;
 	}
-	switch (heapResize(self->ob_heap, size)) {
-	case HEAP_OK:
+	switch (yadsl_heap_resize(self->ob_heap, size)) {
+	case YADSL_HEAP_RET_OK:
 		Py_RETURN_NONE;
-	case HEAP_SHRINK:
+	case YADSL_HEAP_RET_SHRINK:
 		_Heap_throw_error(PyExc_Shrink);
 		break;
-	case HEAP_MEMORY:
+	case YADSL_HEAP_RET_MEMORY:
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not resize heap due to lack of memory");
 		break;
@@ -399,7 +393,7 @@ PyInit_pyheap(void)
 	m = PyModule_Create(&pyheap_module);
 	if (m == NULL)
 		return NULL;
-	_INIT_EXCEPTION_OBJECTS(m, _exc)
+	YADSL_PYDEFINES_INIT_EXCEPTION_OBJECTS(m, _exc)
 	Py_INCREF(&HeapType);
 	if (PyModule_AddObject(m, "Heap", (PyObject *) &HeapType) < 0) {
 		Py_DECREF(&HeapType);

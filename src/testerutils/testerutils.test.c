@@ -23,18 +23,18 @@ char buffer1[BUFSIZ], buffer2[BUFSIZ];
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
-	if matches(command, "serialize") {
+	if yadsl_testerutils_match(command, "serialize") {
 		FILE *file;
 		int ret;
 		if (yadsl_tester_parse_arguments("ss", buffer1, buffer2) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((file = fopen(buffer2, "w")) == NULL)
 			return YADSL_TESTER_RET_FILE;
-		ret = TesterUtilsSerializeString(file, buffer1);
+		ret = yadsl_testerutils_str_serialize(file, buffer1);
 		fclose(file);
 		if (ret)
 			return yadsl_tester_return_external_value("serialization error");
-	} else if matches(command, "deserialize") {
+	} else if yadsl_testerutils_match(command, "deserialize") {
 		FILE *file;
 		char *string;
 		int matches;
@@ -42,26 +42,26 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((file = fopen(buffer2, "r")) == NULL)
 			return YADSL_TESTER_RET_FILE;
-		string = TesterUtilsDeserializeString(file);
+		string = yadsl_testerutils_str_deserialize(file);
 		fclose(file);
 		if (string == NULL)
 			return yadsl_tester_return_external_value("deserialization error");
-		matches = matches(buffer1, string);
+		matches = yadsl_testerutils_match(buffer1, string);
 		free(string);
 		if (!matches)
 			return YADSL_TESTER_RET_RETURN;
-	} else if matches(command, "yes") {
+	} else if yadsl_testerutils_match(command, "yes") {
 		int yes;
 		if (yadsl_tester_parse_arguments("s", buffer1) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		yes = TesterUtilsGetYesOrNoFromString(buffer1);
+		yes = yadsl_testerutils_str_to_bool(buffer1);
 		if (!yes)
 			return YADSL_TESTER_RET_RETURN;
-	} else if matches(command, "no") {
+	} else if yadsl_testerutils_match(command, "no") {
 		int yes;
 		if (yadsl_tester_parse_arguments("s", buffer1) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		yes = TesterUtilsGetYesOrNoFromString(buffer1);
+		yes = yadsl_testerutils_str_to_bool(buffer1);
 		if (yes)
 			return YADSL_TESTER_RET_RETURN;
 	} else {

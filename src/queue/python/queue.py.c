@@ -4,7 +4,7 @@
 
 typedef struct {
     PyObject_HEAD
-    Queue* ob_queue;
+    yadsl_QueueHandle* ob_queue;
 } QueueObject;
 
 static void
@@ -19,7 +19,7 @@ Queue_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	QueueObject *self;
 	self = (QueueObject *) type->tp_alloc(type, 0);
 	if (self != NULL) {
-		if (queueCreate(&self->ob_queue, Queue_decRefCallback)) {
+		if (!(self->ob_queue = yadsl_queue_create(Queue_decRefCallback))) {
 			Py_DECREF(self);
 			return NULL;
 		}
@@ -30,7 +30,7 @@ Queue_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 Queue_dealloc(QueueObject *self)
 {
-	queueDestroy(self->ob_queue);
+	yadsl_queue_destroy(self->ob_queue);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -41,7 +41,7 @@ Queue_queue(QueueObject *self, PyObject *args, PyObject *kw)
 	if (!PyArg_ParseTuple(args, "O:Queue.queue", &obj))
 		return NULL;
 	if (obj) {
-		if (queueQueue(self->ob_queue, obj))
+		if (yadsl_queue_queue(self->ob_queue, obj))
 			return PyErr_NoMemory();
 		Py_INCREF(obj);
 	}
@@ -52,14 +52,14 @@ static PyObject *
 Queue_dequeue(QueueObject *self, PyObject *args, PyObject *kw)
 {
 	PyObject *obj;
-	int is_empty;
-	if (queueIsEmpty(self->ob_queue, &is_empty))
+	bool is_empty;
+	if (yadsl_queue_empty_check(self->ob_queue, &is_empty))
 		return NULL;
 	if (is_empty) {
 		PyErr_SetString(PyExc_RuntimeError, "Empty queue");
 		return NULL; // Throw exception
 	}
-	if (queueDequeue(self->ob_queue, &obj))
+	if (yadsl_queue_dequeue(self->ob_queue, &obj))
 		return NULL;
 	Py_DECREF(obj);
 	return obj;
@@ -68,8 +68,8 @@ Queue_dequeue(QueueObject *self, PyObject *args, PyObject *kw)
 static PyObject *
 Queue_is_empty(QueueObject *self, PyObject *args, PyObject *kw)
 {
-	int is_empty;
-	if (queueIsEmpty(self->ob_queue, &is_empty))
+	bool is_empty;
+	if (yadsl_queue_empty_check(self->ob_queue, &is_empty))
 		return NULL;
 	return PyBool_FromLong(is_empty);
 }
@@ -78,12 +78,12 @@ static PyObject *
 Queue_next(QueueObject *self)
 {
 	PyObject *obj;
-	int is_empty;
-	if (queueIsEmpty(self->ob_queue, &is_empty))
+	bool is_empty;
+	if (yadsl_queue_empty_check(self->ob_queue, &is_empty))
 		return NULL;
 	if (is_empty)
 		return NULL; // Stop iteration
-	if (queueDequeue(self->ob_queue, &obj))
+	if (yadsl_queue_dequeue(self->ob_queue, &obj))
 		return NULL;
 	return obj; // Pass ownership to iterator
 }

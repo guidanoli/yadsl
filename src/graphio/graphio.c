@@ -42,7 +42,7 @@ static yadsl_GraphIoRet yadsl_graph_io_write_internal(
 	FILE *file_ptr,
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
 	yadsl_GraphIoEdgeWriteFunc write_edge_func,
-	Map *address_map);
+	yadsl_MapHandle *address_map);
 
 static yadsl_GraphIoRet yadsl_graph_io_read_internal(
 	yadsl_GraphHandle *graph,
@@ -63,12 +63,12 @@ yadsl_GraphIoRet yadsl_graph_io_write(
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
 	yadsl_GraphIoEdgeWriteFunc write_edge_func)
 {
-	Map *adress_map;
+	yadsl_MapHandle *adress_map;
 	yadsl_GraphIoRet ret;
-	if (mapCreate(&adress_map, NULL, NULL, NULL))
+	if (!(adress_map = yadsl_map_create(NULL, NULL, NULL, NULL)))
 		return YADSL_GRAPH_IO_RET_MEMORY;
 	ret = yadsl_graph_io_write_internal(graph, file_ptr, write_vertex_func, write_edge_func, adress_map);
-	mapDestroy(adress_map);
+	yadsl_map_destroy(adress_map);
 	return ret;
 }
 
@@ -123,10 +123,10 @@ static yadsl_GraphIoRet yadsl_graph_io_write_internal(
 	FILE *file_ptr,
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
 	yadsl_GraphIoEdgeWriteFunc write_edge_func,
-	Map *address_map)
+	yadsl_MapHandle *address_map)
 {
 	bool is_directed;
-	MapRet map_ret;
+	yadsl_MapRet map_ret;
 	void *previous_value;
 	size_t vertex_count, nb_count, i, j, index;
 	void *vertex, *nb, *edge;
@@ -139,9 +139,10 @@ static yadsl_GraphIoRet yadsl_graph_io_write_internal(
 	YADSL_GRAPH_IO_WRITE(file_ptr, YADSL_GRAPH_IO_VCOUNT_STR, vertex_count); /* Vertex count */
 
 	for (i = 0; i < vertex_count; ++i) {
-		int flag, overwrite;
+		int flag;
+		bool overwrite;
 		if (yadsl_graph_vertex_iter(graph, YADSL_GRAPH_ITER_DIR_NEXT, &vertex)) assert(0);
-		if (map_ret = mapPutEntry(address_map, vertex, i, &overwrite, &previous_value)) {
+		if (map_ret = yadsl_map_entry_add(address_map, vertex, i, &overwrite, &previous_value)) {
 			assert(!overwrite);
 			return YADSL_GRAPH_IO_RET_MEMORY;
 		}
@@ -159,7 +160,7 @@ static yadsl_GraphIoRet yadsl_graph_io_write_internal(
 		for (j = nb_count; j; --j) {
 			if (yadsl_graph_vertex_nb_iter(graph, vertex, YADSL_GRAPH_EDGE_DIR_OUT, YADSL_GRAPH_ITER_DIR_NEXT, &nb, &edge))
 				assert(0);
-			if (mapGetEntry(address_map, nb, &previous_value)) assert(0);
+			if (yadsl_map_entry_get(address_map, nb, &previous_value)) assert(0);
 			index = (size_t) previous_value;
 			YADSL_GRAPH_IO_WRITE(file_ptr, YADSL_GRAPH_IO_NB_IDX_STR, index); /* Neighbour index */
 			if (write_edge_func(file_ptr, edge)) /* Edge item */

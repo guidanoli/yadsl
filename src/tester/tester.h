@@ -321,6 +321,6 @@ void yadsl_tester_print_help_strings();
 */
 const char *yadsl_tester_get_return_value_info(yadsl_TesterRet ret);
 
-/** }@ */
+/** @} */
 
 #endif

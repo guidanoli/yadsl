@@ -31,7 +31,7 @@ yadsl_TesterRet yadsl_tester_init()
 
 yadsl_TesterRet yadsl_tester_parse(const char* command)
 {
-	if matches(command, "new") {
+	if yadsl_testerutils_match(command, "new") {
 		char format;
 		size_t size;
 		if (yadsl_tester_parse_arguments("cz", &format, &size) != 2)
@@ -50,7 +50,7 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 		yadsl_memdb_dump();
 		vector = new_vector;
 		dtype_format = format;
-	} else if matches(command, "get") {
+	} else if yadsl_testerutils_match(command, "get") {
 		size_t index;
 		if (yadsl_tester_parse_arguments("z", &index) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -67,7 +67,7 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 		free(expected);
 		if (neq)
 			return YADSL_TESTER_RET_ARGUMENT;
-	} else if matches(command, "set") {
+	} else if yadsl_testerutils_match(command, "set") {
 		size_t index;
 		if (yadsl_tester_parse_arguments("z", &index) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -82,7 +82,7 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 		void* dest = yadsl_vector_at(vector, index);
 		yadsl_tester_copy_argument(dtype_format, src, dest);
 		free(src);
-	} else if matches(command, "resize") {
+	} else if yadsl_testerutils_match(command, "resize") {
 		yadsl_VectorHandle* new_vector;
 		size_t new_size;
 		if (yadsl_tester_parse_arguments("z", &new_size) != 1)
@@ -92,14 +92,14 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 			return YADSL_TESTER_RET_MALLOC;
 		yadsl_memdb_dump();
 		vector = new_vector;
-	} else if matches(command, "size") {
+	} else if yadsl_testerutils_match(command, "size") {
 		size_t expected, obtained;
 		if (yadsl_tester_parse_arguments("z", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		obtained = yadsl_vector_size(vector);
 		if (obtained != expected)
 			return YADSL_TESTER_RET_ARGUMENT;
-	} else if matches(command, "destroy") {
+	} else if yadsl_testerutils_match(command, "destroy") {
 		yadsl_vector_destroy(vector);
 		yadsl_memdb_dump();
 		vector = NULL;

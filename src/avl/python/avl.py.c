@@ -24,7 +24,7 @@ typedef struct
 
 static PyObject *PyExc_Lock = NULL;
 
-_DEFINE_EXCEPTION_METADATA()
+YADSL_PYDEFINES_EXCEPTION_METADATA()
 
 static struct _exception_metadata exceptions[] = {
 	//
@@ -46,7 +46,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-_DEFINE_EXCEPTION_FUNCTIONS(yadsl_AVLTreePythonObject, exceptions)
+YADSL_PYDEFINES_EXCEPTION_FUNCTIONS(yadsl_AVLTreePythonObject, exceptions)
 
 //
 // Callbacks
@@ -442,7 +442,7 @@ PyInit_pyavl(void)
 	m = PyModule_Create(&pyavl_module);
 	if (m == NULL)
 		return NULL;
-	_INIT_EXCEPTION_OBJECTS(m, _exc)
+	YADSL_PYDEFINES_INIT_EXCEPTION_OBJECTS(m, _exc)
 	Py_INCREF(&AVLType);
 	if (PyModule_AddObject(m, "AVL", (PyObject *) &AVLType) < 0) {
 		Py_DECREF(&AVLType);

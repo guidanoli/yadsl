@@ -1,77 +1,97 @@
-#ifndef __STACK_H__
-#define __STACK_H__
+#ifndef __YADSL_STACK_H__
+#define __YADSL_STACK_H__
 
-//     _____ __             __  
-//    / ___// /_____ ______/ /__
-//    \__ \/ __/ __ `/ ___/ //_/
-//   ___/ / /_/ /_/ / /__/ ,<   
-//  /____/\__/\__,_/\___/_/|_|  
-//                              
-//  A Stack starts empty. You can add and
-// remove objects (if not empty), and check
-// whether the stack is empty or not.
-//
-// HINTS
-// -----
-//
-// Objects can assume the value NULL (0).
-//
+/**
+ * \defgroup stack Stack
+ * @brief Generic stack
+ * 
+ * A Stack starts empty. You can add and
+ * remove objects (if not empty), and check
+ * whether the stack is empty or not.
+ * Objects can assume the value NULL (0).
+ * 
+ * @{
+*/
 
+#include <stdbool.h>
+
+/**
+ * @brief Value returned by Stack functions
+*/
 typedef enum
 {
-	STACK_OK = 0,
-	STACK_EMPTY,
-	STACK_MEMORY,
+	YADSL_STACK_RET_OK = 0, /**< All went ok */
+	YADSL_STACK_RET_EMPTY, /**< Stack is empty */
+	YADSL_STACK_RET_MEMORY, /**< Could not allocate memory */
 }
-StackRet;
+yadsl_StackRet;
 
-typedef struct Stack Stack;
+typedef void yadsl_StackHandle; /**< Stack handle */
+typedef void yadsl_StackItemObj; /**< Stack item object */
 
-//  ============= ============================== 
-//   stackCreate           Create stack          
-//  ============= ============================== 
-//   ppStack       (owned ret) pointer to stack  
-//  ============= ============================== 
-//  [!] STACK_MEMORY
+/**
+ * @brief Function responsible for freeing item
+ * @param item item object
+*/
+typedef void
+(*yadsl_StackItemFreeFunc)(
+	yadsl_StackItemObj* item);
 
-StackRet stackCreate(Stack **ppStack);
+/**
+ * @brief Create stack
+ * @return newly created stack or NULL if could not allocate memory
+*/
+yadsl_StackHandle*
+yadsl_stack_create();
 
-//  ========== ===================== 
-//   stackAdd   Add object to stack  
-//  ========== ===================== 
-//   pStack     pointer to stack     
-//   object     object to be added   
-//  ========== ===================== 
-//  [!] STACK_MEMORY
+/**
+ * @brief Add object to stack
+ * @param stack stack
+ * @param object object to be added
+ * @return
+ * * ::YADSL_STACK_RET_OK, and object is added
+ * * ::YADSL_STACK_RET_MEMORY
+*/
+yadsl_StackRet
+yadsl_stack_item_add(
+	yadsl_StackHandle *stack,
+	yadsl_StackItemObj *object);
 
-StackRet stackAdd(Stack *pStack, void *object);
+/**
+ * @brief Check if stack is empty
+ * @param stack stack
+ * @param is_empty_ptr whether stack is empty or not
+ * @return
+ * * ::YADSL_STACK_RET_OK, and *is_empty_ptr is updated
+*/
+yadsl_StackRet
+yadsl_stack_empty_check(
+	yadsl_StackHandle *stack,
+	bool *is_empty_ptr);
 
-//  ============ ===================================== 
-//   stackEmpty         Check if stack is empty        
-//  ============ ===================================== 
-//   pStack       pointer to stack                     
-//   pIsEmpty     (ret) whether stack is empty or not  
-//  ============ ===================================== 
+/**
+ * @brief Remove object from stack
+ * @param stack stack
+ * @param object_ptr removed object
+ * @return
+ * * ::YADSL_STACK_RET_OK, and *object_ptr is updated
+ * * ::YADSL_STACK_RET_EMPTY
+*/
+yadsl_StackRet
+yadsl_stack_item_remove(
+	yadsl_StackHandle *stack,
+	yadsl_StackItemObj **object_ptr);
 
-StackRet stackEmpty(Stack *pStack, int *pIsEmpty);
+/**
+ * @brief Destroy stack and its remaining objects
+ * @param stack stack
+ * @param free_item_func item freeing function
+*/
+void
+yadsl_stack_destroy(
+	yadsl_StackHandle *stack,
+	yadsl_StackItemFreeFunc free_item_func);
 
-//  ============= ============================ 
-//   stackRemove    Remove object from stack   
-//  ============= ============================ 
-//   pStack        pointer to stack            
-//   pObject       (owned ret) removed object  
-//  ============= ============================ 
-//  [!] STACK_EMPTY
-
-StackRet stackRemove(Stack *pStack, void **pObject);
-
-//  ============== ============================================ 
-//   stackDestroy   Deallocate stack and its remaining objects  
-//  ============== ============================================ 
-//   pStack         pointer to stack                            
-//   freeObject     object deallocation function                
-//  ============== ============================================ 
-
-void stackDestroy(Stack *pStack, void freeObject(void *));
+/** @} */
 
 #endif
