@@ -321,7 +321,8 @@ __usage_eval_strings__ = '''  Evaluating arguments as strings
 
 if __name__ == '__main__':
     import sys
-    args, kwargs = process_argv(sys.argv[1:])
+    args, kwargs = process_argv(sys.argv[2:])
+    args.insert(0, sys.argv[1])
     if kwargs.get('help', False):
         exit('\n\n'.join([__usage__,
                           __usage_opts__,
