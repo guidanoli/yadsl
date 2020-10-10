@@ -140,6 +140,7 @@
 
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #include <memdb/memdb.h>
 
@@ -241,7 +242,7 @@ extern yadsl_TesterRet yadsl_tester_release();
  *   a macro defined in the stdio.h header file.
  * - Strings between quotation marks can be parsed too,
  *   allowing separation characters to be ignored.
- *
+ * 
  * @param format format string
  * @param ... pointers to arguments
  * @return number of successfully parsed arguments
@@ -252,8 +253,52 @@ yadsl_tester_parse_arguments(
 	...);
 
 /**
+ * @brief Parse a character that identifies the
+ * object type, then parse the data type identified
+ * by the character.
+ * Examples: i 20, s "abc", c * 
+ * If it could not parse the object, NULL is returned
+ * and the state of the parser is then reversed to that
+ * of before the call.
+ * @return dynamically allocated object
+ */
+void*
+yadsl_tester_object_parse();
+
+/**
+ * @brief Deallocates parsed object
+ * @param object object parsed by tester
+ */
+void
+yadsl_tester_object_free(
+	void* object);
+
+/**
+ * @brief Check if two objects are equal
+ * @param object1 first object
+ * @param object2 second object
+ * @return whether the two are equal
+ */
+bool
+yadsl_tester_object_equal(
+	void* object1,
+	void* object2);
+
+/**
+ * @brief Copy object
+ * @param object
+ * @return object copy or NULL on failure
+ */
+void*
+yadsl_tester_object_copy(
+	void* object);
+
+/**
  * @brief Get size of data type
  * @param dtype data type identifier
+ *
+ * Observation: for strings, sizeof(char*) is returned.
+ *
  * @return data type size or 0 if dtype is invalid
 */
 size_t

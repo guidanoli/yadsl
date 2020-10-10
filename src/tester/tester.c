@@ -12,6 +12,12 @@
 // STATIC VARIABLES DECLARATIONS
 ////////////////////////////////////////////////////////////////////////////////
 
+struct tester_object
+{
+	char dtype;
+	void *data;
+};
+
 static const char* char_f[] = { "%c", NULL };
 static const char* float_f[] = { "%f", "%g", "%e", NULL };
 static const char* int_f[] = { "%d", "%u", NULL };
@@ -98,12 +104,18 @@ size_t yadsl_tester_get_dtype_size(char dtype)
 
 int yadsl_tester_compare_arguments(char dtype, const void* expected, const void* obtained)
 {
-	return memcmp(expected, obtained, yadsl_tester_get_dtype_size(dtype));
+	if (dtype == 's')
+		return strcmp(expected, obtained);
+	else
+		return memcmp(expected, obtained, yadsl_tester_get_dtype_size(dtype));
 }
 
 void yadsl_tester_copy_argument(char dtype, const void* source, void* destination)
 {
-	memcpy(destination, source, yadsl_tester_get_dtype_size(dtype));
+	if (dtype == 's')
+		strcpy(destination, source);
+	else
+		memcpy(destination, source, yadsl_tester_get_dtype_size(dtype));
 }
 
 int yadsl_tester_parse_arguments(const char* format, ...)
@@ -173,6 +185,78 @@ int yadsl_tester_parse_arguments(const char* format, ...)
 	va_end(va);
 	cursor += inc;
 	return argc;
+}
+
+void* yadsl_tester_object_parse()
+{
+	char* cursor_temp = cursor;
+	char dtype[2] = {0, 0};
+	size_t size;
+	char data[BUFSIZ];
+	struct tester_object* obj = NULL;
+	if (yadsl_tester_parse_arguments("c", dtype) != 1)
+		goto fail;
+	if (yadsl_tester_parse_arguments(dtype, data) != 1)
+		goto fail;
+	obj = malloc(sizeof *obj);
+	if (!obj)
+		goto fail;
+	obj->dtype = *dtype;
+	if (*dtype == 's')
+		size = (strlen(data) + 1) * sizeof(char);
+	else
+		size = yadsl_tester_get_dtype_size(*dtype);
+	obj->data = malloc(size);
+	if (!(obj->data))
+		goto fail;
+	memcpy(obj->data, (void*) data, size);
+	return (void*) obj;
+fail:
+	if (obj)
+		free(obj);
+	cursor = cursor_temp;
+	return NULL;
+}
+
+void yadsl_tester_object_free(void* object)
+{
+	free(((struct tester_object*) object)->data);
+	free(object);
+}
+
+bool yadsl_tester_object_equal(void* object1, void* object2)
+{
+	struct tester_object* obj1 = (struct tester_object*) object1;
+	struct tester_object* obj2 = (struct tester_object*) object2;
+	if (obj1->dtype != obj2->dtype)
+		return false;
+	return yadsl_tester_compare_arguments(obj1->dtype, obj1->data, obj2->data) == 0;
+}
+
+void* yadsl_tester_object_copy(void* object)
+{
+	struct tester_object* new_object = malloc(sizeof *new_object);
+	if (new_object) {
+		struct tester_object *base = (struct tester_object *) object;
+		size_t size;
+
+		new_object->dtype = base->dtype;
+		
+		if (base->dtype == 's')
+			size = (strlen((char*) base->data)+1)*sizeof(char);
+		else
+			size = yadsl_tester_get_dtype_size(base->dtype);
+		
+		void* data = malloc(size);
+		if (!data) {
+			free(new_object);
+			return NULL;
+		}
+
+		yadsl_tester_copy_argument(base->dtype, base->data, data);
+		new_object->data = data;
+	}
+	return new_object;
 }
 
 yadsl_TesterRet yadsl_tester_return_external_value(const char* info)
