@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include <tester/tester.h>
 
 #include <yadsl/posixstring.h>

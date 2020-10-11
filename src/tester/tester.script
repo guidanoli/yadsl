@@ -1,4 +1,5 @@
 /help
+
 /print s mystring
 /print s "My String With Spaces In It: Chapter I"
 /print s "My String With Tabs In It:	Chapter II"
@@ -11,6 +12,179 @@
 /print f 1e-2
 /print z 65535
 /print c z
+
 /throw custom
+
 /catch custom
+
 /log "My long message is so long it must be trimmed"
+
+/cmp-pld i 42
+/cmp-pld l 2020
+/cmp-pld f 3.14
+/cmp-pld c *
+/cmp-pld s "lorem ipsum"
+/cmp-pld z 9001
+
+## Comparing objects
+
+# Integer objects
+
+/obj-parse i 42 0
+/obj-parse i 42 1
+/obj-eq 0 1 YES
+
+/obj-parse i 43 0
+/obj-eq 0 1 NO
+
+/obj-parse l 42 0
+/obj-eq 0 1 NO
+
+/obj-parse f 42 0
+/obj-eq 0 1 NO
+
+/obj-parse c * 0
+/obj-eq 0 1 NO
+
+/obj-parse s *** 0
+/obj-eq 0 1 NO
+
+/obj-parse z 42 0
+/obj-eq 0 1 NO
+
+# Long objects
+
+/obj-parse l 42 0
+/obj-parse l 42 1
+/obj-eq 0 1 YES
+
+/obj-parse l 43 0
+/obj-eq 0 1 NO
+
+/obj-parse f 42 0
+/obj-eq 0 1 NO
+
+/obj-parse c * 0
+/obj-eq 0 1 NO
+
+/obj-parse s *** 0
+/obj-eq 0 1 NO
+
+/obj-parse z 42 0
+/obj-eq 0 1 NO
+
+# Floating point
+
+/obj-parse f 42 0
+/obj-parse f 42 1
+/obj-eq 0 1 YES
+
+/obj-parse f 43 0
+/obj-eq 0 1 NO
+
+/obj-parse c * 0
+/obj-eq 0 1 NO
+
+/obj-parse s *** 0
+/obj-eq 0 1 NO
+
+/obj-parse z 42 0
+/obj-eq 0 1 NO
+
+# Character
+
+/obj-parse c * 0
+/obj-parse c * 1
+/obj-eq 0 1 YES
+
+/obj-parse c + 0
+/obj-eq 0 1 NO
+
+/obj-parse s * 0
+/obj-eq 0 1 NO
+
+/obj-parse z 42 0
+/obj-eq 0 1 NO
+
+# String
+
+/obj-parse s * 0
+/obj-parse s * 1
+/obj-eq 0 1 YES
+
+/obj-parse s + 0
+/obj-eq 0 1 NO
+
+/obj-parse z 42 0
+/obj-eq 0 1 NO
+
+# More strings
+
+/obj-parse s "" 0
+/obj-parse s "" 1
+/obj-eq 0 1 YES
+
+/obj-parse s "abc" 0
+/obj-parse s "abc" 1
+/obj-eq 0 1 YES
+
+/obj-parse s "ABC" 0
+/obj-parse s "abc" 1
+/obj-eq 0 1 NO
+
+/obj-parse s " " 0
+/obj-parse s "" 1
+/obj-eq 0 1 NO
+
+# Size
+
+/obj-parse z 42 0
+/obj-parse z 42 1
+/obj-eq 0 1 YES
+
+/obj-parse z 43 0
+/obj-eq 0 1 NO
+
+## Cloning objects
+
+# Integer
+
+/obj-parse i 42 0
+/obj-copy 0 1
+/obj-eq 0 1 YES
+
+# Long
+
+/obj-parse l 42 0
+/obj-copy 0 1
+/obj-eq 0 1 YES
+
+# Floating point
+
+/obj-parse f 3.14 0
+/obj-copy 0 1
+/obj-eq 0 1 YES
+
+# Character
+
+/obj-parse c * 0
+/obj-copy 0 1
+/obj-eq 0 1 YES
+
+# String
+
+/obj-parse s "Rio de Janeiro" 0
+/obj-copy 0 1
+/obj-eq 0 1 YES
+
+# More strings
+
+/obj-parse s "" 0
+/obj-copy 0 1
+/obj-eq 0 1 YES
+
+# Size
+
+/obj-parse z 9001 0
+/obj-copy 0 1
+/obj-eq 0 1 YES
