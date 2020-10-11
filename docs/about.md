@@ -1,7 +1,7 @@
 # About this project {#about}
 
 The *C* standard library, differently from those of more modern programming languages like *Java*, *C++*, *Python* and *Go*,
-provides no data structure or algorithmic functionality. Instead, this task is assigned to community as a whole.
+does not provides data structures or more complex algorithms. Instead, this task is assigned to the community.
 
 The purpose of *YADSL* is to provide data structures and algorithms that are:
 

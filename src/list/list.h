@@ -5,9 +5,49 @@
  * \defgroup list List
  * @brief Mutable sequence of elements
  *
+ * Negative indices
+ * ----------------
+ * 
  * Negative indexation is allowed and has the
- * same semantics as in Python lists.
+ * same semantics as in Python lists. For example:
+ * 
+ * * -1 represents the last item in the list
+ * * -2 represents the penultimate item in the list
+ * 
+ * Some callbacks are nullable. When NULL,
+ * these callbacks are assigned to default ones.
+ * 
+ * Default callbacks
+ * -----------------
+ * 
+ * * yadsl_ListFreeObjFunc -> does nothing
+ * * yadsl_ListEqualObjsFunc -> shallow comparison
+ * * yadsl_ListCopyObjFunc -> shallow copy
  *
+ * Complexity
+ * ----------
+ * 
+ * | Function | Time | Space |
+ * | :-: | :-: | :-: |
+ * | ::yadsl_list_create  | O(1) | O(1) |
+ * | ::yadsl_list_append  | O(1) | O(log n) |
+ * | ::yadsl_list_insert  | O(n) | O(log n) |
+ * | ::yadsl_list_remove  | O(n) | O(1) |
+ * | ::yadsl_list_pop     | O(n) | O(1) |
+ * | ::yadsl_list_clear   | O(n) | O(1) |
+ * | ::yadsl_list_copy    | O(n) | O(n) |
+ * | ::yadsl_list_count   | O(n) | O(1) |
+ * | ::yadsl_list_index   | O(n) | O(1) |
+ * | ::yadsl_list_size    | O(1) | O(1) |
+ * | ::yadsl_list_iter    | O(n) | O(1) |
+ * | ::yadsl_list_at      | O(1) | O(1) |
+ * | ::yadsl_list_destroy | O(n) | O(1) |
+ * 
+ * Some observations:
+ * 
+ * * Popping the last element (index = -1) has a time complexity of O(1).
+ * * Inserting an element at the end of a list (index = -1) is analogous to appending it.
+ * 
  * @{
 */
 
@@ -52,10 +92,20 @@ typedef bool
 /**
  * @brief List object copy function
  * @param obj object
- * @return copied object
+ * @param copy_ptr copied object
+ * @return success (copy_ptr is updated)
 */
-typedef yadsl_ListObj*
+typedef bool
 (yadsl_ListCopyObjFunc)(
+		yadsl_ListObj *obj,
+		yadsl_ListObj **copy_ptr);
+
+/**
+ * @brief List iteration function
+ * @param obj current object
+*/
+typedef void
+(yadsl_ListIterFunc) (
 		yadsl_ListObj *obj);
 
 /**
@@ -81,12 +131,13 @@ yadsl_list_append(
 /**
  * @brief Inserts object in a specific index
  * @param list list
- * @param index in which value is inserted
+ * @param index index in which value is inserted
+ *              if it surpasses the range, it crops to the nearest
+ *              valid value (e.g. on a list with two elements, 10 goes to 2)
  * @param obj object to be inserted
  * @return
  * * ::YADSL_LIST_RET_OK, and object is inserted
  * * ::YADSL_LIST_RET_MEMORY
- * * ::YADSL_LIST_RET_INDEX
 */
 yadsl_ListRet
 yadsl_list_insert(
@@ -99,7 +150,8 @@ yadsl_list_insert(
  * @param list list
  * @param obj object to be removed
  * @param equal_objs_func function that checks if two
- *                        object are equal or not
+ *                        object are equal or not (nullable)
+ * @param free_obj_func function that frees object (nullable)
  * @return
  * * ::YADSL_LIST_RET_OK, and object is removed
  * * ::YADSL_LIST_RET_NOT_FOUND
@@ -108,7 +160,8 @@ yadsl_ListRet
 yadsl_list_remove(
 		yadsl_ListHandle* list,
 		yadsl_ListObj* obj,
-		yadsl_ListEqualObjsFunc equal_objs_func);
+		yadsl_ListEqualObjsFunc equal_objs_func,
+		yadsl_ListFreeObjFunc free_obj_func);
 
 /**
  * @brief Remove object from list and return it
@@ -128,30 +181,32 @@ yadsl_list_pop(
 /**
  * @brief Clear list
  * @param list
- * @param free_obj_func function that frees object
+ * @param free_obj_func function that frees object (nullable)
 */
 void
 yadsl_list_clear(
 		yadsl_ListHandle* list,
-		yadsl_ListFreeObjFunc* free_obj_func);
+		yadsl_ListFreeObjFunc free_obj_func);
 
 /**
  * @brief Copy list
  * @param list
- * @param copy_obj_func function that copies each object
+ * @param copy_obj_func function that copies each object (nullable)
+ * @param free_obj_func function that deallocates object (nullable)
  * @return newly copied list or NULL on failure
 */
 yadsl_ListHandle*
 yadsl_list_copy(
 		yadsl_ListHandle* list,
-		yadsl_ListCopyObjFunc copy_obj_func);
+		yadsl_ListCopyObjFunc copy_obj_func,
+		yadsl_ListFreeObjFunc free_obj_func);
 
 /**
  * @brief Counts incidences of object in list
  * @param list
  * @param obj object to be counted
  * @param equal_objs_func function that tests if two
- *                        objects are equal or not
+ *                        objects are equal or not (nullable)
  * @return number of incidences
 */
 size_t
@@ -188,14 +243,39 @@ yadsl_list_size(
 		yadsl_ListHandle* list);
 
 /**
+ * @brief Iterate throught list
+ * @param list list
+ * @param iter_func iteration function
+*/
+void
+yadsl_list_iter(
+		yadsl_ListHandle* list,
+		yadsl_ListIterFunc iter_func);
+
+/**
+ * @brief Obtain object at a given index
+ * @param list list
+ * @param index index
+ * @param obj_ptr obtained object
+ * @return
+ * * ::YADSL_LIST_RET_OK, and *obj_ptr is updated
+ * * ::YADSL_LIST_RET_INDEX
+*/
+yadsl_ListRet
+yadsl_list_at(
+		yadsl_ListHandle* list,
+		intptr_t index,
+		yadsl_ListObj** obj_ptr);
+
+/**
  * @brief Destroy a list
  * @param list list to be destroyed
- * @param free_obj_func function that frees object
+ * @param free_obj_func function that frees object (nullable)
 */
 void
 yadsl_list_destroy(
 		yadsl_ListHandle* list,
-		yadsl_ListFreeObjFunc* free_obj_func);
+		yadsl_ListFreeObjFunc free_obj_func);
 
 /** @} */
 

@@ -84,7 +84,7 @@
  * ```
  * Usage
  * -----
- *   <tester-executable> [<script-path> [/I] [/LOG]]
+ *   <tester-executable> [<script-path>] [/I] [/LOG]
  *
  * Positional arguments
  * ---------------------
@@ -94,6 +94,7 @@
  * --------------
  *   /I - Interactive mode
  *     Reads from standard input instead of reading script
+ *     (ignores script_path)
  *
  *   /LOG - Logs debug information
  *     Redirects debugging output to file other than the standard output
@@ -106,33 +107,23 @@
  *
  * Script grammar
  * --------------
- * The context free language is specified below:
+ * The syntax is specified below in EBNF.
+ * Observation: some token matching depend on the implemention of the
+ * C fscanf function family.
  *
  * ```
- * Script -> Line | Script "\n" Line
- * Line -> sep* CmdList sep+ comment sep* | sep* CmdList sep*
- * CmdList -> CmdList sep+ cmdname ArgList | epsilon
- * ArgList -> ArgList sep+ Arg | epsilon
- * Arg -> Float | String | Integer | Long | Size | Char
- * Float -> %f | %g | %e
- * String -> string_qm | string_wo_qm
- * Integer -> %d | %u
- * Long -> %ld | %lu
- * Size -> %zu
- * Char -> %c
- * ```
- *
- * Script tokens
- * -------------
- * All the tokens are specified below as regular expressions:
- *
- * ```
- * sep = [ \t]
- * comment = #[^\n]*
- * cmdname = /[^ \t\n]+
- * string_qm = "[^"\n]*"
- * string_wo_qm = [^ \t\n]+
- * %? = identifiers from C standard library
+ * script ::= { line } ;
+ * line ::= { cmd } , [ comment ] ;
+ * cmd ::= '/' , cmd_name , { arg } ;
+ * cmd_name ::= CHAR , { CHAR } ;
+ * comment ::= '#' , { CHAR } ;
+ * arg ::= CHAR | STRING | INTEGER | LONG | FLOAT | SIZE_T ;
+ * CHAR ::= %c - '\n' - ' ' - '\t' ;
+ * STRING ::= { CHAR } | '"' , { %c - '\n' - '"' } , '"' ;
+ * INTEGER ::= %d | %u ;
+ * LONG ::= %l | %lu ;
+ * FLOAT ::= %f | %g | %e ;
+ * SIZE_T ::= %zu ;
  * ```
  *
  * @{
@@ -161,6 +152,7 @@ typedef enum
 	YADSL_TESTER_RET_ARGUMENT, /**< Failed argument parsing */
 	YADSL_TESTER_RET_TOKEN, /**< Failed token parsing */
 	YADSL_TESTER_RET_RETURN, /**< Unexpected return */
+	YADSL_TESTER_RET_CATCH, /**< Unexpected catch (no error) */
 	YADSL_TESTER_RET_EXTERNAL, /**< External return value */
 	YADSL_TESTER_RET_COUNT, /**< For internal use only */
 }
@@ -291,6 +283,24 @@ yadsl_tester_object_equal(
  */
 void*
 yadsl_tester_object_copy(
+	void* object);
+
+/**
+ * @brief Get object data type
+ * @param object 
+ * @return object data type
+*/
+char
+yadsl_tester_object_dtype(
+	void* object);
+
+/**
+ * @brief Get object data
+ * @param object
+ * @return object data
+*/
+const void*
+yadsl_tester_object_data(
 	void* object);
 
 /**

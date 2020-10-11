@@ -14,11 +14,12 @@
 // STATIC VARIABLES DECLARATIONS
 ////////////////////////////////////////////////////////////////////////////////
 
-struct tester_object
+typedef struct
 {
 	char dtype;
 	void *data;
-};
+}
+yadsl_TesterObject;
 
 static const char* char_f[] = { "%c", NULL };
 static const char* float_f[] = { "%f", "%g", "%e", NULL };
@@ -195,7 +196,7 @@ void* yadsl_tester_object_parse()
 	char dtype[2] = {0, 0};
 	size_t size;
 	char data[BUFSIZ];
-	struct tester_object* obj = NULL;
+	yadsl_TesterObject* obj = NULL;
 	if (yadsl_tester_parse_arguments("c", dtype) != 1)
 		goto fail;
 	if (yadsl_tester_parse_arguments(dtype, data) != 1)
@@ -222,14 +223,15 @@ fail:
 
 void yadsl_tester_object_free(void* object)
 {
-	free(((struct tester_object*) object)->data);
-	free(object);
+	yadsl_TesterObject* object_ = (yadsl_TesterObject*) object;
+	free(object_->data);
+	free(object_);
 }
 
 bool yadsl_tester_object_equal(void* object1, void* object2)
 {
-	struct tester_object* obj1 = (struct tester_object*) object1;
-	struct tester_object* obj2 = (struct tester_object*) object2;
+	yadsl_TesterObject* obj1 = (yadsl_TesterObject*) object1;
+	yadsl_TesterObject* obj2 = (yadsl_TesterObject*) object2;
 	if (obj1->dtype != obj2->dtype)
 		return false;
 	return yadsl_tester_compare_arguments(obj1->dtype, obj1->data, obj2->data) == 0;
@@ -237,9 +239,9 @@ bool yadsl_tester_object_equal(void* object1, void* object2)
 
 void* yadsl_tester_object_copy(void* object)
 {
-	struct tester_object* new_object = malloc(sizeof *new_object);
+	yadsl_TesterObject* new_object = malloc(sizeof *new_object);
 	if (new_object) {
-		struct tester_object *base = (struct tester_object *) object;
+		yadsl_TesterObject *base = (yadsl_TesterObject *) object;
 		size_t size;
 
 		new_object->dtype = base->dtype;
@@ -259,6 +261,16 @@ void* yadsl_tester_object_copy(void* object)
 		new_object->data = data;
 	}
 	return new_object;
+}
+
+char yadsl_tester_object_dtype(void* object)
+{
+	return ((yadsl_TesterObject*) object)->dtype;
+}
+
+const void* yadsl_tester_object_data(void* object)
+{
+	return ((yadsl_TesterObject*) object)->data;
 }
 
 yadsl_TesterRet yadsl_tester_return_external_value(const char* info)
@@ -403,6 +415,7 @@ static void yadsl_tester_load_return_values_internal()
 		{YADSL_TESTER_RET_ARGUMENT, "argument"},
 		{YADSL_TESTER_RET_RETURN, "return"},
 		{YADSL_TESTER_RET_TOKEN, "token"},
+		{YADSL_TESTER_RET_CATCH, "catch"},
 		{YADSL_TESTER_RET_EXTERNAL, "external"},
 	};
 	for (i = 0; i < sizeof(nativeValues) / sizeof(nativeValues[0]); ++i) {
@@ -453,7 +466,13 @@ static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet
 		ret = YADSL_TESTER_RET_ARGUMENT;
 		goto jump_print;
 	}
-	fprintf(stderr, "ERROR: Could not catch \"%s\"\n", yadsl_tester_get_return_value_info(ret));
+	if (ret == YADSL_TESTER_RET_OK) {
+		fprintf(stderr, "ERROR: Tried to catch \"%s\" but there was no error\n", arg);
+		ret = YADSL_TESTER_RET_CATCH;
+	} else {
+		fprintf(stderr, "ERROR: Tried to catch \"%s\" but error was \"%s\"\n",
+			arg, yadsl_tester_get_return_value_info(ret));
+	}
 jump_print:
 	return ret;
 }
@@ -461,7 +480,8 @@ jump_print:
 static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret)
 {
 	if (ret) {
-		size_t spacing = fprintf(stderr, "ERROR: \"%s\" ", yadsl_tester_get_return_value_info(ret));
+		size_t spacing = fprintf(stderr, "ERROR: \"%s\" ",
+			yadsl_tester_get_return_value_info(ret));
 		yadsl_tester_print_cursor_position_internal(stderr, spacing);
 	}
 }
