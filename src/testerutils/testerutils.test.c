@@ -50,7 +50,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		string = yadsl_testerutils_str_deserialize(file);
 		fclose(file);
 		if (string == NULL)
-			return yadsl_tester_return_external_value("deserialization error");
+			return YADSL_TESTER_RET_MALLOC;
 		matches = strcmp(buffer1, string) == 0;
 		free(string);
 		if (!matches)

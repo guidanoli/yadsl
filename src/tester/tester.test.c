@@ -161,12 +161,13 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			break;
 		}
 	} else if (yadsl_testerutils_match(command, "obj-parse")) {
-		void* obj = yadsl_tester_object_parse();
-		if (obj == NULL)
-			return YADSL_TESTER_RET_MALLOC;
+		void* obj;
 		size_t slot;
+		obj = yadsl_tester_object_parse();
 		if (yadsl_tester_parse_arguments("z", &slot) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
+		if (obj == NULL)
+			return YADSL_TESTER_RET_MALLOC;
 		if (slot >= sizeof(objects) / sizeof(*objects))
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (objects[slot]) {

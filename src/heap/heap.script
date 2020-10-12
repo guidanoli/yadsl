@@ -4,7 +4,7 @@
 
 # Try resizing with 0
 /resize 0
-/catch "memory"
+/catch "malloc"
 
 # Try resizing to 1
 /resize 1

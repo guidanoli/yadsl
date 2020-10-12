@@ -36,7 +36,7 @@ yadsl_TesterRet convertReturn(yadsl_SetRet setId)
 	case YADSL_SET_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_SET_RET_MEMORY:
-		return yadsl_tester_return_external_value("malloc");
+		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_SET_RET_CONTAINS:
 		return yadsl_tester_return_external_value("contains");
 	case YADSL_SET_RET_DOES_NOT_CONTAIN:
@@ -185,7 +185,8 @@ void freeItem(void *item, void *arg)
 
 yadsl_TesterRet yadsl_tester_release()
 {
-	yadsl_set_destroy(pSet, freeItem, NULL);
+	if (pSet != NULL)
+		yadsl_set_destroy(pSet, freeItem, NULL);
 	if (savedStr != NULL)
 		free(savedStr);
 	return YADSL_TESTER_RET_OK;

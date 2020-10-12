@@ -76,8 +76,10 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 
 yadsl_TesterRet yadsl_tester_release()
 {
-	yadsl_queue_destroy(pQueue);
-	pQueue = NULL;
+	if (pQueue) {
+		yadsl_queue_destroy(pQueue);
+		pQueue = NULL;
+	}
 	return YADSL_TESTER_RET_OK;
 }
 
@@ -89,7 +91,7 @@ static yadsl_TesterRet convertReturnValue(yadsl_QueueRet queueId)
 	case YADSL_QUEUE_RET_EMPTY:
 		return yadsl_tester_return_external_value("empty");
 	case YADSL_QUEUE_RET_MEMORY:
-		return yadsl_tester_return_external_value("malloc");
+		return YADSL_TESTER_RET_MALLOC;
 	default:
 		return yadsl_tester_return_external_value("unknown");
 	}

@@ -39,7 +39,7 @@ yadsl_TesterRet convert(yadsl_HeapRet heapReturnValue)
     case YADSL_HEAP_RET_SHRINK:
         return yadsl_tester_return_external_value("shrink");
     case YADSL_HEAP_RET_MEMORY:
-        return yadsl_tester_return_external_value("memory");
+        return YADSL_TESTER_RET_MALLOC;
     default:
         return yadsl_tester_return_external_value("unknown");
     }

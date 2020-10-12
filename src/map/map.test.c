@@ -33,7 +33,7 @@ yadsl_TesterRet convertReturn(yadsl_MapRet mapId)
 	case YADSL_MAP_RET_ENTRY_NOT_FOUND:
 		return yadsl_tester_return_external_value("noentry");
 	case YADSL_MAP_RET_MEMORY:
-		return yadsl_tester_return_external_value("malloc");
+		return YADSL_TESTER_RET_MALLOC;
 	default:
 		return yadsl_tester_return_external_value("unknown");
 	}

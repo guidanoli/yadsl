@@ -326,7 +326,7 @@ yadsl_TesterRet convert_graph_ret(yadsl_GraphRet graphId)
 	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE:
 		return yadsl_tester_return_external_value("does not contain edge");
 	case YADSL_GRAPH_RET_MEMORY:
-		return yadsl_tester_return_external_value("memory");
+		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_GRAPH_RET_PARAMETER:
 		return yadsl_tester_return_external_value("parameter");
 	default:
@@ -340,7 +340,7 @@ yadsl_TesterRet convert_graph_io_ret(yadsl_GraphIoRet graphIoId)
 	case YADSL_GRAPHIO_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_GRAPHIO_RET_MEMORY:
-		return yadsl_tester_return_external_value("memory");
+		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_GRAPHIO_RET_WRITING_FAILURE:
 		return yadsl_tester_return_external_value("writing failure");
 	case YADSL_GRAPHIO_RET_CREATION_FAILURE:
@@ -366,7 +366,7 @@ yadsl_TesterRet convert_graph_search_ret(yadsl_GraphSearchRet graphSearchId)
 	case YADSL_GRAPHSEARCH_RET_VERTEX_ALREADY_VISITED:
 		return yadsl_tester_return_external_value("vertex already visited");
 	case YADSL_GRAPHSEARCH_RET_MEMORY:
-		return yadsl_tester_return_external_value("memory");
+		return YADSL_TESTER_RET_MALLOC;
 	default:
 		return yadsl_tester_return_external_value("unknown");
 	}
