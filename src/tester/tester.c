@@ -2,7 +2,8 @@
 
 #include <tester/tester.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -52,14 +53,14 @@ static int yadsl_tester_parse_argument_internal(const char* format, void* arg, s
 static int yadsl_tester_parse_string_internal(char* arg, size_t* inc);
 static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret);
 static int yadsl_tester_parse_dtype_internal(const char** format_t, void* arg, size_t* inc);
-static int yadsl_tester_has_flag_internal(int argc, char** argv, const char* flag);
+int yadsl_tester_has_flag_internal(int argc, char** argv, int n, const char* flag, ...);
 
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERN FUNCTIONS DEFINITIONS
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
-* Usage: <program> [script-path [/LOG] [/I]]
+* Usage: <program> [script-path] [/LOG] [/I] [/FAILRATE:?] [/SEED:?]
 * If script-path is not provided,
 * then help strings are displayed.
 */
@@ -67,10 +68,16 @@ int main(int argc, char** argv)
 {
 	yadsl_TesterRet exitReturn, ret;
 	FILE* logger = NULL;
-	if (yadsl_tester_has_flag_internal(argc, argv, "/LOG")) {
+	float fail_rate = 0.0f;
+	unsigned int seed;
+	if (yadsl_tester_has_flag_internal(argc, argv, 0, "/LOG")) {
 		logger = fopen("memdb.log", "w");
 		yadsl_memdb_set_logger(logger);
 	}
+	if (yadsl_tester_has_flag_internal(argc, argv, 1, "/FAILRATE:%f", &fail_rate))
+		yadsl_memdb_set_fail_rate(fail_rate);
+	if (yadsl_tester_has_flag_internal(argc, argv, 1, "/SEED:%u", &seed))
+		srand(seed);
 	ret = yadsl_tester_main_internal(argc, argv);
 	exitReturn = yadsl_tester_release();
 	if (ret == YADSL_TESTER_RET_OK)
@@ -82,6 +89,10 @@ int main(int argc, char** argv)
 	yadsl_memdb_clear_list();
 	yadsl_memdb_set_logger(NULL);
 	if (logger) fclose(logger);
+	if (ret == YADSL_TESTER_RET_MALLOC && fail_rate >= (1.f / (float) RAND_MAX)) {
+		yadsl_tester_log("Malloc errors are forgiven because fail rate was set to %.2f%%.", (float) (fail_rate * 100.));
+		ret = YADSL_TESTER_RET_OK;
+	}
 	return ret;
 }
 
@@ -198,7 +209,7 @@ void* yadsl_tester_object_parse()
 	char data[BUFSIZ];
 	yadsl_TesterObject* obj = NULL;
 	if (yadsl_tester_parse_arguments("c", dtype) != 1)
-		goto fail;
+		goto fail_revert_cursor;
 	if (yadsl_tester_parse_arguments(dtype, data) != 1)
 		goto fail;
 	obj = malloc(sizeof *obj);
@@ -214,10 +225,13 @@ void* yadsl_tester_object_parse()
 		goto fail;
 	memcpy(obj->data, (void*) data, size);
 	return (void*) obj;
+fail_revert_cursor:
+	/* Stopping in the middle of an object causes
+	   YADSL_TESTER_RET_TOKEN to be thrown */
+	cursor = cursor_temp;
 fail:
 	if (obj)
 		free(obj);
-	cursor = cursor_temp;
 	return NULL;
 }
 
@@ -323,7 +337,7 @@ static yadsl_TesterRet yadsl_tester_main_internal(int argc, char** argv)
 		yadsl_tester_print_help_strings();
 		return YADSL_TESTER_RET_OK;
 	}
-	if (yadsl_tester_has_flag_internal(argc, argv, "/I")) {
+	if (yadsl_tester_has_flag_internal(argc, argv, 0, "/I")) {
 		// Use standard input
 		fp = stdin;
 	} else {
@@ -519,10 +533,19 @@ static int yadsl_tester_parse_dtype_internal(const char** format_t, void* arg, s
 	return 1;
 }
 
-int yadsl_tester_has_flag_internal(int argc, char** argv, const char* flag)
+int yadsl_tester_has_flag_internal(int argc, char** argv, int n, const char* flag, ...)
 {
-	while (argc--)
-		if (strcmp(argv[argc], flag) == 0)
-			return 1;
-	return 0;
+	va_list va;
+	va_start(va, flag);
+	int has_flag = 0;
+	while (argc--) {
+		if (n == 0)
+			has_flag = strcmp(argv[argc], flag) == 0;
+		else
+			has_flag = vsscanf(argv[argc], flag, va) == n;
+		if (has_flag)
+			break;
+	}
+	va_end(va);
+	return has_flag;
 }

@@ -1,8 +1,10 @@
 #include <map/map.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <string/string.h>
 
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
@@ -56,9 +58,9 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		bool actual, expected;
 		if (yadsl_tester_parse_arguments("sss", key, value, yn) != 3)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((keyStr = strdup(key)) == NULL)
+		if ((keyStr = yadsl_string_duplicate(key)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		if ((valStr = strdup(value)) == NULL) {
+		if ((valStr = yadsl_string_duplicate(value)) == NULL) {
 			free(keyStr);
 			return YADSL_TESTER_RET_MALLOC;
 		}
@@ -77,7 +79,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		char *temp, *keyStr;
 		if (yadsl_tester_parse_arguments("ss", key, value) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((keyStr = strdup(key)) == NULL)
+		if ((keyStr = yadsl_string_duplicate(key)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		mapId = yadsl_map_entry_get(pMap, keyStr, &temp);
 		free(keyStr);
@@ -86,14 +88,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 				yadsl_tester_log("Value returned by mapGetEntry is NULL");
 				return YADSL_TESTER_RET_RETURN;
 			}
-			if (yadsl_testerutils_unmatch(value, temp))
+			if (strcmp(value, temp))
 				return YADSL_TESTER_RET_RETURN;
 		}
 	} else if (yadsl_testerutils_match(command, "remove")) {
 		char *temp, *keyStr, *valStr;
 		if (yadsl_tester_parse_arguments("s", key) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(key)) == NULL)
+		if ((temp = yadsl_string_duplicate(key)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		mapId = yadsl_map_entry_remove(pMap, temp, &keyStr, &valStr);
 		free(temp);
@@ -128,5 +130,5 @@ static void free_entry_func(void *k, void *v, void *arg)
 
 static int cmp_keys_func(void *a, void *b, void *arg)
 {
-	return yadsl_testerutils_match((char *) a, (char *) b);
+	return strcmp((char *) a, (char *) b) == 0;
 }

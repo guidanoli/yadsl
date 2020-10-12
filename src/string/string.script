@@ -1,0 +1,72 @@
+# Compare static strings
+
+/save 0 "abc"
+/compare 0 0 YES
+
+/save 1 "abd"
+/compare 0 1 NO
+
+/save 1 "abc "
+/compare 0 1 NO
+
+/save 1 " abc"
+/compare 0 1 NO
+
+/save 1 "abC"
+/compare 0 1 NO
+
+/save 1 "Abc"
+/compare 0 1 NO
+
+/save 0 "algo assim"
+/save 1 "algo assim"
+/compare 0 1 YES
+
+/save 1 "algo  assim"
+/compare 0 1 NO
+
+/save 1 "algo   assim"
+/compare 0 1 NO
+
+/save 1 " algo assim"
+/compare 0 1 NO
+
+/save 1 "algo assim "
+/compare 0 1 NO
+
+/save 1 "Algo assim"
+/compare 0 1 NO
+
+# Duplicate
+
+/save 0 "My very complicated string!"
+/duplicate 0 1
+/save 2 "My very complicated string!"
+/compare 0 1 YES
+/compare 1 2 YES
+
+# Compare ignoring case
+
+/save 0 "qwertyuiopasdfghjklzxcvbnm1234567890   !@#$%¨&*()_-+=~^`´:;?/\[]"
+/compare-ic 0 0 YES
+
+/save 1 "QWERTYUIOPASDFGHJKLZXCVBNM1234567890   !@#$%¨&*()_-+=~^`´:;?/\[]"
+/compare-ic 0 1 YES
+
+/save 1 "QWERTYUIOPASDFGHJKLZXCVBNM1234567890   !@#$%¨&*()_-+=~^`´:;?/\[] "
+/compare-ic 0 1 NO
+
+/save 1 " QWERTYUIOPASDFGHJKLZXCVBNM1234567890   !@#$%¨&*()_-+=~^`´:;?/\[]"
+/compare-ic 0 1 NO
+
+/save 1 "QWERTYUIOPAS DFGHJKLZXCVBNM1234567890   !@#$%¨&*()_-+=~^`´:;?/\[]"
+/compare-ic 0 1 NO
+
+/save 1 "QWERTYUIOPASDXGHJKLZXCVBNM1234567890   !@#$%¨&*()_-+=~^`´:;?/\[] "
+/compare-ic 0 1 NO
+
+/save 1 "QWERTYUIOPASDFGHJKLZXCVBNM1234567890   !@#$%¨&*()_-+=~^`´:;?/\[]X"
+/compare-ic 0 1 NO
+
+/save 1 "XQWERTYUIOPASDFGHJKLZXCVBNM1234567890   !@#$%¨&*()_-+=~^`´:;?/\[]"
+/compare-ic 0 1 NO

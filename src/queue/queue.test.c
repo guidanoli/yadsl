@@ -1,11 +1,16 @@
 #include <queue/queue.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <string/string.h>
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
+
+#if defined(_MSC_VER)
+# pragma warning(disable : 4996)
+#endif
 
 const char *yadsl_tester_help_strings[] = {
 	"This is the queue test module",
@@ -37,19 +42,19 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 	if (yadsl_testerutils_match(command, "queue")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((str1 = strdup(buffer)) == NULL)
+		if ((str1 = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (queueId = yadsl_queue_queue(pQueue, str1))
 			free(str1);
 	} else if (yadsl_testerutils_match(command, "dequeue")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((str1 = strdup(buffer)) == NULL)
+		if ((str1 = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (queueId = yadsl_queue_dequeue(pQueue, &str2)) {
 			free(str1);
 		} else {
-			int equal = yadsl_testerutils_match(str1, str2);
+			bool equal = strcmp(str1, str2) == 0;
 			free(str1);
 			free(str2);
 			if (!equal)

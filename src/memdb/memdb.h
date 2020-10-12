@@ -28,6 +28,20 @@
 #include <stdbool.h>
 
 /**
+ * @brief Get (re)allocation fail rate
+ * @return percentage (0.0 - 1.0)
+*/
+float
+yadsl_memdb_get_fail_rate();
+
+/**
+ * @brief Set (re)allocation fail rate
+ * @param fail_rate percentage
+*/
+void
+yadsl_memdb_set_fail_rate(float fail_rate);
+
+/**
  * @brief Get size of list of allocated data
  * @return size of list
 */
@@ -105,15 +119,6 @@ yadsl_memdb_calloc(
 	const char* file,
 	const int line);
 
-/**
- * @brief Wrapper around strdup
-*/
-char*
-yadsl_memdb_strdup(
-	const char* str,
-	const char* file,
-	const int line);
-
 #ifndef _MEMDB_INTERNAL
 #  ifndef _DEBUG
 #    define yadsl_memdb_dump() ((void) 0)
@@ -123,7 +128,6 @@ yadsl_memdb_strdup(
 #    define malloc(_size) yadsl_memdb_malloc(_size, __FILE__, __LINE__)
 #    define realloc(_mem, _size) yadsl_memdb_realloc(_mem, _size, __FILE__, __LINE__)
 #    define calloc(_cnt, _size) yadsl_memdb_calloc(_cnt, _size, __FILE__, __LINE__)
-#    define strdup(_str) yadsl_memdb_strdup(_str, __FILE__, __LINE__)
 #  endif /* _DEBUG */
 #endif /* _MEMDB_INTERNAL */
 

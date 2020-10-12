@@ -64,13 +64,11 @@ bool yadsl_tester_object_copy_aux(yadsl_ListObj* obj, yadsl_ListObj** copy_ptr)
 void yadsl_list_iter_test(yadsl_ListObj* obtained)
 {
 	void* expected = yadsl_tester_object_parse();
-	/*yadsl_tester_log("list[%zu] = %p (type %c)", yadsl_list_iter_test_index,
-		obtained, yadsl_tester_object_dtype(obtained));*/
 	if (expected) {
 		if (!yadsl_tester_object_equal(obtained, expected)) {
 			yadsl_tester_log("Objects in index %zu differ",
 				yadsl_list_iter_test_index);
-			global_ret = YADSL_TESTER_RET_ARGUMENT;
+			global_ret = YADSL_TESTER_RET_RETURN;
 		}
 		yadsl_tester_object_free(expected);
 	} else {
@@ -174,7 +172,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			bool equal = yadsl_tester_object_equal(expected, obtained);
 			yadsl_tester_object_free(obtained);
 			if (!equal)
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 		}
 		yadsl_tester_object_free(expected);
 	} else if (yadsl_testerutils_match(command, "clear")) {
@@ -207,14 +205,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		check_index(slot, lists);
 		check_not_null(slot, lists);
 		obj = yadsl_tester_object_parse();
-		if (obj == NULL)
-			return YADSL_TESTER_RET_MALLOC;
 		if (yadsl_tester_parse_arguments("z", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
+		if (obj == NULL)
+			return YADSL_TESTER_RET_MALLOC;
 		obtained = yadsl_list_count(lists[slot], obj, yadsl_tester_object_equal);
 		yadsl_tester_object_free(obj);
 		if (obtained != expected)
-			return YADSL_TESTER_RET_ARGUMENT;
+			return YADSL_TESTER_RET_RETURN;
 	} else if (yadsl_testerutils_match(command, "index")) {
 		size_t slot, expected, obtained = -1;
 		void* obj;
@@ -223,14 +221,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		check_index(slot, lists);
 		check_not_null(slot, lists);
 		obj = yadsl_tester_object_parse();
-		if (obj == NULL)
-			return YADSL_TESTER_RET_MALLOC;
 		if (yadsl_tester_parse_arguments("z", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
+		if (obj == NULL)
+			return YADSL_TESTER_RET_MALLOC;
 		ret = yadsl_list_index(lists[slot], obj, yadsl_tester_object_equal, &obtained);
 		yadsl_tester_object_free(obj);
 		if (!ret && obtained != expected)
-			return YADSL_TESTER_RET_ARGUMENT;
+			return YADSL_TESTER_RET_RETURN;
 	} else if (yadsl_testerutils_match(command, "size")) {
 		size_t slot, expected, obtained;
 		if (yadsl_tester_parse_arguments("zz", &slot, &expected) != 2)
@@ -239,7 +237,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		check_not_null(slot, lists);
 		obtained = yadsl_list_size(lists[slot]);
 		if (obtained != expected)
-			return YADSL_TESTER_RET_ARGUMENT;
+			return YADSL_TESTER_RET_RETURN;
 	} else if (yadsl_testerutils_match(command, "iter")) {
 		size_t slot;
 		if (yadsl_tester_parse_arguments("z", &slot) != 1)
@@ -267,7 +265,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			bool equal = yadsl_tester_object_equal(expected, obtained);
 			yadsl_tester_object_free(expected);
 			if (!equal)
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 		} else {
 			yadsl_tester_object_free(expected);
 		}

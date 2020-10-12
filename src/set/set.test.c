@@ -1,9 +1,10 @@
 #include <set/set.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <string/string.h>
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 
@@ -65,7 +66,7 @@ yadsl_TesterRet yadsl_tester_init()
 
 bool filterItem(void *item, void *arg)
 {
-	return yadsl_testerutils_match((char *) item, (char *) arg);
+	return strcmp((char *) item, (char *) arg) == 0;
 }
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
@@ -75,7 +76,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 	if (yadsl_testerutils_match(command, "save")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (yadsl_set_item_contains_check(pSet, savedStr) != YADSL_SET_RET_CONTAINS)
 			if (savedStr)
@@ -99,7 +100,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		char *foundStr;
 		if (yadsl_tester_parse_arguments("ss", buffer, arg) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		expected = yadsl_testerutils_str_to_bool(arg);
 		setId = yadsl_set_item_filter(pSet, filterItem, temp, &foundStr);
@@ -113,7 +114,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		char *foundStr;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		setId = yadsl_set_item_filter(pSet, filterItem, temp, &foundStr);
 		if (setId == YADSL_SET_RET_OK) {
@@ -135,7 +136,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		char *currentStr;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (setId = yadsl_set_cursor_get(pSet, &currentStr)) {
 			free(temp);
@@ -146,7 +147,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 				yadsl_tester_log("The current item is NULL");
 				return YADSL_TESTER_RET_RETURN;
 			}
-			equal = yadsl_testerutils_match(temp, currentStr);
+			equal = strcmp(temp, currentStr) == 0;
 			free(temp);
 			if (!equal) {
 				yadsl_tester_log("%s is the current item", currentStr);

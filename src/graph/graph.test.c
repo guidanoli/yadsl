@@ -1,9 +1,11 @@
-#include <yadsl/posixstring.h>
 #include <graph/graph.h>
 #include <graphio/graphio.h>
 #include <graphsearch/graphsearch.h>
 
 #include <stdlib.h>
+#include <string.h>
+
+#include <string/string.h>
 
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
@@ -107,7 +109,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		graph_ret = yadsl_graph_vertex_iter(graph, iteration_direction, &vertex);
 		if (graph_ret == YADSL_GRAPH_RET_OK)
-			if (yadsl_testerutils_unmatch(buffer2, vertex))
+			if (strcmp(buffer2, vertex))
 				return YADSL_TESTER_RET_RETURN;
 	} else if (yadsl_testerutils_match(command, "degree")) {
 		size_t actual, expected;
@@ -131,7 +133,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		graph_ret = yadsl_graph_vertex_nb_iter(graph, buffer, edge_direction, iteration_direction, &v, &uv);
 		if (graph_ret == YADSL_GRAPH_RET_OK)
-			if (yadsl_testerutils_unmatch(v, buffer4) || yadsl_testerutils_unmatch(uv, buffer5))
+			if (strcmp(v, buffer4) || strcmp(uv, buffer5))
 				return YADSL_TESTER_RET_RETURN;
 	} else if (yadsl_testerutils_match(command, "containsvertex")) {
 		bool actual, expected;
@@ -145,7 +147,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 		char* vertex;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((vertex = strdup(buffer)) == NULL)
+		if ((vertex = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (graph_ret = yadsl_graph_vertex_add(graph, vertex))
 			free(vertex);
@@ -165,7 +167,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 		char* edge;
 		if (yadsl_tester_parse_arguments("sss", buffer, buffer2, buffer3) != 3)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((edge = strdup(buffer3)) == NULL)
+		if ((edge = yadsl_string_duplicate(buffer3)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (graph_ret = yadsl_graph_edge_add(graph, buffer, buffer2, edge))
 			free(edge);
@@ -175,7 +177,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		graph_ret = yadsl_graph_edge_get(graph, buffer, buffer2, &actual);
 		if (graph_ret == YADSL_GRAPH_RET_OK)
-			if (yadsl_testerutils_unmatch(actual, buffer3))
+			if (strcmp(actual, buffer3))
 				return YADSL_TESTER_RET_RETURN;
 	} else if (yadsl_testerutils_match(command, "removeedge")) {
 		if (yadsl_tester_parse_arguments("ss", buffer, buffer2) != 2)
@@ -295,7 +297,7 @@ yadsl_TesterRet yadsl_tester_release()
 
 int compare_strings_func(void* a, void* b)
 {
-	return yadsl_testerutils_match((char*) a, (char*) b);
+	return strcmp((char*) a, (char*) b) == 0;
 }
 
 int read_string_func(FILE* fp, void** vertex_ptr)

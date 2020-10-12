@@ -1,6 +1,6 @@
 #include <heap/heap.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdlib.h>
 
 #include <tester/tester.h>

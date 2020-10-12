@@ -1,6 +1,6 @@
 #include <diff/diff.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
 
 #include <tester/tester.h>

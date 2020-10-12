@@ -1,4 +1,4 @@
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <math.h>
@@ -41,40 +41,58 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 	if (yadsl_testerutils_match(command, "help")) {
 		yadsl_tester_print_help_strings();
 	} else if (yadsl_testerutils_match(command, "print")) {
-		if (yadsl_tester_parse_arguments("s", buffer) != 1)
+		char dtype;
+		if (yadsl_tester_parse_arguments("c", &dtype) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if (strlen(buffer) != 1)
-			return YADSL_TESTER_RET_ARGUMENT;
-		if (yadsl_testerutils_match(buffer, "s")) {
+		switch (dtype) {
+		case 's':
+		{
 			if (yadsl_tester_parse_arguments("s", buffer) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			yadsl_tester_log("String: '%s'", buffer);
-		} else if (yadsl_testerutils_match(buffer, "i")) {
+			break;
+		}
+		case 'i':
+		{
 			int i;
 			if (yadsl_tester_parse_arguments("i", &i) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			yadsl_tester_log("Integer: '%d'", i);
-		} else if (yadsl_testerutils_match(buffer, "l")) {
+			break;
+		}
+		case 'l':
+		{
 			long l;
 			if (yadsl_tester_parse_arguments("l", &l) != 1)
 				return YADSL_TESTER_RET_RETURN;
 			yadsl_tester_log("Long: '%ld'", l);
-		} else if (yadsl_testerutils_match(buffer, "f")) {
+			break;
+		}
+		case 'f':
+		{
 			float f;
 			if (yadsl_tester_parse_arguments("f", &f) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			yadsl_tester_log("Float: '%f'", f);
-		} else if (yadsl_testerutils_match(buffer, "z")) {
+			break;
+		}
+		case 'z':
+		{
 			size_t z;
 			if (yadsl_tester_parse_arguments("z", &z) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			yadsl_tester_log("Size Type: '%zu'", z);
-		} else if (yadsl_testerutils_match(buffer, "c")) {
+			break;
+		}
+		case 'c':
+		{
 			char c;
 			if (yadsl_tester_parse_arguments("c", &c) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			yadsl_tester_log("Character: '%c'", c);
-		} else {
+			break;
+		}
+		default:
 			return YADSL_TESTER_RET_ARGUMENT;
 		}
 	} else if (yadsl_testerutils_match(command, "log")) {
@@ -96,7 +114,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (yadsl_tester_parse_arguments("i", &i) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			if (i != 42)
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 		}
 			break;
 		case 'l':
@@ -105,7 +123,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (yadsl_tester_parse_arguments("l", &l) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			if (l != 2020)
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 		}
 			break;
 		case 'f':
@@ -114,7 +132,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (yadsl_tester_parse_arguments("f", &f) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			if (fabsf(f - 3.14f) > 1e-5)
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 		}
 			break;
 		case 'c':
@@ -123,14 +141,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (yadsl_tester_parse_arguments("c", &c) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			if (c != '*')
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 		}
 			break;
 		case 's':
 			if (yadsl_tester_parse_arguments("s", buffer) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			if (strcmp(buffer, "lorem ipsum") != 0)
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 			break;
 		case 'z':
 		{
@@ -138,7 +156,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			if (yadsl_tester_parse_arguments("z", &z) != 1)
 				return YADSL_TESTER_RET_ARGUMENT;
 			if (z != 9001)
-				return YADSL_TESTER_RET_ARGUMENT;
+				return YADSL_TESTER_RET_RETURN;
 		}
 			break;
 		}
@@ -195,7 +213,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		bool expected = yadsl_testerutils_str_to_bool(buffer);
 		bool obtained = yadsl_tester_object_equal(objects[slot1], objects[slot2]);
 		if (expected != obtained)
-			return YADSL_TESTER_RET_ARGUMENT;
+			return YADSL_TESTER_RET_RETURN;
 ;	} else {
 		return YADSL_TESTER_RET_COMMAND;
 	}

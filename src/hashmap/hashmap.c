@@ -1,7 +1,9 @@
 #include <hashmap/hashmap.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdlib.h>
+
+#include <string/string.h>
 
 #include <memdb/memdb.h>
 
@@ -78,7 +80,7 @@ yadsl_hashmap_entry_create_internal(
 	if (!entry)
 		goto fail;
 
-	if (!(entry->key = strdup(key)))
+	if (!(entry->key = yadsl_string_duplicate(key)))
 		goto fail2;
 
 	entry->value = value;

@@ -2,8 +2,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <tester/tester.h>
+
+#if defined(_MSC_VER)
+# pragma warning(disable : 4996)
+#endif
 
 const char *yadsl_tester_help_strings[] = {
 	"This is the testerutils test module",
@@ -46,7 +51,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		fclose(file);
 		if (string == NULL)
 			return yadsl_tester_return_external_value("deserialization error");
-		matches = yadsl_testerutils_match(buffer1, string);
+		matches = strcmp(buffer1, string) == 0;
 		free(string);
 		if (!matches)
 			return YADSL_TESTER_RET_RETURN;

@@ -84,7 +84,7 @@
  * ```
  * Usage
  * -----
- *   <tester-executable> [<script-path>] [/I] [/LOG]
+ *   <tester-executable> [<script-path>] [/I] [/LOG] [/FAILRATE:?] [/SEED:?]
  *
  * Positional arguments
  * ---------------------
@@ -99,6 +99,13 @@
  *   /LOG - Logs debug information
  *     Redirects debugging output to file other than the standard output
  *     e.g. memdb information goes to memdb.log
+ * 
+ *   /FAILRATE - Memory Debugger fail rate
+ *     :? - floating point between 0 and 1
+ *     Where 0 = never fail, 1 = always fail.
+ * 
+ *   /SEED - Pseudo-Random Number Generator initial seed
+ *     :? - integer between 0 and 32768
  *
  * No arguments
  * ------------

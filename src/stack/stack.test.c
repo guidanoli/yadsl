@@ -1,6 +1,6 @@
 #include <stack/stack.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 

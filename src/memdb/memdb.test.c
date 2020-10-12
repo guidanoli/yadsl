@@ -1,4 +1,4 @@
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
 
 // Force debug being set on

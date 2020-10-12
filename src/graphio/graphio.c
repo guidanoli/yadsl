@@ -1,6 +1,6 @@
 #include <graphio/graphio.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 

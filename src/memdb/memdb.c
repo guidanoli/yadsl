@@ -1,4 +1,4 @@
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -32,6 +32,12 @@ static struct _memdb_node* list = NULL;
 static size_t listsize = 0;
 static bool error_occurred = false;
 static FILE* log_fp = NULL;
+static float fail_rate = 0.0f;
+
+static bool fail_bernoulli()
+{
+	return rand() < (int) (fail_rate * (float) RAND_MAX);
+}
 
 static void _memdb_log(const char* format, ...)
 {
@@ -121,6 +127,21 @@ void yadsl_memdb_clear_list()
 	listsize = 0;
 }
 
+float yadsl_memdb_get_fail_rate()
+{
+	return fail_rate;
+}
+
+void yadsl_memdb_set_fail_rate(float rate)
+{
+	if (rate < 0.0f)
+		fail_rate = 0.0f;
+	else if (rate > 1.0f)
+		fail_rate = 1.0f;
+	else
+		fail_rate = rate;
+}
+
 size_t yadsl_memdb_list_size()
 {
 	return listsize;
@@ -147,7 +168,13 @@ void yadsl_memdb_set_logger(FILE* fp)
 
 void* yadsl_memdb_malloc(size_t _size, const char* file, const int line)
 {
-	void* _mem = malloc(_size);
+	void* _mem;
+	if (fail_bernoulli()) {
+		fprintf(stderr, "MEMDB: Failing malloc (%zuB) in %s:%d.\n",
+			_size, file, line);
+		return NULL;
+	}
+	_mem = malloc(_size);
 	if (_mem) {
 		struct _memdb_node* copy;
 		switch (_memdb_add(_mem, _size, file, line, &copy)) {
@@ -168,7 +195,13 @@ void* yadsl_memdb_malloc(size_t _size, const char* file, const int line)
 
 void* yadsl_memdb_realloc(void* _mem, size_t _size, const char* file, const int line)
 {
-	void* _new_mem = realloc(_mem, _size);
+	void* _new_mem;
+	if (fail_bernoulli()) {
+		fprintf(stderr, "MEMDB: Failing realloc (%zuB) in %s:%d.\n",
+			_size, file, line);
+		return NULL;
+	}
+	_new_mem = realloc(_mem, _size);
 	if (_new_mem) {
 		struct _memdb_node* copy;
 		_memdb_enum returnId;
@@ -192,7 +225,13 @@ void* yadsl_memdb_realloc(void* _mem, size_t _size, const char* file, const int 
 
 void* yadsl_memdb_calloc(size_t _cnt, size_t _size, const char* file, const int line)
 {
-	void* _mem = calloc(_cnt, _size);
+	void* _mem;
+	if (fail_bernoulli()) {
+		fprintf(stderr, "MEMDB: Failing calloc (%zuB) in %s:%d.\n",
+			_size, file, line);
+		return NULL;
+	}
+	_mem = calloc(_cnt, _size);
 	if (_mem) {
 		struct _memdb_node* copy;
 		switch (_memdb_add(_mem, _cnt * _size, file, line, &copy)) {
@@ -209,25 +248,4 @@ void* yadsl_memdb_calloc(size_t _cnt, size_t _size, const char* file, const int 
 		}
 	}
 	return _mem;
-}
-
-char* yadsl_memdb_strdup(const char* _str, const char* file, const int line)
-{
-	char* _dup = strdup(_str);
-	if (_dup) {
-		struct _memdb_node* copy;
-		switch (_memdb_add(_dup, sizeof(_dup), file, line, &copy)) {
-		case MEM_OK:
-			break;
-		case MEM_COPY:
-			assert(0);
-			break;
-		case MEM_MEMORY:
-			free(_dup);
-			return NULL;
-		default:
-			assert(0);
-		}
-	}
-	return _dup;
 }
