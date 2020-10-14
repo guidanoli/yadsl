@@ -4,6 +4,9 @@ build_and_run_c_tests() {
 	local config="$1"; shift
 	
 	args=()
+	if [[ -n "$BUILD_LONG_TESTS" ]]; then
+		args+= ( "-DYADSL_BUILD_LONG_TESTS=$BUILD_LONG_TESTS" )
+	fi
 	if [[ -n "$PYENV_VERSION" ]]; then
 		args+=( "-DYADSL_PYTHON_SUPPORT=ON" )
 		args+=( "-DPYTHON_EXECUTABLE=$(pyenv which python)" )

@@ -234,7 +234,7 @@ Heap_extract(HeapObject *self, PyObject *Py_UNUSED(ignored))
 		_Heap_throw_error(PyExc_Lock);
 		goto exit;
 	}
-	returnId = yadsl_heap_extract(self->ob_heap, &obj);
+	returnId = yadsl_heap_extract(self->ob_heap, (yadsl_HeapObj**) &obj);
 	if (PyErr_Occurred()) {
 		Py_XDECREF(obj);
 		goto exit;

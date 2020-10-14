@@ -86,7 +86,8 @@ HashMap_get(HashMapObject* self, PyObject* args, PyObject* kw)
 	if (!PyArg_ParseTuple(args, "s:HashMap.get", &key))
 		return NULL;
 	PyObject* obj;
-	switch (yadsl_hashmap_entry_value_get(self->ob_hash_map, key, &obj)) {
+	switch (yadsl_hashmap_entry_value_get(self->ob_hash_map, key,
+		(yadsl_HashMapValue**) &obj)) {
 	case YADSL_HASHMAP_RET_OK:
 		Py_INCREF(obj);
 		return obj;

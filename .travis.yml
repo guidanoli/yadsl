@@ -18,6 +18,7 @@ env:
         - PYENV_VERSION='3.7.8'  PYENV_VERSION_STRING='Python 3.7.8'
         - PYENV_VERSION='3.8.5'  PYENV_VERSION_STRING='Python 3.8.5'
         - LUA_VERSION='5.3.5'
+        - BUILD_LONG_TESTS='ON'
 before_install:
         - source config/before_install.sh
 before_script:
