@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(YADSL_BUILD_TESTS "Build unit tests" ON)
+option(YADSL_BUILD_LONG_TESTS "Build long unit tests" OFF)
 option(YADSL_PYTHON_SUPPORT "Build Python C extension modules" OFF)
 option(YADSL_LUA_SUPPORT "Build Lua C bindings" OFF)
 

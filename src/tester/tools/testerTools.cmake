@@ -21,14 +21,22 @@ function(add_tester_scripts target)
 	endif()
 	foreach(SCRIPT ${ARG_SOURCES})
 		get_filename_component(SCRIPT_PATH ${SCRIPT} ABSOLUTE)
-		add_test(NAME ${SCRIPT} COMMAND
+		add_test(NAME "${SCRIPT} (leaking %0) " COMMAND
 			${target} "--input-file" ${SCRIPT_PATH}
 			"--enable-log-channel" "LEAKAGE")
-		add_test(NAME "${SCRIPT} (w/ leaking)" COMMAND
-			${target} "--input-file" ${SCRIPT_PATH}
-			"--enable-log-channel" "ALLOCATION"
-			"--enable-log-channel" "DEALLOCATION"
-			"--enable-log-channel" "LEAKAGE"
-			"--malloc-failing-rate" "0.01")
+		if(YADSL_BUILD_LONG_TESTS)
+			set(seedmax 99)
+		else()
+			set(seedmax 0)
+		endif()
+		foreach(seed RANGE ${seedmax})
+			add_test(NAME "${SCRIPT} (leaking 1%, seed ${seed})" COMMAND
+				${target} "--input-file" ${SCRIPT_PATH}
+				"--enable-log-channel" "ALLOCATION"
+				"--enable-log-channel" "DEALLOCATION"
+				"--enable-log-channel" "LEAKAGE"
+				"--malloc-failing-rate" "0.01"
+				"--prng-seed" "${seed}")
+		endforeach()
 	endforeach()
 endfunction()

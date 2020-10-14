@@ -161,13 +161,13 @@ yadsl_memdb_calloc(
 		const char* file,
 		const int line);
 
-#ifndef YADSL_MEMDB_DONT_DEFINE_MACROS
+#if !defined(YADSL_MEMDB_DONT_DEFINE_MACROS) && (defined(YADSL_RELEASE) || defined(YADSL_DEBUG))
 #  define yadsl_memdb_dump() printf("MEMDB: %zu items in list\n", yadsl_memdb_amb_list_size())
 #  define free yadsl_memdb_free
 #  define malloc(size) yadsl_memdb_malloc(size, __FILE__, __LINE__)
 #  define realloc(mem, size) yadsl_memdb_realloc(mem, size, __FILE__, __LINE__)
 #  define calloc(cnt, size) yadsl_memdb_calloc(cnt, size, __FILE__, __LINE__)
-#endif /* _MEMDB_INTERNAL */
+#endif /* YADSL_MEMDB_DONT_DEFINE_MACROS */
 
 /** @} */
 

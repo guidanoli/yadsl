@@ -142,7 +142,11 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 /**
 * @brief Enumeration of tester return values.

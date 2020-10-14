@@ -2,16 +2,19 @@
 #define __YADSL_ARGVP_H__
 
 /**
- * \defgroup argvp Argument Vector Parser
+ * \defgroup argvp ARGV Parser
  * 
  * @brief Utility module for parsing argument vectors.
  * @{
 */
 
+/**
+ * @brief Keyword argument definition
+*/
 typedef struct
 {
-	const char* kw;
-	int valc;
+	const char* kw; /**< Keyword (e.g. "--verbose") */
+	int valc; /**< Number of values that come after */
 }
 yadsl_ArgvKeywordArgumentDef;
 
