@@ -1,8 +1,10 @@
 #include <set/set.h>
 
-#include <stdlib.h>
-
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 struct yadsl_SetItem_s
 {

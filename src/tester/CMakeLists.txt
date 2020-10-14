@@ -1,5 +1,6 @@
 add_yadsl_library(tester STATIC
     SOURCES tester.c tester.h)
+target_link_libraries(tester argvp)
 
 # Makes tester tools visible to global scope and allows tools to
 # be included by other projects too.

@@ -1,7 +1,5 @@
 #include <hashmap/hashmap.h>
 
-#include <stdlib.h>
-
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 

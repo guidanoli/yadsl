@@ -2,9 +2,13 @@
 #include <Python.h>
 
 #include <yadsl/pydefines.h>
-
 #include <heap/heap.h>
+
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 //
 // Objects

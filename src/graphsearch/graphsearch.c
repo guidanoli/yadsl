@@ -1,13 +1,17 @@
 #include <graphsearch/graphsearch.h>
 
+#include <stdio.h>
 #include <assert.h>
+
+#ifdef YADSL_DEBUG
+#include <memdb/memdb.h>
+#else
 #include <stdlib.h>
+#endif
 
 #include <queue/queue.h>
-#include <memdb/memdb.h>
 
 #ifdef _DEBUG
-#include <stdio.h>
 int nodeRefCount = 0;
 #endif
 

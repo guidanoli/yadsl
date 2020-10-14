@@ -1,10 +1,8 @@
 #include <testerutils/testerutils.h>
 
 #include <string.h>
-#include <stdlib.h>
 
 #include <string/string.h>
-
 #include <tester/tester.h>
 
 #if defined(_MSC_VER)
@@ -35,7 +33,7 @@ yadsl_testerutils_str_deserialize(
 	char* string;
 	if (fscanf(fp, "%zu~", &size) != 1)
 		goto fail1;
-	string = malloc(sizeof(char) * (size + 1));
+	string = malloc(size + 1);
 	if (string) {
 		size_t i = 0;
 		for (; i < size; ++i) {

@@ -1,4 +1,5 @@
 #include <Python.h>
+
 #include <diff/diff.h>
 
 PyDoc_STRVAR(_diff__doc__,

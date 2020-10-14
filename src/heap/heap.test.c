@@ -1,7 +1,6 @@
 #include <heap/heap.h>
 
 #include <string.h>
-#include <stdlib.h>
 
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>

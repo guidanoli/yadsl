@@ -1,10 +1,14 @@
 #include <map/map.h>
 
-#include <stdlib.h>
 #include <assert.h>
 
 #include <set/set.h>
+
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 typedef struct
 {

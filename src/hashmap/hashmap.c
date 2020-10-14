@@ -1,11 +1,15 @@
 #include <hashmap/hashmap.h>
 
 #include <string.h>
+#include <stdio.h>
+
+#ifdef YADSL_DEBUG
+#include <memdb/memdb.h>
+#else
 #include <stdlib.h>
+#endif
 
 #include <string/string.h>
-
-#include <memdb/memdb.h>
 
 struct yadsl_HashMapEntry_s
 {

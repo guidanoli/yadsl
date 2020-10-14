@@ -21,6 +21,14 @@ function(add_tester_scripts target)
 	endif()
 	foreach(SCRIPT ${ARG_SOURCES})
 		get_filename_component(SCRIPT_PATH ${SCRIPT} ABSOLUTE)
-		add_test(NAME ${SCRIPT} COMMAND ${target} ${SCRIPT_PATH})
+		add_test(NAME ${SCRIPT} COMMAND
+			${target} "--input-file" ${SCRIPT_PATH}
+			"--enable-log-channel" "LEAKAGE")
+		add_test(NAME "${SCRIPT} (w/ leaking)" COMMAND
+			${target} "--input-file" ${SCRIPT_PATH}
+			"--enable-log-channel" "ALLOCATION"
+			"--enable-log-channel" "DEALLOCATION"
+			"--enable-log-channel" "LEAKAGE"
+			"--malloc-failing-rate" "0.01")
 	endforeach()
 endfunction()

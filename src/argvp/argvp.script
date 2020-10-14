@@ -1,0 +1,223 @@
+# String tokenization
+
+/create "" 
+/argc 0
+
+/create " "
+/argc 0
+
+/create "   "
+/argc 0
+
+/create "a"
+/argc 1
+/argv 0 a
+
+/create "  a  "
+/argc 1
+/argv 0 a
+
+/create "a b c"
+/argc 3
+/argv 0 a
+/argv 1 b
+/argv 2 c
+
+/create "  a  b  c  "
+/argc 3
+/argv 0 a
+/argv 1 b
+/argv 2 c
+
+/create "abc"
+/argc 1
+/argv 0 abc
+
+/create "  abc  "
+/argc 1
+/argv 0 abc
+
+/create "abc def ghi"
+/argc 3
+/argv 0 abc
+/argv 1 def
+/argv 2 ghi
+
+/create "  abc def ghi  "
+/argc 3
+/argv 0 abc
+/argv 1 def
+/argv 2 ghi
+
+# Positional arguments
+
+/create ""
+/get-pos-arg-cnt 0
+/get-pos-arg 0 NULL
+
+/create "a"
+/get-pos-arg-cnt 1
+/get-pos-arg 0 a
+/parse-pos-arg 0 s a
+/get-pos-arg 1 NULL
+
+/create "a 42 3.14"
+/get-pos-arg-cnt 3
+/get-pos-arg 0 a
+/parse-pos-arg 0 s a
+/parse-pos-arg 0 f 3.14 /catch return
+/parse-pos-arg 0 i 10   /catch return
+/parse-pos-arg 0 s b    /catch return
+/get-pos-arg 1 42
+/parse-pos-arg 1 i 42
+/parse-pos-arg 1 i 43   /catch return
+/parse-pos-arg 1 s *    /catch return
+/parse-pos-arg 1 f 3.14 /catch return
+/get-pos-arg 2 3.14
+/parse-pos-arg 2 f 3.14
+/parse-pos-arg 2 f 3.15 /catch return
+/parse-pos-arg 2 i 42   /catch return
+/parse-pos-arg 2 s *    /catch return
+/get-pos-arg 3 NULL
+
+# Keywords arguments
+
+/create ""
+/add-kw-arg a 0
+/get-pos-arg-cnt 0
+/get-pos-arg 0 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+
+/create "a"
+/add-kw-arg a 0
+/get-pos-arg-cnt 0
+/get-pos-arg 0 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg a 0
+/get-pos-arg-cnt 2
+/get-pos-arg 0 b
+/get-pos-arg 1 c
+/get-pos-arg 2 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg a 1
+/get-pos-arg-cnt 1
+/get-pos-arg 0 c
+/get-pos-arg 1 NULL
+/get-kw-arg-val a 0 b
+/parse-kw-arg-val a 0 s b
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg a 2
+/get-pos-arg-cnt 0
+/get-pos-arg 0 NULL
+/get-kw-arg-val a 0 b
+/parse-kw-arg-val a 0 s b
+/get-kw-arg-val a 1 c
+/parse-kw-arg-val a 1 s c
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg b 0
+/get-pos-arg-cnt 2
+/get-pos-arg 0 a
+/get-pos-arg 1 c
+/get-pos-arg 2 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg b 1
+/get-pos-arg-cnt 1
+/get-pos-arg 0 a
+/get-pos-arg 1 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+/get-kw-arg-val b 0 c
+/parse-kw-arg-val b 0 s c
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg c 0
+/get-pos-arg-cnt 2
+/get-pos-arg 0 a
+/get-pos-arg 1 b
+/get-pos-arg 2 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg a 0
+/add-kw-arg b 0
+/get-pos-arg-cnt 1
+/get-pos-arg 0 c
+/get-pos-arg 1 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg a 0
+/add-kw-arg b 1
+/get-pos-arg-cnt 0
+/get-pos-arg 0 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+/get-kw-arg-val b 0 c
+/parse-kw-arg-val b 0 s c
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg a 1
+/add-kw-arg c 0
+/get-pos-arg-cnt 0
+/get-pos-arg 0 NULL
+/get-kw-arg-val a 0 b
+/parse-kw-arg-val a 0 s b
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return
+
+/create "a b c"
+/add-kw-arg a 0
+/add-kw-arg b 0
+/add-kw-arg c 0
+/get-pos-arg-cnt 0
+/get-pos-arg 0 NULL
+/get-kw-arg-val a 0 NULL
+/parse-kw-arg-val a 0 s * /catch return
+/get-kw-arg-val b 0 NULL
+/parse-kw-arg-val b 0 s * /catch return
+/get-kw-arg-val c 0 NULL
+/parse-kw-arg-val c 0 s * /catch return

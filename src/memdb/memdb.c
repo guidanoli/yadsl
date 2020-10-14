@@ -1,138 +1,364 @@
+#define YADSL_MEMDB_DONT_DEFINE_MACROS
+#include <memdb/memdb.h>
+
 #include <string.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
-
-#define _MEMDB_INTERNAL
-#include <memdb/memdb.h>
+#include <stdint.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
 #endif
 
+/**
+ * @brief Return code used internally
+*/
 typedef enum
 {
-	MEM_OK = 0,
-	MEM_COPY,
-	MEM_NOT_FOUND,
-	MEM_MEMORY,
+	YADSL_MEMDB_RET_OK = 0, /**< All went ok */
+	YADSL_MEMDB_RET_COPY, /**< Found duplicate node */
+	YADSL_MEMDB_RET_NOT_FOUND, /**< Node not found */
+	YADSL_MEMDB_RET_MEMORY, /**< Could not allocate memory */
 }
-_memdb_enum;
+yadsl_MemDebugRet;
 
-struct _memdb_node
+/**
+ * @brief List of allocated memory blocks (AMB)
+*/
+struct yadsl_MemDebugAMB_s
 {
-	struct _memdb_node* next;
-	const char* file;
-	size_t size;
-	void* mem;
-	int line;
+	struct yadsl_MemDebugAMB_s* next; /**< Next node (nullable) */
+	const char* funcname; /**< Name of function called to allocate it */
+	const char* file; /**< File where function was called */
+	int line; /**< Line where function was called, in file */
+	size_t size; /**< Size of memory block */
+	void* amb; /**< Pointer to memory block (unique) */
 };
 
-static struct _memdb_node* list = NULL;
-static size_t listsize = 0;
-static bool error_occurred = false;
-static FILE* log_fp = NULL;
-static float fail_rate = 0.0f;
+typedef struct yadsl_MemDebugAMB_s yadsl_MemDebugAMB;
 
-static bool fail_bernoulli()
+/* Globals */
+
+static yadsl_MemDebugAMB* amb_list_head; /**< AMB list head (nullable) */
+static size_t amb_list_size; /**< AMB list size */
+
+static uint8_t log_channels; /**< Log channels bitmap */
+static FILE* log_fp; /**< Log file pointer (nullable) */
+
+static bool error_occurred; /**< Error occurred flag */
+static bool fail_occurred; /**< Fail occurred flag */
+
+static float fail_rate; /**< Allocation fail rate */
+
+/* Functions */
+
+bool
+yadsl_memdb_log_channel_get(
+	yadsl_MemDebugLogChannel log_channel)
 {
-	return rand() < (int) (fail_rate * (float) RAND_MAX);
+	return log_channels & (1 << log_channel);
 }
 
-static void _memdb_log(const char* format, ...)
+void
+yadsl_memdb_log_channel_set(
+	yadsl_MemDebugLogChannel log_channel,
+	bool enable)
 {
-	FILE* fp = log_fp ? log_fp : stderr;
+	if (enable)
+		log_channels |= (1 << log_channel);
+	else
+		log_channels &= ~(1 << log_channel);
+}
+
+/**
+ * @brief Get label for log channel
+ * @param log_channel log channel
+ * @return label or NULL if nonexistent
+*/
+static const char*
+yadsl_memdb_log_channel_label_get_internal(
+		yadsl_MemDebugLogChannel log_channel)
+{
+	switch (log_channel) {
+	case YADSL_MEMDB_LOG_CHANNEL_ALLOCATION:
+		return "ALLOC";
+	case YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION:
+		return "DEALLOC";
+	case YADSL_MEMDB_LOG_CHANNEL_LEAKAGE:
+		return "LEAK";
+	default:
+		return NULL;
+	}
+}
+
+/**
+ * @brief Log message to a specific channel
+ * @param log_channel log channel
+ * @param format see fprintf function family
+ * @param ... see fprintf function family
+*/
+static void
+yadsl_memdb_log_internal(
+		yadsl_MemDebugLogChannel log_channel,
+		const char* format,
+		...)
+{
 	va_list va;
+	const char* label;
+	FILE* fp;
+
+	/* Check if log channel is temp */
+	if (!yadsl_memdb_log_channel_get(log_channel))
+		return;
+
+	/* Use stderr by default if no file pointer is given */
+	fp = log_fp ? log_fp : stderr;
+
+	/* Start varadic arguments */
 	va_start(va, format);
-	fprintf(fp, "MEMDB: ");
+
+	/* Get log channel label */
+	label = yadsl_memdb_log_channel_label_get_internal(log_channel);
+
+	if (label)
+		fprintf(fp, "[MEMDB<<%s] ", label);
+	else
+		fprintf(fp, "[MEMDB] ");
+	
 	vfprintf(fp, format, va);
-	fprintf(fp, "\n");
+
+	/* End varadic arguments */
 	va_end(va);
+
+	fprintf(fp, "\n");
 }
 
-static struct _memdb_node* _memdb_get(void* _mem)
+bool
+yadsl_memdb_error_occurred()
 {
-	struct _memdb_node* node = list;
+	return error_occurred;
+}
+
+bool
+yadsl_memdb_fail_occurred()
+{
+	return fail_occurred;
+}
+
+/**
+ * @brief Bernoulli trial with probability of fail_rate
+ * @return whether allocation should fail (true) or not (false)
+*/
+static bool
+yadsl_memdb_fail_internal()
+{
+	bool fail = rand() < (int) (fail_rate * (float) RAND_MAX);
+	fail_occurred = fail_occurred || fail;
+	return fail;
+}
+
+/**
+ * @brief Find node holding AMB
+ * @param camb pointer to an AMB
+ * @param prev_ptr previous node (NULL = first node)
+ * @return
+ * * node, and *prev_ptr is updated if not NULL
+ * * NULL if node was not found
+*/
+static yadsl_MemDebugAMB*
+yadsl_memdb_find_amb_internal(
+		void* amb,
+		yadsl_MemDebugAMB** prev_ptr)
+{
+	yadsl_MemDebugAMB* node = amb_list_head, *prev = NULL;
 	for (; node; node = node->next) {
-		if (node->mem == _mem)
+		if (node->amb == amb) {
+			if (prev_ptr)
+				*prev_ptr = prev;
 			return node;
+		}
+		prev = node;
 	}
 	return NULL;
 }
 
-static _memdb_enum _memdb_add(void* _mem, size_t _size, const char* file,
-	const int line, struct _memdb_node** pCopy)
+/**
+ * @brief Add node to AMB list
+ * @params see yadsl_MemDebugAMB
+ * @return
+ * * ::YADSL_MEMDB_RET_OK
+ * * ::YADSL_MEMDB_RET_COPY
+ * * ::YADSL_MEMDB_RET_MEMORY
+*/
+static yadsl_MemDebugRet
+yadsl_memdb_add_amb_internal(
+		const char* funcname,
+		void* amb,
+		size_t size,
+		const char* file,
+		const int line)
 {
-	struct _memdb_node* node;
-	if (node = _memdb_get(_mem)) {
-		*pCopy = node;
-		return MEM_COPY;
+	yadsl_MemDebugAMB* node;
+
+	/* Try to find node holding AMB */
+	if (node = yadsl_memdb_find_amb_internal(amb, NULL)) {
+
+		/* Log copy error */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+			"Tried to add %p (%zuB @ %s:%d by %s) to the list but found copy "
+			" (%zuB @ %s:%d by %s)",
+			amb, size, file, line, funcname,
+			node->size, node->file, node->line, node->funcname);
+
+		error_occurred = true;
+
+		return YADSL_MEMDB_RET_COPY;
 	}
-	node = malloc(sizeof(struct _memdb_node));
-	if (node == NULL)
-		return MEM_MEMORY;
-#ifdef _VERBOSE
-	_memdb_log("Allocated %p (%zuB) in %s:%d.", _mem, _size, file, line);
-#endif
-	node->mem = _mem;
-	node->size = _size;
-	node->file = file;
-	node->line = line;
-	node->next = list;
-	list = node;
-	++listsize;
-	return MEM_OK;
-}
 
-static _memdb_enum _memdb_remove(void* _mem)
-{
-	struct _memdb_node* node = list, * prev = NULL;
-	for (; node; node = node->next) {
-		if (node->mem == _mem) {
-#ifdef _VERBOSE
-			_memdb_log("Deallocated %p (%zuB) in %s:%d.", node->mem,
-				node->size, node->file, node->line);
-#endif
-			if (prev == NULL)
-				list = node->next;
-			else
-				prev->next = node->next;
-			free(node);
-			--listsize;
-			return MEM_OK;
-		}
-		prev = node;
+	/* Allocate node */
+	node = malloc(sizeof(yadsl_MemDebugAMB));
+	if (node) {
+		node->amb = amb;
+		node->size = size;
+		node->file = file;
+		node->line = line;
+		node->next = amb_list_head;
+		node->funcname = funcname;
+		
+		/* Append node to AMB list */
+		amb_list_head = node;
+		++amb_list_size;
+
+		/* Log allocation */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+			"%s(%zu) @ %s:%d -> %p",
+			funcname, size, file, line, amb);
+
+		return YADSL_MEMDB_RET_OK;
+	} else {
+		return YADSL_MEMDB_RET_MEMORY;
 	}
-	return MEM_NOT_FOUND;
 }
 
-bool yadsl_memdb_contains(void* _mem)
+/**
+ * @brief Remove node from AMB list
+ * @param camb pointer to AMB
+ * @return
+ * * ::YADSL_MEMDB_RET_OK
+ * * ::YADSL_MEMDB_RET_NOT_FOUND
+*/
+static yadsl_MemDebugRet
+yadsl_memdb_remove_amb_internal(
+		void* amb)
 {
-	return _memdb_get(_mem) != NULL;
-}
+	yadsl_MemDebugAMB* node, *prev;
 
-void yadsl_memdb_clear_list()
-{
-	struct _memdb_node* node = list, * next = NULL;
-	if (listsize)
-		_memdb_log("%zu leak(s) in total:", listsize);
-	for (; node; node = next) {
-		next = node->next;
-		_memdb_log("Leaked %p (%zuB), allocated in %s:%d.",
-			node->mem, node->size, node->file, node->line);
-		free(node->mem);
+	/* Try to find node holding AMB */
+	node = yadsl_memdb_find_amb_internal(amb, &prev);
+
+	if (node) {
+		/* Remove node */
+		if (prev == NULL)
+			amb_list_head = node->next;
+		else
+			prev->next = node->next;
+
+		--amb_list_size;
+
+		/* Log deallocation */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION,
+			"free(%p) <- %s(%zu) @ %s:%d",
+			node->amb, node->funcname, node->size, node->file, node->line);
+
+		/* Deallocate node */
 		free(node);
+
+		return YADSL_MEMDB_RET_OK;
+	} else {
+		/* Log failed deallocation */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION,
+			"free(%p) <- ?(?) @ ?:?", amb);
+
+		error_occurred = true;
+
+		return YADSL_MEMDB_RET_NOT_FOUND;
 	}
-	list = NULL;
-	listsize = 0;
 }
 
-float yadsl_memdb_get_fail_rate()
+bool
+yadsl_memdb_contains_amb(
+		void* amb)
+{
+	return yadsl_memdb_find_amb_internal(amb, NULL) != NULL;
+}
+
+void
+yadsl_memdb_clear_amb_list()
+{
+	bool temp;
+
+	/* Check if list is not empty */
+	if (amb_list_size) {
+
+		/* Log leakage */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_LEAKAGE,
+			"%zu leaks detected:", amb_list_size);
+	}
+
+	temp = yadsl_memdb_log_channel_get(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION);
+	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, true);
+
+	while (amb_list_size) {
+		void* amb = amb_list_head->amb;
+		yadsl_memdb_remove_amb_internal(amb);
+		free(amb);
+	}
+
+	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, temp);
+}
+
+void
+yadsl_memdb_clear_amb_list_from_file(const char* file)
+{
+	bool temp;
+	yadsl_MemDebugAMB* node, *next;
+	size_t mem_leaks = 0;
+
+	temp = yadsl_memdb_log_channel_get(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION);
+	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, true);
+
+	for (node = amb_list_head; node; node = node->next)
+		if (strcmp(node->file, file) == 0)
+			++mem_leaks;
+
+	if (mem_leaks) {
+
+		/* Log leakage */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_LEAKAGE,
+			"%zu leaks detected:", mem_leaks);
+	}
+
+	for (node = amb_list_head; node; node = next) {
+		next = node->next;
+		if (strcmp(node->file, file) == 0) {
+			void* amb = node->amb;
+			yadsl_memdb_remove_amb_internal(amb);
+			free(amb);
+		}
+	}
+
+	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, temp);
+}
+
+float
+yadsl_memdb_get_fail_rate()
 {
 	return fail_rate;
 }
 
-void yadsl_memdb_set_fail_rate(float rate)
+void
+yadsl_memdb_set_fail_rate(
+		float rate)
 {
 	if (rate < 0.0f)
 		fail_rate = 0.0f;
@@ -142,110 +368,129 @@ void yadsl_memdb_set_fail_rate(float rate)
 		fail_rate = rate;
 }
 
-size_t yadsl_memdb_list_size()
+size_t
+yadsl_memdb_amb_list_size()
 {
-	return listsize;
+	return amb_list_size;
 }
 
-bool yadsl_memdb_error_occurred()
-{
-	return error_occurred;
-}
-
-void yadsl_memdb_free(void* _mem)
-{
-	if (_memdb_remove(_mem) == MEM_NOT_FOUND) {
-		_memdb_log("Freeing block (%p) not in list.", _mem);
-		error_occurred = true;
-	}
-	free(_mem);
-}
-
-void yadsl_memdb_set_logger(FILE* fp)
+void
+yadsl_memdb_set_logger(
+		FILE* fp)
 {
 	log_fp = fp;
 }
 
-void* yadsl_memdb_malloc(size_t _size, const char* file, const int line)
+void
+yadsl_memdb_free(
+	void* amb)
 {
-	void* _mem;
-	if (fail_bernoulli()) {
-		fprintf(stderr, "MEMDB: Failing malloc (%zuB) in %s:%d.\n",
-			_size, file, line);
-		return NULL;
-	}
-	_mem = malloc(_size);
-	if (_mem) {
-		struct _memdb_node* copy;
-		switch (_memdb_add(_mem, _size, file, line, &copy)) {
-		case MEM_OK:
-			break;
-		case MEM_COPY:
-			assert(0);
-			break;
-		case MEM_MEMORY:
-			free(_mem);
-			return NULL;
-		default:
-			assert(0);
-		}
-	}
-	return _mem;
+	/* Remove AMB node from list */
+	yadsl_memdb_remove_amb_internal(amb);
+
+	/* Deallocate AMB */
+	free(amb);
 }
 
-void* yadsl_memdb_realloc(void* _mem, size_t _size, const char* file, const int line)
+void*
+yadsl_memdb_malloc(
+		size_t size,
+		const char* file,
+		const int line)
 {
-	void* _new_mem;
-	if (fail_bernoulli()) {
-		fprintf(stderr, "MEMDB: Failing realloc (%zuB) in %s:%d.\n",
-			_size, file, line);
-		return NULL;
-	}
-	_new_mem = realloc(_mem, _size);
-	if (_new_mem) {
-		struct _memdb_node* copy;
-		_memdb_enum returnId;
-		if (_memdb_remove(_mem)) assert(0);
-		returnId = _memdb_add(_new_mem, _size, file, line, &copy);
-		switch (returnId) {
-		case MEM_OK:
-			break;
-		case MEM_COPY:
-			assert(0);
-			break;
-		case MEM_MEMORY:
-			free(_new_mem);
-			return NULL;
-		default:
-			assert(0);
+	void* amb = NULL; /* Allocated memory block */
+
+	if (yadsl_memdb_fail_internal()) {
+		/* Log allocation error */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+			"malloc(%zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
+			size, file, line, NULL);
+	} else {
+		amb = malloc(size);
+		if (amb) {
+			/* If allocation succeeded, add AMB node */
+			if (yadsl_memdb_add_amb_internal("malloc", amb, size, file, line)) {
+				/* If node could not be added, deallocate AMB */
+				free(amb);
+				amb = NULL;
+			}
 		}
 	}
-	return _new_mem;
+
+	return amb;
 }
 
-void* yadsl_memdb_calloc(size_t _cnt, size_t _size, const char* file, const int line)
+void*
+yadsl_memdb_realloc(
+		void* amb,
+		size_t size,
+		const char* file,
+		const int line)
 {
-	void* _mem;
-	if (fail_bernoulli()) {
-		fprintf(stderr, "MEMDB: Failing calloc (%zuB) in %s:%d.\n",
-			_size, file, line);
-		return NULL;
-	}
-	_mem = calloc(_cnt, _size);
-	if (_mem) {
-		struct _memdb_node* copy;
-		switch (_memdb_add(_mem, _cnt * _size, file, line, &copy)) {
-		case MEM_OK:
-			break;
-		case MEM_COPY:
-			assert(0);
-			break;
-		case MEM_MEMORY:
-			free(_mem);
-			return NULL;
-		default:
-			assert(0);
+	void* ramb = NULL; /* Reallocated memory block */
+
+	if (yadsl_memdb_fail_internal()) {
+		/* Log reallocation error */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+			"realloc(%p, %zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
+			amb, size, file, line, NULL);
+	} else {
+		yadsl_MemDebugAMB* node;
+
+		/* Try finding AMB node in list */
+		node = yadsl_memdb_find_amb_internal(amb, NULL);
+		if (node) {
+			/* If found, reallocate memory block */
+			ramb = realloc(amb, size);
+			if (ramb) {
+				/* If reallocation succedded, update AMB node */
+				node->file = file;
+				node->funcname = "realloc";
+				node->line = line;
+				node->amb = ramb;
+				node->size = size;
+			}
+			yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+				"realloc(%p, %zu) @ %s:%d -> %p",
+				amb, size, file, line, ramb);
+		} else {
+			/* Log reallocation error */
+			yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+				"realloc(%p, %zu) @ %s:%d -> %p (NODE NOT FOUND)",
+				amb, size, file, line, NULL);
+
+			error_occurred = true;
 		}
 	}
-	return _mem;
+	
+	return ramb;
+}
+
+void*
+yadsl_memdb_calloc(
+		size_t cnt,
+		size_t size,
+		const char* file,
+		const int line)
+{
+	void* camb = NULL; /* Cleanly allocated memory block */
+
+	if (yadsl_memdb_fail_internal()) {
+		/* Log allocation error */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+			"calloc(%zu, %zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
+			cnt, size, file, line, NULL);
+	} else {
+		camb = calloc(cnt, size);
+		if (camb) {
+			/* If cleanly allocation succeeded, add AMB node */
+			if (yadsl_memdb_add_amb_internal("calloc", camb, size, file, line)) {
+				/* If node could not be added, deallocate AMB */
+				free(camb);
+				camb = NULL;
+			}
+		}
+	}
+
+	return camb;
 }

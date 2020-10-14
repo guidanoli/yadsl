@@ -1,7 +1,5 @@
 #include <vector/vector.h>
 
-#include <stdlib.h>
-
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 

@@ -1,11 +1,13 @@
 #include <vector/vector.h>
 
-#include <stdlib.h>
 #include <stdint.h>
-
 #include <assert.h>
 
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 typedef struct
 {

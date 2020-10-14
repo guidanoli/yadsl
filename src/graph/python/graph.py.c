@@ -2,7 +2,6 @@
 #include <Python.h>
 
 #include <yadsl/pydefines.h>
-
 #include <graph/graph.h>
 
 typedef struct {

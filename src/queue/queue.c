@@ -1,8 +1,10 @@
 #include <queue/queue.h>
 
-#include <stdlib.h>
-
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 struct yadsl_QueueItem_s
 {

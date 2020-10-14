@@ -252,25 +252,31 @@ def process_argv(argv):
     args = list()
     kwargs = dict()
     
-    def _eval(exp):
-        try:
-            return eval(exp, {}, {})
-        except:
-            return exp
-    
+    eval_patt = re.compile(r'^%([^%]+)%$')
     kw_patt = re.compile(r'^--([^=]+)=(.*)$')
     string_flag_patt = re.compile(r'^--([^=]+)$')
     char_flag_patt = re.compile(r'^-([^=]+)$')
 
+    def _eval(exp):
+        match = eval_patt.match(exp)
+        if match:
+            v = match.group(1)
+            try:
+                return eval(v, {}, {})
+            except:
+                return v
+        else:
+            return exp
+    
     for arg in argv:
         match = kw_patt.match(arg)
         if match:
-            k, v = match.groups()
-            kwargs[k] = _eval(v)
+            k, v = map(_eval, match.groups())
+            kwargs[k] = v
             continue
         match = string_flag_patt.match(arg)
         if match:
-            v = match.group(1)
+            v = _eval(match.group(1))
             kwargs[v] = True
             continue
         match = char_flag_patt.match(arg)
@@ -279,8 +285,7 @@ def process_argv(argv):
             for v in vs:
                 kwargs[v] = True
         else:
-            v = _eval(arg)
-            args.append(v)
+            args.append(_eval(arg))
     
     return args, kwargs
 
@@ -300,36 +305,32 @@ __usage_opts__ = '''Options
   --lua=<bool>     = Create Lua binding.'''
 
 __usage_eval__ = '''Argument evaluation
-  Command line arguments are evaluated in a special way.'''
+  Command line arguments are evaluated in a special way.
+
+  <expr> are valid Python expressions, like True, 0, 2**32, etc.
+  <not-expr> are not valid Python expressions, like true, @, etc.'''
 
 __usage_eval_args__ = '''  Positional arguments
-    <expr>           = Evaluation of <expr> as Python expression.
+    %<expr>%         = Evaluation of <expr> as Python expression.
+    %<not-expr>%     = Evaluation of <not-expr> as string.
     <not-expr>       = Evaluation of <not-expr> as string.'''
 
 __usage_eval_kwargs__ = '''  Keyword arguments
-    --key=<expr>     = Evaluation of <expr> as Python expression.
-    --key=<not-expr> = Evaluation of <not-expr> as string.
-    --key            = --key=True
-    -key             = --k --e --y'''
-
-__usage_eval_strings__ = '''  Evaluating arguments as strings
-    By using quotes (") or ('), the argument is forced to evaluate to a string.
-    For example, take the word 'list'.
-    
-    list             = <class 'list'>
-    'list'           = 'list' '''
+    --key=%<expr>%     = Evaluation of <expr> as Python expression.
+    --key=%<not-expr>% = Evaluation of <not-expr> as string.
+    --key=<not-expr>   = Evaluation of <not-expr> as string.
+    --key              = --key=True
+    -key               = --k --e --y'''
 
 if __name__ == '__main__':
     import sys
-    args, kwargs = process_argv(sys.argv[2:])
-    args.insert(0, sys.argv[1])
+    args, kwargs = process_argv(sys.argv[1:])
     if kwargs.get('help', False):
         exit('\n\n'.join([__usage__,
                           __usage_opts__,
                           __usage_eval__,
                           __usage_eval_args__,
-                          __usage_eval_kwargs__,
-                          __usage_eval_strings__]))
+                          __usage_eval_kwargs__]))
     try:
         main(*args, **kwargs)
     except Exception as e:

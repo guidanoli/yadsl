@@ -2,10 +2,8 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include <string/string.h>
-
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 

@@ -3,6 +3,7 @@ add_subdirectory(yadsl)
 add_subdirectory(tester)
 add_subdirectory(testerutils)
 add_subdirectory(memdb)
+add_subdirectory(argvp)
 
 # Modules
 add_subdirectory(avl)

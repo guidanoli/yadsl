@@ -1,7 +1,6 @@
 #include <stack/stack.h>
 
 #include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
 
 #include <tester/tester.h>

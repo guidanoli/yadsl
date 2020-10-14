@@ -2,9 +2,12 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include <stdlib.h>
 
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 /**** Macros ****/
 

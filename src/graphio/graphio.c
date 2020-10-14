@@ -2,10 +2,14 @@
 
 #include <string.h>
 #include <assert.h>
+
+#ifdef YADSL_DEBUG
+#include <memdb/memdb.h>
+#else
 #include <stdlib.h>
+#endif
 
 #include <map/map.h>
-#include <memdb/memdb.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)

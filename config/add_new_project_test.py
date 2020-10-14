@@ -14,7 +14,7 @@ import pytest
     ),
     (
         # List of valid Python expressions
-        ['True', '0', '123+321', 'set', '"set"', "'set'"],
+        ['%True%', '%0%', '%123+321%', '%set%', '%"set"%', "%'set'%"],
         [True, 0, 444, set, 'set', 'set'], {}
     ),
     (
@@ -29,17 +29,17 @@ import pytest
     ),
     (
         # List of key-value keyword arguments
-        ['--k=v', '--key=value', '--x='],
-        [], {'k': 'v', 'key': 'value', 'x': ''}
+        ['--k=v', '--key=value', '--x=', '--y=10'],
+        [], {'k': 'v', 'key': 'value', 'x': '', 'y': '10'}
     ),
     (
         # Mix of all types of arguments
-        ['a', '-b', '--cd', 'd', '--e=0', '--f=g', 'True'],
+        ['a', '-b', '--cd', 'd', '--e=%0%', '--f=g', '%True%'],
         ['a', 'd', True], {'b': True, 'cd': True, 'e': 0, 'f': 'g'}
     ),
     (
-        # Previously initialized keyword arguments
-        ['--e', '--f=10', '--g=e', '--h=f'],
+        # Previously initialized keyword arguments (not supported)
+        ['--e', '--f=%10%', '--g=e', '--h=f'],
         [], {'e': True, 'f': 10, 'g': 'e', 'h': 'f'}
     ),
 ])

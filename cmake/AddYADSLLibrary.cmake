@@ -13,6 +13,19 @@ function(safe_target_link_libraries target)
     endforeach()
 endfunction()
 
+# Links debug libraries to target, always checking if
+# they are not equal (STREQUAL)
+#
+# safe_target_link_debug_libraries(target [tgt1 ...])
+#
+function(safe_target_link_debug_libraries target)
+    foreach(arg IN LISTS ARGN)
+        if(NOT arg STREQUAL target)
+            target_link_libraries(${target} debug ${arg})
+        endif()
+    endforeach()
+endfunction()
+
 # Do logical ternary based on value and save
 # result in variable
 #
@@ -53,7 +66,10 @@ function(add_yadsl_library target)
     endif()
     
     add_library(${target} ${OPTS_SOURCES})
-    safe_target_link_libraries(${target} yadsl memdb)
+	target_compile_definitions(${target} PUBLIC
+		"$<IF:$<CONFIG:Debug>,YADSL_DEBUG,YADSL_RELEASE>")
+	safe_target_link_libraries(${target} yadsl)
+	safe_target_link_debug_libraries(${target} memdb)
     target_include_directories(${target} PUBLIC ${YADSL_SOURCE_DIR})
     
     invert_boolean("OPTS_FPIC" OPTS_STATIC)

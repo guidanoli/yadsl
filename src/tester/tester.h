@@ -79,39 +79,42 @@
  *   Exits tester environment. It is specially useful when on interactive mode.
  * ```
  *
- * Program arguments
- * -----------------
+ * Program usage
+ * -------------
+ * 
  * ```
- * Usage
- * -----
- *   <tester-executable> [<script-path>] [/I] [/LOG] [/FAILRATE:?] [/SEED:?]
- *
- * Positional arguments
- * ---------------------
- *   script_path - Path to script file to be parsed
- *
- * Flag arguments
- * --------------
- *   /I - Interactive mode
- *     Reads from standard input instead of reading script
- *     (ignores script_path)
- *
- *   /LOG - Logs debug information
- *     Redirects debugging output to file other than the standard output
- *     e.g. memdb information goes to memdb.log
+ * <program> [options...]
+ * ```
  * 
- *   /FAILRATE - Memory Debugger fail rate
- *     :? - floating point between 0 and 1
- *     Where 0 = never fail, 1 = always fail.
+ * If no arguments are provided, a help message will be printed.
  * 
- *   /SEED - Pseudo-Random Number Generator initial seed
- *     :? - integer between 0 and 32768
- *
- * No arguments
+ * Options
+ * -------
+ * 
+ * ```
+ * --input-file <file-path>       Reads input from file.
+ *                                (Default: standard input)
+ * 
+ * --log-file <file-path>         Logs debug information to file.
+ *                                (Default: standard error)
+ * 
+ * --malloc-failing-rate <rate>   Changes memory allocation failing rate.
+ *                                (Default: 0)
+ * 
+ * --prng-seed <seed>             Changes pseudorandom number generator seed.
+ *                                (Default: 0)
+ * 
+ * --enable-log-channel <channel> Enable log channel
+ *                                (Default: all log channels are disabled)
+ * ```
+ * 
+ * Log channels
  * ------------
- *   If no arguments are given, a help message will be displayed, if available.
- * ```
- *
+ * 
+ * * ALLOCATION, for memory allocation events
+ * * DEALLOCATION, for memory deallocation events
+ * * LEAKAGE, for memory leak events
+ * 
  * Script grammar
  * --------------
  * The syntax is specified below in EBNF.
@@ -135,7 +138,6 @@
  *
  * @{
 */
-
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -165,9 +167,9 @@ typedef enum
 }
 yadsl_TesterRet;
 
-/***************************/
-/* SYMBOLS YOU MUST DEFINE */
-/***************************/
+/*****************************************************************************/
+/*                          SYMBOLS TO BE DEFINED                            */
+/*****************************************************************************/
 
 /**
  * @brief When no arguments are provided, help strings
@@ -204,9 +206,9 @@ extern yadsl_TesterRet yadsl_tester_parse(const char* command);
 */
 extern yadsl_TesterRet yadsl_tester_release();
 
-/***************************/
-/* SYMBOLS ALREADY DEFINED */
-/***************************/
+/*****************************************************************************/
+/*                            DEFINED SYMBOLS                                */
+/*****************************************************************************/
 
 /**
  * @brief Parse arguments following the current command,
@@ -250,6 +252,17 @@ int
 yadsl_tester_parse_arguments(
 	const char* format,
 	...);
+
+/**
+ * @brief Create an object
+ * @param dtype data type identifier
+ * @param data object data
+ * @return newly created object or NULL on failure
+*/
+void*
+yadsl_tester_object_create(
+	char dtype,
+	char* data);
 
 /**
  * @brief Parse a character that identifies the
@@ -320,6 +333,15 @@ yadsl_tester_object_data(
 */
 size_t
 yadsl_tester_get_dtype_size(
+	char dtype);
+
+/**
+ * @brief Get format for data type
+ * @param dtype data type identifier
+ * @return format for C stdio.h functions or 0 if dtype is invalid
+*/
+const char*
+yadsl_tester_get_dtype_fmt(
 	char dtype);
 
 /**

@@ -2,11 +2,9 @@
 #include <graphio/graphio.h>
 #include <graphsearch/graphsearch.h>
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <string/string.h>
-
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 

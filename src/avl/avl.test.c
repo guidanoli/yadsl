@@ -1,6 +1,5 @@
 #include <avl/avl.h>
 
-#include <stdlib.h>
 #include <assert.h>
 
 #include <tester/tester.h>
