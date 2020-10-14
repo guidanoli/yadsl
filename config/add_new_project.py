@@ -271,13 +271,13 @@ def process_argv(argv):
     for arg in argv:
         match = kw_patt.match(arg)
         if match:
-            k, v = map(_eval, match.groups())
-            kwargs[k] = v
+            k, v = match.groups()
+            kwargs[k] = _eval(v)
             continue
         match = string_flag_patt.match(arg)
         if match:
-            v = _eval(match.group(1))
-            kwargs[v] = True
+            v = match.group(1)
+            kwargs[_eval(v)] = True
             continue
         match = char_flag_patt.match(arg)
         if match:

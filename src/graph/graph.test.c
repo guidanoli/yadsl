@@ -105,7 +105,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!parse_iteration_direction(buffer, &iteration_direction))
 			return YADSL_TESTER_RET_ARGUMENT;
-		graph_ret = yadsl_graph_vertex_iter(graph, iteration_direction, &vertex);
+		graph_ret = yadsl_graph_vertex_iter(graph, iteration_direction, (yadsl_GraphVertexObject**) &vertex);
 		if (graph_ret == YADSL_GRAPH_RET_OK)
 			if (strcmp(buffer2, vertex))
 				return YADSL_TESTER_RET_RETURN;
@@ -129,7 +129,8 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!parse_edge_direction(buffer3, &edge_direction))
 			return YADSL_TESTER_RET_ARGUMENT;
-		graph_ret = yadsl_graph_vertex_nb_iter(graph, buffer, edge_direction, iteration_direction, &v, &uv);
+		graph_ret = yadsl_graph_vertex_nb_iter(graph, buffer, edge_direction,
+			iteration_direction, (yadsl_GraphVertexObject**) &v, (yadsl_GraphEdgeObject**) &uv);
 		if (graph_ret == YADSL_GRAPH_RET_OK)
 			if (strcmp(v, buffer4) || strcmp(uv, buffer5))
 				return YADSL_TESTER_RET_RETURN;
@@ -173,7 +174,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 		char* actual;
 		if (yadsl_tester_parse_arguments("sss", buffer, buffer2, buffer3) != 3)
 			return YADSL_TESTER_RET_ARGUMENT;
-		graph_ret = yadsl_graph_edge_get(graph, buffer, buffer2, &actual);
+		graph_ret = yadsl_graph_edge_get(graph, buffer, buffer2, (yadsl_GraphEdgeObject**) &actual);
 		if (graph_ret == YADSL_GRAPH_RET_OK)
 			if (strcmp(actual, buffer3))
 				return YADSL_TESTER_RET_RETURN;
@@ -285,7 +286,7 @@ yadsl_TesterRet yadsl_tester_release()
 	if (graph)
 		yadsl_graph_destroy(graph);
 
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 	if (yadsl_graphsearch_get_node_ref_count())
 		return YADSL_TESTER_RET_MEMLEAK;
 #endif

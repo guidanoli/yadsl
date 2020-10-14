@@ -146,7 +146,7 @@ static yadsl_GraphIoRet yadsl_graphio_write_internal(
 		int flag;
 		bool overwrite;
 		if (yadsl_graph_vertex_iter(graph, YADSL_GRAPH_ITER_DIR_NEXT, &vertex)) assert(0);
-		if (map_ret = yadsl_map_entry_add(address_map, vertex, i, &overwrite, &previous_value)) {
+		if (map_ret = yadsl_map_entry_add(address_map, vertex, (yadsl_MapEntryValue*) i, &overwrite, &previous_value)) {
 			assert(!overwrite);
 			return YADSL_GRAPHIO_RET_MEMORY;
 		}

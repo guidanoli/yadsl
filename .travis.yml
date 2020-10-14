@@ -14,7 +14,6 @@ cache:
                 - $HOME/.pyenv_cache
                 - $HOME/.lua
 env:
-        - PYENV_VERSION='3.5.9'  PYENV_VERSION_STRING='Python 3.5.9'
         - PYENV_VERSION='3.6.11' PYENV_VERSION_STRING='Python 3.6.11'
         - PYENV_VERSION='3.7.8'  PYENV_VERSION_STRING='Python 3.7.8'
         - PYENV_VERSION='3.8.5'  PYENV_VERSION_STRING='Python 3.8.5'

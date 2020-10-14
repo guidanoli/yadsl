@@ -22,7 +22,7 @@ yadsl_ArgvType;
 typedef struct
 {
 	int argc;
-	const char** argv;
+	char** argv;
 	yadsl_ArgvType* argv_types; /* Map from argument vector to argument type */
 	int cursor; /* Cursor for iterating through keyword argument values */
 }
@@ -33,7 +33,7 @@ yadsl_ArgvParser;
 yadsl_ArgvParserHandle*
 yadsl_argvp_create(
 	int argc,
-	const char** argv)
+	char** argv)
 {
 	yadsl_ArgvParser* argvp = malloc(sizeof *argvp);
 	if (argvp) {

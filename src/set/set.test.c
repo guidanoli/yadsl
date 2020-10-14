@@ -102,7 +102,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		expected = yadsl_testerutils_str_to_bool(arg);
-		setId = yadsl_set_item_filter(pSet, filterItem, temp, &foundStr);
+		setId = yadsl_set_item_filter(pSet, filterItem, temp, (yadsl_SetItemObj**) &foundStr);
 		free(temp);
 		actual = (setId == YADSL_SET_RET_OK);
 		if (actual != expected)
@@ -115,7 +115,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		setId = yadsl_set_item_filter(pSet, filterItem, temp, &foundStr);
+		setId = yadsl_set_item_filter(pSet, filterItem, temp, (yadsl_SetItemObj**) &foundStr);
 		if (setId == YADSL_SET_RET_OK) {
 			if (savedStr != NULL &&
 				yadsl_set_item_contains_check(pSet, savedStr) != YADSL_SET_RET_CONTAINS)
@@ -137,7 +137,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		if (setId = yadsl_set_cursor_get(pSet, &currentStr)) {
+		if (setId = yadsl_set_cursor_get(pSet, (yadsl_SetItemObj**) &currentStr)) {
 			free(temp);
 		} else {
 			int equal;

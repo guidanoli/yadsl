@@ -76,7 +76,7 @@ yadsl_graphsearch_bfs(
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func);
 
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 
 /**
  * @brief Get graph search node reference count

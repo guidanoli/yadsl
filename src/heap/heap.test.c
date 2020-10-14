@@ -78,7 +78,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
         int *pObj, actual, expected;
         if (yadsl_tester_parse_arguments("i", &expected) != 1)
             return YADSL_TESTER_RET_ARGUMENT;
-        returnId = yadsl_heap_extract(pHeap, &pObj);
+        returnId = yadsl_heap_extract(pHeap, (yadsl_HeapObj**) &pObj);
         if (!returnId) {
             actual = *pObj;
             free(pObj);

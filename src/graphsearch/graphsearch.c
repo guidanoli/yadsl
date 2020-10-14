@@ -11,7 +11,7 @@
 
 #include <queue/queue.h>
 
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 int nodeRefCount = 0;
 #endif
 
@@ -31,7 +31,7 @@ static yadsl_GraphSearchBFSTreeNode* yadsl_graphsearch_allocate_node_internal(
 	yadsl_GraphVertexObject* child);
 
 static void yadsl_graphsearch_free_node_internal(
-	yadsl_GraphSearchBFSTreeNode* node);
+	yadsl_QueueItemObj* item);
 
 static yadsl_GraphSearchRet yadsl_graphsearch_dfs_internal(
 	yadsl_GraphHandle* graph,
@@ -215,7 +215,7 @@ yadsl_GraphSearchRet yadsl_graphsearch_bfs_internal(
 		visit_vertex_func(vertex);
 	if (graph_search_ret = yadsl_graphsearch_add_nb_to_queue_internal(graph, bfs_queue, visited_flag, vertex, edge_direction))
 		return graph_search_ret;
-	while (yadsl_queue_dequeue(bfs_queue, &node) == YADSL_QUEUE_RET_OK) {
+	while (yadsl_queue_dequeue(bfs_queue, (yadsl_QueueItemObj**) &node) == YADSL_QUEUE_RET_OK) {
 		if (visit_edge_func)
 			visit_edge_func(node->parent, node->edge, node->child);
 		if (visit_vertex_func)
@@ -239,7 +239,7 @@ yadsl_GraphSearchBFSTreeNode* yadsl_graphsearch_allocate_node_internal(
 		node->edge = edge;
 		node->child = child;
 
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 		++nodeRefCount;
 		printf("Allocating node %p\n", node);
 #endif
@@ -248,10 +248,11 @@ yadsl_GraphSearchBFSTreeNode* yadsl_graphsearch_allocate_node_internal(
 	return node;
 }
 
-void yadsl_graphsearch_free_node_internal(yadsl_GraphSearchBFSTreeNode* node)
+void yadsl_graphsearch_free_node_internal(yadsl_QueueItemObj* item)
 {
+	yadsl_GraphSearchBFSTreeNode* node = (yadsl_GraphSearchBFSTreeNode*) item;
 
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 	--nodeRefCount;
 	printf("Deallocating node %p\n", node);
 #endif
@@ -259,7 +260,7 @@ void yadsl_graphsearch_free_node_internal(yadsl_GraphSearchBFSTreeNode* node)
 	free(node);
 }
 
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 int yadsl_graphsearch_get_node_ref_count()
 {
 	return nodeRefCount;

@@ -30,7 +30,7 @@ typedef void yadsl_ArgvParserHandle; /**< Argument vector parser handle */
 yadsl_ArgvParserHandle*
 yadsl_argvp_create(
 	int argc,
-	const char** argv);
+	char** argv);
 
 /**
  * @brief Add keyword arguments from array

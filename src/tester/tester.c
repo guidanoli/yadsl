@@ -47,7 +47,7 @@ static FILE* input_fp; /* Input file pointer */
 static FILE* log_fp; /* Logger file pointer */
 
 static int argc; /* Argument count */
-static const char** argv; /* Argument vector */
+static char** argv; /* Argument vector */
 
 #define YADSL_TESTER_PROPAGATE(status, temp) \
 do { \
@@ -70,7 +70,6 @@ static int yadsl_tester_parse_argument_internal(const char* format, void* arg, s
 static int yadsl_tester_parse_string_internal(char* arg, size_t* inc);
 static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret);
 static int yadsl_tester_parse_dtype_internal(const char** format_t, void* arg, size_t* inc);
-static int yadsl_tester_has_flag_internal(int argc, char** argv, int n, const char* flag, ...);
 
 /*****************************************************************************/
 /*                      EXTERN FUNCTIONS DEFINITIONS                         */
@@ -589,23 +588,6 @@ int yadsl_tester_parse_dtype_internal(const char** format_t, void* arg, size_t* 
 			return 0;
 	}
 	return 1;
-}
-
-int yadsl_tester_has_flag_internal(int argc, char** argv, int n, const char* flag, ...)
-{
-	va_list va;
-	va_start(va, flag);
-	int has_flag = 0;
-	while (argc--) {
-		if (n == 0)
-			has_flag = strcmp(argv[argc], flag) == 0;
-		else
-			has_flag = vsscanf(argv[argc], flag, va) == n;
-		if (has_flag)
-			break;
-	}
-	va_end(va);
-	return has_flag;
 }
 
 yadsl_TesterRet yadsl_tester_argvp_init_internal()

@@ -50,7 +50,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if ((str1 = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		if (queueId = yadsl_queue_dequeue(pQueue, &str2)) {
+		if (queueId = yadsl_queue_dequeue(pQueue, (yadsl_QueueItemObj**) &str2)) {
 			free(str1);
 		} else {
 			bool equal = strcmp(str1, str2) == 0;

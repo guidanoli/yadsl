@@ -64,7 +64,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		int *actual_ptr, expected;
 		if (yadsl_tester_parse_arguments("i", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		ret = yadsl_stack_item_remove(st, &actual_ptr);
+		ret = yadsl_stack_item_remove(st, (yadsl_StackItemObj**) &actual_ptr);
 		if (!ret) {
 			int actual;
 			actual = *actual_ptr;

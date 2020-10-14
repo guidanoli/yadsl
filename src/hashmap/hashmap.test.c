@@ -70,7 +70,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		if (yadsl_tester_parse_arguments("si", key, &exp) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
 		int* obt_ptr;
-		ret = yadsl_hashmap_entry_value_get(map, key, &obt_ptr);
+		ret = yadsl_hashmap_entry_value_get(map, key, (yadsl_HashMapValue**) &obt_ptr);
 		if (ret == YADSL_HASHMAP_RET_OK) {
 			if (*obt_ptr != exp)
 				return YADSL_TESTER_RET_RETURN;

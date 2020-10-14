@@ -36,7 +36,7 @@
 x->height = 1 + max(YADSL_AVLTREE_NODE_HEIGHT(x->left), YADSL_AVLTREE_NODE_HEIGHT(x->right))
 
 /* check AVL tree invariants  */
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 #define YADSL_AVLTREE_CHECK_INVARIANTS(x) do { \
     if (x != NULL) { \
         assert(x != x->left); \
@@ -47,9 +47,9 @@ x->height = 1 + max(YADSL_AVLTREE_NODE_HEIGHT(x->left), YADSL_AVLTREE_NODE_HEIGH
         assert(abs(YADSL_AVLTREE_NODE_BALANCE(x)) < 2); \
     } \
 } while(0)
-#else /* ifndef _DEBUG */
+#else /* ifndef YADSL_DEBUG */
 #define YADSL_AVLTREE_CHECK_INVARIANTS(x) ((void) 0)
-#endif /* _DEBUG */
+#endif /* YADSL_DEBUG */
 
 /**** Structs ****/
 
