@@ -651,13 +651,13 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 	}
 #endif
 
+#ifdef YADSL_DEBUG
 	unsigned int prng_seed;
 	if (yadsl_argvp_parse_keyword_argument_value(argvp,
 		"--prng-seed", 0, "%u", &prng_seed) == 1) {
-		srand(prng_seed);
-	} else {
-		srand(0);
+		yadsl_memdb_set_prng_seed(prng_seed);
 	}
+#endif
 
 #ifdef YADSL_DEBUG
 	const char* log_channel_name, *kw = "--enable-log-channel";

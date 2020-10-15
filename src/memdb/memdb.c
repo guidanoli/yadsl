@@ -49,8 +49,16 @@ static bool error_occurred; /**< Error occurred flag */
 static bool fail_occurred; /**< Fail occurred flag */
 
 static float fail_rate; /**< Allocation fail rate */
+static unsigned int prng_state; /**< PRNG seed */
 
 /* Functions */
+
+static int
+yadsl_memdb_prng_internal()
+{
+	prng_state = ((prng_state * 1103515245) + 12345) & 0x7fffffff;
+	return prng_state;
+}
 
 bool
 yadsl_memdb_log_channel_get(
@@ -152,7 +160,7 @@ yadsl_memdb_fail_occurred()
 static bool
 yadsl_memdb_fail_internal()
 {
-	bool fail = rand() < (int) (fail_rate * (float) RAND_MAX);
+	bool fail = yadsl_memdb_prng_internal() < (int) (fail_rate * (float) RAND_MAX);
 	fail_occurred = fail_occurred || fail;
 	return fail;
 }
@@ -290,6 +298,13 @@ yadsl_memdb_contains_amb(
 		void* amb)
 {
 	return yadsl_memdb_find_amb_internal(amb, NULL) != NULL;
+}
+
+void
+yadsl_memdb_set_prng_seed(
+		unsigned int seed)
+{
+	prng_state = seed;
 }
 
 void

@@ -25,7 +25,7 @@ function(add_tester_scripts target)
 			COMMAND ${target}
 			"--input-file" ${SCRIPT_PATH}
 			"--enable-log-channel" "LEAKAGE")
-		if($<CONFIG:Debug>)
+		if(CMAKE_BUILD_TYPE MATCHES Debug)
 			if(YADSL_BUILD_LONG_TESTS)
 				set(seedmax 99)
 			else()

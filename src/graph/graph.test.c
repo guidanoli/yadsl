@@ -50,6 +50,7 @@ const char* yadsl_tester_help_strings[] = {
 
 static yadsl_GraphHandle* graph = NULL;
 static char buffer[BUFSIZ], buffer2[BUFSIZ], buffer3[BUFSIZ], buffer4[BUFSIZ], buffer5[BUFSIZ];
+static bool string_duplicate_failed = false;
 
 static int compare_strings_func(void* a, void* b);
 static int read_string_func(FILE* fp, void** vertex_ptr);
@@ -228,6 +229,8 @@ static yadsl_TesterRet parse_graph_io_command(const char* command)
 		if (graph_io_ret == YADSL_GRAPHIO_RET_OK) {
 			yadsl_graph_destroy(graph);
 			graph = temp;
+		} else if (graph_io_ret == YADSL_GRAPHIO_RET_CREATION_FAILURE && string_duplicate_failed) {
+			graph_io_ret = YADSL_GRAPHIO_RET_MEMORY; /* So that it gets ignored when --fail-memory-allocation is set */
 		}
 		fclose(file_ptr);
 	} else {
@@ -301,7 +304,14 @@ int compare_strings_func(void* a, void* b)
 
 int read_string_func(FILE* fp, void** vertex_ptr)
 {
-	return ((*vertex_ptr = yadsl_testerutils_str_deserialize(fp)) == NULL);
+	char* str = yadsl_testerutils_str_deserialize(fp);
+	
+	if (str == NULL)
+		string_duplicate_failed = true;
+	else
+		*vertex_ptr = str;
+
+	return str == NULL;
 }
 
 int write_string_func(FILE* fp, void* v)
