@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <time.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
@@ -85,15 +86,26 @@ char* redirect_stdout_to_null_device(char* command)
 	return command;
 }
 
+char* get_random_filename()
+{
+    int randnum;
+    char randnumstrbuf[12];
+
+    srand(time(NULL));
+    sprintf(randnumstrbuf, "%08X", rand());
+
+    return strcatdyn("mallocfailtmp-", false, randnumstrbuf, false);
+}
+
 int main(int argc, char** argv) {
-	char tmpfilename[L_tmpnam];
+	char* tmpfilename;
 	char indexstrbuf[20];
 	char* command;
 	int ret, fail_count = 0;
 	size_t malloc_count;
 
-	// Get temporary file name
-	tmpnam(tmpfilename);
+    // Get random filename
+    tmpfilename = get_random_filename();
 
 	// Build command
 	command = strcatdyn(argv[1], false, " --input-file ", false);
@@ -114,6 +126,10 @@ int main(int argc, char** argv) {
 
 	// Get number of memory allocations
 	malloc_count = count_lines(tmpfilename);
+
+    // Removes file and file name
+    remove(tmpfilename);
+    free(tmpfilename);
 
 	// For each memory allocation
 	for (size_t malloc_index = 0; malloc_index < malloc_count; ++malloc_index) {

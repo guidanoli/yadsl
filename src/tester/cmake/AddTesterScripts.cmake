@@ -17,7 +17,8 @@ function(add_tester_scripts target)
 		if(CMAKE_BUILD_TYPE MATCHES Debug)
 			if(YADSL_BUILD_LONG_TESTS)
 				add_test(NAME "${SCRIPT}_memfail"
-					COMMAND memfail $<TARGET_FILE:${target}> ${SCRIPT_PATH})
+					COMMAND memfail $<TARGET_FILE:${target}> ${SCRIPT_PATH}
+                    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 			endif()
 		endif()
 	endforeach()
