@@ -101,6 +101,9 @@
  * --malloc-failing-rate <rate>   Changes memory allocation failing rate.
  *                                (Default: 0)
  * 
+ * --malloc-failing-index         Sets memory allocation failing index
+ *                                (Default: never fails by index)
+ * 
  * --prng-seed <seed>             Changes pseudorandom number generator seed.
  *                                (Default: 0)
  * 

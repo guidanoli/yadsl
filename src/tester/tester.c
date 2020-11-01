@@ -596,6 +596,7 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		{ "--input-file", 1 },
 		{ "--log-file", 1 },
 		{ "--malloc-failing-rate", 1 },
+		{ "--malloc-failing-index", 1 },
 		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
 		{ NULL, 0 }, /* End of definitions array */
@@ -648,6 +649,17 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		}
 	} else {
 		yadsl_memdb_set_fail_rate(0.f);
+	}
+#endif
+
+#ifdef YADSL_DEBUG
+	size_t malloc_failing_index;
+	if (yadsl_argvp_parse_keyword_argument_value(argvp,
+		"--malloc-failing-index", 0, "%zu", &malloc_failing_index) == 1) {
+		yadsl_memdb_set_fail_by_index(true);
+		yadsl_memdb_set_fail_index(malloc_failing_index);
+	} else {
+		yadsl_memdb_set_fail_by_index(false);
 	}
 #endif
 

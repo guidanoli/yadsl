@@ -41,14 +41,17 @@ typedef struct yadsl_MemDebugAMB_s yadsl_MemDebugAMB;
 
 static yadsl_MemDebugAMB* amb_list_head; /**< AMB list head (nullable) */
 static size_t amb_list_size; /**< AMB list size */
+static size_t amb_total_count; /**< AMB total count */
 
 static uint8_t log_channels; /**< Log channels bitmap */
 static FILE* log_fp; /**< Log file pointer (nullable) */
 
+static bool fail_by_index; /**< Fail by index flag */
 static bool error_occurred; /**< Error occurred flag */
 static bool fail_occurred; /**< Fail occurred flag */
 
 static float fail_rate; /**< Allocation fail rate */
+static size_t fail_index; /**< Allocation fail_by_prng index */
 static unsigned int prng_state; /**< PRNG seed */
 
 /* Functions */
@@ -158,9 +161,31 @@ yadsl_memdb_fail_occurred()
  * @return whether allocation should fail (true) or not (false)
 */
 static bool
+yadsl_memdb_fail_by_prng_internal()
+{
+	return yadsl_memdb_prng_internal() < (int) (fail_rate * (float) RAND_MAX);
+}
+
+/**
+ * @brief Checks if AMB total count coincides with failing index and
+ *        whether failing by index is enabled
+ * @return whether allocation should fail (true) or not (false)
+*/
+static bool
+yadsl_memdb_fail_by_index_internal()
+{
+	return fail_by_index && (amb_total_count == fail_index);
+}
+
+/**
+ * @brief Checks if memory allocation should fail
+ * @return whether allocation should fail (true) or not (false)
+*/
+static bool
 yadsl_memdb_fail_internal()
 {
-	bool fail = yadsl_memdb_prng_internal() < (int) (fail_rate * (float) RAND_MAX);
+	bool fail = yadsl_memdb_fail_by_prng_internal() ||
+	            yadsl_memdb_fail_by_index_internal();
 	fail_occurred = fail_occurred || fail;
 	return fail;
 }
@@ -236,6 +261,7 @@ yadsl_memdb_add_amb_internal(
 		/* Append node to AMB list */
 		amb_list_head = node;
 		++amb_list_size;
+		++amb_total_count;
 
 		/* Log allocation */
 		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
@@ -381,6 +407,32 @@ yadsl_memdb_set_fail_rate(
 		fail_rate = 1.0f;
 	else
 		fail_rate = rate;
+}
+
+bool
+yadsl_memdb_get_fail_by_index()
+{
+	return fail_by_index;
+}
+
+void
+yadsl_memdb_set_fail_by_index(
+		bool enable)
+{
+	fail_by_index = enable;
+}
+
+size_t
+yadsl_memdb_get_fail_index()
+{
+	return fail_index;
+}
+
+void
+yadsl_memdb_set_fail_index(
+		size_t index)
+{
+	fail_index = index;
 }
 
 size_t

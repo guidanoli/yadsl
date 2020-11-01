@@ -68,6 +68,36 @@ yadsl_memdb_set_fail_rate(
 		float fail_rate);
 
 /**
+ * @brief Get whether fial by index is enabled or not
+ * @return enabled (true) or disabled (false)
+*/
+bool
+yadsl_memdb_get_fail_by_index();
+
+/**
+ * @brief Fail by (re)allocation index
+ * @param fail_by_index enable (true) or disable (false)
+*/
+void
+yadsl_memdb_set_fail_by_index(
+		bool fail_by_index);
+
+/**
+ * @brief Get (re)allocation fail index
+ * @return index
+*/
+size_t
+yadsl_memdb_get_fail_index();
+
+/**
+ * @brief Set (re)allocation fail index
+ * @param fail_index index
+*/
+void
+yadsl_memdb_set_fail_index(
+		size_t fail_index);
+
+/**
  * @brief Get size of list of allocated memory blocks
  * @return size of list
 */
