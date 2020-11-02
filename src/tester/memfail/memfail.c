@@ -97,9 +97,9 @@ static size_t count_lines(const char* filename)
 */
 static char* get_filename(unsigned long num)
 {
-	char randnumstrbuf[12];
+	char randnumstrbuf[sizeof(unsigned long)*3+1];
 	char* filename;
-	sprintf(randnumstrbuf, "%x", num);
+	sprintf(randnumstrbuf, "%lx", num);
 	filename = strcatdyn("memfail_", false, randnumstrbuf, false);
 	filename = strcatdyn(filename, true, ".tmp", false);
 	return filename;
@@ -138,7 +138,6 @@ tester_arguments;
 static void run_tester(tester_arguments* args)
 {
 	int ret;
-	char subcommand[64];
 
 	// Free previous command
 	if (command != NULL)
@@ -151,6 +150,7 @@ static void run_tester(tester_arguments* args)
 	command = strcatdyn(command, true, tmpfilename, false);
 
 	if (args->fail_by_index) {
+        char subcommand[26+sizeof(size_t)*3];
 		sprintf(subcommand, " --malloc-failing-index %zu", args->malloc_index);
 		command = strcatdyn(command, true, subcommand, false);
 	}
