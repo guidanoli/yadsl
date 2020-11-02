@@ -119,13 +119,13 @@ int main(int argc_, char** argv_)
 	/* Propagate error code, if status is OK */
 	YADSL_TESTER_PROPAGATE(status, temp);
 
+	/* Check for memory leak (may fail) */
+	temp = yadsl_tester_check_memleak_internal();
+
 #ifdef YADSL_DEBUG
 	/* Clear allocated memory block list */
 	yadsl_memdb_clear_amb_list();
 #endif
-
-	/* Check for memory leak (may fail) */
-	temp = yadsl_tester_check_memleak_internal();
 
 	/* Propagate error code, if status is OK */
 	YADSL_TESTER_PROPAGATE(status, temp);

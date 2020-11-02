@@ -1,6 +1,7 @@
 #include <testerutils/testerutils.h>
 
 #include <string.h>
+#include <errno.h>
 
 #include <string/string.h>
 #include <tester/tester.h>
@@ -8,6 +9,14 @@
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
 #endif
+
+struct tempfile
+{
+	char* filename;
+	struct tempfile* next; /* nullable */
+};
+
+static struct tempfile* tempfilelist;
 
 bool
 yadsl_testerutils_match(
@@ -75,4 +84,47 @@ yadsl_testerutils_str_to_bool(
 			return false;
 	yadsl_tester_log("Invalid string \"%s\". Assumed \"no\".", string);
 	return false;
+}
+
+bool
+yadsl_testerutils_add_tempfile_to_list(
+	const char* filename)
+{
+	struct tempfile* temp;
+	for (temp = tempfilelist; temp; temp = temp->next)
+		if (strcmp(temp->filename, filename) == 0)
+			return true;
+	temp = malloc(sizeof * temp);
+	if (temp == NULL)
+		goto fail;
+	temp->filename = yadsl_string_duplicate(filename);
+	if (temp->filename == NULL)
+		goto fail2;
+	temp->next = tempfilelist;
+	tempfilelist = temp;
+	return true;
+fail2:
+	free(temp);
+fail:
+	if (remove(filename) != 0) {
+		fprintf(stderr, "Could not remove file %s: %s\n",
+			filename, strerror(errno));
+	}
+	return false;
+}
+
+void
+yadsl_testerutils_clear_tempfile_list()
+{
+	while (tempfilelist != NULL) {
+		struct tempfile* next;
+		next = tempfilelist->next;
+		if (remove(tempfilelist->filename) != 0) {
+			fprintf(stderr, "Could not remove file %s: %s\n",
+				tempfilelist->filename, strerror(errno));
+		}
+		free(tempfilelist->filename);
+		free(tempfilelist);
+		tempfilelist = next;
+	}
 }

@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <time.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
@@ -21,6 +20,25 @@
  * Returns the number of tests that have failed.
 */
 
+static char* tmpfilename; /**< Temporary file name */
+static char* command; /**< Command */
+static char* tester; /**< Tester */
+static char* script; /**< Script */
+
+/**
+ * @brief Release static resources
+*/
+static void release_resources()
+{
+	if (command)
+		free(command);
+
+	if (tmpfilename) {
+		remove(tmpfilename);
+		free(tmpfilename);
+	}
+}
+
 /**
  * @brief Concatenates two strings dynamically
  * @param a first string
@@ -29,12 +47,13 @@
  * @param is_b_dyn if b can be deallocated after concatenation
  * @return newly concatenated string or NULL
 */
-char* strcatdyn(char* a, bool is_a_dyn, char* b, bool is_b_dyn)
+static char* strcatdyn(char* a, bool is_a_dyn, char* b, bool is_b_dyn)
 {
 	char* s = malloc(strlen(a) + strlen(b) + 1);
 	if (s == NULL) {
 		fprintf(stderr, "Bad malloc in strcatdyn\n");
-		exit(1);
+		release_resources();
+		exit(EXIT_FAILURE);
 	}
 	strcpy(s, a);
 	strcat(s, b);
@@ -50,13 +69,14 @@ char* strcatdyn(char* a, bool is_a_dyn, char* b, bool is_b_dyn)
  * @param filename file name
  * @return number of '\n' in the file
 */
-size_t count_lines(const char* filename)
+static size_t count_lines(const char* filename)
 {
 	FILE* f = fopen(filename, "r");
 	size_t linecnt = 0;
 	if (f == NULL) {
 		fprintf(stderr, "Could not open %s\n", filename);
-		exit(1);
+		release_resources();
+		exit(EXIT_FAILURE);
 	} else {
 		while (true) {
 			char c = fgetc(f);
@@ -71,89 +91,132 @@ size_t count_lines(const char* filename)
 }
 
 /**
- * @brief Modify command in order to redirect all output to the corresponding
- * null of the system
- * @param command command to be modified
- * @return new command
+ * @brief Get file name based on number
+ * @param num file number
+ * @return dynamically allocated file name
 */
-char* redirect_stdout_to_null_device(char* command)
+static char* get_filename(unsigned long num)
 {
-#if defined(_WIN32) || defined(WIN32)
-	command = strcatdyn(command, true, " >nul", false);
-#else
-	command = strcatdyn(command, true, " >/dev/null", false);
-#endif
-	return command;
+	char randnumstrbuf[12];
+	char* filename;
+	sprintf(randnumstrbuf, "%x", num);
+	filename = strcatdyn("memfail_", false, randnumstrbuf, false);
+	filename = strcatdyn(filename, true, ".tmp", false);
+	return filename;
 }
 
-char* get_random_filename()
+static unsigned long get_string_digest(char* str)
 {
-    int randnum;
-    char randnumstrbuf[12];
-
-    srand(time(NULL));
-    sprintf(randnumstrbuf, "%08X", rand());
-
-    return strcatdyn("mallocfailtmp-", false, randnumstrbuf, false);
+	unsigned long hash = 5381;
+	char c;
+	while (c = *str++)
+		hash = ((hash << 5) + hash) + (unsigned long) c; /* hash * 33 + c */
+	return hash;
 }
 
-int main(int argc, char** argv) {
-	char* tmpfilename;
-	char indexstrbuf[20];
-	char* command;
-	int ret, fail_count = 0;
-	size_t malloc_count;
+/**
+ * @brief Tester arguments
+*/
+typedef struct
+{
+	bool fail_by_index;
+	size_t malloc_index;
+	bool log_allocation;
+	bool log_deallocation;
+	bool log_leakage;
+}
+tester_arguments;
 
-    // Get random filename
-    tmpfilename = get_random_filename();
+/**
+ * @brief Runs tester with different parameters
+ * @param fail_by_index fail by index
+ * @param malloc_index memory allocation failing index
+ * @param log_allocation log allocation to log file
+ * @param log_leakage log leakage to log file
+ * @return log file line count
+*/
+static void run_tester(tester_arguments* args)
+{
+	int ret;
+	char subcommand[64];
+
+	// Free previous command
+	if (command != NULL)
+		free(command);
 
 	// Build command
-	command = strcatdyn(argv[1], false, " --input-file ", false);
-	command = strcatdyn(command, true, argv[2], false);
+	command = strcatdyn(tester, false, " --input-file ", false);
+	command = strcatdyn(command, true, script, false);
 	command = strcatdyn(command, true, " --log-file ", false);
 	command = strcatdyn(command, true, tmpfilename, false);
-	command = strcatdyn(command, true, " --enable-log-channel ALLOCATION ", false);
-	command = redirect_stdout_to_null_device(command);
+
+	if (args->fail_by_index) {
+		sprintf(subcommand, " --malloc-failing-index %zu", args->malloc_index);
+		command = strcatdyn(command, true, subcommand, false);
+	}
+	
+	if (args->log_allocation)
+		command = strcatdyn(command, true, " --enable-log-channel ALLOCATION", false);
+	
+	if (args->log_deallocation)
+		command = strcatdyn(command, true, " --enable-log-channel DEALLOCATION", false);
+	
+	if (args->log_leakage)
+		command = strcatdyn(command, true, " --enable-log-channel LEAKAGE", false);
 
 	// Run command
 	if ((ret = system(command)) != 0) {
 		fprintf(stderr, "Command \"%s\" exited with value %d\n", command, ret);
+		release_resources();
 		exit(ret);
 	}
+}
 
-	// Free command
-	free(command);
+int main(int argc, char** argv)
+{
+	unsigned long hash = 0;
+	int fail_count = 0;
+	size_t malloc_count;
+	tester_arguments args;
 
-	// Get number of memory allocations
-	malloc_count = count_lines(tmpfilename);
-
-    // Removes file and file name
-    remove(tmpfilename);
-    free(tmpfilename);
-
-	// For each memory allocation
-	for (size_t malloc_index = 0; malloc_index < malloc_count; ++malloc_index) {
-		// Print index to buffer
-		sprintf(indexstrbuf, "%zu", malloc_index);
-
-		// Build command
-		command = strcatdyn(argv[1], false, " --input-file ", false);
-		command = strcatdyn(command, true, argv[2], false);
-		command = strcatdyn(command, true, " --malloc-failing-index ", false);
-		command = strcatdyn(command, true, indexstrbuf, false);
-		command = strcatdyn(command, true, " --enable-log-channel LEAKAGE", false);
-		command = redirect_stdout_to_null_device(command);
-
-		// Run command
-		if ((ret = system(command)) != 0) {
-			fprintf(stderr, "Command \"%s\" exited with value %d\n", command, ret);
-			++fail_count;
-		}
-
-		// Free command
-		free(command);
+	// Check argument count
+	if (argc < 3) {
+		fprintf(stderr, "Usage: %s <tester> <script>\n", argv[0]);
+		release_resources();
+		exit(EXIT_FAILURE);
 	}
 
-	// Return fail count
-	return fail_count;
+	// Store arguments
+	tester = argv[1];
+	script = argv[2];
+
+	// Hash all arguments
+	for (int i = 0; i < argc; ++i)
+		hash ^= get_string_digest(argv[i]);
+
+	// Get filename
+	tmpfilename = get_filename(hash);
+
+	// Check for memory leaks without memory failing
+	args = (tester_arguments) { .log_leakage = true };
+	run_tester(&args);
+
+	// Get number of memory allocations
+	args = (tester_arguments) { .log_allocation = true };
+	run_tester(&args);
+	malloc_count = count_lines(tmpfilename);
+	
+	// Check for memory leaks with memory failing
+	for (size_t malloc_index = 0; malloc_index < malloc_count; ++malloc_index) {
+		args = (tester_arguments) { .fail_by_index = true,
+		                            .malloc_index = malloc_index,
+		                            .log_leakage = true };
+		run_tester(&args);
+	}
+
+	// Release resources
+	release_resources();
+
+	// Exit with success
+	return EXIT_SUCCESS;
 }

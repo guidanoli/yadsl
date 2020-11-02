@@ -218,6 +218,8 @@ static yadsl_TesterRet parse_graph_io_command(const char* command)
 			return YADSL_TESTER_RET_FILE;
 		graph_io_ret = yadsl_graphio_write(graph, file_ptr, write_string_func, write_string_func);
 		fclose(file_ptr);
+		if (!yadsl_testerutils_add_tempfile_to_list(buffer))
+			return YADSL_TESTER_RET_MALLOC;
 	} else if (yadsl_testerutils_match(command, "read")) {
 		yadsl_GraphHandle* temp;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
@@ -286,6 +288,8 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 
 yadsl_TesterRet yadsl_tester_release()
 {
+	yadsl_testerutils_clear_tempfile_list();
+
 	if (graph)
 		yadsl_graph_destroy(graph);
 

@@ -51,6 +51,23 @@ bool
 yadsl_testerutils_str_to_bool(
 	const char* string);
 
+/**
+ * @brief Add temporary file to list
+ * [!] On failure, tries to remove file. Be sure to close any remaining
+ *     file pointers before calling this function
+ * @param filename temporary file name
+ * @return sucess (true) or failure (false)
+*/
+bool
+yadsl_testerutils_add_tempfile_to_list(
+	const char* filename);
+
+/**
+ * @brief Removes all temporary files in the list
+*/
+void
+yadsl_testerutils_clear_tempfile_list();
+
 /** @} */
 
 #endif

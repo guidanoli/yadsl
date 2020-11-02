@@ -36,6 +36,8 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_FILE;
 		ret = yadsl_testerutils_str_serialize(file, buffer1);
 		fclose(file);
+		if (!yadsl_testerutils_add_tempfile_to_list(buffer2))
+			return YADSL_TESTER_RET_MALLOC;
 		if (ret)
 			return yadsl_tester_return_external_value("serialization error");
 	} else if (yadsl_testerutils_match(command, "deserialize")) {
@@ -76,6 +78,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 
 yadsl_TesterRet yadsl_tester_release()
 {
+	yadsl_testerutils_clear_tempfile_list();
 	return YADSL_TESTER_RET_OK;
 }
 
