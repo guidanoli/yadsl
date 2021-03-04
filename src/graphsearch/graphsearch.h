@@ -1,5 +1,5 @@
-#ifndef __YADSL_GRAPH_SEARCH_H__
-#define __YADSL_GRAPH_SEARCH_H__
+#ifndef __YADSL_GRAPHSEARCH_H__
+#define __YADSL_GRAPHSEARCH_H__
 
 /**
  * \defgroup graphsearch Graph Search
@@ -14,10 +14,10 @@
 */
 typedef enum
 {
-	YADSL_GRAPH_SEARCH_RET_OK = 0, /**< All went ok */
-	YADSL_GRAPH_SEARCH_RET_DOES_NOT_CONTAIN_VERTEX, /**< Graph doesn't contain vertex */
-	YADSL_GRAPH_SEARCH_RET_VERTEX_ALREADY_VISITED, /**< Vertex was already visited */
-	YADSL_GRAPH_SEARCH_RET_MEMORY, /**< Could not allocate memory */
+	YADSL_GRAPHSEARCH_RET_OK = 0, /**< All went ok */
+	YADSL_GRAPHSEARCH_RET_DOES_NOT_CONTAIN_VERTEX, /**< Graph doesn't contain vertex */
+	YADSL_GRAPHSEARCH_RET_VERTEX_ALREADY_VISITED, /**< Vertex was already visited */
+	YADSL_GRAPHSEARCH_RET_MEMORY, /**< Could not allocate memory */
 }
 yadsl_GraphSearchRet;
 
@@ -43,11 +43,11 @@ typedef void (*yadsl_GraphSearchEdgeVisitFunc)(yadsl_GraphVertexObject* source, 
  * @param visit_vertex_func vertex visiting function
  * @param visit_edge_func edge visiting function
  * @return
- * * ::YADSL_GRAPH_SEARCH_RET_OK
- * * ::YADSL_GRAPH_SEARCH_RET_VERTEX_ALREADY_VISITED
- * * ::YADSL_GRAPH_SEARCH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPHSEARCH_RET_OK
+ * * ::YADSL_GRAPHSEARCH_RET_VERTEX_ALREADY_VISITED
+ * * ::YADSL_GRAPHSEARCH_RET_DOES_NOT_CONTAIN_VERTEX
 */
-yadsl_GraphSearchRet yadsl_graph_search_dfs(
+yadsl_GraphSearchRet yadsl_graphsearch_dfs(
 	yadsl_GraphHandle *graph,
 	yadsl_GraphVertexObject *initial_vertex,
 	yadsl_GraphVertexFlag visited_flag,
@@ -62,12 +62,12 @@ yadsl_GraphSearchRet yadsl_graph_search_dfs(
  * @param visit_vertex_func vertex visiting function
  * @param visit_edge_func edge visiting function
  * @return
- * * ::YADSL_GRAPH_SEARCH_RET_OK
- * * ::YADSL_GRAPH_SEARCH_RET_VERTEX_ALREADY_VISITED
- * * ::YADSL_GRAPH_SEARCH_RET_DOES_NOT_CONTAIN_VERTEX
- * * ::YADSL_GRAPH_SEARCH_RET_MEMORY
+ * * ::YADSL_GRAPHSEARCH_RET_OK
+ * * ::YADSL_GRAPHSEARCH_RET_VERTEX_ALREADY_VISITED
+ * * ::YADSL_GRAPHSEARCH_RET_DOES_NOT_CONTAIN_VERTEX
+ * * ::YADSL_GRAPHSEARCH_RET_MEMORY
 */
-yadsl_GraphSearchRet yadsl_graph_search_bfs(
+yadsl_GraphSearchRet yadsl_graphsearch_bfs(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexObject* initial_vertex,
 	yadsl_GraphVertexFlag visited_flag,
@@ -81,7 +81,7 @@ yadsl_GraphSearchRet yadsl_graph_search_bfs(
  * Used for memory leak detection.
  * @return graph search node reference count
 */
-int yadsl_graph_search_get_node_ref_count();
+int yadsl_graphsearch_get_node_ref_count();
 
 #endif
 

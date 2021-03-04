@@ -59,7 +59,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
         if (yadsl_tester_parse_arguments("z", &size) != 1)
             return YADSL_TESTER_RET_ARGUMENT;
         if (pHeap != NULL)
-            yadsl_hash_destroy(pHeap);
+            yadsl_heap_destroy(pHeap);
         if (temp = yadsl_heap_create(size, cmpObjs, free, NULL))
             pHeap = temp;
         else
@@ -107,7 +107,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 yadsl_TesterRet yadsl_tester_release()
 {
     if (pHeap) {
-        yadsl_hash_destroy(pHeap);
+        yadsl_heap_destroy(pHeap);
         pHeap = NULL;
     }
     return YADSL_TESTER_RET_OK;

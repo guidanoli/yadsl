@@ -181,7 +181,7 @@ yadsl_heap_resize(
 }
 
 void
-yadsl_hash_destroy(
+yadsl_heap_destroy(
 	yadsl_HeapHandle* heap)
 {
 	yadsl_Heap* heap_ = (yadsl_Heap*) heap;
