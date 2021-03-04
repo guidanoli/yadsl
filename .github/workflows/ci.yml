@@ -7,12 +7,15 @@ jobs:
     strategy:
       matrix:
         config: ["Release", "Debug"]
-        lua_version: ["5.1.5", "5.2.4", "5.3.6", "5.4.2"]
+        lua_version: ["5.2.4", "5.3.6", "5.4.2"]
         python_version: ["3.6-dev", "3.7-dev", "3.8-dev", "3.9-dev"]
         cmake_version: ["3.18.5"]
     
     runs-on: ubuntu-latest
     
+    env:
+      LIBDIR: ${{ contain(matrix.config, "Debug") && "$GITHUB_WORKSPACE/lib64d" || "$GITHUB_WORKSPACE/lib64" }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -109,7 +112,7 @@ jobs:
         run: cmake --build build --config "${{ matrix.config }}" --target test
 
       - name: Test Python
-        run: PYTHONPATH="$PWD/lib64" pyenv exec pytest -s
+        run: PYTHONPATH="$LIBDIR" pyenv exec pytest -s src
 
       - name: Test Lua
-        run: LUA_CPATH="$PWD/lib64/?.so" ./config/luatest
+        run: LUA_CPATH="$LIBDIR/?.so" ./config/luatest

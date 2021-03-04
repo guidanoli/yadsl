@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 failed=0
-for file in $(find -name '*_test.lua')
+for file in $(find src -name '*_test.lua')
 do
 	if lua "$file"
 	then
