@@ -66,10 +66,11 @@ function(add_yadsl_library target)
     endif()
     
     add_library(${target} ${OPTS_SOURCES})
-	target_compile_definitions(${target} PUBLIC
-		"$<IF:$<CONFIG:Debug>,YADSL_DEBUG,YADSL_RELEASE>")
-	safe_target_link_libraries(${target} yadsl)
-	safe_target_link_debug_libraries(${target} memdb)
+    target_compile_definitions(${target} PUBLIC
+        "$<IF:$<CONFIG:Debug>,YADSL_DEBUG,YADSL_RELEASE>")
+
+    safe_target_link_libraries(${target} yadsl)
+    safe_target_link_debug_libraries(${target} memdb)
     target_include_directories(${target} PUBLIC ${YADSL_SOURCE_DIR})
     
     invert_boolean("OPTS_FPIC" OPTS_STATIC)
