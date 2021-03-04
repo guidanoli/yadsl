@@ -49,6 +49,16 @@ if(YADSL_PYTHON_SUPPORT)
 	if(WIN32)
 		find_package(PythonLibs 3.5 REQUIRED)
 	endif()
+
+	# Get Python extension module suffix
+	execute_process(
+		COMMAND "${PYTHON_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/src/yadsl/ext.py"
+		OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
+		RESULT_VARIABLE PYTHON_EXT_SUFFIX_NOT_FOUND) 
+
+	if(PYTHON_EXT_SUFFIX_NOT_FOUND)
+		message(FATAL_ERROR "Could not obtain Python extension module suffix")
+	endif()
 	
 	# Add 'add_python_module' function
 	include(AddPythonModule)
