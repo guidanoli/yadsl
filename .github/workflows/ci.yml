@@ -109,7 +109,7 @@ jobs:
         run: cmake --version 2>&1 | grep -F "${{ matrix.cmake_version }}"
 
       - name: Configure build environment
-        run: cmake -B build "-DCMAKE_BUILD_TYPE=$CONFIG" -DYADSL_LUA_SUPPORT=1 -DYADSL_PYTHON_SUPPORT=1
+        run: cmake -B build "-DCMAKE_BUILD_TYPE=$CONFIG" -DYADSL_LUA_SUPPORT=1 -DYADSL_PYTHON_SUPPORT=1 "-DPython_EXECUTABLE:FILEPATH=$(pyenv which python)"
 
       - name: Build
         run: cmake --build build --config "$CONFIG" --target all
