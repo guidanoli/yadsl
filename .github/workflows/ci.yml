@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      LIBDIR: ${{ contains(matrix.config, 'Debug') && '$GITHUB_WORKSPACE/lib64d' || '$GITHUB_WORKSPACE/lib64' }}
+      LIBDIR: ${{ contains(matrix.config, 'Debug') && 'lib64d' || 'lib64' }}
 
     steps:
       - name: Checkout
@@ -115,4 +115,6 @@ jobs:
         run: PYTHONPATH="$LIBDIR" pyenv exec pytest -s src
 
       - name: Test Lua
-        run: LUA_CPATH="$LIBDIR/?.so" ./config/luatest
+        run: |
+          chmod +x config/luatest
+          LUA_CPATH="$LIBDIR/?.so" config/luatest
