@@ -99,17 +99,17 @@ jobs:
       - name: Test CMake
         run: cmake --version 2>&1 | grep -F "${{ matrix.cmake_version }}"
 
-      - name: Configure build environment
-        run: cmake -B build "-DCMAKE_BUILD_TYPE=${{ matrix.config }}" "-DPython_EXECUTABLE:FILEPATH=$(pyenv which python)"
-
-      - name: Build
-        run: cmake --build build --config "${{ matrix.config }}" --target all
-
-      - name: Test C
-        run: cmake --build build --config "${{ matrix.config }}" --target test
-
-      - name: Test Python
-        run: PYTHONPATH="$PWD/lib64" pyenv exec pytest -s
-
-      - name: Test Lua
-        run: LUA_CPATH="$PWD/lib64/?.so" ./config/luatest
+#      - name: Configure build environment
+#        run: cmake -B build "-DCMAKE_BUILD_TYPE=${{ matrix.config }}" "-DPython_EXECUTABLE:FILEPATH=$(pyenv which python)"
+#
+#      - name: Build
+#        run: cmake --build build --config "${{ matrix.config }}" --target all
+#
+#      - name: Test C
+#        run: cmake --build build --config "${{ matrix.config }}" --target test
+#
+#      - name: Test Python
+#        run: PYTHONPATH="$PWD/lib64" pyenv exec pytest -s
+#
+#      - name: Test Lua
+#        run: LUA_CPATH="$PWD/lib64/?.so" ./config/luatest
