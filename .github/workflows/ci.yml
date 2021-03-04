@@ -16,7 +16,7 @@ jobs:
     env:
       CONFIG: ${{ matrix.debug && 'Debug' || 'Release' }}
       LIBDIR: ${{ matrix.debug && 'lib64d' || 'lib64' }}
-      PYTHONVER: ${{ format(matrix.debug && '{0}-debug' || '{0}', ${{ matrix.python_version }}) }}
+      PYTHONVER: ${{ format(matrix.debug && '{0}-debug' || '{0}', matrix.python_version) }}
 
     steps:
       - name: Checkout
