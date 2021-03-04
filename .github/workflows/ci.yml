@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      LIBDIR: ${{ contains(matrix.config, "Debug") && "$GITHUB_WORKSPACE/lib64d" || "$GITHUB_WORKSPACE/lib64" }}
+      LIBDIR: ${{ contains(matrix.config, 'Debug') && '$GITHUB_WORKSPACE/lib64d' || '$GITHUB_WORKSPACE/lib64' }}
 
     steps:
       - name: Checkout
