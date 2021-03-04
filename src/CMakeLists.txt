@@ -7,6 +7,7 @@ add_subdirectory(argvp)
 
 # Modules
 add_subdirectory(avl)
+add_subdirectory(bigint)
 add_subdirectory(diff)
 add_subdirectory(graph)
 add_subdirectory(graphio)
