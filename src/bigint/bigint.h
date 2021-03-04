@@ -6,9 +6,9 @@
 /**
  * \defgroup bigint Big Integer
  * @brief Integer of arbitrary precision
- * If any of the functions that return yadsl_BigIntHandle*
- * return a null pointer, it means that it could not allocate
- * enough memory.
+ * If any of the functions that returns a pointer end up
+ * returning NULL, it means that it could not allocate.
+ * Every big integer is immutable to the user.
  * @{
 */
 
@@ -34,6 +34,24 @@ yadsl_bigint_to_int(
 	int* i_ptr);
 
 /**
+ * @brief Copy bigint
+ * @param bigint
+ * @return bigint
+*/
+yadsl_BigIntHandle*
+yadsl_bigint_copy(
+	yadsl_BigIntHandle* bigint);
+
+/**
+ * @brief Multiplicates a big integer by -1
+ * @param bigint
+ * @return -bigint
+*/
+yadsl_BigIntHandle*
+yadsl_bigint_opposite(
+	yadsl_BigIntHandle* bigint);
+
+/**
  * @brief Add two big integers
  * @param bigint1
  * @param bigint2
@@ -43,6 +61,7 @@ yadsl_BigIntHandle*
 yadsl_bigint_add(
 	yadsl_BigIntHandle* bigint1,
 	yadsl_BigIntHandle* bigint2);
+
 /**
  * @brief Subtract two big integers
  * @param bigint1
@@ -80,56 +99,23 @@ yadsl_bigint_divide(
  * @brief Compare two big integers
  * @param bigint1
  * @param bigint2
- * @return bigint1 > bigint2
+ * @return -1 if bigint1 < bigint2
+ *          1 if bigint1 > bigint2
+ *          0 else
 */
-bool
-yadsl_bigint_compare_gt(
+int
+yadsl_bigint_compare(
 	yadsl_BigIntHandle* bigint1,
 	yadsl_BigIntHandle* bigint2);
 
 /**
- * @brief Compare two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 >= bigint2
+ * @brief Converts big int to string
+ * @param bigint
+ * @return newly allocated string
 */
-bool
-yadsl_bigint_compare_ge(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
-
-/**
- * @brief Compare two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 == bigint2
-*/
-bool
-yadsl_bigint_compare_eq(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
-
-/**
- * @brief Compare two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 < bigint2
-*/
-bool
-yadsl_bigint_compare_le(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
-
-/**
- * @brief Compare two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 < bigint2
-*/
-bool
-yadsl_bigint_compare_lt(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
+char*
+yadsl_bigint_to_string(
+	yadsl_BigIntHandle* bigint);
 
 /**
  * @brief Destroy a bigint
