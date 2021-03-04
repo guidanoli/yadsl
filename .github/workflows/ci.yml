@@ -118,7 +118,7 @@ jobs:
         run: cmake --build build --config "$CONFIG" --target test
 
       - name: Test Python
-        run: PYTHONPATH="$LIBDIR" pyenv exec pytest -s src
+        run: PYTHONPATH="$LIBDIR" pyenv exec pytest -s src --ignore=src/yadsl/templates
 
       - name: Test Lua
         run: |
