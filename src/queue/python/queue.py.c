@@ -62,7 +62,6 @@ Queue_dequeue(QueueObject *self, PyObject *args, PyObject *kw)
 	}
 	if (yadsl_queue_dequeue(self->ob_queue, (yadsl_QueueItemObj**) &obj))
 		return NULL;
-	Py_DECREF(obj);
 	return obj;
 }
 
