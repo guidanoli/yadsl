@@ -83,7 +83,7 @@ jobs:
       - name: Install Python packages
         run: |
           pyenv exec pip install --upgrade pip
-          pyenv exec pip install -r config/dev-requirements.txt
+          pyenv exec pip install -r src/yadsl/dev-requirements.txt
 
       - name: Cache CMake
         id: cache-cmake
@@ -122,5 +122,5 @@ jobs:
 
       - name: Test Lua
         run: |
-          chmod +x config/luatest
-          LUA_CPATH="$LIBDIR/?.so" config/luatest
+          chmod +x src/yadsl/luatest
+          LUA_CPATH="$LIBDIR/?.so" src/yadsl/luatest

@@ -12,10 +12,10 @@ function(add_python_module target modulename)
 			OUTPUT_NAME "${modulename}"
 			LINKER_LANGUAGE C
 	)
-	target_include_directories(${target} PUBLIC ${PYTHON_INCLUDE_DIRS})
+	target_include_directories(${target} PUBLIC ${Python_INCLUDE_DIRS})
 	# On Windows, it is required to link to the Python libraries
 	if(WIN32)
-		target_link_libraries(${target} ${PYTHON_LIBRARIES})
+		target_link_libraries(${target} ${Python_LIBRARIES})
 	endif()
 	set_target_properties(${target} PROPERTIES FOLDER python)
 	

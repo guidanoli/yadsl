@@ -8,10 +8,10 @@ def get_repository_root():
     '''
     from pathlib import Path
     return (
-        Path(__file__)  # root/config/add_new_project.py
-        .resolve()      # root/config/
-        .parents[1]     # root
-    )                   # [1]   [0]
+        Path(__file__)  # ?/add_new_project.py
+        .resolve()      # root/src/yadsl/add_new_project.py
+        .parents[2]     # root
+    )                   # [2]  [1] [0]
 
 class BaseFileEntity(object):
     '''A generic target
@@ -196,7 +196,8 @@ def main(*args, **kwargs):
             import re
             templatepath = (
                 root
-                / 'config'
+                / 'src'
+                / 'yadsl'
                 / 'templates'
                 / 'src'
                 / 'x'
