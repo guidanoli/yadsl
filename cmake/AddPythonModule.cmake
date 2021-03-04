@@ -8,21 +8,14 @@ function(add_python_module target modulename)
 		${target}
 		PROPERTIES
 			PREFIX ""
-			DEBUG_POSTFIX "_d"
+			SUFFIX "${PYTHON_EXT_SUFFIX}"
 			OUTPUT_NAME "${modulename}"
 			LINKER_LANGUAGE C
 	)
-	if(WIN32)
-		set_target_properties(
-			${target}
-			PROPERTIES
-			SUFFIX ".pyd"
-		)
-	endif()
-	target_include_directories(${target} PUBLIC ${PYTHON_INCLUDE_DIRS})
+	target_include_directories(${target} PUBLIC ${Python_INCLUDE_DIRS})
 	# On Windows, it is required to link to the Python libraries
 	if(WIN32)
-		target_link_libraries(${target} ${PYTHON_LIBRARIES})
+		target_link_libraries(${target} ${Python_LIBRARIES})
 	endif()
 	set_target_properties(${target} PROPERTIES FOLDER python)
 	

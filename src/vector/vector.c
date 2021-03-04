@@ -1,12 +1,13 @@
 #include <vector/vector.h>
 
-#include <stdlib.h>
 #include <stdint.h>
-#include <stdint.h>
-
 #include <assert.h>
 
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 typedef struct
 {
@@ -28,26 +29,31 @@ yadsl_VectorHandle* yadsl_vector_create(size_t dtype_size, size_t size)
 
 size_t yadsl_vector_size(yadsl_VectorHandle* vector)
 {
-	return ((yadsl_Vector *) vector)->size;
+	return ((yadsl_Vector*) vector)->size;
 }
 
 void* yadsl_vector_at(yadsl_VectorHandle* vector, size_t index)
 {
-	assert(((yadsl_Vector *) vector)->size > index);
-	return ((yadsl_Vector *) vector)->data + (index * ((yadsl_Vector *) vector)->dtype_size);
+	assert(((yadsl_Vector*) vector)->size > index);
+	return ((yadsl_Vector*) vector)->data + (index * ((yadsl_Vector*) vector)->dtype_size);
 }
 
-yadsl_VectorHandle* yadsl_vector_resize(yadsl_VectorHandle* vector, size_t new_size)
+bool
+yadsl_vector_resize(
+	yadsl_VectorHandle** vector_ptr,
+	size_t new_size)
 {
-	yadsl_Vector* new_vector = (yadsl_Vector*) vector;
-
-	new_vector = realloc(vector,
-		sizeof(*new_vector) + new_vector->dtype_size * new_size * sizeof(uint8_t));
+	yadsl_Vector* new_vector = (yadsl_Vector*) *vector_ptr;
 	
-	if (new_vector)
-		new_vector->size = new_size;
+	new_vector = realloc(new_vector, sizeof(*new_vector) + new_vector->dtype_size * new_size * sizeof(uint8_t));
 
-	return new_vector;
+	if (new_vector) {
+		new_vector->size = new_size;
+		*vector_ptr = new_vector;
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void yadsl_vector_destroy(yadsl_VectorHandle* vector)

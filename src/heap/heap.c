@@ -1,9 +1,12 @@
 #include <heap/heap.h>
 
-#include <stdlib.h>
 #include <stdint.h>
 
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 typedef struct
 {
@@ -121,7 +124,7 @@ yadsl_heap_extract(
 	while (YADSL_HEAP_EXISTS(index, heap_) && YADSL_HEAP_HAS_CHILD(index, heap_)) {
 		size_t left_index = YADSL_HEAP_LEFT(index);
 		size_t right_index = YADSL_HEAP_RIGHT(index);
-		yadsl_HeapObj* left_object, *right_object;
+		yadsl_HeapObj* left_object, * right_object;
 
 		if (!YADSL_HEAP_EXISTS(right_index, heap_)) {
 			if (heap_->cmp_objs_func(heap_->arr[left_index], object, heap_->cmp_objs_arg))
@@ -159,7 +162,7 @@ yadsl_heap_resize(
 	size_t new_size)
 {
 	void* new_arr;
-	yadsl_Heap* heap_ = (yadsl_Heap *) heap;
+	yadsl_Heap* heap_ = (yadsl_Heap*) heap;
 
 	if (new_size == 0)
 		return YADSL_HEAP_RET_MEMORY;

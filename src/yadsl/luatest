@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+failed=0
+for file in $(find src -name '*_test.lua')
+do
+	if lua "$file"
+	then
+		echo "[ PASS ] $file"
+	else
+		echo "[ FAIL ] $file"
+		failed=1
+	fi
+done
+if [[ $failed -ne 0 ]]
+then
+	exit 1
+fi

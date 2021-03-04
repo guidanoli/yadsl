@@ -1,79 +1,145 @@
 #include <tester/tester.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+
+#include <argvp/argvp.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
 #endif
 
-////////////////////////////////////////////////////////////////////////////////
-// STATIC VARIABLES DECLARATIONS
-////////////////////////////////////////////////////////////////////////////////
+/*****************************************************************************/
+/*                      STATIC VARIABLES DECLARATIONS                        */
+/*****************************************************************************/
 
-static const char* char_f[] =   { "%c", NULL };
-static const char *float_f[] =  { "%f", "%g", "%e", NULL };
-static const char *int_f[] =    { "%d", "%u", NULL };
-static const char *long_f[] =   { "%l", "%lu", NULL };
-static const char *size_t_f[] = { "%zu", NULL };
-
-static size_t line; // line count
-static const char *external_ret_info = NULL; // external return value
-static const char *tester_ret_infos[YADSL_TESTER_RET_COUNT]; // return value
-
-static char buffer[BUFSIZ]    = "", // file line
-            buffer2[BUFSIZ]   = "", // previous file line
-            command[BUFSIZ]   = "", // command string
-            sep[BUFSIZ]       = "", // separation characters
-            temp[BUFSIZ]      = ""; // temporary variable
-
-static char *cursor = buffer; // buffer cursor
-
-////////////////////////////////////////////////////////////////////////////////
-// STATIC FUNCTIONS DECLARATIONS
-////////////////////////////////////////////////////////////////////////////////
-
-static yadsl_TesterRet yadsl_tester_main_internal(int argc, char **argv);
-static void yadsl_tester_load_return_values_internal();
-static yadsl_TesterRet yadsl_tester_parse_file_internal(FILE *fp);
-static void yadsl_tester_print_cursor_position_internal(FILE *fp, size_t spacing);
-static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret);
-static int yadsl_tester_parse_argument_internal(const char *format, void *arg, size_t *inc);
-static int yadsl_tester_parse_string_internal(char *arg, size_t *inc);
-static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret);
-static int yadsl_tester_parse_dtype_internal(const char **format_t, void *arg, size_t *inc);
-static int yadsl_tester_has_flag_internal(int argc, char** argv, const char* flag);
-
-////////////////////////////////////////////////////////////////////////////////
-// EXTERN FUNCTIONS DEFINITIONS
-////////////////////////////////////////////////////////////////////////////////
-
-/**
-* Usage: <program> [script-path [/LOG] [/I]]
-* If script-path is not provided,
-* then help strings are displayed.
-*/
-int main(int argc, char **argv)
+typedef struct
 {
-	yadsl_TesterRet exitReturn, ret;
-	FILE *logger = NULL;
-	if (yadsl_tester_has_flag_internal(argc, argv, "/LOG")) {
-		logger = fopen("memdb.log", "w");
-		yadsl_memdb_set_logger(logger);
+	char dtype;
+	void *data;
+}
+yadsl_TesterObject;
+
+static const char
+*char_f[] = { "%c", NULL },
+*float_f[] = { "%f", "%g", "%e", NULL },
+*int_f[] = { "%d", "%u", NULL },
+*long_f[] = { "%l", "%lu", NULL },
+*size_t_f[] = { "%zu", NULL };
+
+static size_t line; /* line count */
+static const char* external_ret_info; /* external return value */
+static const char* tester_ret_infos[YADSL_TESTER_RET_COUNT]; /* return value */
+
+static char
+buffer[BUFSIZ], /* file line */
+buffer2[BUFSIZ], /* previous file line */
+command[BUFSIZ], /* command string */
+sep[BUFSIZ], /* separation characters */
+temp[BUFSIZ]; /* temporary variable */
+
+static char* cursor = buffer; /* buffer cursor */
+
+static yadsl_ArgvParserHandle* argvp; /* argument vector parser */
+
+static FILE* input_fp; /* Input file pointer */
+static FILE* log_fp; /* Logger file pointer */
+
+static int argc; /* Argument count */
+static char** argv; /* Argument vector */
+
+#define YADSL_TESTER_PROPAGATE(status, temp) \
+do { \
+	if (!status) \
+		status = temp; \
+} while (0)
+
+/*****************************************************************************/
+/*                      STATIC FUNCTIONS DECLARATIONS                        */
+/*****************************************************************************/
+
+static yadsl_TesterRet yadsl_tester_argvp_init_internal();
+static yadsl_TesterRet yadsl_tester_argvp_release_internal();
+static yadsl_TesterRet yadsl_tester_check_memleak_internal();
+static void yadsl_tester_load_return_values_internal();
+static yadsl_TesterRet yadsl_tester_parse_file_internal();
+static void yadsl_tester_print_cursor_position_internal(FILE* fp, size_t spacing);
+static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret);
+static int yadsl_tester_parse_argument_internal(const char* format, void* arg, size_t* inc);
+static int yadsl_tester_parse_string_internal(char* arg, size_t* inc);
+static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret);
+static int yadsl_tester_parse_dtype_internal(const char** format_t, void* arg, size_t* inc);
+
+/*****************************************************************************/
+/*                      EXTERN FUNCTIONS DEFINITIONS                         */
+/*****************************************************************************/
+
+int main(int argc_, char** argv_)
+{
+	yadsl_TesterRet status = YADSL_TESTER_RET_OK, temp;
+
+	/* Store arguments globally */
+	argc = argc_;
+	argv = argv_;
+
+	/* Load return values */
+	yadsl_tester_load_return_values_internal();
+
+	/* Initialize argument vector parser (critical) */
+	if (status = yadsl_tester_argvp_init_internal())
+		return status;
+
+	/* If no arguments were passed, then print help strings */
+	if (argc == 1) {
+		yadsl_tester_print_help_strings();
+		return YADSL_TESTER_RET_OK;
 	}
-	ret = yadsl_tester_main_internal(argc, argv);
-	exitReturn = yadsl_tester_release();
-	if (ret == YADSL_TESTER_RET_OK)
-		ret = exitReturn;
-	if (ret == YADSL_TESTER_RET_OK &&
-		(yadsl_memdb_list_size() || yadsl_memdb_error_occurred()))
-		ret = YADSL_TESTER_RET_MEMLEAK;
-	yadsl_tester_print_return_value_info_internal(ret);
-	yadsl_memdb_clear_list();
-	yadsl_memdb_set_logger(NULL);
-	if (logger) fclose(logger);
-	return ret;
+
+	/* Initialize tester (may fail) */
+	status = yadsl_tester_init();
+
+	/* If initialization failed, skip parsing */
+	if (!status) {
+
+		/* Parse script (may fail) */
+		status = yadsl_tester_parse_file_internal();
+
+	}
+
+	/* Release tester (may fail) */
+	temp = yadsl_tester_release();
+
+	/* If parsing succeeds, take status code from release callback */
+	YADSL_TESTER_PROPAGATE(status, temp);
+
+	/* Release argument vector parser */
+	temp = yadsl_tester_argvp_release_internal();
+
+	/* Propagate error code, if status is OK */
+	YADSL_TESTER_PROPAGATE(status, temp);
+
+	/* Check for memory leak (may fail) */
+	temp = yadsl_tester_check_memleak_internal();
+
+#ifdef YADSL_DEBUG
+	/* Clear allocated memory block list */
+	yadsl_memdb_clear_amb_list();
+#endif
+
+	/* Propagate error code, if status is OK */
+	YADSL_TESTER_PROPAGATE(status, temp);
+
+#ifdef YADSL_DEBUG
+	/* Ignore MALLOC error if a fail has occurred */
+	if (status == YADSL_TESTER_RET_MALLOC && yadsl_memdb_fail_occurred())
+		status = YADSL_TESTER_RET_OK;
+#endif
+
+	/* Print return value information */
+	yadsl_tester_print_return_value_info_internal(status);
+
+	return status;
 }
 
 size_t yadsl_tester_get_dtype_size(char dtype)
@@ -96,22 +162,50 @@ size_t yadsl_tester_get_dtype_size(char dtype)
 	}
 }
 
+const char*
+yadsl_tester_get_dtype_fmt(
+	char dtype)
+{
+	switch (dtype) {
+	case 'c':
+		return "%c";
+	case 'i':
+		return "%d";
+	case 'f':
+		return "%f";
+	case 'l':
+		return "%l";
+	case 's':
+		return "%s";
+	case 'z':
+		return "%zu";
+	default:
+		return 0;
+	}
+}
+
 int yadsl_tester_compare_arguments(char dtype, const void* expected, const void* obtained)
 {
-	return memcmp(expected, obtained, yadsl_tester_get_dtype_size(dtype));
+	if (dtype == 's')
+		return strcmp(expected, obtained);
+	else
+		return memcmp(expected, obtained, yadsl_tester_get_dtype_size(dtype));
 }
 
 void yadsl_tester_copy_argument(char dtype, const void* source, void* destination)
 {
-	memcpy(destination, source, yadsl_tester_get_dtype_size(dtype));
+	if (dtype == 's')
+		strcpy(destination, source);
+	else
+		memcpy(destination, source, yadsl_tester_get_dtype_size(dtype));
 }
 
-int yadsl_tester_parse_arguments(const char *format, ...)
+int yadsl_tester_parse_arguments(const char* format, ...)
 {
 	va_list va;
 	size_t inc = 0;
-	void *arg;
-	char *str;
+	void* arg;
+	char* str;
 	int argc = 0;
 	if (format == NULL) return -1;
 	va_start(va, format);
@@ -119,42 +213,42 @@ int yadsl_tester_parse_arguments(const char *format, ...)
 		int parsingError = 0;
 		switch (*format) {
 		case 'c':
-			if (!(arg = va_arg(va, char *))) {
+			if (!(arg = va_arg(va, char*))) {
 				parsingError = 1;
 				break;
 			}
 			parsingError = yadsl_tester_parse_dtype_internal(char_f, arg, &inc);
 			break;
 		case 'f':
-			if (!(arg = va_arg(va, float *))) {
+			if (!(arg = va_arg(va, float*))) {
 				parsingError = 1;
 				break;
 			}
 			parsingError = yadsl_tester_parse_dtype_internal(float_f, arg, &inc);
 			break;
 		case 'i':
-			if (!(arg = va_arg(va, int *))) {
+			if (!(arg = va_arg(va, int*))) {
 				parsingError = 1;
 				break;
 			}
 			parsingError = yadsl_tester_parse_dtype_internal(int_f, arg, &inc);
 			break;
 		case 'l':
-			if (!(arg = va_arg(va, long *))) {
+			if (!(arg = va_arg(va, long*))) {
 				parsingError = 1;
 				break;
 			}
 			parsingError = yadsl_tester_parse_dtype_internal(long_f, arg, &inc);
 			break;
 		case 's':
-			if (!(str = va_arg(va, char *))) {
+			if (!(str = va_arg(va, char*))) {
 				parsingError = 1;
 				break;
 			}
 			parsingError = yadsl_tester_parse_string_internal(str, &inc);
 			break;
 		case 'z':
-			if (!(arg = va_arg(va, size_t *))) {
+			if (!(arg = va_arg(va, size_t*))) {
 				parsingError = 1;
 				break;
 			}
@@ -175,7 +269,106 @@ int yadsl_tester_parse_arguments(const char *format, ...)
 	return argc;
 }
 
-yadsl_TesterRet yadsl_tester_return_external_value(const char *info)
+void* yadsl_tester_object_create(char dtype, char *data)
+{
+	yadsl_TesterObject* obj;
+	size_t size;
+	if (dtype == 's') {
+		size = strlen(data) + 1;
+	} else {
+		size = yadsl_tester_get_dtype_size(dtype);
+		if (size == 0)
+			return NULL;
+	}
+	obj = malloc(sizeof * obj);
+	if (obj) {
+		obj->dtype = dtype;
+		obj->data = malloc(size);
+		if (!(obj->data))
+			goto fail;
+		memcpy(obj->data, (void*) data, size);
+	}
+	return obj;
+fail:
+	if (obj)
+		free(obj);
+	return NULL;
+}
+
+void* yadsl_tester_object_parse()
+{
+	char* cursor_temp = cursor;
+	char dtypebuf[2] = { 0, 0 };
+	char data[BUFSIZ];
+	
+	/* Parse data type */
+	if (yadsl_tester_parse_arguments("c", &dtypebuf[0]) != 1) {
+		/* Stopping in the middle of an object causes
+		   YADSL_TESTER_RET_TOKEN to be thrown */
+		cursor = cursor_temp;
+	}
+
+	/* Parse data */
+	if (yadsl_tester_parse_arguments(dtypebuf, data) != 1)
+		return NULL;
+
+	/* Return object */
+	return yadsl_tester_object_create(dtypebuf[0], data);
+}
+
+void yadsl_tester_object_free(void* object)
+{
+	yadsl_TesterObject* object_ = (yadsl_TesterObject*) object;
+	free(object_->data);
+	free(object_);
+}
+
+bool yadsl_tester_object_equal(void* object1, void* object2)
+{
+	yadsl_TesterObject* obj1 = (yadsl_TesterObject*) object1;
+	yadsl_TesterObject* obj2 = (yadsl_TesterObject*) object2;
+	if (obj1->dtype != obj2->dtype)
+		return false;
+	return yadsl_tester_compare_arguments(obj1->dtype, obj1->data, obj2->data) == 0;
+}
+
+void* yadsl_tester_object_copy(void* object)
+{
+	yadsl_TesterObject* new_object = malloc(sizeof *new_object);
+	if (new_object) {
+		yadsl_TesterObject *base = (yadsl_TesterObject *) object;
+		size_t size;
+
+		new_object->dtype = base->dtype;
+		
+		if (base->dtype == 's')
+			size = strlen((const char*) base->data) + 1;
+		else
+			size = yadsl_tester_get_dtype_size(base->dtype);
+		
+		void* data = malloc(size);
+		if (!data) {
+			free(new_object);
+			return NULL;
+		}
+
+		yadsl_tester_copy_argument(base->dtype, base->data, data);
+		new_object->data = data;
+	}
+	return new_object;
+}
+
+char yadsl_tester_object_dtype(void* object)
+{
+	return ((yadsl_TesterObject*) object)->dtype;
+}
+
+const void* yadsl_tester_object_data(void* object)
+{
+	return ((yadsl_TesterObject*) object)->data;
+}
+
+yadsl_TesterRet yadsl_tester_return_external_value(const char* info)
 {
 	external_ret_info = info;
 	return YADSL_TESTER_RET_EXTERNAL;
@@ -183,11 +376,11 @@ yadsl_TesterRet yadsl_tester_return_external_value(const char *info)
 
 void yadsl_tester_print_help_strings()
 {
-	const char **str = yadsl_tester_help_strings;
+	const char** str = yadsl_tester_help_strings;
 	for (; str && *str; ++str) puts(*str);
 }
 
-const char *yadsl_tester_get_return_value_info(yadsl_TesterRet returnValue)
+const char* yadsl_tester_get_return_value_info(yadsl_TesterRet returnValue)
 {
 	if (returnValue < YADSL_TESTER_RET_OK || returnValue >= YADSL_TESTER_RET_COUNT)
 		return "Invalid return value";
@@ -199,7 +392,7 @@ const char *yadsl_tester_get_return_value_info(yadsl_TesterRet returnValue)
 	return tester_ret_infos[returnValue];
 }
 
-void yadsl_tester_log(const char *message, ...)
+void yadsl_tester_log(const char* message, ...)
 {
 	va_list va;
 	size_t col = cursor - buffer + 1;
@@ -210,43 +403,16 @@ void yadsl_tester_log(const char *message, ...)
 	va_end(va);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// STATIC FUNCTIONS DEFINITIONS
-////////////////////////////////////////////////////////////////////////////////
+/*****************************************************************************/
+/*                      STATIC FUNCTIONS DEFINITIONS                         */
+/*****************************************************************************/
 
-static yadsl_TesterRet yadsl_tester_main_internal(int argc, char **argv)
-{
-	FILE *fp;
-	yadsl_TesterRet ret;
-	// First, load return value informations
-	yadsl_tester_load_return_values_internal();
-	if (argc == 1) {
-		// If no arguments were passed, then print help strings
-		yadsl_tester_print_help_strings();
-		return YADSL_TESTER_RET_OK;
-	}
-	if (yadsl_tester_has_flag_internal(argc, argv, "/I")) {
-		// Use standard input
-		fp = stdin;
-	} else {
-		// Open file whose path was passed as argument
-		fp = fopen(argv[1], "r");
-		if (fp == NULL)
-			return YADSL_TESTER_RET_FILE;
-	}
-	// Initialize tester
-	if (ret = yadsl_tester_init())
-		return ret;
-	// Parse script
-	return yadsl_tester_parse_file_internal(fp);
-}
-
-static yadsl_TesterRet yadsl_tester_parse_file_internal(FILE *fp)
+yadsl_TesterRet yadsl_tester_parse_file_internal()
 {
 	yadsl_TesterRet ret = YADSL_TESTER_RET_OK;
 	size_t prev_line = line = 0;
 	// Read a line from the file and store it in a buffer
-	while (fgets(buffer, sizeof(buffer), fp)) {
+	while (fgets(buffer, sizeof(buffer), input_fp)) {
 		size_t bufflen = strlen(buffer);
 		if (bufflen == sizeof(buffer) - 1)
 			// If the buffer overflows, then quit
@@ -299,12 +465,13 @@ static yadsl_TesterRet yadsl_tester_parse_file_internal(FILE *fp)
 	}
 	return ret;
 }
-static void yadsl_tester_load_return_values_internal()
+
+void yadsl_tester_load_return_values_internal()
 {
 	struct returnValue
 	{
 		yadsl_TesterRet value;
-		const char *info;
+		const char* info;
 	};
 	size_t i;
 	struct returnValue nativeValues[] = {
@@ -317,6 +484,7 @@ static void yadsl_tester_load_return_values_internal()
 		{YADSL_TESTER_RET_ARGUMENT, "argument"},
 		{YADSL_TESTER_RET_RETURN, "return"},
 		{YADSL_TESTER_RET_TOKEN, "token"},
+		{YADSL_TESTER_RET_CATCH, "catch"},
 		{YADSL_TESTER_RET_EXTERNAL, "external"},
 	};
 	for (i = 0; i < sizeof(nativeValues) / sizeof(nativeValues[0]); ++i) {
@@ -325,7 +493,7 @@ static void yadsl_tester_load_return_values_internal()
 	}
 }
 
-static int yadsl_tester_parse_argument_internal(const char *format, void *arg, size_t *inc)
+int yadsl_tester_parse_argument_internal(const char* format, void* arg, size_t* inc)
 {
 	if (arg == NULL) return -1;
 	if (sscanf(cursor + *inc, "%[ \t\n]%[^ \t\n]", sep, temp) != 2)
@@ -336,22 +504,24 @@ static int yadsl_tester_parse_argument_internal(const char *format, void *arg, s
 	return 0;
 }
 
-static int yadsl_tester_parse_string_internal(char *arg, size_t *inc)
+int yadsl_tester_parse_string_internal(char* arg, size_t* inc)
 {
-	if (arg == NULL) return -1;
+	if (arg == NULL)
+		return -1;
 	if (sscanf(cursor + *inc, "%[ \t\n]\"%[^\"]\"", sep, temp) == 2) {
-		*inc += 2; /* First checks if there are quotation marks */
-	} else if (sscanf(cursor + *inc, "%[ \t\n]%[^ \t\n]", sep, temp) != 2) {
+		*inc += strlen(sep) + strlen(temp) + 2; /* Includes quotation marks */
+	} else if (sscanf(cursor + *inc, "%[ \t\n]%[^ \t\n]", sep, temp) == 2) {
+		*inc += strlen(sep) + strlen(temp);
+		if (strcmp(temp, "\"\"") == 0)
+			temp[0] = '\0'; /* Make "" an empty string in practice */
+	} else {
 		return -1; /* Then attempts to parse without them */
 	}
 	strcpy(arg, temp);
-	if (arg == NULL)
-		return -1;
-	*inc += strlen(sep) + strlen(temp);
 	return 0;
 }
 
-static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret)
+yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret)
 {
 	char arg[BUFSIZ] = "";
 	if (yadsl_tester_parse_arguments("s", arg) == 1) {
@@ -367,15 +537,22 @@ static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet
 		ret = YADSL_TESTER_RET_ARGUMENT;
 		goto jump_print;
 	}
-	fprintf(stderr, "ERROR: Could not catch \"%s\"\n", yadsl_tester_get_return_value_info(ret));
+	if (ret == YADSL_TESTER_RET_OK) {
+		fprintf(stderr, "ERROR: Tried to catch \"%s\" but there was no error\n", arg);
+		ret = YADSL_TESTER_RET_CATCH;
+	} else {
+		fprintf(stderr, "ERROR: Tried to catch \"%s\" but error was \"%s\"\n",
+			arg, yadsl_tester_get_return_value_info(ret));
+	}
 jump_print:
 	return ret;
 }
 
-static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret)
+void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret)
 {
 	if (ret) {
-		size_t spacing = fprintf(stderr, "ERROR: \"%s\" ", yadsl_tester_get_return_value_info(ret));
+		size_t spacing = fprintf(stderr, "ERROR: \"%s\" ",
+			yadsl_tester_get_return_value_info(ret));
 		yadsl_tester_print_cursor_position_internal(stderr, spacing);
 	}
 }
@@ -383,7 +560,7 @@ static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret)
 // Prints the buffer and the cursor current position with an arrow (^)
 // spacing = how many characters have been printed out on the current line
 // HINT: printf-like functions return the number of characters printed out
-static void yadsl_tester_print_cursor_position_internal(FILE *fp, size_t spacing)
+void yadsl_tester_print_cursor_position_internal(FILE* fp, size_t spacing)
 {
 	size_t col = cursor - buffer, bufflen = strlen(buffer);
 	if (bufflen == 0) return;
@@ -403,9 +580,9 @@ static void yadsl_tester_print_cursor_position_internal(FILE *fp, size_t spacing
 	fprintf(fp, "^\n");
 }
 
-static int yadsl_tester_parse_dtype_internal(const char **format_t, void *arg, size_t *inc)
+int yadsl_tester_parse_dtype_internal(const char** format_t, void* arg, size_t* inc)
 {
-	const char *format;
+	const char* format;
 	while (format = *(format_t++)) {
 		if (!yadsl_tester_parse_argument_internal(format, arg, inc))
 			return 0;
@@ -413,10 +590,139 @@ static int yadsl_tester_parse_dtype_internal(const char **format_t, void *arg, s
 	return 1;
 }
 
-int yadsl_tester_has_flag_internal(int argc, char** argv, const char* flag)
+yadsl_TesterRet yadsl_tester_argvp_init_internal()
 {
-	while (argc--)
-		if (strcmp(argv[argc], flag) == 0)
-			return 1;
-	return 0;
+	static yadsl_ArgvKeywordArgumentDef kwargdefs[] = {
+		{ "--input-file", 1 },
+		{ "--log-file", 1 },
+		{ "--malloc-failing-rate", 1 },
+		{ "--malloc-failing-index", 1 },
+		{ "--prng-seed", 1 },
+		{ "--enable-log-channel", 1 },
+		{ NULL, 0 }, /* End of definitions array */
+	};
+
+	argvp = yadsl_argvp_create(argc, argv);
+
+	/* If could not allocate argvp, exit */
+	if (argvp == NULL) {
+		fprintf(stderr, "ERROR: Could not allocate argvp.\n");
+		return YADSL_TESTER_RET_MALLOC;
+	}
+
+	/* Add keyword arguments */
+	yadsl_argvp_add_keyword_arguments(argvp, kwargdefs);
+
+	const char* input_file;
+	input_file = yadsl_argvp_get_keyword_argument_value(argvp, "--input-file", 0);
+	if (input_file != NULL) {
+		input_fp = fopen(input_file, "r");
+		if (input_fp == NULL)
+			return YADSL_TESTER_RET_FILE;
+	} else {
+		input_fp = stdin;
+	}
+
+#ifdef YADSL_DEBUG
+	const char* log_file;
+	log_file = yadsl_argvp_get_keyword_argument_value(argvp, "--log-file", 0);
+	if (log_file != NULL) {
+		log_fp = fopen(log_file, "w");
+		if (log_fp == NULL)
+			return YADSL_TESTER_RET_FILE;
+		yadsl_memdb_set_logger(log_fp);
+	} else {
+		yadsl_memdb_set_logger(NULL);
+	}
+#endif
+
+#ifdef YADSL_DEBUG
+	float malloc_failing_rate;
+	if (yadsl_argvp_parse_keyword_argument_value(argvp,
+		"--malloc-failing-rate", 0, "%f", &malloc_failing_rate) == 1) {
+		float effective_malloc_failing_rate;
+		yadsl_memdb_set_fail_rate(malloc_failing_rate);
+		effective_malloc_failing_rate = yadsl_memdb_get_fail_rate();
+		if (effective_malloc_failing_rate != malloc_failing_rate) {
+			fprintf(stderr, "WARNING: Failing rate clamped to %f.\n",
+				effective_malloc_failing_rate);
+		}
+	} else {
+		yadsl_memdb_set_fail_rate(0.f);
+	}
+#endif
+
+#ifdef YADSL_DEBUG
+	size_t malloc_failing_index;
+	if (yadsl_argvp_parse_keyword_argument_value(argvp,
+		"--malloc-failing-index", 0, "%zu", &malloc_failing_index) == 1) {
+		yadsl_memdb_set_fail_by_index(true);
+		yadsl_memdb_set_fail_index(malloc_failing_index);
+	} else {
+		yadsl_memdb_set_fail_by_index(false);
+	}
+#endif
+
+#ifdef YADSL_DEBUG
+	unsigned int prng_seed;
+	if (yadsl_argvp_parse_keyword_argument_value(argvp,
+		"--prng-seed", 0, "%u", &prng_seed) == 1) {
+		yadsl_memdb_set_prng_seed(prng_seed);
+	}
+#endif
+
+#ifdef YADSL_DEBUG
+	const char* log_channel_name, *kw = "--enable-log-channel";
+	while (1) {
+		log_channel_name = yadsl_argvp_get_keyword_argument_value(argvp, kw, 0);
+		kw = NULL; /* Iterate over keyword argument values */
+		if (log_channel_name) {
+			yadsl_MemDebugLogChannel log_channel_value;
+			if (strcmp(log_channel_name, "ALLOCATION") == 0) {
+				log_channel_value = YADSL_MEMDB_LOG_CHANNEL_ALLOCATION;
+			} else if (strcmp(log_channel_name, "DEALLOCATION") == 0) {
+				log_channel_value = YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION;
+			} else if (strcmp(log_channel_name, "LEAKAGE") == 0) {
+				log_channel_value = YADSL_MEMDB_LOG_CHANNEL_LEAKAGE;
+			} else {
+				fprintf(stderr, "WARNING: Invalid log channel name.\n");
+				continue;
+			}
+			yadsl_memdb_log_channel_set(log_channel_value, true);
+		} else {
+			break;
+		}
+	}
+#endif
+	
+	return YADSL_TESTER_RET_OK;
+}
+
+yadsl_TesterRet yadsl_tester_argvp_release_internal()
+{
+	yadsl_argvp_destroy(argvp);
+
+#ifdef YADSL_DEBUG
+	if (log_fp != NULL) {
+		fclose(log_fp);
+		log_fp = NULL;
+		yadsl_memdb_set_logger(NULL);
+	}
+#endif
+
+	if (input_fp != stdin) {
+		fclose(input_fp);
+		input_fp = NULL;
+	}
+
+	return YADSL_TESTER_RET_OK;
+}
+
+yadsl_TesterRet yadsl_tester_check_memleak_internal()
+{
+#ifdef YADSL_DEBUG
+	if (yadsl_memdb_amb_list_size() > 0 || yadsl_memdb_error_occurred())
+		return YADSL_TESTER_RET_MEMLEAK;	
+#endif
+	return YADSL_TESTER_RET_OK;
 }

@@ -1,6 +1,23 @@
 /yes YES
-/no NO
-/no ANYTHING
+/yes Yes
+/yes yes
+/yes TRUE
+/yes True
+/yes true
+/yes 1
 
-/serialize "My enourmous string which is awesome" ser1.txt
-/deserialize "My enourmous string which is awesome" ser1.txt
+/no NO
+/no No
+/no no
+/no FALSE
+/no False
+/no false
+/no 0
+
+/no ANYTHING
+/no ""
+/no " "
+/no "   "
+
+/serialize "My enourmous string which is awesome" temp
+/deserialize "My enourmous string which is awesome" temp

@@ -11,7 +11,7 @@ For those on *Windows*, you are able to obtain the necessaries binaries in the [
 
 ## Step 2: Configure your build system
 
-Having installed *CMake*, make sure its version is at least 3.0. Check it by running:
+Having installed *CMake*, make sure its version is at least 3.12. Check it by running:
 
 ```sh
 $ cmake --version

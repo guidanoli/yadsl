@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+
 #include <queue/queue.h>
 
 typedef struct {
@@ -59,9 +60,8 @@ Queue_dequeue(QueueObject *self, PyObject *args, PyObject *kw)
 		PyErr_SetString(PyExc_RuntimeError, "Empty queue");
 		return NULL; // Throw exception
 	}
-	if (yadsl_queue_dequeue(self->ob_queue, &obj))
+	if (yadsl_queue_dequeue(self->ob_queue, (yadsl_QueueItemObj**) &obj))
 		return NULL;
-	Py_DECREF(obj);
 	return obj;
 }
 
@@ -83,7 +83,7 @@ Queue_next(QueueObject *self)
 		return NULL;
 	if (is_empty)
 		return NULL; // Stop iteration
-	if (yadsl_queue_dequeue(self->ob_queue, &obj))
+	if (yadsl_queue_dequeue(self->ob_queue, (yadsl_QueueItemObj**) &obj))
 		return NULL;
 	return obj; // Pass ownership to iterator
 }

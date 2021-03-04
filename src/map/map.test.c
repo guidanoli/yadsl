@@ -1,9 +1,9 @@
 #include <map/map.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 
+#include <string/string.h>
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 
@@ -31,7 +31,7 @@ yadsl_TesterRet convertReturn(yadsl_MapRet mapId)
 	case YADSL_MAP_RET_ENTRY_NOT_FOUND:
 		return yadsl_tester_return_external_value("noentry");
 	case YADSL_MAP_RET_MEMORY:
-		return yadsl_tester_return_external_value("malloc");
+		return YADSL_TESTER_RET_MALLOC;
 	default:
 		return yadsl_tester_return_external_value("unknown");
 	}
@@ -51,19 +51,19 @@ yadsl_TesterRet yadsl_tester_init()
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	yadsl_MapRet mapId;
-	if yadsl_testerutils_match(command, "put") {
+	if (yadsl_testerutils_match(command, "put")) {
 		char *temp, *keyStr, *valStr;
 		bool actual, expected;
 		if (yadsl_tester_parse_arguments("sss", key, value, yn) != 3)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((keyStr = strdup(key)) == NULL)
+		if ((keyStr = yadsl_string_duplicate(key)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		if ((valStr = strdup(value)) == NULL) {
+		if ((valStr = yadsl_string_duplicate(value)) == NULL) {
 			free(keyStr);
 			return YADSL_TESTER_RET_MALLOC;
 		}
 		expected = yadsl_testerutils_str_to_bool(yn);
-		mapId = yadsl_map_entry_add(pMap, keyStr, valStr, &actual, &temp);
+		mapId = yadsl_map_entry_add(pMap, keyStr, valStr, &actual, (yadsl_MapEntryValue**) &temp);
 		if (actual) {
 			free(keyStr);
 			free(temp);
@@ -73,35 +73,36 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		}
 		if (!mapId && actual != expected)
 			return YADSL_TESTER_RET_RETURN;
-	} else if yadsl_testerutils_match(command, "get") {
+	} else if (yadsl_testerutils_match(command, "get")) {
 		char *temp, *keyStr;
 		if (yadsl_tester_parse_arguments("ss", key, value) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((keyStr = strdup(key)) == NULL)
+		if ((keyStr = yadsl_string_duplicate(key)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		mapId = yadsl_map_entry_get(pMap, keyStr, &temp);
+		mapId = yadsl_map_entry_get(pMap, keyStr, (yadsl_MapEntryValue**) &temp);
 		free(keyStr);
 		if (mapId == YADSL_MAP_RET_OK) {
 			if (temp == NULL) {
 				yadsl_tester_log("Value returned by mapGetEntry is NULL");
 				return YADSL_TESTER_RET_RETURN;
 			}
-			if (yadsl_testerutils_unmatch(value, temp))
+			if (strcmp(value, temp))
 				return YADSL_TESTER_RET_RETURN;
 		}
-	} else if yadsl_testerutils_match(command, "remove") {
+	} else if (yadsl_testerutils_match(command, "remove")) {
 		char *temp, *keyStr, *valStr;
 		if (yadsl_tester_parse_arguments("s", key) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(key)) == NULL)
+		if ((temp = yadsl_string_duplicate(key)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		mapId = yadsl_map_entry_remove(pMap, temp, &keyStr, &valStr);
+		mapId = yadsl_map_entry_remove(pMap, temp,
+			(yadsl_MapEntryKey**) &keyStr, (yadsl_MapEntryValue**) &valStr);
 		free(temp);
 		if (mapId == YADSL_MAP_RET_OK) {
 			free(keyStr);
 			free(valStr);
 		}
-	} else if yadsl_testerutils_match(command, "nentries") {
+	} else if (yadsl_testerutils_match(command, "nentries")) {
 		size_t expected, actual;
 		if (yadsl_tester_parse_arguments("z", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -128,5 +129,5 @@ static void free_entry_func(void *k, void *v, void *arg)
 
 static int cmp_keys_func(void *a, void *b, void *arg)
 {
-	return yadsl_testerutils_match((char *) a, (char *) b);
+	return strcmp((char *) a, (char *) b) == 0;
 }

@@ -30,22 +30,34 @@ yadsl_GraphIoRet;
 /**
  * @brief Function responsible for serializing a vertex object
 */
-typedef int (*yadsl_GraphIoVertexWriteFunc)(FILE*, yadsl_GraphVertexObject*);
+typedef int
+(*yadsl_GraphIoVertexWriteFunc)(
+	FILE*,
+	yadsl_GraphVertexObject*);
 
 /**
  * @brief Function responsible for serializing an edge object
 */
-typedef int (*yadsl_GraphIoEdgeWriteFunc)(FILE*, yadsl_GraphEdgeObject*);
+typedef int
+(*yadsl_GraphIoEdgeWriteFunc)(
+	FILE*,
+	yadsl_GraphEdgeObject*);
 
 /**
  * @brief Function responsible for deserializing a vertex object
 */
-typedef int (*yadsl_GraphIoVertexReadFunc)(FILE*, yadsl_GraphVertexObject**);
+typedef int
+(*yadsl_GraphIoVertexReadFunc)(
+	FILE*,
+	yadsl_GraphVertexObject**);
 
 /**
  * @brief Function responsible for deserializing an edge object
 */
-typedef int (*yadsl_GraphIoEdgeReadFunc)(FILE*, yadsl_GraphEdgeObject**);
+typedef int
+(*yadsl_GraphIoEdgeReadFunc)(
+	FILE*,
+	yadsl_GraphEdgeObject**);
 
 /**
  * @brief Serialize graph structure to file
@@ -59,9 +71,10 @@ typedef int (*yadsl_GraphIoEdgeReadFunc)(FILE*, yadsl_GraphEdgeObject**);
  * * ::YADSL_GRAPHIO_RET_WRITING_FAILURE
  * * ::YADSL_GRAPHIO_RET_MEMORY
 */
-yadsl_GraphIoRet yadsl_graphio_write(
-	yadsl_GraphHandle *graph,
-	FILE *file_ptr,
+yadsl_GraphIoRet
+yadsl_graphio_write(
+	yadsl_GraphHandle* graph,
+	FILE* file_ptr,
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
 	yadsl_GraphIoEdgeWriteFunc write_edge_func);
 
@@ -84,15 +97,16 @@ yadsl_GraphIoRet yadsl_graphio_write(
  * * ::YADSL_GRAPHIO_RET_CORRUPTED_FILE_FORMAT
  * * ::YADSL_GRAPHIO_RET_MEMORY
 */
-yadsl_GraphIoRet yadsl_graphio_read(
-	FILE *file_ptr,
+yadsl_GraphIoRet
+yadsl_graphio_read(
+	FILE* file_ptr,
 	yadsl_GraphIoVertexReadFunc read_vertex_func,
 	yadsl_GraphIoEdgeReadFunc read_edge_func,
 	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func,
 	yadsl_GraphFreeVertexObjFunc free_vertex_func,
 	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func,
 	yadsl_GraphFreeEdgeObjFunc free_edge_func,
-	yadsl_GraphHandle **graph_ptr);
+	yadsl_GraphHandle** graph_ptr);
 
 /** @} */
 

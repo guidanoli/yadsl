@@ -1,11 +1,15 @@
 #include <graph/graph.h>
 
 #include <assert.h>
-#include <stdlib.h>
 #include <stdarg.h>
 
-#include <set/set.h>
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
+
+#include <set/set.h>
 
 /*******************************************************************************
 * Graph data structure invariants
@@ -40,7 +44,7 @@
 typedef struct
 {
 	bool is_directed; /**< whether graph is directed or not */
-	yadsl_SetHandle *vertex_set; /**< set of yadsl_GraphVertex */
+	yadsl_SetHandle* vertex_set; /**< set of yadsl_GraphVertex */
 	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func; /**< compares yadsl_GraphVertex::item */
 	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func; /**< compares yadsl_GraphEdge::item */
 	yadsl_GraphFreeVertexObjFunc free_vertex_func; /**< frees yadsl_GraphVertex::item */
@@ -61,14 +65,14 @@ yadsl_GraphVertex;
 
 typedef struct
 {
-	yadsl_GraphEdgeObject *item; /**< generic portion of edge */
+	yadsl_GraphEdgeObject* item; /**< generic portion of edge */
 	yadsl_GraphVertex* source; /**< vertex from which the edge comes from */
 	yadsl_GraphVertex* destination; /**< vertex to with the edge goes to */
 }
 yadsl_GraphEdge;
 
-  /**********************************/
- /*  Private functions prototypes  */
+/**********************************/
+/*  Private functions prototypes  */
 /**********************************/
 
 ///////////////////////////////////////////////
@@ -80,7 +84,7 @@ yadsl_GraphEdge;
 
 typedef struct
 {
-	yadsl_GraphVertexObject *item;
+	yadsl_GraphVertexObject* item;
 	yadsl_GraphCmpVertexObjsFunc cmp_vertices_func;
 }
 yadsl_GraphVertexItemCmpParam;
@@ -90,28 +94,28 @@ yadsl_GraphVertexItemCmpParam;
 ///////////////////////////////////////////////
 
 static bool yadsl_graph_edge_dest_compare_internal(
-	yadsl_GraphEdge *edge,
-	yadsl_GraphVertex *destination);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg);
 
 static bool yadsl_graph_vertex_item_compare_internal(
-	yadsl_GraphVertex *vertex,
-	yadsl_GraphVertexItemCmpParam *par);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg);
 
 static void yadsl_graph_vertex_free_internal(
-	yadsl_GraphVertex *vertex,
-	yadsl_Graph *graph);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFreeArg* arg);
 
 static void yadsl_graph_vertex_in_free_internal(
-	yadsl_GraphEdge *edge,
-	yadsl_GraphFreeEdgeObjFunc free_edge_func);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFreeArg* arg);
 
 static void yadsl_graph_vertex_out_free_internal(
-	yadsl_GraphEdge *edge,
-	yadsl_GraphFreeEdgeObjFunc free_edge_func);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFreeArg* arg);
 
 static bool yadsl_graph_vertex_flag_set_internal(
-	yadsl_GraphVertex *vertex,
-	yadsl_GraphVertexFlag *flag);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg);
 
 ///////////////////////////////////////////////
 // Internal use
@@ -130,12 +134,12 @@ static yadsl_GraphRet yadsl_graph_vertex_nb_total_prev_get_internal(
 	yadsl_GraphEdgeObject** edge_ptr);
 
 static void yadsl_graph_adj_list_counters_reset_internal(
-	yadsl_GraphVertex *vertex,
+	yadsl_GraphVertex* vertex,
 	int orientation);
 
 static yadsl_GraphRet yadsl_graph_set_cursor_cycle_internal(
 	yadsl_SetHandle* set,
-	void** value_ptr,
+	yadsl_SetItemObj** item_obj_ptr,
 	yadsl_GraphIterationDirection iter_direction);
 
 static yadsl_GraphRet yadsl_graph_vertex_nb_get_internal(
@@ -147,23 +151,25 @@ static yadsl_GraphRet yadsl_graph_vertex_nb_get_internal(
 	yadsl_GraphEdgeObject** uv_ptr);
 
 static yadsl_GraphRet yadsl_graph_edge_find_internal(
-	yadsl_GraphHandle *graph,
-	yadsl_GraphVertex *u_vertex,
-	yadsl_GraphVertex *v_vertex,
-	yadsl_GraphVertex **source_ptr,
-	yadsl_GraphVertex **destination_ptr,
-	yadsl_GraphEdge **uv_edge_ptr);
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertex* u_vertex,
+	yadsl_GraphVertex* v_vertex,
+	yadsl_GraphVertex** source_ptr,
+	yadsl_GraphVertex** destination_ptr,
+	yadsl_GraphEdge** uv_edge_ptr);
 
 #define YADSL_GRAPH_VERTICES_FIND(...) \
 yadsl_graph_vertices_find_internal(__VA_ARGS__, NULL, NULL)
 
-static yadsl_GraphRet yadsl_graph_vertices_find_internal(
-	yadsl_GraphHandle *graph,
-	yadsl_GraphVertexObject *item,
-	yadsl_GraphVertex **vertex_ptr, ...);
+#define cast_(graph) yadsl_Graph* graph ## _ = (yadsl_Graph*) graph
 
-  /**********************/
- /*  Public functions  */
+static yadsl_GraphRet yadsl_graph_vertices_find_internal(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* item,
+	yadsl_GraphVertex** vertex_ptr, ...);
+
+/**********************/
+/*  Public functions  */
 /**********************/
 
 yadsl_GraphHandle* yadsl_graph_create(
@@ -173,7 +179,7 @@ yadsl_GraphHandle* yadsl_graph_create(
 	yadsl_GraphCmpEdgeObjsFunc cmp_edges_func,
 	yadsl_GraphFreeEdgeObjFunc free_edge_func)
 {
-	yadsl_Graph *graph = malloc(sizeof(*graph));
+	yadsl_Graph* graph = malloc(sizeof(*graph));
 	if (graph) {
 		if (!(graph->vertex_set = yadsl_set_create())) {
 			free(graph);
@@ -189,11 +195,12 @@ yadsl_GraphHandle* yadsl_graph_create(
 }
 
 yadsl_GraphRet yadsl_graph_vertex_count_get(
-	yadsl_GraphHandle *graph,
-	size_t *size_ptr)
+	yadsl_GraphHandle* graph,
+	size_t* size_ptr)
 {
 	size_t temp;
-	if (yadsl_set_size_get(((yadsl_Graph*) graph)->vertex_set, &temp))
+	cast_(graph);
+	if (yadsl_set_size_get(graph_->vertex_set, &temp))
 		assert(0);
 	*size_ptr = temp;
 	return YADSL_GRAPH_RET_OK;
@@ -207,12 +214,17 @@ yadsl_GraphRet yadsl_graph_vertex_iter(
 	size_t vertex_count;
 	yadsl_GraphVertex* vertex;
 	yadsl_GraphRet graph_ret;
-	yadsl_SetHandle* vertex_set = ((yadsl_Graph*) graph)->vertex_set;
+	yadsl_SetHandle* vertex_set;
+	cast_(graph);
+	vertex_set = graph_->vertex_set;
 	if (yadsl_set_size_get(vertex_set, &vertex_count))
 		assert(0);
 	if (vertex_count == 0)
 		return YADSL_GRAPH_RET_EMPTY;
-	if (graph_ret = yadsl_graph_set_cursor_cycle_internal(vertex_set, &vertex, iter_direction))
+	if (graph_ret = yadsl_graph_set_cursor_cycle_internal(
+		vertex_set,
+		(yadsl_SetItemObj**) &vertex,
+		iter_direction))
 		return graph_ret;
 	*curr_ptr = vertex->item;
 	return YADSL_GRAPH_RET_OK;
@@ -222,7 +234,8 @@ yadsl_GraphRet yadsl_graph_is_directed_check(
 	yadsl_GraphHandle* graph,
 	bool* is_directed_ptr)
 {
-	*is_directed_ptr = ((yadsl_Graph *) graph)->is_directed;
+	cast_(graph);
+	*is_directed_ptr = graph_->is_directed;
 	return YADSL_GRAPH_RET_OK;
 }
 
@@ -231,11 +244,16 @@ yadsl_GraphRet yadsl_graph_vertex_exists_check(
 	yadsl_GraphVertexObject* curr,
 	bool* contains_ptr)
 {
-	void* p; // does nothing with p
+	yadsl_SetItemObj* temp;
 	yadsl_GraphVertexItemCmpParam par;
+	cast_(graph);
 	par.item = curr;
-	par.cmp_vertices_func = ((yadsl_Graph*) graph)->cmp_vertices_func;
-	switch (yadsl_set_item_filter(((yadsl_Graph*) graph)->vertex_set, yadsl_graph_vertex_item_compare_internal, &par, &p)) {
+	par.cmp_vertices_func = graph_->cmp_vertices_func;
+	switch (yadsl_set_item_filter(
+			graph_->vertex_set,
+			yadsl_graph_vertex_item_compare_internal,
+			&par,
+			&temp)) {
 	case YADSL_SET_RET_OK:
 		*contains_ptr = 1;
 		break;
@@ -252,10 +270,11 @@ yadsl_GraphRet yadsl_graph_vertex_add(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexObject* curr)
 {
-	yadsl_GraphVertex *vertex;
+	yadsl_GraphVertex* vertex;
 	yadsl_GraphRet graph_ret;
 	yadsl_SetRet set_ret;
 	bool contains_vertex;
+	cast_(graph);
 	if (graph_ret = yadsl_graph_vertex_exists_check(graph, curr, &contains_vertex))
 		return graph_ret;
 	if (contains_vertex)
@@ -276,7 +295,7 @@ yadsl_GraphRet yadsl_graph_vertex_add(
 		free(vertex);
 		return YADSL_GRAPH_RET_MEMORY;
 	}
-	if (set_ret = yadsl_set_item_add(((yadsl_Graph *) graph)->vertex_set, vertex)) {
+	if (set_ret = yadsl_set_item_add(graph_->vertex_set, vertex)) {
 		yadsl_set_destroy(vertex->in_edges, NULL, NULL);
 		yadsl_set_destroy(vertex->out_edges, NULL, NULL);
 		free(vertex);
@@ -290,11 +309,12 @@ yadsl_GraphRet yadsl_graph_vertex_remove(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexObject* curr)
 {
-	yadsl_GraphVertex *vertex = NULL;
+	yadsl_GraphVertex* vertex = NULL;
 	yadsl_GraphRet graph_ret;
+	cast_(graph);
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
 		return graph_ret;
-	if (yadsl_set_item_remove(((yadsl_Graph*) graph)->vertex_set, vertex)) assert(0);
+	if (yadsl_set_item_remove(graph_->vertex_set, vertex)) assert(0);
 	yadsl_graph_vertex_free_internal(vertex, graph);
 	return YADSL_GRAPH_RET_OK;
 }
@@ -305,11 +325,12 @@ yadsl_GraphRet yadsl_graph_edge_add(
 	yadsl_GraphVertexObject* v,
 	yadsl_GraphEdgeObject* uv)
 {
-	yadsl_GraphVertex *u_vertex = NULL, *v_vertex = NULL;
-	yadsl_GraphEdge *uv_edge = NULL;
+	yadsl_GraphVertex* u_vertex = NULL, * v_vertex = NULL;
+	yadsl_GraphEdge* uv_edge = NULL;
 	yadsl_GraphRet graph_ret;
 	yadsl_SetRet set_ret;
 	bool contains_edge;
+	cast_(graph);
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
 		return graph_ret;
 	if (yadsl_graph_edge_exists_check(graph, u, v, &contains_edge))
@@ -320,7 +341,7 @@ yadsl_GraphRet yadsl_graph_edge_add(
 	if (uv_edge == NULL)
 		return YADSL_GRAPH_RET_MEMORY;
 	uv_edge->item = uv;
-	if (((yadsl_Graph*) graph)->is_directed) {
+	if (graph_->is_directed) {
 		uv_edge->source = u_vertex;
 		uv_edge->destination = v_vertex;
 	} else {
@@ -351,7 +372,7 @@ yadsl_GraphRet yadsl_graph_edge_exists_check(
 	yadsl_GraphVertexObject* v,
 	bool* contains_ptr)
 {
-	yadsl_GraphVertex *u_vertex = NULL, *v_vertex = NULL;
+	yadsl_GraphVertex* u_vertex = NULL, * v_vertex = NULL;
 	yadsl_GraphRet graph_ret;
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
 		return graph_ret;
@@ -373,10 +394,11 @@ yadsl_GraphRet yadsl_graph_edge_remove(
 	yadsl_GraphVertexObject* u,
 	yadsl_GraphVertexObject* v)
 {
-	yadsl_GraphVertex *u_vertex = NULL, *v_vertex = NULL,
-		*source = NULL, *destination = NULL;
-	yadsl_GraphEdge *uv_edge = NULL;
+	yadsl_GraphVertex* u_vertex = NULL, * v_vertex = NULL,
+		* source = NULL, * destination = NULL;
+	yadsl_GraphEdge* uv_edge = NULL;
 	yadsl_GraphRet graph_ret;
+	cast_(graph);
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
 		return graph_ret;
 	if (graph_ret = yadsl_graph_edge_find_internal(graph, u_vertex, v_vertex, &source,
@@ -386,8 +408,8 @@ yadsl_GraphRet yadsl_graph_edge_remove(
 	yadsl_graph_adj_list_counters_reset_internal(source, 1);
 	if (yadsl_set_item_remove(destination->in_edges, uv_edge)) assert(0);
 	yadsl_graph_adj_list_counters_reset_internal(destination, 1);
-	if (((yadsl_Graph *) graph)->free_edge_func)
-		((yadsl_Graph*) graph)->free_edge_func(uv_edge->item);
+	if (graph_->free_edge_func)
+		graph_->free_edge_func(uv_edge->item);
 	free(uv_edge);
 	return YADSL_GRAPH_RET_OK;
 }
@@ -398,8 +420,8 @@ yadsl_GraphRet yadsl_graph_edge_get(
 	yadsl_GraphVertexObject* v,
 	yadsl_GraphEdgeObject** uv_ptr)
 {
-	yadsl_GraphVertex *u_vertex, *v_vertex;
-	yadsl_GraphEdge *temp;
+	yadsl_GraphVertex* u_vertex, * v_vertex;
+	yadsl_GraphEdge* temp;
 	yadsl_GraphRet graph_ret;
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, u, &u_vertex, v, &v_vertex))
 		return graph_ret;
@@ -466,7 +488,7 @@ yadsl_GraphRet yadsl_graph_vertex_flag_get(
 	yadsl_GraphVertexObject* curr,
 	yadsl_GraphVertexFlag* flag_ptr)
 {
-	yadsl_GraphVertex *vertex;
+	yadsl_GraphVertex* vertex;
 	yadsl_GraphRet graph_ret;
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
 		return graph_ret;
@@ -479,7 +501,7 @@ yadsl_GraphRet yadsl_graph_vertex_flag_set(
 	yadsl_GraphVertexObject* curr,
 	yadsl_GraphVertexFlag flag)
 {
-	yadsl_GraphVertex *vertex;
+	yadsl_GraphVertex* vertex;
 	yadsl_GraphRet graph_ret;
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, curr, &vertex))
 		return graph_ret;
@@ -491,23 +513,31 @@ yadsl_GraphRet yadsl_graph_vertex_flag_set_all(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexFlag flag)
 {
-	void *temp;
-	if(yadsl_set_item_filter(((yadsl_Graph*) graph)->vertex_set, yadsl_graph_vertex_flag_set_internal, &flag, &temp)
-		!= YADSL_SET_RET_DOES_NOT_CONTAIN) // yadsl_graph_vertex_flag_set_internal only returns 0
+	yadsl_SetItemObj* temp;
+	cast_(graph);
+	if (yadsl_set_item_filter(
+		graph_->vertex_set,
+		yadsl_graph_vertex_flag_set_internal,
+		&flag,
+		&temp) != YADSL_SET_RET_DOES_NOT_CONTAIN)
 		assert(0);
 	return YADSL_GRAPH_RET_OK;
 }
 
-void yadsl_graph_destroy(yadsl_GraphHandle *graph)
+void yadsl_graph_destroy(yadsl_GraphHandle* graph)
 {
 	if (graph == NULL)
 		return;
-	yadsl_set_destroy(((yadsl_Graph*) graph)->vertex_set, yadsl_graph_vertex_free_internal, graph);
+	cast_(graph);
+	yadsl_set_destroy(
+		graph_->vertex_set,
+		yadsl_graph_vertex_free_internal,
+		graph);
 	free(graph);
 }
 
-  /**************************************/
- /*  Private functions implementation  */
+/**************************************/
+/*  Private functions implementation  */
 /**************************************/
 
 yadsl_GraphRet yadsl_graph_vertex_nb_total_next_get_internal(
@@ -528,10 +558,16 @@ yadsl_GraphRet yadsl_graph_vertex_nb_total_next_get_internal(
 		return YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE;
 	if (in_size == 0) {
 		// thus, out_size > 0
-		yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+		yadsl_graph_set_cursor_cycle_internal(
+			vertex->out_edges,
+			(yadsl_SetItemObj**) &temp,
+			YADSL_GRAPH_ITER_DIR_NEXT);
 	} else if (out_size == 0) {
 		// thus, in_size > 0
-		yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+		yadsl_graph_set_cursor_cycle_internal(
+			vertex->in_edges,
+			(yadsl_SetItemObj**) &temp,
+			YADSL_GRAPH_ITER_DIR_NEXT);
 	} else {
 		// thus, both are > 0
 		if (vertex->in_edges_to_iterate == 0 &&
@@ -540,12 +576,18 @@ yadsl_GraphRet yadsl_graph_vertex_nb_total_next_get_internal(
 			goto flag;
 		} else if (vertex->in_edges_to_iterate == 0) {
 			// thus, outEdgesIterated > 0
-			yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+			yadsl_graph_set_cursor_cycle_internal(
+				vertex->out_edges,
+				(yadsl_SetItemObj**) &temp,
+				YADSL_GRAPH_ITER_DIR_NEXT);
 			--vertex->out_edges_to_iterate;
 		} else {
 		flag:
 			// thus, in_edges_to_iterate > 0
-			yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_NEXT);
+			yadsl_graph_set_cursor_cycle_internal(
+				vertex->in_edges,
+				(yadsl_SetItemObj**) &temp,
+				YADSL_GRAPH_ITER_DIR_NEXT);
 			--vertex->in_edges_to_iterate;
 		}
 	}
@@ -573,11 +615,17 @@ yadsl_GraphRet yadsl_graph_vertex_nb_total_prev_get_internal(
 		return YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE;
 	if (in_size == 0) {
 		// thus, out_size > 0
-		if (yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+		if (yadsl_graph_set_cursor_cycle_internal(
+			vertex->out_edges,
+			(yadsl_SetItemObj**) &temp,
+			YADSL_GRAPH_ITER_DIR_PREVIOUS))
 			assert(0);
 	} else if (out_size == 0) {
 		// thus, in_size > 0
-		if (yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+		if (yadsl_graph_set_cursor_cycle_internal(
+			vertex->in_edges,
+			(yadsl_SetItemObj**) &temp,
+			YADSL_GRAPH_ITER_DIR_PREVIOUS))
 			assert(0);
 	} else {
 		// thus, both are > 0
@@ -586,13 +634,19 @@ yadsl_GraphRet yadsl_graph_vertex_nb_total_prev_get_internal(
 			goto flag;
 		} else if (vertex->out_edges_to_iterate == out_size) {
 			// thus, in_edges_to_iterate < in_size
-			if (yadsl_graph_set_cursor_cycle_internal(vertex->in_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+			if (yadsl_graph_set_cursor_cycle_internal(
+				vertex->in_edges,
+				(yadsl_SetItemObj**) &temp,
+				YADSL_GRAPH_ITER_DIR_PREVIOUS))
 				assert(0);
 			++vertex->in_edges_to_iterate;
 		} else {
 		flag:
 			// thus, out_edges_to_iterate < out_size
-			if (yadsl_graph_set_cursor_cycle_internal(vertex->out_edges, &temp, YADSL_GRAPH_ITER_DIR_PREVIOUS))
+			if (yadsl_graph_set_cursor_cycle_internal(
+				vertex->out_edges,
+				(yadsl_SetItemObj**) &temp,
+				YADSL_GRAPH_ITER_DIR_PREVIOUS))
 				assert(0);
 			++vertex->out_edges_to_iterate;
 		}
@@ -606,14 +660,14 @@ yadsl_GraphRet yadsl_graph_vertex_nb_total_prev_get_internal(
 // Cycle set cursor (when reaches end, go to first)
 // [!] Assumes set is not empty!
 yadsl_GraphRet yadsl_graph_set_cursor_cycle_internal(
-	yadsl_SetHandle *set,
-	void **value_ptr,
+	yadsl_SetHandle* set,
+	yadsl_SetItemObj** item_obj_ptr,
 	yadsl_GraphIterationDirection iter_direction)
 {
 	yadsl_SetRet set_ret;
-	yadsl_SetRet (*cycle_func)(yadsl_SetHandle *);
-	yadsl_SetRet (*reset_func)(yadsl_SetHandle *);
-	void *temp;
+	yadsl_SetRet(*cycle_func)(yadsl_SetHandle*);
+	yadsl_SetRet(*reset_func)(yadsl_SetHandle*);
+	yadsl_SetItemObj* temp;
 	switch (iter_direction) {
 	case YADSL_GRAPH_ITER_DIR_NEXT:
 		cycle_func = yadsl_set_cursor_next;
@@ -631,13 +685,13 @@ yadsl_GraphRet yadsl_graph_set_cursor_cycle_internal(
 		assert(set_ret == YADSL_SET_RET_OUT_OF_BOUNDS);
 		if (reset_func(set)) assert(0);
 	}
-	*value_ptr = temp;
+	*item_obj_ptr = temp;
 	return YADSL_GRAPH_RET_OK;
 }
 
 // Reset set cursors (due to getNeighbour contract)
 void yadsl_graph_adj_list_counters_reset_internal(
-	yadsl_GraphVertex *vertex,
+	yadsl_GraphVertex* vertex,
 	int orientation)
 {
 	assert(orientation == 1 || orientation == -1);
@@ -656,17 +710,21 @@ void yadsl_graph_adj_list_counters_reset_internal(
 
 // Compares destination from edge and the one provided
 bool yadsl_graph_edge_dest_compare_internal(
-	yadsl_GraphEdge *edge_ptr,
-	yadsl_GraphVertex *destination)
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg)
 {
+	yadsl_GraphEdge* edge_ptr = (yadsl_GraphEdge*) item;
+	yadsl_GraphVertex* destination = (yadsl_GraphVertex*) arg;
 	return edge_ptr->destination == destination;
 }
 
 // Compares item from graph vertex struct and item
 bool yadsl_graph_vertex_item_compare_internal(
-	yadsl_GraphVertex *vertex,
-	yadsl_GraphVertexItemCmpParam *par)
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg)
 {
+	yadsl_GraphVertex* vertex = (yadsl_GraphVertex*) item;
+	yadsl_GraphVertexItemCmpParam* par = (yadsl_GraphVertexItemCmpParam*) arg;
 	if (par->cmp_vertices_func)
 		return par->cmp_vertices_func(par->item, vertex->item);
 	return vertex->item == par->item;
@@ -674,21 +732,31 @@ bool yadsl_graph_vertex_item_compare_internal(
 
 // Called by setlib while removing vertex from graph->vertex_set
 void yadsl_graph_vertex_free_internal(
-	yadsl_GraphVertex *vertex,
-	yadsl_Graph *graph)
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFreeArg* arg)
 {
+	yadsl_GraphVertex* vertex = (yadsl_GraphVertex*) item;
+	yadsl_Graph* graph = (yadsl_Graph*) arg;
 	if (graph->free_vertex_func)
 		graph->free_vertex_func(vertex->item);
-	yadsl_set_destroy(vertex->in_edges, yadsl_graph_vertex_in_free_internal, graph->free_edge_func);
-	yadsl_set_destroy(vertex->out_edges, yadsl_graph_vertex_out_free_internal, graph->free_edge_func);
+	yadsl_set_destroy(
+		vertex->in_edges,
+		yadsl_graph_vertex_in_free_internal,
+		graph->free_edge_func);
+	yadsl_set_destroy(
+		vertex->out_edges,
+		yadsl_graph_vertex_out_free_internal,
+		graph->free_edge_func);
 	free(vertex);
 }
 
 // Called by setlib while removing edge from edge->destination->in_edges
 void yadsl_graph_vertex_in_free_internal(
-	yadsl_GraphEdge *edge_ptr,
-	yadsl_GraphFreeEdgeObjFunc free_edge_func)
+	yadsl_SetItemObj *item,
+	yadsl_SetItemFreeArg *arg)
 {
+	yadsl_GraphEdge* edge_ptr = (yadsl_GraphEdge*) item;
+	yadsl_GraphFreeEdgeObjFunc free_edge_func = (yadsl_GraphFreeEdgeObjFunc) arg;
 	yadsl_set_item_remove(edge_ptr->source->out_edges, edge_ptr);
 	if (free_edge_func)
 		free_edge_func(edge_ptr->item);
@@ -697,9 +765,11 @@ void yadsl_graph_vertex_in_free_internal(
 
 // Called by setlib while removing edge from edge->source->out_edges
 void yadsl_graph_vertex_out_free_internal(
-	yadsl_GraphEdge *edge_ptr,
-	yadsl_GraphFreeEdgeObjFunc free_edge_func)
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFreeArg* arg)
 {
+	yadsl_GraphEdge* edge_ptr = (yadsl_GraphEdge*) item;
+	yadsl_GraphFreeEdgeObjFunc free_edge_func = (yadsl_GraphFreeEdgeObjFunc) arg;
 	yadsl_set_item_remove(edge_ptr->destination->in_edges, edge_ptr);
 	if (free_edge_func)
 		free_edge_func(edge_ptr->item);
@@ -716,24 +786,25 @@ void yadsl_graph_vertex_out_free_internal(
 //	- "v_vertex" is NULL
 // GRAPH_DOES_NOT_CONTAIN_EDGE
 yadsl_GraphRet yadsl_graph_edge_find_internal(
-	yadsl_GraphHandle *graph,
-	yadsl_GraphVertex *u_vertex,
-	yadsl_GraphVertex *v_vertex,
-	yadsl_GraphVertex **source_ptr,
-	yadsl_GraphVertex **destination_ptr,
-	yadsl_GraphEdge **uv_edge_ptr)
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertex* u_vertex,
+	yadsl_GraphVertex* v_vertex,
+	yadsl_GraphVertex** source_ptr,
+	yadsl_GraphVertex** destination_ptr,
+	yadsl_GraphEdge** uv_edge_ptr)
 {
-	yadsl_GraphVertex *source, *destination;
-	yadsl_GraphEdge *uv_edge;
+	yadsl_GraphVertex* source, * destination;
+	yadsl_GraphEdge* uv_edge;
 	yadsl_SetRet set_ret;
-	source = (((yadsl_Graph*) graph)->is_directed || u_vertex < v_vertex) ?
+	cast_(graph);
+	source = (graph_->is_directed || u_vertex < v_vertex) ?
 		u_vertex : v_vertex;
 	destination = u_vertex == source ? v_vertex : u_vertex;
 	set_ret = yadsl_set_item_filter(
-		source->out_edges,   /* set */
-		yadsl_graph_edge_dest_compare_internal, /* func */
-		destination,        /* arg */
-		&uv_edge);           /* item_ptr */
+		source->out_edges,
+		yadsl_graph_edge_dest_compare_internal,
+		destination,
+		(yadsl_SetItemObj**) &uv_edge);
 	switch (set_ret) {
 	case YADSL_SET_RET_OK:
 		if (source_ptr) *source_ptr = source;
@@ -760,28 +831,29 @@ yadsl_GraphRet yadsl_graph_edge_find_internal(
 //  - "curr_ptr" is NULL
 // GRAPH_DOES_NOT_CONTAIN_VERTEX
 yadsl_GraphRet yadsl_graph_vertices_find_internal(
-	yadsl_GraphHandle *graph,
-	yadsl_GraphVertexObject *item,
-	yadsl_GraphVertex **vertex_ptr, ...)
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* item,
+	yadsl_GraphVertex** vertex_ptr, ...)
 {
 	yadsl_SetRet set_ret;
 	va_list va;
 	yadsl_GraphVertexItemCmpParam param;
+	cast_(graph);
 	param.item = item;
-	param.cmp_vertices_func = ((yadsl_Graph*) graph)->cmp_vertices_func;
+	param.cmp_vertices_func = graph_->cmp_vertices_func;
 	va_start(va, vertex_ptr);
 	do {
 		if (set_ret = yadsl_set_item_filter(
-			((yadsl_Graph*) graph)->vertex_set,        /* set */
-			yadsl_graph_vertex_item_compare_internal,  /* func */
-			&param,                                    /* arg */
-			vertex_ptr)) {                               /* item_ptr */
+			graph_->vertex_set,
+			yadsl_graph_vertex_item_compare_internal,
+			&param,
+			(yadsl_SetItemObj**) vertex_ptr)) {
 			va_end(va);
 			assert(set_ret == YADSL_SET_RET_DOES_NOT_CONTAIN);
 			return YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX;
 		}
 		param.item = va_arg(va, yadsl_GraphVertexObject*);
-		if (!(vertex_ptr = va_arg(va, yadsl_GraphVertex **)))
+		if (!(vertex_ptr = va_arg(va, yadsl_GraphVertex**)))
 			break; /* sentinel */
 	} while (1);
 	va_end(va);
@@ -790,9 +862,11 @@ yadsl_GraphRet yadsl_graph_vertices_find_internal(
 
 // set vertex flag to *flag
 bool yadsl_graph_vertex_flag_set_internal(
-	yadsl_GraphVertex *vertex,
-	yadsl_GraphVertexFlag *flag)
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg)
 {
+	yadsl_GraphVertex* vertex = (yadsl_GraphVertex*) item;
+	yadsl_GraphVertexFlag* flag = (yadsl_GraphVertexFlag*) arg;
 	vertex->flag = *flag;
 	return 0;
 }
@@ -804,13 +878,13 @@ yadsl_GraphRet yadsl_graph_vertex_nb_get_internal(
 	yadsl_GraphEdgeDirection edge_direction,
 	yadsl_GraphIterationDirection iter_direction,
 	yadsl_GraphVertexObject** v_ptr,
-	yadsl_GraphEdgeObject ** uv_ptr)
+	yadsl_GraphEdgeObject** uv_ptr)
 {
-	yadsl_GraphVertex *vertex;
-	yadsl_SetHandle *set;
+	yadsl_GraphVertex* vertex;
+	yadsl_SetHandle* set;
 	yadsl_GraphRet graph_ret;
 	size_t set_size;
-	yadsl_GraphEdge *temp;
+	yadsl_GraphEdge* temp;
 	if (graph_ret = YADSL_GRAPH_VERTICES_FIND(graph, u, &vertex))
 		return graph_ret;
 	switch (edge_direction) {
@@ -826,7 +900,10 @@ yadsl_GraphRet yadsl_graph_vertex_nb_get_internal(
 	if (yadsl_set_size_get(set, &set_size)) assert(0);
 	if (set_size == 0)
 		return YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE;
-	if (graph_ret = yadsl_graph_set_cursor_cycle_internal(set, &temp, iter_direction))
+	if (graph_ret = yadsl_graph_set_cursor_cycle_internal(
+		set,
+		(yadsl_SetItemObj**) &temp,
+		iter_direction))
 		return graph_ret;
 	*v_ptr = edge_direction == YADSL_GRAPH_EDGE_DIR_IN ? temp->source->item : temp->destination->item;
 	*uv_ptr = temp->item;

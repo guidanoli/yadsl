@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.12)
 project(yadsl)
 
 set(CMAKE_C_STANDARD 99)
@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(YADSL_BUILD_TESTS "Build unit tests" ON)
+option(YADSL_BUILD_LONG_TESTS "Build long unit tests" OFF)
 option(YADSL_PYTHON_SUPPORT "Build Python C extension modules" OFF)
 option(YADSL_LUA_SUPPORT "Build Lua C bindings" OFF)
 
@@ -28,25 +29,17 @@ if(YADSL_BUILD_TESTS)
 endif()
 
 if(YADSL_PYTHON_SUPPORT)
-	if(NOT PYTHON_EXECUTABLE)
-		# Find Python interpreter
-		set(Python_FIND_VIRTUALENV FIRST)
-		find_package(PythonInterp 3.5 REQUIRED)
-	endif()
+	# Find Python interpreter and library
+	find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
 
-	# Find Python headers
-	exec_program(${PYTHON_EXECUTABLE}
-		ARGS "-c \"import sysconfig; print(sysconfig.get_paths()['include'])\""
-		OUTPUT_VARIABLE PYTHON_INCLUDE_DIRS
-		RETURN_VALUE PYTHON_INCLUDE_DIRS_NOT_FOUND)
+	# Get Python extension module suffix
+	execute_process(
+		COMMAND "${Python_EXECUTABLE}" "${YADSL_SOURCE_DIR}/yadsl/ext.py"
+		OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
+		RESULT_VARIABLE PYTHON_EXT_SUFFIX_NOT_FOUND) 
 
-	if(PYTHON_INCLUDE_DIRS_NOT_FOUND)
-		message(FATAL_ERROR "Python headers not found")
-	endif()
-
-	# This goes after, since it uses PythonInterp as a hint
-	if(WIN32)
-		find_package(PythonLibs 3.5 REQUIRED)
+	if(PYTHON_EXT_SUFFIX_NOT_FOUND)
+		message(FATAL_ERROR "Could not obtain Python extension module suffix")
 	endif()
 	
 	# Add 'add_python_module' function

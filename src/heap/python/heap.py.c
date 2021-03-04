@@ -2,9 +2,13 @@
 #include <Python.h>
 
 #include <yadsl/pydefines.h>
-
 #include <heap/heap.h>
+
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 //
 // Objects
@@ -179,7 +183,9 @@ Heap_dealloc(HeapObject *self)
 {
 	if (self->ob_heap)
 		yadsl_heap_destroy(self->ob_heap);
+#ifdef YADSL_DEBUG
 	yadsl_memdb_dump();
+#endif
 	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
@@ -228,7 +234,7 @@ Heap_extract(HeapObject *self, PyObject *Py_UNUSED(ignored))
 		_Heap_throw_error(PyExc_Lock);
 		goto exit;
 	}
-	returnId = yadsl_heap_extract(self->ob_heap, &obj);
+	returnId = yadsl_heap_extract(self->ob_heap, (yadsl_HeapObj**) &obj);
 	if (PyErr_Occurred()) {
 		Py_XDECREF(obj);
 		goto exit;

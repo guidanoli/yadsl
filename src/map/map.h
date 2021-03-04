@@ -4,7 +4,7 @@
 /**
  * \defgroup map Map
  * @brief Generic mapping structure
- * 
+ *
  * A Map starts empty, with no entries.
  * It works as a function K -> V where
  * K is the key space and V is the value space.
@@ -18,7 +18,7 @@
  * boolean value indicating whether the two keys
  * are equal (!=0) or not (0). If no function is
  * given, shallow comparison will be assumed.
- * 
+ *
  * @{
 */
 
@@ -93,18 +93,18 @@ yadsl_map_create(
  * @param value entry value (owned by the map on success)
  * @param overwritten_ptr whether entry was overwritten or not
  * @param overwritten_value_ptr value previously assigned to key
- * @return 
+ * @return
  * * ::YADSL_MAP_RET_OK, and *overwritten_ptr is updated.
  *   If the entry was overwritten, then *overwritten_value_ptr is updated.
  * * ::YADSL_MAP_RET_MEMORY
 */
 yadsl_MapRet
 yadsl_map_entry_add(
-	yadsl_MapHandle *map,
-	yadsl_MapEntryKey *key,
-	yadsl_MapEntryValue *value,
-	bool *overwritten_ptr,
-	yadsl_MapEntryValue **overwritten_value_ptr);
+	yadsl_MapHandle* map,
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntryValue* value,
+	bool* overwritten_ptr,
+	yadsl_MapEntryValue** overwritten_value_ptr);
 
 /**
  * @brief Get map entry
@@ -117,9 +117,9 @@ yadsl_map_entry_add(
 */
 yadsl_MapRet
 yadsl_map_entry_get(
-	yadsl_MapHandle *map,
-	yadsl_MapEntryKey *key,
-	yadsl_MapEntryValue **value_ptr);
+	yadsl_MapHandle* map,
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntryValue** value_ptr);
 
 /**
  * @brief Remove map entry
@@ -133,10 +133,10 @@ yadsl_map_entry_get(
 */
 yadsl_MapRet
 yadsl_map_entry_remove(
-	yadsl_MapHandle *map,
-	yadsl_MapEntryKey *key,
-	yadsl_MapEntryKey **original_key_ptr,
-	yadsl_MapEntryValue **value_ptr);
+	yadsl_MapHandle* map,
+	yadsl_MapEntryKey* key,
+	yadsl_MapEntryKey** original_key_ptr,
+	yadsl_MapEntryValue** value_ptr);
 
 /**
  * @brief Get number of entries in map
@@ -147,8 +147,8 @@ yadsl_map_entry_remove(
 */
 yadsl_MapRet
 yadsl_map_entry_count_get(
-	yadsl_MapHandle *map,
-	size_t *count_ptr);
+	yadsl_MapHandle* map,
+	size_t* count_ptr);
 
 /**
  * @brief Destroy map and its remaining entries
@@ -156,7 +156,7 @@ yadsl_map_entry_count_get(
 */
 void
 yadsl_map_destroy(
-	yadsl_MapHandle *map);
+	yadsl_MapHandle* map);
 
 /** @} */
 

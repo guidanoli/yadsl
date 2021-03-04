@@ -2,7 +2,6 @@
 #include <Python.h>
 
 #include <yadsl/pydefines.h>
-
 #include <stack/stack.h>
 
 //
@@ -125,7 +124,7 @@ static PyObject *
 _stackRemove(stack_object *self, PyObject *Py_UNUSED(ignored))
 {
 	PyObject *obj = NULL;
-	switch (yadsl_stack_item_remove(self->ob_stack, &obj)) {
+	switch (yadsl_stack_item_remove(self->ob_stack, (yadsl_StackItemObj**) &obj)) {
 	case YADSL_STACK_RET_OK:
 		// Borrow reference
 		return obj;

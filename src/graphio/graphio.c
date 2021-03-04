@@ -1,11 +1,15 @@
 #include <graphio/graphio.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <assert.h>
+
+#ifdef YADSL_DEBUG
+#include <memdb/memdb.h>
+#else
 #include <stdlib.h>
+#endif
 
 #include <map/map.h>
-#include <memdb/memdb.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
@@ -38,16 +42,16 @@
 /* Private functions prototypes */
 
 static yadsl_GraphIoRet yadsl_graphio_write_internal(
-	yadsl_GraphHandle *graph,
-	FILE *file_ptr,
+	yadsl_GraphHandle* graph,
+	FILE* file_ptr,
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
 	yadsl_GraphIoEdgeWriteFunc write_edge_func,
-	yadsl_MapHandle *address_map);
+	yadsl_MapHandle* address_map);
 
 static yadsl_GraphIoRet yadsl_graphio_read_internal(
-	yadsl_GraphHandle *graph,
-	void **address_map,
-	FILE *file_ptr,
+	yadsl_GraphHandle* graph,
+	void** address_map,
+	FILE* file_ptr,
 	size_t vertex_count,
 	int is_directed,
 	yadsl_GraphIoVertexReadFunc read_vertex_func,
@@ -58,12 +62,12 @@ static yadsl_GraphIoRet yadsl_graphio_read_internal(
 /* Public functions */
 
 yadsl_GraphIoRet yadsl_graphio_write(
-	yadsl_GraphHandle * graph,
-	FILE * file_ptr,
+	yadsl_GraphHandle* graph,
+	FILE* file_ptr,
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
 	yadsl_GraphIoEdgeWriteFunc write_edge_func)
 {
-	yadsl_MapHandle *adress_map;
+	yadsl_MapHandle* adress_map;
 	yadsl_GraphIoRet ret;
 	if (!(adress_map = yadsl_map_create(NULL, NULL, NULL, NULL)))
 		return YADSL_GRAPHIO_RET_MEMORY;
@@ -86,8 +90,8 @@ yadsl_GraphIoRet yadsl_graphio_read(
 	unsigned int version;
 	size_t vertex_count;
 	int is_directed;
-	yadsl_GraphHandle *graph;
-	void **address_map;
+	yadsl_GraphHandle* graph;
+	void** address_map;
 
 	YADSL_GRAPHIO_READ(file_ptr, YADSL_GRAPHIO_VERSION_STR, &version); /* Version */
 	if (version != YADSL_GRAPHIO_FILE_FORMAT_VERSION)
@@ -100,7 +104,7 @@ yadsl_GraphIoRet yadsl_graphio_read(
 		return YADSL_GRAPHIO_RET_MEMORY;
 
 	/* Address map to store vertex items */
-	address_map = malloc(vertex_count * sizeof(void *));
+	address_map = malloc(vertex_count * sizeof(void*));
 	if (address_map == NULL) {
 		yadsl_graph_destroy(graph);
 		return YADSL_GRAPHIO_RET_MEMORY;
@@ -119,17 +123,17 @@ yadsl_GraphIoRet yadsl_graphio_read(
 /* Private functions */
 
 static yadsl_GraphIoRet yadsl_graphio_write_internal(
-	yadsl_GraphHandle *graph,
-	FILE *file_ptr,
+	yadsl_GraphHandle* graph,
+	FILE* file_ptr,
 	yadsl_GraphIoVertexWriteFunc write_vertex_func,
 	yadsl_GraphIoEdgeWriteFunc write_edge_func,
-	yadsl_MapHandle *address_map)
+	yadsl_MapHandle* address_map)
 {
 	bool is_directed;
 	yadsl_MapRet map_ret;
-	void *previous_value;
+	void* previous_value;
 	size_t vertex_count, nb_count, i, j, index;
-	void *vertex, *nb, *edge;
+	void* vertex, * nb, * edge;
 
 	if (yadsl_graph_is_directed_check(graph, &is_directed)) assert(0);
 	if (yadsl_graph_vertex_count_get(graph, &vertex_count)) assert(0);
@@ -142,7 +146,7 @@ static yadsl_GraphIoRet yadsl_graphio_write_internal(
 		int flag;
 		bool overwrite;
 		if (yadsl_graph_vertex_iter(graph, YADSL_GRAPH_ITER_DIR_NEXT, &vertex)) assert(0);
-		if (map_ret = yadsl_map_entry_add(address_map, vertex, i, &overwrite, &previous_value)) {
+		if (map_ret = yadsl_map_entry_add(address_map, vertex, (yadsl_MapEntryValue*) i, &overwrite, &previous_value)) {
 			assert(!overwrite);
 			return YADSL_GRAPHIO_RET_MEMORY;
 		}
@@ -172,9 +176,9 @@ static yadsl_GraphIoRet yadsl_graphio_write_internal(
 }
 
 static yadsl_GraphIoRet yadsl_graphio_read_internal(
-	yadsl_GraphHandle *graph,
-	void **address_map,
-	FILE *file_ptr,
+	yadsl_GraphHandle* graph,
+	void** address_map,
+	FILE* file_ptr,
 	size_t vertex_count,
 	int is_directed,
 	yadsl_GraphIoVertexReadFunc read_vertex_func,
@@ -184,10 +188,10 @@ static yadsl_GraphIoRet yadsl_graphio_read_internal(
 {
 	size_t nb_count, i, j, index;
 	yadsl_GraphRet graph_ret;
-	void *vertex_item, *nb_item, *edge_item;
+	void* vertex_item, * nb_item, * edge_item;
 
 	for (i = 0; i < vertex_count; ++i) {
-		void *pPreviousValue = NULL;
+		void* pPreviousValue = NULL;
 		int flag;
 		if (read_vertex_func(file_ptr, &vertex_item)) /* Vertex item */
 			return YADSL_GRAPHIO_RET_CREATION_FAILURE;

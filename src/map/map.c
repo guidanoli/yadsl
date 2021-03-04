@@ -1,10 +1,14 @@
 #include <map/map.h>
 
-#include <stdlib.h>
 #include <assert.h>
 
 #include <set/set.h>
+
+#ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
 
 typedef struct
 {
@@ -47,13 +51,13 @@ yadsl_map_entry_create_internal(
 
 static void
 yadsl_map_entry_destroy_internal(
-	yadsl_MapEntry *entry,
-	yadsl_MapEntryFreeParameter *par);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFreeArg* arg);
 
 static bool
 yadsl_map_entry_key_compare_internal(
-	yadsl_MapEntry *entry,
-	yadsl_MapCmpEntryKeyParameter *par);
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg);
 
 static yadsl_MapRet
 yadsl_map_entry_get_internal(
@@ -194,7 +198,10 @@ yadsl_map_destroy(
 
 	cmp_keys_func_arg.func = map_->free_entry_func;
 	cmp_keys_func_arg.arg = map_->free_entry_arg;
-	yadsl_set_destroy(map_->entry_set, yadsl_map_entry_destroy_internal, &cmp_keys_func_arg);
+	yadsl_set_destroy(
+		map_->entry_set,
+		yadsl_map_entry_destroy_internal,
+		&cmp_keys_func_arg);
 
 	free(map_);
 }
@@ -203,9 +210,11 @@ yadsl_map_destroy(
 
 void
 yadsl_map_entry_destroy_internal(
-	yadsl_MapEntry* entry,
-	yadsl_MapEntryFreeParameter* par)
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFreeArg* arg)
 {
+	yadsl_MapEntry* entry = (yadsl_MapEntry*) item;
+	yadsl_MapEntryFreeParameter* par = (yadsl_MapEntryFreeParameter*) arg;
 	if (par->func)
 		par->func(entry->key, entry->value, par->arg);
 	free(entry);
@@ -213,9 +222,11 @@ yadsl_map_entry_destroy_internal(
 
 bool
 yadsl_map_entry_key_compare_internal(
-	yadsl_MapEntry* entry,
-	yadsl_MapCmpEntryKeyParameter* par)
+	yadsl_SetItemObj* item,
+	yadsl_SetItemFilterArg* arg)
 {
+	yadsl_MapEntry* entry = (yadsl_MapEntry*) item;
+	yadsl_MapCmpEntryKeyParameter* par = (yadsl_MapCmpEntryKeyParameter*) arg;
 	if (par->func)
 		return par->func(entry->key, par->key, par->arg);
 	else
@@ -236,7 +247,11 @@ yadsl_map_entry_get_internal(
 	cmp_keys_func_arg.func = map_->cmp_keys_func;
 	cmp_keys_func_arg.arg = map_->cmp_keys_func_arg;
 
-	if (set_ret = yadsl_set_item_filter(map_->entry_set, yadsl_map_entry_key_compare_internal, &cmp_keys_func_arg, entry_ptr)) {
+	if (set_ret = yadsl_set_item_filter(
+		map_->entry_set,
+		yadsl_map_entry_key_compare_internal,
+		&cmp_keys_func_arg,
+		(yadsl_SetItemObj**) entry_ptr)) {
 		assert(set_ret == YADSL_SET_RET_DOES_NOT_CONTAIN);
 		return YADSL_MAP_RET_ENTRY_NOT_FOUND;
 	}

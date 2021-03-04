@@ -47,9 +47,10 @@ typedef void (*yadsl_GraphSearchEdgeVisitFunc)(yadsl_GraphVertexObject* source, 
  * * ::YADSL_GRAPHSEARCH_RET_VERTEX_ALREADY_VISITED
  * * ::YADSL_GRAPHSEARCH_RET_DOES_NOT_CONTAIN_VERTEX
 */
-yadsl_GraphSearchRet yadsl_graphsearch_dfs(
-	yadsl_GraphHandle *graph,
-	yadsl_GraphVertexObject *initial_vertex,
+yadsl_GraphSearchRet
+yadsl_graphsearch_dfs(
+	yadsl_GraphHandle* graph,
+	yadsl_GraphVertexObject* initial_vertex,
 	yadsl_GraphVertexFlag visited_flag,
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func);
@@ -67,21 +68,23 @@ yadsl_GraphSearchRet yadsl_graphsearch_dfs(
  * * ::YADSL_GRAPHSEARCH_RET_DOES_NOT_CONTAIN_VERTEX
  * * ::YADSL_GRAPHSEARCH_RET_MEMORY
 */
-yadsl_GraphSearchRet yadsl_graphsearch_bfs(
+yadsl_GraphSearchRet
+yadsl_graphsearch_bfs(
 	yadsl_GraphHandle* graph,
 	yadsl_GraphVertexObject* initial_vertex,
 	yadsl_GraphVertexFlag visited_flag,
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func);
 
-#ifdef _DEBUG
+#ifdef YADSL_DEBUG
 
 /**
  * @brief Get graph search node reference count
  * Used for memory leak detection.
  * @return graph search node reference count
 */
-int yadsl_graphsearch_get_node_ref_count();
+int
+yadsl_graphsearch_get_node_ref_count();
 
 #endif
 

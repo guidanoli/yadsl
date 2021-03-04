@@ -1,9 +1,9 @@
 #include <set/set.h>
 
-#include <yadsl/posixstring.h>
+#include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 
+#include <string/string.h>
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>
 
@@ -35,7 +35,7 @@ yadsl_TesterRet convertReturn(yadsl_SetRet setId)
 	case YADSL_SET_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_SET_RET_MEMORY:
-		return yadsl_tester_return_external_value("malloc");
+		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_SET_RET_CONTAINS:
 		return yadsl_tester_return_external_value("contains");
 	case YADSL_SET_RET_DOES_NOT_CONTAIN:
@@ -65,23 +65,23 @@ yadsl_TesterRet yadsl_tester_init()
 
 bool filterItem(void *item, void *arg)
 {
-	return yadsl_testerutils_match((char *) item, (char *) arg);
+	return strcmp((char *) item, (char *) arg) == 0;
 }
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	yadsl_SetRet setId = YADSL_SET_RET_OK;
 	char *temp;
-	if yadsl_testerutils_match(command, "save") {
+	if (yadsl_testerutils_match(command, "save")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		if (yadsl_set_item_contains_check(pSet, savedStr) != YADSL_SET_RET_CONTAINS)
 			if (savedStr)
 				free(savedStr);
 		savedStr = temp;
-	} else if yadsl_testerutils_match(command, "contains") {
+	} else if (yadsl_testerutils_match(command, "contains")) {
 		int expected, actual;
 		if (yadsl_tester_parse_arguments("s", arg) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -94,28 +94,28 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_RETURN;
 		else
 			setId = YADSL_SET_RET_OK;
-	} else if yadsl_testerutils_match(command, "filter") {
+	} else if (yadsl_testerutils_match(command, "filter")) {
 		int actual, expected;
 		char *foundStr;
 		if (yadsl_tester_parse_arguments("ss", buffer, arg) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
 		expected = yadsl_testerutils_str_to_bool(arg);
-		setId = yadsl_set_item_filter(pSet, filterItem, temp, &foundStr);
+		setId = yadsl_set_item_filter(pSet, filterItem, temp, (yadsl_SetItemObj**) &foundStr);
 		free(temp);
 		actual = (setId == YADSL_SET_RET_OK);
 		if (actual != expected)
 			return YADSL_TESTER_RET_RETURN;
 		else
 			setId = YADSL_SET_RET_OK;
-	} else if yadsl_testerutils_match(command, "filtersave") {
+	} else if (yadsl_testerutils_match(command, "filtersave")) {
 		char *foundStr;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		setId = yadsl_set_item_filter(pSet, filterItem, temp, &foundStr);
+		setId = yadsl_set_item_filter(pSet, filterItem, temp, (yadsl_SetItemObj**) &foundStr);
 		if (setId == YADSL_SET_RET_OK) {
 			if (savedStr != NULL &&
 				yadsl_set_item_contains_check(pSet, savedStr) != YADSL_SET_RET_CONTAINS)
@@ -123,21 +123,21 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			savedStr = foundStr;
 		}
 		free(temp);
-	} else if yadsl_testerutils_match(command, "add") {
+	} else if (yadsl_testerutils_match(command, "add")) {
 		if (savedStr == NULL)
 			yadsl_tester_log("Found no variable saved. Adding NULL.");
 		setId = yadsl_set_item_add(pSet, savedStr);
-	} else if yadsl_testerutils_match(command, "remove") {
+	} else if (yadsl_testerutils_match(command, "remove")) {
 		if (savedStr == NULL)
 			yadsl_tester_log("Found no variable saved. Removing NULL.");
 		setId = yadsl_set_item_remove(pSet, savedStr);
-	} else if yadsl_testerutils_match(command, "current") {
+	} else if (yadsl_testerutils_match(command, "current")) {
 		char *currentStr;
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		if ((temp = strdup(buffer)) == NULL)
+		if ((temp = yadsl_string_duplicate(buffer)) == NULL)
 			return YADSL_TESTER_RET_MALLOC;
-		if (setId = yadsl_set_cursor_get(pSet, &currentStr)) {
+		if (setId = yadsl_set_cursor_get(pSet, (yadsl_SetItemObj**) &currentStr)) {
 			free(temp);
 		} else {
 			int equal;
@@ -146,27 +146,27 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 				yadsl_tester_log("The current item is NULL");
 				return YADSL_TESTER_RET_RETURN;
 			}
-			equal = yadsl_testerutils_match(temp, currentStr);
+			equal = strcmp(temp, currentStr) == 0;
 			free(temp);
 			if (!equal) {
 				yadsl_tester_log("%s is the current item", currentStr);
 				return YADSL_TESTER_RET_RETURN;
 			}
 		}
-	} else if yadsl_testerutils_match(command, "size") {
+	} else if (yadsl_testerutils_match(command, "size")) {
 		size_t expected, actual;
 		if (yadsl_tester_parse_arguments("z", &expected) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		setId = yadsl_set_size_get(pSet, &actual);
 		if (setId == YADSL_SET_RET_OK && actual != expected)
 			return YADSL_TESTER_RET_RETURN;
-	} else if yadsl_testerutils_match(command, "previous") {
+	} else if (yadsl_testerutils_match(command, "previous")) {
 		setId = yadsl_set_cursor_previous(pSet);
-	} else if yadsl_testerutils_match(command, "next") {
+	} else if (yadsl_testerutils_match(command, "next")) {
 		setId = yadsl_set_cursor_next(pSet);
-	} else if yadsl_testerutils_match(command, "first") {
+	} else if (yadsl_testerutils_match(command, "first")) {
 		setId = yadsl_set_cursor_first(pSet);
-	} else if yadsl_testerutils_match(command, "last") {
+	} else if (yadsl_testerutils_match(command, "last")) {
 		setId = yadsl_set_cursor_last(pSet);
 	} else {
 		return YADSL_TESTER_RET_COMMAND;
@@ -184,7 +184,8 @@ void freeItem(void *item, void *arg)
 
 yadsl_TesterRet yadsl_tester_release()
 {
-	yadsl_set_destroy(pSet, freeItem, NULL);
+	if (pSet != NULL)
+		yadsl_set_destroy(pSet, freeItem, NULL);
 	if (savedStr != NULL)
 		free(savedStr);
 	return YADSL_TESTER_RET_OK;

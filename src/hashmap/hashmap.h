@@ -4,7 +4,7 @@
 /**
 * \defgroup hashmap Hash Map
 * @brief A hash map that takes strings as keys and generic data as values
-* 
+*
 * @{
 */
 

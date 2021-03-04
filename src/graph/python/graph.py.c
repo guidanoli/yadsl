@@ -2,7 +2,6 @@
 #include <Python.h>
 
 #include <yadsl/pydefines.h>
-
 #include <graph/graph.h>
 
 typedef struct {
@@ -298,7 +297,8 @@ Graph_get_edge(GraphObject* self, PyObject* args)
 		"OO:pygraph.Graph.remove_edge",
 		&u, &v))
 		goto exit;
-	returnId = yadsl_graph_edge_get(self->ob_graph, u, v, &uv);
+	returnId = yadsl_graph_edge_get(self->ob_graph, u, v,
+		(yadsl_GraphEdgeObject**) &uv);
 	if (PyErr_Occurred())
 		goto exit;
 	switch (returnId) {
@@ -335,7 +335,9 @@ Graph_vertices(GraphObject *self, PyObject *Py_UNUSED(ignored))
 	if (tuple == NULL)
 		return NULL;
 	while (size--) {
-		if (yadsl_graph_vertex_iter(self->ob_graph, YADSL_GRAPH_ITER_DIR_PREVIOUS, &vertex)) {
+		if (yadsl_graph_vertex_iter(self->ob_graph,
+				YADSL_GRAPH_ITER_DIR_PREVIOUS,
+				(yadsl_GraphVertexObject**) &vertex)) {
 			Py_DECREF(tuple);
 			goto exit;
 		}
@@ -392,7 +394,10 @@ Graph_neighbours(GraphObject *self, PyObject *args, PyObject *kw)
 	if ((tuple = PyTuple_New(size)) == NULL)
 		goto exit;
 	while (size--) {
-		if (yadsl_graph_vertex_nb_iter(self->ob_graph, vertex, edge_direction, YADSL_GRAPH_ITER_DIR_PREVIOUS, &neighbour, &edge))
+		if (yadsl_graph_vertex_nb_iter(self->ob_graph, vertex, edge_direction,
+				YADSL_GRAPH_ITER_DIR_PREVIOUS,
+				(yadsl_GraphVertexObject**) &neighbour,
+				(yadsl_GraphEdgeObject**) &edge))
 			goto badinternalcall_exit;
 		if (PyErr_Occurred())
 			goto exit;
