@@ -144,6 +144,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef YADSL_DEBUG
 #include <memdb/memdb.h>
@@ -168,6 +169,7 @@ typedef enum
 	YADSL_TESTER_RET_ARGUMENT, /**< Failed argument parsing */
 	YADSL_TESTER_RET_TOKEN, /**< Failed token parsing */
 	YADSL_TESTER_RET_RETURN, /**< Unexpected return */
+    YADSL_TESTER_RET_ARGCOMP, /*< Failed argument comparison */
 	YADSL_TESTER_RET_CATCH, /**< Unexpected catch (no error) */
 	YADSL_TESTER_RET_EXTERNAL, /**< External return value */
 	YADSL_TESTER_RET_COUNT, /**< For internal use only */
@@ -260,6 +262,87 @@ int
 yadsl_tester_parse_arguments(
 	const char* format,
 	...);
+
+/**
+ * @brief Restrict form of yadsl_tester_parse_arguments
+ * Asserts that all arguments in format string match.
+ * If not, peforms a long jump and an "argument" error is raised.
+ * @param fmt format string
+ * @param ... pointers to arguments
+ */
+#define yadsl_tester_parse_n_arguments(fmt, ...) \
+    yadsl_tester_assert(yadsl_tester_parse_arguments(fmt, __VA_ARGS__) == (sizeof(fmt)-1), YADSL_TESTER_RET_ARGUMENT)
+
+/**
+ * @brief Asserts that condition is true.
+ * If not, performs a long jump and the error is raised.
+ * @param condition condition to be tested
+ * @param errno error number
+*/
+void
+yadsl_tester_assert(
+    int condition,
+    yadsl_TesterRet errno);
+
+/**
+ * @brief Assert that condition is true.
+ * If not, performs a long jump and the error is raised
+ * @param condition condition to be tester
+ * @param errmsg error message
+*/
+void
+yadsl_tester_assertx(
+    int condition,
+    const char* errmsg);
+
+/**
+ * @brief Asserts floats are equal
+*/
+void
+yadsl_tester_asserteqf(
+    float a, float b, const char* errmsg);
+
+/**
+ * @brief Asserts integers are equal
+*/
+void
+yadsl_tester_asserteqi(
+    int a, int b, const char* errmsg);
+
+/**
+ * @brief Asserts longs are equal
+*/
+void
+yadsl_tester_asserteql(
+    long a, long b, const char* errmsg);
+
+/**
+ * @brief Asserts characters are equal
+*/
+void
+yadsl_tester_asserteqc(
+    char a, char b, const char* errmsg);
+
+/**
+ * @brief Asserts strings are equal
+*/
+void
+yadsl_tester_asserteqs(
+    const char* a, const char* b, const char* errmsg);
+
+/**
+ * @brief Asserts size types are equal
+*/
+void
+yadsl_tester_asserteqz(
+    size_t a, size_t b, const char* errmsg);
+
+/**
+ * @brief Asserts max. integers are equal
+*/
+void
+yadsl_tester_asserteqI(
+    intmax_t a, intmax_t b, const char* errmsg);
 
 /**
  * @brief Create an object

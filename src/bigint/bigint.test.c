@@ -9,7 +9,13 @@ const char *yadsl_tester_help_strings[] = {0};
 
 #define MAXSTACKSIZE 16
 yadsl_BigIntHandle* stack[MAXSTACKSIZE];
-size_t stacksize;
+int stacksize;
+
+static void check_index(int index)
+{
+	yadsl_tester_assertx(index >= 0, "negative index");
+	yadsl_tester_assertx(index < stacksize, "index too big");
+}
 
 yadsl_TesterRet yadsl_tester_init()
 {
@@ -20,28 +26,40 @@ yadsl_TesterRet yadsl_tester_init()
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
+	yadsl_TesterRet ret;
 	if (yadsl_testerutils_match(command, "push")) {
 		intmax_t i;
 		yadsl_BigIntHandle* bigint;
-		if (yadsl_tester_parse_arguments("I", &i) != 1)
-			return YADSL_TESTER_RET_ARGUMENT;
-		if (stacksize == MAXSTACKSIZE)
-			return yadsl_tester_return_external_value("stack overflow");
+		yadsl_tester_parse_n_arguments("I", &i);
+		yadsl_tester_assertx(stacksize < MAXSTACKSIZE, "stack overflow");
 		bigint = yadsl_bigint_from_int(i);
-		if (bigint == NULL)
-			return YADSL_TESTER_RET_MALLOC;
+		yadsl_tester_assert(bigint != NULL, YADSL_TESTER_RET_MALLOC);
 		stack[stacksize++] = bigint;
 	} else if (yadsl_testerutils_match(command, "pop")) {
 		int n;
-		if (yadsl_tester_parse_arguments("i", &n) != 1)
-			return YADSL_TESTER_RET_ARGUMENT;
-		if (n < 0)
-			return yadsl_tester_return_external_value("negative pop argument");
-		if (n >= stacksize)
-			return yadsl_tester_return_external_value("empty stack");
+		yadsl_tester_parse_n_arguments("i", &n);
+		yadsl_tester_assertx(n >= 0, "negative pop argument");
+		yadsl_tester_assertx(n <= stacksize, "empty stack");
 		for (int i = stacksize - 1; i >= stacksize - n; --i)
 			yadsl_bigint_destroy(stack[i]);
 		stacksize -= n;
+	} else if (yadsl_testerutils_match(command, "settop")) {
+		int n;
+		yadsl_tester_parse_n_arguments("i", &n);
+		check_index(n);
+		while (stacksize != n)
+			yadsl_bigint_destroy(stack[--stacksize]);
+	} else if (yadsl_testerutils_match(command, "gettop")) {
+		int n;
+		yadsl_tester_parse_n_arguments("i", &n);
+		yadsl_tester_asserteqi(n, stacksize, NULL);
+	} else if (yadsl_testerutils_match(command, "get")) {
+		int n;
+		intmax_t expected, obtained;
+		yadsl_tester_parse_n_arguments("iI", &n, &expected);
+		check_index(n);
+		yadsl_tester_assert(yadsl_bigint_to_int(stack[n], &obtained), YADSL_TESTER_RET_OVERFLOW);
+		yadsl_tester_asserteqI(expected, obtained, NULL);
 	} else {
 		return YADSL_TESTER_RET_COUNT;
 	}

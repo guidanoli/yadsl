@@ -188,3 +188,13 @@
 /obj-parse z 9001 0
 /obj-copy 0 1
 /obj-eq 0 1 YES
+
+## Asserting
+
+/assert 1 "noerror"
+
+/assert 0 "myerror"
+/catch "myerror"
+
+/assert 0 "myseconderror"
+/catch "myseconderror"

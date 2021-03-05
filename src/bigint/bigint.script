@@ -1,1 +1,85 @@
+## Stack manipulation
+
+/gettop 0
 /push 1
+/gettop 1
+/push 1
+/gettop 2
+/push 1
+/gettop 3
+/push 1
+/gettop 4
+/push 1
+/gettop 5
+/push 1
+/gettop 6
+/push 1
+/gettop 7
+/push 1
+/gettop 8
+/push 1
+/gettop 9
+/push 1
+/gettop 10
+/push 1
+/gettop 11
+/push 1
+/gettop 12
+/push 1
+/gettop 13
+/push 1
+/gettop 14
+/push 1
+/gettop 15
+/push 1
+/gettop 16
+
+/push 1
+/catch "stack overflow"
+
+/gettop 16
+/pop 1
+/gettop 15
+/pop 2
+/gettop 13
+
+/settop 16
+/catch "index too big"
+
+/settop 0
+/gettop 0
+
+## Pushing and popping
+
+/push 1
+/get 0 1
+/pop 1
+
+/push -1
+/get 0 -1
+/pop 1
+
+/push 2
+/get 0 2
+/pop 1
+
+/push -2
+/get 0 -2
+/pop 1
+
+/push 2147483647
+/get 0 2147483647
+/pop 1
+
+/push -2147483648
+/get 0 -2147483648
+/pop 1
+
+/push 9223372036854775807
+/get 0 9223372036854775807
+/pop 1
+
+/push -9223372036854775808
+/get 0 -9223372036854775808
+/catch overflow
+/pop 1

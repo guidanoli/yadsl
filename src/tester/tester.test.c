@@ -17,6 +17,7 @@ const char *yadsl_tester_help_strings[] = {
 	"/obj-copy <src> <dest>           Copy object from one slot to another",
 	"/obj-eq <slot1> <slot2> <eq?>    Check if two objects are equal or not",
 	"/throw                           Throws custom error",
+	"/assert <cond> <error>           Asserts condition is true, if not throws error"
 	"",
 	"Preloaded data",
 	"i 42",
@@ -203,7 +204,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_MALLOC;
 	} else if (yadsl_testerutils_match(command, "obj-eq")) {
 		size_t slot1, slot2;
-		if (yadsl_tester_parse_arguments("zzs", &slot1, &slot2, &buffer) != 3)
+		if (yadsl_tester_parse_arguments("zzs", &slot1, &slot2, buffer) != 3)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (slot1 >= sizeof(objects) / sizeof(*objects))
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -215,7 +216,12 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		bool obtained = yadsl_tester_object_equal(objects[slot1], objects[slot2]);
 		if (expected != obtained)
 			return YADSL_TESTER_RET_RETURN;
-;	} else {
+	} else if (yadsl_testerutils_match(command, "assert")) {
+		int cond;
+		if (yadsl_tester_parse_arguments("is", &cond, buffer) != 2)
+			return YADSL_TESTER_RET_ARGUMENT;
+		yadsl_tester_assert(cond, yadsl_tester_return_external_value(buffer));
+	} else {
 		return YADSL_TESTER_RET_COMMAND;
 	}
 	return YADSL_TESTER_RET_OK;

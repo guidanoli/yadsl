@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <setjmp.h>
 
 #include <argvp/argvp.h>
 
@@ -32,6 +33,7 @@ static const char
 *intmax_t_f[] = { "%" SCNdMAX, NULL };
 
 static size_t line; /* line count */
+static jmp_buf env; /* environment */
 static const char* external_ret_info; /* external return value */
 static const char* tester_ret_infos[YADSL_TESTER_RET_COUNT]; /* return value */
 
@@ -57,6 +59,9 @@ do { \
 	if (!status) \
 		status = temp; \
 } while (0)
+
+#define YADSL_ERROR(err) \
+longjmp(env, err)
 
 /*****************************************************************************/
 /*                      STATIC FUNCTIONS DECLARATIONS                        */
@@ -99,8 +104,13 @@ int main(int argc_, char** argv_)
 		return YADSL_TESTER_RET_OK;
 	}
 
-	/* Initialize tester (may fail) */
-	status = yadsl_tester_init();
+	/* Set environment */
+	status = setjmp(env);
+
+	if (status == 0) {
+		/* Initialize tester (may fail) */
+		status = yadsl_tester_init();
+	}
 
 	/* If initialization failed, skip parsing */
 	if (!status) {
@@ -110,8 +120,13 @@ int main(int argc_, char** argv_)
 
 	}
 
-	/* Release tester (may fail) */
-	temp = yadsl_tester_release();
+	/* Set environment */
+	temp = setjmp(env);
+
+	if (temp == 0) {
+		/* Release tester (may fail) */
+		temp = yadsl_tester_release();
+	}
 
 	/* If parsing succeeds, take status code from release callback */
 	YADSL_TESTER_PROPAGATE(status, temp);
@@ -160,6 +175,8 @@ size_t yadsl_tester_get_dtype_size(char dtype)
 		return sizeof(char*);
 	case 'z':
 		return sizeof(size_t);
+	case 'I':
+		return sizeof(intmax_t);
 	default:
 		return 0;
 	}
@@ -182,6 +199,8 @@ yadsl_tester_get_dtype_fmt(
 		return "%s";
 	case 'z':
 		return "%zu";
+	case 'I':
+		return "%" SCNdMAX;
 	default:
 		return 0;
 	}
@@ -413,6 +432,43 @@ void yadsl_tester_log(const char* message, ...)
 	va_end(va);
 }
 
+void
+yadsl_tester_assert(
+    int condition,
+    yadsl_TesterRet errno)
+{
+	if (!condition) YADSL_ERROR(errno);
+}
+
+void
+yadsl_tester_assertx(
+    int condition,
+    const char* errmsg)
+{
+	if (!condition) YADSL_ERROR(yadsl_tester_return_external_value(errmsg));
+}
+
+#define NORMALEQ(a, b) (a == b)
+#define STREQ(a, b) (strcmp(a, b) == 0)
+#define MAKE_ASSERTEQ(type, fmt, suffix, eqf) \
+void yadsl_tester_asserteq ## suffix (type a, type b, const char* errmsg) { \
+	if (!eqf(a, b)) { \
+		if (errmsg != NULL) \
+			yadsl_tester_log("%s (" fmt " != " fmt ")", errmsg, a, b); \
+		else \
+			yadsl_tester_log(fmt " != " fmt, a, b); \
+		YADSL_ERROR(YADSL_TESTER_RET_ARGCOMP); \
+	} \
+}
+
+MAKE_ASSERTEQ(float, "%f", f, NORMALEQ)
+MAKE_ASSERTEQ(int, "%d", i, NORMALEQ)
+MAKE_ASSERTEQ(long, "%ld", l, NORMALEQ)
+MAKE_ASSERTEQ(char, "%c", c, NORMALEQ)
+MAKE_ASSERTEQ(const char*, "%s", s, STREQ)
+MAKE_ASSERTEQ(size_t, "%zu", z, NORMALEQ)
+MAKE_ASSERTEQ(intmax_t, "%" SCNdMAX, I, NORMALEQ)
+
 /*****************************************************************************/
 /*                      STATIC FUNCTIONS DEFINITIONS                         */
 /*****************************************************************************/
@@ -455,8 +511,12 @@ yadsl_TesterRet yadsl_tester_parse_file_internal()
 							return ret;
 						}
 						external_ret_info = NULL;
-						// Call the command parser (can move cursor)
-						ret = yadsl_tester_parse(command);
+						// Set environment
+						ret = setjmp(env);
+						if (ret == 0) {
+							// Call the command parser (can move cursor)
+							ret = yadsl_tester_parse(command);
+						}
 						// Copy command to buffer2
 						strncpy(buffer2, buffer, cursor - buffer);
 						buffer2[cursor - buffer] = '\0';
