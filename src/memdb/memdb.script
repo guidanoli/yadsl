@@ -139,3 +139,15 @@
 /free 0
 /contains 0 NO
 /size 0
+
+## Write and dump
+
+/malloc 0 13
+/write 0 "Hello World!"
+/dump 0 "48656C6C6F20576F726C642100"
+/free 0
+
+/malloc 0 1
+/write 0 ""
+/dump 0 "00"
+/free 0

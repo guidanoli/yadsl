@@ -2,6 +2,7 @@
 #define __YADSL_BIGINT_H__
 
 #include <stdbool.h>
+#include <stdint.h>
 
 /**
  * \defgroup bigint Big Integer
@@ -20,7 +21,7 @@ typedef void yadsl_BigIntHandle; /**< Big Integer handle */
 */
 yadsl_BigIntHandle*
 yadsl_bigint_from_int(
-	int i);
+	intmax_t i);
 
 /**
  * @brief Converts big int to C int
@@ -31,7 +32,7 @@ yadsl_bigint_from_int(
 bool
 yadsl_bigint_to_int(
 	yadsl_BigIntHandle* bigint,
-	int* i_ptr);
+	intmax_t* i_ptr);
 
 /**
  * @brief Copy bigint

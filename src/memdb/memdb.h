@@ -161,6 +161,14 @@ void
 yadsl_memdb_set_logger(
 		FILE* fp);
 
+/**
+ * @brief Dump memory space information
+*/
+void
+yadsl_memdb_dump(
+		FILE* fp,
+		void* mem);
+
 /* stdlib.h wrapped functions */
 
 /**
@@ -200,7 +208,7 @@ yadsl_memdb_calloc(
 		const int line);
 
 #if !defined(YADSL_MEMDB_DONT_DEFINE_MACROS) && (defined(YADSL_RELEASE) || defined(YADSL_DEBUG))
-#  define yadsl_memdb_dump() printf("MEMDB: %zu items in list\n", yadsl_memdb_amb_list_size())
+#  define yadsl_memdb_status() printf("MEMDB: %zu items in list\n", yadsl_memdb_amb_list_size())
 #  define free yadsl_memdb_free
 #  define malloc(size) yadsl_memdb_malloc(size, __FILE__, __LINE__)
 #  define realloc(mem, size) yadsl_memdb_realloc(mem, size, __FILE__, __LINE__)

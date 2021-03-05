@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 #include <argvp/argvp.h>
 
@@ -26,7 +28,8 @@ static const char
 *float_f[] = { "%f", "%g", "%e", NULL },
 *int_f[] = { "%d", "%u", NULL },
 *long_f[] = { "%l", "%lu", NULL },
-*size_t_f[] = { "%zu", NULL };
+*size_t_f[] = { "%zu", NULL },
+*intmax_t_f[] = { "%" SCNdMAX, NULL };
 
 static size_t line; /* line count */
 static const char* external_ret_info; /* external return value */
@@ -253,6 +256,13 @@ int yadsl_tester_parse_arguments(const char* format, ...)
 				break;
 			}
 			parsingError = yadsl_tester_parse_dtype_internal(size_t_f, arg, &inc);
+			break;
+		case 'I':
+			if (!(arg = va_arg(va, intmax_t*))) {
+				parsingError = 1;
+				break;
+			}
+			parsingError = yadsl_tester_parse_dtype_internal(intmax_t_f, arg, &inc);
 			break;
 		default:
 			fprintf(stderr, "Unknown format character \"%c\".\n", *format);
@@ -564,7 +574,7 @@ void yadsl_tester_print_cursor_position_internal(FILE* fp, size_t spacing)
 {
 	size_t col = cursor - buffer, bufflen = strlen(buffer);
 	if (bufflen == 0) return;
-	spacing += fprintf(fp, "(lin %zu, col %zu) ", line, col + 1);
+	spacing += fprintf(fp, "(line %zu, col %zu) ", line, col + 1);
 	spacing %= 80; /* Loop command length */
 	if (spacing + bufflen > 80) {
 		// trim buffer to fit 80 characters

@@ -449,6 +449,21 @@ yadsl_memdb_set_logger(
 }
 
 void
+yadsl_memdb_dump(
+		FILE* fp,
+		void* mem)
+{
+	yadsl_MemDebugAMB* amb = yadsl_memdb_find_amb_internal(mem, NULL);
+	if (amb == NULL) {
+		fputc('?', fp);
+	} else {
+		unsigned char* c = mem;
+		size_t size = amb->size;
+		while (size--) fprintf(fp, "%02X", (unsigned int) *(c++));
+	}
+}
+
+void
 yadsl_memdb_free(
 	void* amb)
 {

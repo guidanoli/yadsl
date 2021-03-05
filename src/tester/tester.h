@@ -226,16 +226,17 @@ extern yadsl_TesterRet yadsl_tester_release();
  * The avaiable **data types** are:
  *
  * ```
- * +--------+------------------+----------------+
- * | C type | Format character | Reference type |
- * +--------+------------------+----------------+
- * | float  | f                | float *        |
- * | int    | i                | int *          |
- * | long   | l                | long *         |
- * | char   | c                | char *         |
- * | char * | s                | char [BUFSIZ]  |
- * | size_t | z                | size_t *       |
- * +--------+------------------+----------------+
+ * +----------+------------------+----------------+
+ * | C type   | Format character | Reference type |
+ * +----------+------------------+----------------+
+ * | float    | f                | float *        |
+ * | int      | i                | int *          |
+ * | long     | l                | long *         |
+ * | char     | c                | char *         |
+ * | char *   | s                | char [BUFSIZ]  |
+ * | size_t   | z                | size_t *       |
+ * | intmax_t | I                | intmax_t *     |
+ * +----------+------------------+----------------+
  * ```
  *
  * Following the format string, the argument variables

@@ -128,3 +128,16 @@ yadsl_testerutils_clear_tempfile_list()
 		tempfilelist = next;
 	}
 }
+
+bool
+yadsl_testerutils_compare_file_and_string(
+    FILE* fp, const char* string)
+{
+	int ch;
+	do {
+		ch = fgetc(fp);
+		if (ch == EOF) return *string == '\0';
+		else if (*string == '\0') return false;
+	} while ((char) ch == *(string++));
+	return false;
+}

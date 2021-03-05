@@ -68,6 +68,13 @@ yadsl_testerutils_add_tempfile_to_list(
 void
 yadsl_testerutils_clear_tempfile_list();
 
+/**
+ * @brief Compares file and string
+*/
+bool
+yadsl_testerutils_compare_file_and_string(
+    FILE* fp, const char* string);
+
 /** @} */
 
 #endif

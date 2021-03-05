@@ -47,7 +47,7 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 		if (vector)
 			yadsl_vector_destroy(vector);
 #ifdef YADSL_DEBUG
-		yadsl_memdb_dump();
+		yadsl_memdb_status();
 #endif
 		vector = new_vector;
 		dtype_format = format;
@@ -75,7 +75,7 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 		if (!ret)
 			return YADSL_TESTER_RET_MALLOC;
 #ifdef YADSL_DEBUG
-		yadsl_memdb_dump();
+		yadsl_memdb_status();
 #endif
 	} else if (yadsl_testerutils_match(command, "size")) {
 		size_t expected, obtained;
@@ -87,7 +87,7 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 	} else if (yadsl_testerutils_match(command, "destroy")) {
 		yadsl_vector_destroy(vector);
 #ifdef YADSL_DEBUG
-		yadsl_memdb_dump();
+		yadsl_memdb_status();
 #endif
 		vector = NULL;
 	} else {
@@ -101,7 +101,7 @@ yadsl_TesterRet yadsl_tester_release()
 	if (vector) {
 		yadsl_vector_destroy(vector);
 #ifdef YADSL_DEBUG
-		yadsl_memdb_dump();
+		yadsl_memdb_status();
 #endif
 		vector = NULL;
 	}
