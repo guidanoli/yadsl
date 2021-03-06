@@ -11,6 +11,17 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <tester/tester.h>
+
+typedef void (*yadsl_TesterUtilsCommandHandler)();
+
+typedef struct
+{
+    const char* command;
+    void (*commandhandler)();
+}
+yadsl_TesterUtilsCommand;
+
 /**
  * @brief Check if two strings match, ignoring case
  * @param a first string
@@ -70,10 +81,25 @@ yadsl_testerutils_clear_tempfile_list();
 
 /**
  * @brief Compares file and string
+ * @param fp file pointer
+ * @param string string
+ * @return if file contents and string are equal
 */
 bool
 yadsl_testerutils_compare_file_and_string(
-    FILE* fp, const char* string);
+    FILE* fp,
+    const char* string);
+
+/**
+ * @brief Parse command
+ * @param command command
+ * @param commands NULL-terminated array of commands
+ * @return return code
+*/
+yadsl_TesterRet
+yadsl_testerutils_parse_command(
+    const char* command,
+    yadsl_TesterUtilsCommand* commands);
 
 /** @} */
 

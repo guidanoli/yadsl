@@ -38,16 +38,17 @@
 /catch "stack overflow"
 
 /gettop 16
-/pop 1
+/pop
 /gettop 15
-/pop 2
-/gettop 13
 
 /settop 16
-/catch "index too big"
+/catch "index >= top"
 
 /settop 0
 /gettop 0
+
+/pop
+/catch "empty stack"
 
 ## Roundtrip
 
@@ -58,4 +59,14 @@
 /roundtrip -2147483648
 /roundtrip 9223372036854775807
 /roundtrip -9223372036854775808
+
+# Copying
+
+/copyroundtrip 0
+/copyroundtrip 1
+/copyroundtrip -1
+/copyroundtrip 2147483647
+/copyroundtrip -2147483648
+/copyroundtrip 9223372036854775807
+/copyroundtrip -9223372036854775808
 

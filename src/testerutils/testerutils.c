@@ -4,7 +4,6 @@
 #include <errno.h>
 
 #include <string/string.h>
-#include <tester/tester.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
@@ -140,4 +139,19 @@ yadsl_testerutils_compare_file_and_string(
 		else if (*string == '\0') return false;
 	} while ((char) ch == *(string++));
 	return false;
+}
+
+yadsl_TesterRet
+yadsl_testerutils_parse_command(
+    const char* command,
+    yadsl_TesterUtilsCommand* commands)
+{
+	while (commands->command != NULL) {
+		if (strcmp(command, commands->command) == 0) {
+			commands->commandhandler();
+			return YADSL_TESTER_RET_OK;
+		}
+		++commands;
+	}
+	return YADSL_TESTER_RET_COUNT;
 }

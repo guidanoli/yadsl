@@ -1,6 +1,7 @@
 #include <bigint/bigint.h>
 
 #include <stdio.h>
+#include <string.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -12,6 +13,7 @@
 
 typedef uint32_t digit;
 typedef int32_t sdigit;
+
 #define shift (sizeof(digit)*CHAR_BIT - 1)
 
 /**
@@ -131,9 +133,18 @@ yadsl_bigint_to_int(
 
 yadsl_BigIntHandle*
 yadsl_bigint_copy(
-	yadsl_BigIntHandle* bigint)
+	yadsl_BigIntHandle* _bigint)
 {
-	return NULL;
+	yadsl_BigInt* bigint, * copy;
+	size_t size;
+	intptr_t ndigits;
+	bigint = (yadsl_BigInt*) _bigint;
+	if (bigint->size < 0) ndigits = -bigint->size;
+	else ndigits = bigint->size;
+	size = sizeof(*copy)+(ndigits-1)*sizeof(digit);
+	copy = malloc(size);
+	if (copy != NULL) memcpy(copy, bigint, size);
+	return copy;
 }
 
 yadsl_BigIntHandle*
