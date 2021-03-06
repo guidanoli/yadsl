@@ -112,12 +112,18 @@ jobs:
         run: cmake --build build --config "$CONFIG" --target all
 
       - name: Test C
+        env:
+          CTEST_OUTPUT_ON_FAILURE: 1
         run: cmake --build build --config "$CONFIG" --target test
 
       - name: Test Python
-        run: PYTHONPATH="$LIBDIR" pyenv exec pytest -s src --ignore=src/yadsl/templates
+        env:
+          PYTHONPATH: ${{ env.LIBDIR }}
+        run: pyenv exec pytest -s src --ignore=src/yadsl/templates
 
       - name: Test Lua
+        env:
+          LUA_CPATH: ${{ format('${0}/?.so', env.LIBDIR) }}
         run: |
           chmod +x src/yadsl/luatest
-          LUA_CPATH="$LIBDIR/?.so" src/yadsl/luatest
+          src/yadsl/luatest
