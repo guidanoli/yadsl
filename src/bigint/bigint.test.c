@@ -60,6 +60,17 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		check_index(n);
 		yadsl_tester_assert(yadsl_bigint_to_int(stack[n], &obtained), YADSL_TESTER_RET_OVERFLOW);
 		yadsl_tester_asserteqI(expected, obtained, NULL);
+	} else if (yadsl_testerutils_match(command, "roundtrip")) {
+		intmax_t i, j;
+		yadsl_BigIntHandle* bigint;
+		yadsl_tester_parse_n_arguments("I", &i);
+		yadsl_tester_assertx(stacksize < MAXSTACKSIZE, "stack overflow");
+		bigint = yadsl_bigint_from_int(i);
+		yadsl_tester_assert(bigint != NULL, YADSL_TESTER_RET_MALLOC);
+		stack[stacksize++] = bigint;
+		yadsl_tester_assert(yadsl_bigint_to_int(stack[stacksize-1], &j), YADSL_TESTER_RET_OVERFLOW);
+		yadsl_tester_asserteqI(i, j, NULL);
+		yadsl_bigint_destroy(stack[--stacksize]);
 	} else {
 		return YADSL_TESTER_RET_COUNT;
 	}

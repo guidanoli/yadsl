@@ -48,6 +48,7 @@ static char* cursor = buffer; /* buffer cursor */
 
 static yadsl_ArgvParserHandle* argvp; /* argument vector parser */
 
+static int help; /* Print help message */
 static FILE* input_fp; /* Input file pointer */
 static FILE* log_fp; /* Logger file pointer */
 
@@ -98,8 +99,8 @@ int main(int argc_, char** argv_)
 	if (status = yadsl_tester_argvp_init_internal())
 		return status;
 
-	/* If no arguments were passed, then print help strings */
-	if (argc == 1) {
+	/* Print help strings */
+	if (help) {
 		yadsl_tester_print_help_strings();
 		return YADSL_TESTER_RET_OK;
 	}
@@ -552,8 +553,9 @@ void yadsl_tester_load_return_values_internal()
 		{YADSL_TESTER_RET_OVERFLOW, "overflow"},
 		{YADSL_TESTER_RET_COMMAND, "command"},
 		{YADSL_TESTER_RET_ARGUMENT, "argument"},
-		{YADSL_TESTER_RET_RETURN, "return"},
 		{YADSL_TESTER_RET_TOKEN, "token"},
+		{YADSL_TESTER_RET_RETURN, "return"},
+		{YADSL_TESTER_RET_ARGCOMP, "argcomp"},
 		{YADSL_TESTER_RET_CATCH, "catch"},
 		{YADSL_TESTER_RET_EXTERNAL, "external"},
 	};
@@ -682,6 +684,14 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 
 	/* Add keyword arguments */
 	yadsl_argvp_add_keyword_arguments(argvp, kwargdefs);
+
+	/* Process positional arguments */
+	int pargc = yadsl_argvp_get_positional_argument_count(argvp);
+	for (int pargi = 0; pargi < pargc; ++pargi) {
+		const char* parg = yadsl_argvp_get_positional_argument(argvp, pargi);
+		if (strcmp(parg, "--help") == 0)
+			help = 1;
+	}
 
 	const char* input_file;
 	input_file = yadsl_argvp_get_keyword_argument_value(argvp, "--input-file", 0);

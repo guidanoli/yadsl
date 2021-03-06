@@ -89,8 +89,9 @@ yadsl_bigint_to_int(
 	yadsl_BigIntHandle* _bigint,
 	intmax_t* i_ptr)
 {
-	intmax_t i, iprev;
-	int negative;
+	intmax_t i;
+	uintmax_t u, v;
+	int sign;
 	intptr_t ndigits;
 	yadsl_BigInt* bigint = (yadsl_BigInt *) _bigint;
 	switch (bigint->size) {
@@ -106,18 +107,23 @@ yadsl_bigint_to_int(
 	default:
 		if (bigint->size < 0) {
 			ndigits = -bigint->size;
-			negative = 1;
+			sign = -1;
 		} else {
 			ndigits = bigint->size;
-			negative = 0;
+			sign = 1;
 		}
-		i = 0;
+		u = 0;
 		while (ndigits > 0) {
-			iprev = i;
-			i = (i << shift) | bigint->digits[--ndigits];
-			if ((i >> shift) != iprev) return false;
+			v = u;
+			u = (u << shift) | bigint->digits[--ndigits];
+			if ((u >> shift) != v) return false;
 		}
-		if (negative) i = -i;
+		if (u <= (uintmax_t)INTMAX_MAX)
+			i = (intmax_t)u * sign;
+		else if (sign < 0 && u == (0-(uintmax_t)INTMAX_MIN))
+			i = INTMAX_MIN;
+		else
+			return false;
 	}
 	*i_ptr = i;
 	return true;

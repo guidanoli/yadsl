@@ -86,12 +86,14 @@
  * <program> [options...]
  * ```
  * 
- * If no arguments are provided, a help message will be printed.
+ * If no arguments are provided, the program will commence reading from stdin.
  * 
  * Options
  * -------
  * 
  * ```
+ * --help                         Print help message and quit
+ *
  * --input-file <file-path>       Reads input from file.
  *                                (Default: standard input)
  * 
@@ -497,8 +499,7 @@ yadsl_tester_log(
 	...);
 
 /**
-* @brief Prints help strings provided in the same
-* way as if no arguments were provided.
+* @brief Prints help strings
 */
 void
 yadsl_tester_print_help_strings();

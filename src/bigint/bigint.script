@@ -49,37 +49,13 @@
 /settop 0
 /gettop 0
 
-## Pushing and popping
+## Roundtrip
 
-/push 1
-/get 0 1
-/pop 1
+/roundtrip 0
+/roundtrip 1
+/roundtrip -1
+/roundtrip 2147483647
+/roundtrip -2147483648
+/roundtrip 9223372036854775807
+/roundtrip -9223372036854775808
 
-/push -1
-/get 0 -1
-/pop 1
-
-/push 2
-/get 0 2
-/pop 1
-
-/push -2
-/get 0 -2
-/pop 1
-
-/push 2147483647
-/get 0 2147483647
-/pop 1
-
-/push -2147483648
-/get 0 -2147483648
-/pop 1
-
-/push 9223372036854775807
-/get 0 9223372036854775807
-/pop 1
-
-/push -9223372036854775808
-/get 0 -9223372036854775808
-/catch overflow
-/pop 1
