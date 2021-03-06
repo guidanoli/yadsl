@@ -33,7 +33,7 @@ typedef struct
 	intptr_t size;
 	digit digits[1];
 }
-yadsl_BigInt;
+BigInt;
 
 static int getndigits(intmax_t i)
 {
@@ -54,7 +54,7 @@ static int getndigits(intmax_t i)
 }
 
 static void
-yadsl_bigint_dump_internal(yadsl_BigInt* bigint)
+yadsl_bigint_dump_internal(BigInt* bigint)
 {
 	intptr_t size = bigint->size;
 	intptr_t ndigits = size < 0 ? -size : size;
@@ -68,7 +68,7 @@ yadsl_BigIntHandle*
 yadsl_bigint_from_int(intmax_t i)
 {
 	int ndigits = getndigits(i);
-	yadsl_BigInt* bigint = malloc(sizeof(*bigint)+(ndigits-1)*sizeof(digit));
+	BigInt* bigint = malloc(sizeof(*bigint)+(ndigits-1)*sizeof(digit));
 	if (bigint != NULL) {
 		bigint->size = i > 0 ? ndigits : -ndigits;
 		if (i == INTMAX_MIN) {
@@ -95,7 +95,7 @@ yadsl_bigint_to_int(
 	uintmax_t u, v;
 	int sign;
 	intptr_t ndigits;
-	yadsl_BigInt* bigint = (yadsl_BigInt *) _bigint;
+	BigInt* bigint = (BigInt *) _bigint;
 	switch (bigint->size) {
 	case 0:
 		i = 0;
@@ -135,10 +135,10 @@ yadsl_BigIntHandle*
 yadsl_bigint_copy(
 	yadsl_BigIntHandle* _bigint)
 {
-	yadsl_BigInt* bigint, * copy;
+	BigInt* bigint, * copy;
 	size_t size;
 	intptr_t ndigits;
-	bigint = (yadsl_BigInt*) _bigint;
+	bigint = (BigInt*) _bigint;
 	if (bigint->size < 0) ndigits = -bigint->size;
 	else ndigits = bigint->size;
 	size = sizeof(*copy)+(ndigits-1)*sizeof(digit);
@@ -149,9 +149,11 @@ yadsl_bigint_copy(
 
 yadsl_BigIntHandle*
 yadsl_bigint_opposite(
-	yadsl_BigIntHandle* bigint)
+	yadsl_BigIntHandle* _bigint)
 {
-	return NULL;
+	BigInt* bigint = yadsl_bigint_copy(_bigint);
+	if (bigint != NULL) bigint->size *= -1;
+	return bigint;
 }
 
 yadsl_BigIntHandle*

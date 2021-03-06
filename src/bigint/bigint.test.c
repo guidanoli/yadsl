@@ -128,18 +128,46 @@ static void bigint_copyroundtrip()
 	yadsl_tester_asserteqI(i, j, NULL);
 }
 
+static void bigint_pushopposite()
+{
+	int n;
+	yadsl_BigIntHandle* opposite;
+	yadsl_tester_parse_n_arguments("i", &n);
+	checkindex(n);
+	checkstack();
+	opposite = yadsl_bigint_opposite(at(n));
+	yadsl_tester_assert(opposite != NULL, YADSL_TESTER_RET_MALLOC);
+	push(opposite);
+}
+
+static void bigint_oppositeroundtrip()
+{
+	intmax_t i, j;
+	yadsl_BigIntHandle* opposite;
+	bigint_push();
+	yadsl_tester_assert(yadsl_bigint_to_int(at(top-1), &i), YADSL_TESTER_RET_OVERFLOW);
+	opposite = yadsl_bigint_opposite(at(top-1));
+	bigint_pop();
+	yadsl_tester_assert(opposite != NULL, YADSL_TESTER_RET_MALLOC);
+	push(opposite);
+	yadsl_tester_assert(yadsl_bigint_to_int(at(top-1), &j), YADSL_TESTER_RET_OVERFLOW);
+	bigint_pop();
+	yadsl_tester_asserteqI(-i, j, NULL);
+}
 
 #define CMD(name) { #name, bigint_ ## name }
 
 static yadsl_TesterUtilsCommand commands[] = {
-	CMD(push),
+	CMD(get),
 	CMD(pop),
+	CMD(copy),
+	CMD(push),
 	CMD(settop),
 	CMD(gettop),
-	CMD(get),
 	CMD(roundtrip),
-	CMD(copy),
+	CMD(pushopposite),
 	CMD(copyroundtrip),
+	CMD(oppositeroundtrip),
 	{ NULL, NULL },
 };
 

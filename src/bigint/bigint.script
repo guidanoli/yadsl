@@ -1,4 +1,4 @@
-## Stack manipulation
+# Stack manipulation
 
 /gettop 0
 /push 1
@@ -50,7 +50,7 @@
 /pop
 /catch "empty stack"
 
-## Roundtrip
+# Roundtrip
 
 /roundtrip 0
 /roundtrip 1
@@ -70,3 +70,12 @@
 /copyroundtrip 9223372036854775807
 /copyroundtrip -9223372036854775808
 
+# Opposite
+
+/oppositeroundtrip 0
+/oppositeroundtrip 1
+/oppositeroundtrip -1
+/oppositeroundtrip 2147483647
+/oppositeroundtrip -2147483647
+/oppositeroundtrip 9223372036854775807
+/oppositeroundtrip -9223372036854775807

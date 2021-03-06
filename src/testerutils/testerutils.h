@@ -92,6 +92,8 @@ yadsl_testerutils_compare_file_and_string(
 
 /**
  * @brief Parse command
+ * Hint: Order the commands by ascending order of
+ * length so that parsing time is optimized
  * @param command command
  * @param commands NULL-terminated array of commands
  * @return return code
