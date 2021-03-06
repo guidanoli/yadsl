@@ -1,5 +1,6 @@
 #include <bigint/bigint.h>
 
+#include <stdio.h>
 #include <inttypes.h>
 #include <limits.h>
 
@@ -80,8 +81,6 @@ yadsl_bigint_from_int(intmax_t i)
 			}
 		}
 	}
-	fprintf(stderr, "num = %" PRIdMAX "\n", i);
-	yadsl_bigint_dump_internal(bigint);
 	return bigint;
 }
 
