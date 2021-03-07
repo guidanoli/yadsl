@@ -16,6 +16,7 @@ typedef uint32_t digit;
 typedef int32_t sdigit;
 
 #define SHIFT (sizeof(digit)*CHAR_BIT - 1)
+#define SIGN ((digit)1 << SHIFT)
 #define ABS(num) ((num < 0) ? -(num) : (num))
 #define SIZE(bigint) (bigint->size)
 #define DIGITVALUE(bigint) \
@@ -29,12 +30,15 @@ typedef int32_t sdigit;
  * 
  * Each digit contains at least 31 bits.
  * The most significant digit is zeroed.
+ * The size field sign bit represents the
+ * sign of the big integer itself.
  *
  * 0XXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
  *
- * The size field is signed so that
- * the sign bit indicates the sign of
- * the number itself.
+ * Invariants:
+ *
+ * ABS(size) >= 0
+ * SIGN & digits[i] == 0, for i in [0, ABS(size)]
 */
 typedef struct
 {
@@ -45,15 +49,8 @@ BigInt;
 
 static int getndigits(intmax_t i)
 {
-	uintmax_t u;
+	uintmax_t u = (uintmax_t)ABS(i);
 	int ndigits = 0;
-	if (i == INTMAX_MIN) {
-		u = UINTMAX_MAX;
-	} else if (i < 0) {
-		u = (uintmax_t)-i;
-	} else {
-		u = (uintmax_t)i;
-	}
 	while (u != 0) {
 		u >>= SHIFT;
 		++ndigits;
@@ -72,14 +69,25 @@ yadsl_bigint_dump_internal(BigInt* bigint)
 		fprintf(stderr, "digit #%zd = %" PRIu32 "\n", i, bigint->digits[i]);
 }
 
+static BigInt*
+bigint_new(intptr_t size)
+{
+	BigInt* bigint;
+	intptr_t ndigits = ABS(size);
+	if (ndigits < 0) return NULL;
+	bigint = malloc(sizeof(*bigint)+(ndigits-1)*sizeof(digit));
+	if (bigint != NULL) SIZE(bigint) = size;
+	return bigint;
+}
+
 yadsl_BigIntHandle*
 yadsl_bigint_from_int(intmax_t i)
 {
 	int ndigits = getndigits(i);
-	BigInt* bigint = malloc(sizeof(*bigint)+(ndigits-1)*sizeof(digit));
+	int size = i > 0 ? ndigits : -ndigits;
+	BigInt* bigint = bigint_new((intptr_t) size);
 	if (bigint != NULL) {
-		bigint->size = i > 0 ? ndigits : -ndigits;
-		if (i == INTMAX_MIN) {
+		if (ABS(i) < 0) {
 			for (int ndigit = 0; ndigit < ndigits-1; ++ndigit)
 				bigint->digits[ndigit] = 0;
 			bigint->digits[ndigits-1] = 2;
@@ -155,32 +163,58 @@ yadsl_BigIntHandle*
 yadsl_bigint_opposite(
 	yadsl_BigIntHandle* _bigint)
 {
-	BigInt* bigint, * copy;
-	bigint = (BigInt*) _bigint;
-	if (SIZE(bigint) == INTPTR_MIN)
-		return NULL;
-	copy = yadsl_bigint_copy(_bigint);
+	BigInt* copy = yadsl_bigint_copy(_bigint);
 	if (copy != NULL) SIZE(copy) *= -1;
 	return copy;
 }
 
+static BigInt*
+bigint_add(BigInt* a, intptr_t na, BigInt* b, intptr_t nb)
+{
+	BigInt* c;
+	digit da, db, dc, carry = 0;
+	intptr_t n = na > nb ? na : nb;
+	intptr_t m = 0;
+	for (intptr_t i = 0; i < n; ++i) {
+		da = i < na ? a->digits[i] : 0;
+		db = i < nb ? b->digits[i] : 0;
+		dc = da + db + carry;
+		carry = (dc & SIGN) >> SHIFT;
+		if (dc != 0) m = i+1;
+	}
+	if (carry) ++m;
+	c = bigint_new(m);
+	if (c == NULL) return NULL;
+	carry = 0;
+	for (intptr_t i = 0; i < m; ++i) {
+		da = i < na ? a->digits[i] : 0;
+		db = i < nb ? b->digits[i] : 0;
+		dc = da + db + carry;
+		carry = (dc & SIGN) >> SHIFT;
+		c->digits[i] = dc & ~SIGN;
+	}
+	return c;
+}
+
 yadsl_BigIntHandle*
 yadsl_bigint_add(
-	yadsl_BigIntHandle* _bigint1,
-	yadsl_BigIntHandle* _bigint2)
+	yadsl_BigIntHandle* _a,
+	yadsl_BigIntHandle* _b)
 {
-	BigInt* bigint1, * bigint2;
-	intptr_t size1, size2;
-	bigint1 = (BigInt*) _bigint1;
-	bigint2 = (BigInt*) _bigint2;
-	size1 = SIZE(bigint1);
-	size2 = SIZE(bigint2);
-	if (size1 == 0) {
-		return yadsl_bigint_copy(_bigint2);
-	} else if (size2 == 0) {
-		return yadsl_bigint_copy(_bigint1);
-	} else if (ABS(size1) <= 1 && ABS(size2) <= 1) {
-		return yadsl_bigint_from_int((intmax_t)(DIGITVALUE(bigint1) + DIGITVALUE(bigint2)));
+	BigInt* a = (BigInt*) _a, * b = (BigInt*) _b;
+	intptr_t na = SIZE(a), nb = SIZE(b);
+	if (na == 0) {
+		return yadsl_bigint_copy(b);
+	} else if (nb == 0) {
+		return yadsl_bigint_copy(a);
+	} else if (ABS(na) <= 1 && ABS(nb) <= 1) {
+		return yadsl_bigint_from_int((intmax_t)DIGITVALUE(a) + (intmax_t)DIGITVALUE(b));
+	} else if (na > 0 && nb > 0) {
+		return bigint_add(a, na, b, nb);
+	} else if (na < 0 && nb < 0) {
+		BigInt* c = bigint_add(a, -na, b, -nb);
+		if (c != NULL) SIZE(c) *= -1;
+		return c;
 	} else {
 		return NULL;
 	}
