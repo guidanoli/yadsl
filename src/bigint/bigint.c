@@ -15,11 +15,9 @@
 typedef uint32_t digit;
 typedef int32_t sdigit;
 
-#define shift (sizeof(digit)*CHAR_BIT - 1)
+#define SHIFT (sizeof(digit)*CHAR_BIT - 1)
 #define ABS(num) ((num < 0) ? -(num) : (num))
 #define SIZE(bigint) (bigint->size)
-#define NDIGITS(bigint) (ABS(SIZE(bigint)))
-#define ISNEGATIVE(bigint) (SIZE(bigint) < 0)
 #define DIGITVALUE(bigint) \
 	(assert(-1 <= SIZE(bigint) && SIZE(bigint) <= 1), \
 		SIZE(bigint) < 0 ? -(sdigit)(bigint)->digits[0] : \
@@ -57,7 +55,7 @@ static int getndigits(intmax_t i)
 		u = (uintmax_t)i;
 	}
 	while (u != 0) {
-		u >>= shift;
+		u >>= SHIFT;
 		++ndigits;
 	}
 	return ndigits;
@@ -66,8 +64,9 @@ static int getndigits(intmax_t i)
 static void
 yadsl_bigint_dump_internal(BigInt* bigint)
 {
-	intptr_t ndigits = NDIGITS(bigint);
-	fprintf(stderr, "isnegative = %s\n", ISNEGATIVE(bigint) ? "true" : "false");
+	intptr_t size = SIZE(bigint);
+	intptr_t ndigits = ABS(size);
+	fprintf(stderr, "isnegative = %s\n", size < 0 ? "true" : "false");
 	fprintf(stderr, "ndigits = %zd\n", ndigits);
 	for (intptr_t i = 0; i < ndigits; ++i)
 		fprintf(stderr, "digit #%zd = %" PRIu32 "\n", i, bigint->digits[i]);
@@ -87,8 +86,8 @@ yadsl_bigint_from_int(intmax_t i)
 		} else {
 			uintmax_t u = i > 0 ? (uintmax_t)i : (uintmax_t)-i;
 			for (int ndigit = 0; ndigit < ndigits; ++ndigit) {
-				bigint->digits[ndigit] = (digit)u & ~(1 << shift);
-				u >>= shift;
+				bigint->digits[ndigit] = (digit)u & ~(1 << SHIFT);
+				u >>= SHIFT;
 			}
 		}
 	}
@@ -104,6 +103,7 @@ yadsl_bigint_to_int(
 	uintmax_t u, v;
 	int sign;
 	intptr_t ndigits;
+	intptr_t size;
 	BigInt* bigint = (BigInt *) _bigint;
 	switch (SIZE(bigint)) {
 	case 0:
@@ -116,13 +116,14 @@ yadsl_bigint_to_int(
 		i = -(sdigit)bigint->digits[0];
 		break;
 	default:
-		ndigits = NDIGITS(bigint);
-		sign = ISNEGATIVE(bigint) ? -1 : 1;
+		size = SIZE(bigint);
+		ndigits = ABS(size);
+		sign = size < 0 ? -1 : 1;
 		u = 0;
 		while (ndigits > 0) {
 			v = u;
-			u = (u << shift) | bigint->digits[--ndigits];
-			if ((u >> shift) != v) return false;
+			u = (u << SHIFT) | bigint->digits[--ndigits];
+			if ((u >> SHIFT) != v) return false;
 		}
 		if (u <= (uintmax_t)INTMAX_MAX)
 			i = (intmax_t)u * sign;
@@ -143,7 +144,7 @@ yadsl_bigint_copy(
 	size_t size;
 	intptr_t ndigits;
 	bigint = (BigInt*) _bigint;
-	ndigits = NDIGITS(bigint);
+	ndigits = ABS(SIZE(bigint));
 	size = sizeof(*copy)+(ndigits-1)*sizeof(digit);
 	copy = malloc(size);
 	if (copy != NULL) memcpy(copy, bigint, size);
@@ -174,7 +175,11 @@ yadsl_bigint_add(
 	bigint2 = (BigInt*) _bigint2;
 	size1 = SIZE(bigint1);
 	size2 = SIZE(bigint2);
-	if (ABS(size1) <= 1 && ABS(size2) <= 1) {
+	if (size1 == 0) {
+		return yadsl_bigint_copy(_bigint2);
+	} else if (size2 == 0) {
+		return yadsl_bigint_copy(_bigint1);
+	} else if (ABS(size1) <= 1 && ABS(size2) <= 1) {
 		return yadsl_bigint_from_int((intmax_t)(DIGITVALUE(bigint1) + DIGITVALUE(bigint2)));
 	} else {
 		return NULL;

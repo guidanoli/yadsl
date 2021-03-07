@@ -29,11 +29,11 @@ yadsl_TesterRet convertReturn(yadsl_MapRet mapId)
 	case YADSL_MAP_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_MAP_RET_ENTRY_NOT_FOUND:
-		return yadsl_tester_return_external_value("noentry");
+		return yadsl_tester_error("noentry");
 	case YADSL_MAP_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 

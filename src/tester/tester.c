@@ -34,7 +34,7 @@ static const char
 
 static size_t line; /* line count */
 static jmp_buf env; /* environment */
-static const char* external_ret_info; /* external return value */
+static const char* errmsg; /* custom error message */
 static const char* tester_ret_infos[YADSL_TESTER_RET_COUNT]; /* return value */
 
 static char
@@ -398,10 +398,10 @@ const void* yadsl_tester_object_data(void* object)
 	return ((yadsl_TesterObject*) object)->data;
 }
 
-yadsl_TesterRet yadsl_tester_return_external_value(const char* info)
+yadsl_TesterRet yadsl_tester_error(const char* _errmsg)
 {
-	external_ret_info = info;
-	return YADSL_TESTER_RET_EXTERNAL;
+	errmsg = _errmsg;
+	return YADSL_TESTER_RET_CUSTOM;
 }
 
 void yadsl_tester_print_help_strings()
@@ -414,11 +414,11 @@ const char* yadsl_tester_get_return_value_info(yadsl_TesterRet returnValue)
 {
 	if (returnValue < YADSL_TESTER_RET_OK || returnValue >= YADSL_TESTER_RET_COUNT)
 		return "Invalid return value";
-	if (returnValue == YADSL_TESTER_RET_EXTERNAL)
-		if (external_ret_info == NULL)
-			return "Missing external return value information";
+	if (returnValue == YADSL_TESTER_RET_CUSTOM)
+		if (errmsg == NULL)
+			return "Missing error message";
 		else
-			return external_ret_info;
+			return errmsg;
 	return tester_ret_infos[returnValue];
 }
 
@@ -439,7 +439,8 @@ yadsl_tester_assert(
     yadsl_TesterRet errno)
 {
 	if (!condition)
-		YADSL_ERROR(errno);
+		YADSL_ERROR(errno ? errno :
+				yadsl_tester_error("assert"));
 }
 
 void
@@ -448,7 +449,7 @@ yadsl_tester_assertx(
     const char* errmsg)
 {
 	if (!condition)
-		YADSL_ERROR(yadsl_tester_return_external_value(errmsg));
+		YADSL_ERROR(yadsl_tester_error(errmsg));
 }
 
 void
@@ -464,7 +465,7 @@ yadsl_tester_assertf(
 			errcb();
 			--reclvl;
 		}
-		YADSL_ERROR(yadsl_tester_return_external_value(errmsg));
+		YADSL_ERROR(yadsl_tester_error(errmsg));
 	}
 }
 
@@ -530,7 +531,7 @@ yadsl_TesterRet yadsl_tester_parse_file_internal()
 							line = prev_line;
 							return ret;
 						}
-						external_ret_info = NULL;
+						errmsg = NULL;
 						// Set environment
 						ret = setjmp(env);
 						if (ret == 0) {
@@ -545,11 +546,11 @@ yadsl_TesterRet yadsl_tester_parse_file_internal()
 					}
 				} else {
 					// Command does not match regex
-					return YADSL_TESTER_RET_COMMAND;
+					return ret ? ret : YADSL_TESTER_RET_COMMAND;
 				}
 			} else {
 				// Unexpected token
-				return YADSL_TESTER_RET_TOKEN;
+				return ret ? ret : YADSL_TESTER_RET_TOKEN;
 			}
 		}
 	}
@@ -576,7 +577,6 @@ void yadsl_tester_load_return_values_internal()
 		{YADSL_TESTER_RET_RETURN, "return"},
 		{YADSL_TESTER_RET_ARGCOMP, "argcomp"},
 		{YADSL_TESTER_RET_CATCH, "catch"},
-		{YADSL_TESTER_RET_EXTERNAL, "external"},
 	};
 	for (i = 0; i < sizeof(nativeValues) / sizeof(nativeValues[0]); ++i) {
 		struct returnValue retVal = nativeValues[i];
@@ -616,9 +616,9 @@ yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret)
 {
 	char arg[BUFSIZ] = "";
 	if (yadsl_tester_parse_arguments("s", arg) == 1) {
-		if (ret == YADSL_TESTER_RET_EXTERNAL) {
-			if (external_ret_info != NULL &&
-				strcmp(external_ret_info, arg) == 0)
+		if (ret == YADSL_TESTER_RET_CUSTOM) {
+			if (errmsg != NULL &&
+				strcmp(errmsg, arg) == 0)
 				return YADSL_TESTER_RET_OK;
 		} else if (ret >= YADSL_TESTER_RET_OK && ret < YADSL_TESTER_RET_COUNT) {
 			if (strcmp(tester_ret_infos[ret], arg) == 0)

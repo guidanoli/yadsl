@@ -37,15 +37,15 @@ yadsl_TesterRet convertReturn(yadsl_SetRet setId)
 	case YADSL_SET_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_SET_RET_CONTAINS:
-		return yadsl_tester_return_external_value("contains");
+		return yadsl_tester_error("contains");
 	case YADSL_SET_RET_DOES_NOT_CONTAIN:
-		return yadsl_tester_return_external_value("containsnot");
+		return yadsl_tester_error("containsnot");
 	case YADSL_SET_RET_EMPTY:
-		return yadsl_tester_return_external_value("empty");
+		return yadsl_tester_error("empty");
 	case YADSL_SET_RET_OUT_OF_BOUNDS:
-		return yadsl_tester_return_external_value("bounds");
+		return yadsl_tester_error("bounds");
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 

@@ -103,7 +103,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 	} else if (yadsl_testerutils_match(command, "throw")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		return yadsl_tester_return_external_value(buffer);
+		return yadsl_tester_error(buffer);
 	} else if (yadsl_testerutils_match(command, "cmp-pld")) {
 		char dtype;
 		if (yadsl_tester_parse_arguments("c", &dtype) != 1)
@@ -220,7 +220,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		int cond;
 		if (yadsl_tester_parse_arguments("is", &cond, buffer) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		yadsl_tester_assert(cond, yadsl_tester_return_external_value(buffer));
+		yadsl_tester_assert(cond, yadsl_tester_error(buffer));
 	} else {
 		return YADSL_TESTER_RET_COMMAND;
 	}

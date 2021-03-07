@@ -21,13 +21,13 @@ yadsl_TesterRet convertRet(yadsl_HashMapRet ret)
 	case YADSL_HASHMAP_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_HASHMAP_RET_EXISTS:
-		return yadsl_tester_return_external_value("exists");
+		return yadsl_tester_error("exists");
 	case YADSL_HASHMAP_RET_DOESNT_EXIST:
-		return yadsl_tester_return_external_value("doesnt exist");
+		return yadsl_tester_error("doesnt exist");
 	case YADSL_HASHMAP_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 

@@ -189,6 +189,7 @@ static void bigint_addip()
 	yadsl_tester_asserteqI(c, a + b, "given parameters don't add up");
 	bigint_add();
 	yadsl_tester_asserteqI(c, get(top-1), "obtained and expected addiotion results differ");
+	popx();
 }
 
 #define CMD(name) { #name, bigint_ ## name }

@@ -31,11 +31,11 @@ yadsl_TesterRet convert(yadsl_StackRet ret)
 	case YADSL_STACK_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_STACK_RET_EMPTY:
-		return yadsl_tester_return_external_value("empty");
+		return yadsl_tester_error("empty");
 	case YADSL_STACK_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 

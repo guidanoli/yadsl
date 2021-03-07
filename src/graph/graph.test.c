@@ -329,21 +329,21 @@ yadsl_TesterRet convert_graph_ret(yadsl_GraphRet graphId)
 	case YADSL_GRAPH_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_GRAPH_RET_EMPTY:
-		return yadsl_tester_return_external_value("empty");
+		return yadsl_tester_error("empty");
 	case YADSL_GRAPH_RET_CONTAINS_VERTEX:
-		return yadsl_tester_return_external_value("contains vertex");
+		return yadsl_tester_error("contains vertex");
 	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_VERTEX:
-		return yadsl_tester_return_external_value("does not contain vertex");
+		return yadsl_tester_error("does not contain vertex");
 	case YADSL_GRAPH_RET_CONTAINS_EDGE:
-		return yadsl_tester_return_external_value("contains edge");
+		return yadsl_tester_error("contains edge");
 	case YADSL_GRAPH_RET_DOES_NOT_CONTAIN_EDGE:
-		return yadsl_tester_return_external_value("does not contain edge");
+		return yadsl_tester_error("does not contain edge");
 	case YADSL_GRAPH_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_GRAPH_RET_PARAMETER:
-		return yadsl_tester_return_external_value("parameter");
+		return yadsl_tester_error("parameter");
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 
@@ -355,17 +355,17 @@ yadsl_TesterRet convert_graph_io_ret(yadsl_GraphIoRet graphIoId)
 	case YADSL_GRAPHIO_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_GRAPHIO_RET_WRITING_FAILURE:
-		return yadsl_tester_return_external_value("writing failure");
+		return yadsl_tester_error("writing failure");
 	case YADSL_GRAPHIO_RET_CREATION_FAILURE:
-		return yadsl_tester_return_external_value("creation failure");
+		return yadsl_tester_error("creation failure");
 	case YADSL_GRAPHIO_RET_SAME_CREATION:
-		return yadsl_tester_return_external_value("same creation");
+		return yadsl_tester_error("same creation");
 	case YADSL_GRAPHIO_RET_FILE_ERROR:
-		return yadsl_tester_return_external_value("file error");
+		return yadsl_tester_error("file error");
 	case YADSL_GRAPHIO_RET_DEPRECATED_FILE_FORMAT:
-		return yadsl_tester_return_external_value("deprecated file format");
+		return yadsl_tester_error("deprecated file format");
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 
@@ -375,13 +375,13 @@ yadsl_TesterRet convert_graph_search_ret(yadsl_GraphSearchRet graphSearchId)
 	case YADSL_GRAPHSEARCH_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_GRAPHSEARCH_RET_DOES_NOT_CONTAIN_VERTEX:
-		return yadsl_tester_return_external_value("does not contain vertex");
+		return yadsl_tester_error("does not contain vertex");
 	case YADSL_GRAPHSEARCH_RET_VERTEX_ALREADY_VISITED:
-		return yadsl_tester_return_external_value("vertex already visited");
+		return yadsl_tester_error("vertex already visited");
 	case YADSL_GRAPHSEARCH_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 

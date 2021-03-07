@@ -56,11 +56,11 @@
  *
  * External return values
  * ----------------------
- * You may have noticed that the EXTERNAL return value is the only one that does
+ * You may have noticed that the CUSTOM return value is the only one that does
  * not have a string nor a description defined. That is because it is a
  * polymorphic return value. It can be whatever the user determines at runtime.
  * Instead of returning this value right away, you ought to call
- * yadsl_tester_return_external_value(), passing its string as the parameter,
+ * yadsl_tester_error(), passing its string as the parameter,
  * which then returns the enumerator.
  *
  * Error handling
@@ -156,7 +156,7 @@
 
 /**
 * @brief Enumeration of tester return values.
-* OBS: ::YADSL_TESTER_RET_COUNT and ::YADSL_TESTER_RET_EXTERNAL are
+* OBS: ::YADSL_TESTER_RET_COUNT and ::YADSL_TESTER_RET_CUSTOM are
 * not meant to be used as return values, since they serve
 * merely for internal purposes.
 */
@@ -173,7 +173,7 @@ typedef enum
 	YADSL_TESTER_RET_RETURN, /**< Unexpected return */
     YADSL_TESTER_RET_ARGCOMP, /*< Failed argument comparison */
 	YADSL_TESTER_RET_CATCH, /**< Unexpected catch (no error) */
-	YADSL_TESTER_RET_EXTERNAL, /**< External return value */
+	YADSL_TESTER_RET_CUSTOM, /**< Custom error message */
 	YADSL_TESTER_RET_COUNT, /**< For internal use only */
 }
 yadsl_TesterRet;
@@ -479,21 +479,19 @@ yadsl_tester_copy_argument(
 	void* destination);
 
 /**
- * @brief Create an external value for an specific error.
- * Once called, its return value must be returned by the
- * callback from which it was called.
+ * @brief Create a custom error message.
  *
  * Hint
  * ----
- * The external value can be caught by '/catch' too,
- * by providing the same string 'info' as its parameter.
+ * The error can be caught by '/catch' too,
+ * by providing the same error message.
  *
- * @param info external value name
- * @return ::YADSL_TESTER_RET_EXTERNAL
+ * @param errmsg error message
+ * @return ::YADSL_TESTER_RET_CUSTOM
 */
 yadsl_TesterRet
-yadsl_tester_return_external_value(
-	const char* info);
+yadsl_tester_error(
+	const char* errmsg);
 
 /**
  * @brief Log a message with additional information about current

@@ -88,10 +88,10 @@ static yadsl_TesterRet convertReturnValue(yadsl_QueueRet queueId)
 	case YADSL_QUEUE_RET_OK:
 		return YADSL_TESTER_RET_OK;
 	case YADSL_QUEUE_RET_EMPTY:
-		return yadsl_tester_return_external_value("empty");
+		return yadsl_tester_error("empty");
 	case YADSL_QUEUE_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }

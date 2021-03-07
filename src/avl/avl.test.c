@@ -79,7 +79,7 @@ yadsl_TesterRet convert(yadsl_AVLTreeRet returnId)
 	case YADSL_AVLTREE_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 

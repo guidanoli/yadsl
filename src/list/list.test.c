@@ -92,11 +92,11 @@ yadsl_TesterRet yadsl_tester_convert_ret(yadsl_ListRet ret)
 	case YADSL_LIST_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
 	case YADSL_LIST_RET_INDEX:
-		return yadsl_tester_return_external_value("index");
+		return yadsl_tester_error("index");
 	case YADSL_LIST_RET_NOT_FOUND:
-		return yadsl_tester_return_external_value("not found");
+		return yadsl_tester_error("not found");
 	default:
-		return yadsl_tester_return_external_value("unknown");
+		return yadsl_tester_error("unknown");
 	}
 }
 
