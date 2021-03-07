@@ -5,26 +5,28 @@
 
 #include <stddef.h>
 
-const char *yadsl_tester_help_strings[] = {0};
-
 #define MAXSTACKSIZE 16
-yadsl_BigIntHandle* stack[MAXSTACKSIZE];
-int top;
+
+/* Static variables */
+static yadsl_BigIntHandle* stack[MAXSTACKSIZE+1];
+static int top;
+
+/* Static functions */
+static yadsl_BigIntHandle* pop();
+static void popx();
+static void checkstack();
+static void checknull(yadsl_BigIntHandle* bigint);
+static void push(yadsl_BigIntHandle* bigint);
+static void checkindex(int index);
+static void checkop(int opcnt);
+static yadsl_BigIntHandle* at(int index);
+static intmax_t get(int index);
+
+const char *yadsl_tester_help_strings[] = {0};
 
 yadsl_TesterRet yadsl_tester_init()
 {
 	return YADSL_TESTER_RET_OK;
-}
-
-static void checkstack()
-{
-	yadsl_tester_assertx(top < MAXSTACKSIZE, "stack overflow");
-}
-
-static void push(yadsl_BigIntHandle* bigint)
-{
-	checkstack();
-	stack[top++] = bigint;
 }
 
 static yadsl_BigIntHandle* pop()
@@ -33,10 +35,37 @@ static yadsl_BigIntHandle* pop()
 	return stack[--top];
 }
 
+static void popx()
+{
+	yadsl_bigint_destroy(pop());
+}
+
+static void checkstack()
+{
+	yadsl_tester_assertf(top <= MAXSTACKSIZE, "stack overflow", popx);
+}
+
+static void checknull(yadsl_BigIntHandle* bigint)
+{
+	yadsl_tester_assert(bigint != NULL, YADSL_TESTER_RET_MALLOC);
+}
+
+static void push(yadsl_BigIntHandle* bigint)
+{
+	checknull(bigint);
+	stack[top++] = bigint;
+	checkstack();
+}
+
 static void checkindex(int index)
 {
 	yadsl_tester_assertx(index >= 0, "index < 0");
 	yadsl_tester_assertx(index < top, "index >= top");
+}
+
+static void checkop(int opcnt)
+{
+	yadsl_tester_assertx(top >= opcnt-1, "too few operands");
 }
 
 static yadsl_BigIntHandle* at(int index)
@@ -45,20 +74,29 @@ static yadsl_BigIntHandle* at(int index)
 	return stack[index];
 }
 
-static void bigint_push()
+static intmax_t get(int index)
 {
 	intmax_t i;
-	yadsl_BigIntHandle* bigint;
+	yadsl_tester_assert(yadsl_bigint_to_int(at(index), &i), YADSL_TESTER_RET_OVERFLOW);
+	return i;
+}
+
+static intmax_t _bigint_push()
+{
+	intmax_t i;
 	yadsl_tester_parse_n_arguments("I", &i);
-	checkstack();
-	bigint = yadsl_bigint_from_int(i);
-	yadsl_tester_assert(bigint != NULL, YADSL_TESTER_RET_MALLOC);
-	push(bigint);
+	push(yadsl_bigint_from_int(i));
+	return i;
+}
+
+static void bigint_push()
+{
+	_bigint_push();
 }
 
 static void bigint_pop()
 {
-	yadsl_bigint_destroy(pop());
+	popx();
 }
 
 static void bigint_settop()
@@ -66,7 +104,7 @@ static void bigint_settop()
 	int n;
 	yadsl_tester_parse_n_arguments("i", &n);
 	checkindex(n);
-	while (top != n) yadsl_bigint_destroy(pop());
+	while (top != n) popx();
 }
 
 static void bigint_gettop()
@@ -79,93 +117,93 @@ static void bigint_gettop()
 static void bigint_get()
 {
 	int n;
-	intmax_t expected, obtained;
-	yadsl_tester_parse_n_arguments("iI", &n, &expected);
-	checkindex(n);
-	yadsl_tester_assert(yadsl_bigint_to_int(at(n), &obtained), YADSL_TESTER_RET_OVERFLOW);
-	yadsl_tester_asserteqI(expected, obtained, NULL);
+	intmax_t i;
+	yadsl_tester_parse_n_arguments("iI", &n, &i);
+	yadsl_tester_asserteqI(i, get(n), NULL);
 }
 
 static void bigint_roundtrip()
 {
-	intmax_t i, j;
-	yadsl_BigIntHandle* bigint;
-	yadsl_tester_parse_n_arguments("I", &i);
-	checkstack();
-	bigint = yadsl_bigint_from_int(i);
-	yadsl_tester_assert(bigint != NULL, YADSL_TESTER_RET_MALLOC);
-	push(bigint);
-	yadsl_tester_assert(yadsl_bigint_to_int(at(top-1), &j), YADSL_TESTER_RET_OVERFLOW);
-	yadsl_tester_asserteqI(i, j, NULL);
-	bigint_pop();
+	intmax_t i;
+	i = _bigint_push();
+	yadsl_tester_asserteqI(i, get(top-1), NULL);
+	popx();
 }
 
 static void bigint_copy()
 {
 	int n;
-	yadsl_BigIntHandle* copy;
 	yadsl_tester_parse_n_arguments("i", &n);
-	checkindex(n);
-	checkstack();
-	copy = yadsl_bigint_copy(at(n));
-	yadsl_tester_assert(copy != NULL, YADSL_TESTER_RET_MALLOC);
-	push(copy);
+	push(yadsl_bigint_copy(at(n)));
 }
 
 static void bigint_copyroundtrip()
 {
 	intmax_t i, j;
 	yadsl_BigIntHandle* copy;
-	bigint_push();
-	yadsl_tester_assert(yadsl_bigint_to_int(at(top-1), &i), YADSL_TESTER_RET_OVERFLOW);
-	checkstack();
+	i = _bigint_push();
 	copy = yadsl_bigint_copy(at(top-1));
-	bigint_pop();
-	yadsl_tester_assert(copy != NULL, YADSL_TESTER_RET_MALLOC);
+	popx();
 	push(copy);
-	yadsl_tester_assert(yadsl_bigint_to_int(at(top-1), &j), YADSL_TESTER_RET_OVERFLOW);
-	bigint_pop();
+	j = get(top-1);
+	popx();
 	yadsl_tester_asserteqI(i, j, NULL);
 }
 
-static void bigint_pushopposite()
+static void bigint_opposite()
 {
-	int n;
-	yadsl_BigIntHandle* opposite;
-	yadsl_tester_parse_n_arguments("i", &n);
-	checkindex(n);
-	checkstack();
-	opposite = yadsl_bigint_opposite(at(n));
-	yadsl_tester_assert(opposite != NULL, YADSL_TESTER_RET_MALLOC);
-	push(opposite);
+	checkop(1);
+	push(yadsl_bigint_opposite(at(top-1)));
 }
 
 static void bigint_oppositeroundtrip()
 {
 	intmax_t i, j;
 	yadsl_BigIntHandle* opposite;
-	bigint_push();
-	yadsl_tester_assert(yadsl_bigint_to_int(at(top-1), &i), YADSL_TESTER_RET_OVERFLOW);
+	i = _bigint_push();
 	opposite = yadsl_bigint_opposite(at(top-1));
-	bigint_pop();
-	yadsl_tester_assert(opposite != NULL, YADSL_TESTER_RET_MALLOC);
+	popx();
 	push(opposite);
-	yadsl_tester_assert(yadsl_bigint_to_int(at(top-1), &j), YADSL_TESTER_RET_OVERFLOW);
-	bigint_pop();
+	j = get(top-1);
+	popx();
 	yadsl_tester_asserteqI(-i, j, NULL);
+}
+
+static void bigint_add()
+{
+	yadsl_BigIntHandle *bigint;
+	checkop(2);
+	bigint = yadsl_bigint_add(at(top-1), at(top-2));
+	checknull(bigint);
+	popx();
+	popx();
+	push(bigint);
+}
+
+static void bigint_addip()
+{
+	intmax_t a, b, c;
+	a = _bigint_push();
+	b = _bigint_push();
+	yadsl_tester_parse_n_arguments("I", &c);
+	yadsl_tester_asserteqI(c, a + b, "given parameters don't add up");
+	bigint_add();
+	yadsl_tester_asserteqI(c, get(top-1), "obtained and expected addiotion results differ");
 }
 
 #define CMD(name) { #name, bigint_ ## name }
 
 static yadsl_TesterUtilsCommand commands[] = {
+	CMD(add),
 	CMD(get),
 	CMD(pop),
 	CMD(copy),
 	CMD(push),
+	CMD(addip),
 	CMD(settop),
 	CMD(gettop),
+	CMD(opposite),
 	CMD(roundtrip),
-	CMD(pushopposite),
 	CMD(copyroundtrip),
 	CMD(oppositeroundtrip),
 	{ NULL, NULL },

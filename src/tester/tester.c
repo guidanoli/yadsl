@@ -438,7 +438,8 @@ yadsl_tester_assert(
     int condition,
     yadsl_TesterRet errno)
 {
-	if (!condition) YADSL_ERROR(errno);
+	if (!condition)
+		YADSL_ERROR(errno);
 }
 
 void
@@ -446,7 +447,25 @@ yadsl_tester_assertx(
     int condition,
     const char* errmsg)
 {
-	if (!condition) YADSL_ERROR(yadsl_tester_return_external_value(errmsg));
+	if (!condition)
+		YADSL_ERROR(yadsl_tester_return_external_value(errmsg));
+}
+
+void
+yadsl_tester_assertf(
+    int condition,
+    const char* errmsg,
+    void (*errcb)())
+{
+	static int reclvl = 0;
+	if (!condition) {
+		if (reclvl == 0) {
+			++reclvl;
+			errcb();
+			--reclvl;
+		}
+		YADSL_ERROR(yadsl_tester_return_external_value(errmsg));
+	}
 }
 
 #define NORMALEQ(a, b) (a == b)

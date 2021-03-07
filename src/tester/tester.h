@@ -298,6 +298,19 @@ yadsl_tester_assertx(
     const char* errmsg);
 
 /**
+ * @brief Assert that condition is true.
+ * If not, performs a long jump and the error is raised
+ * @param condition condition to be tester
+ * @param errmsg error message
+ * @param errcb error callback
+*/
+void
+yadsl_tester_assertf(
+    int condition,
+    const char* errmsg,
+    void (*errcb)());
+
+/**
  * @brief Asserts floats are equal
 */
 void
