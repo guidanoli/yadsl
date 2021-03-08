@@ -198,6 +198,14 @@ digitadd(digit* a, intptr_t na, digit* b, intptr_t nb)
 	return bigint;
 }
 
+static BigInt*
+digitaddneg(digit* a, intptr_t na, digit* b, intptr_t nb)
+{
+	BigInt* bigint = digitadd(a, na, b, nb);
+	if (bigint != NULL) SIZE(bigint) *= -1;
+	return bigint;
+}
+
 static int
 digitcmp(digit* a, intptr_t na, digit* b, intptr_t nb)
 {
@@ -269,9 +277,7 @@ yadsl_bigint_add(
 	} else if (na > 0 && nb > 0) {
 		return digitadd(a->digits, na, b->digits, nb);
 	} else if (na < 0 && nb < 0) {
-		BigInt* c = digitadd(a->digits, -na, b->digits, -nb);
-		if (c != NULL) SIZE(c) *= -1;
-		return c;
+		return digitaddneg(a->digits, -na, b->digits, -nb);
 	} else if (na > 0 && nb < 0) {
 		return digitsub(a->digits, na, b->digits, -nb);
 	} else { /* na < 0 && nb > 0 */
@@ -281,10 +287,26 @@ yadsl_bigint_add(
 
 yadsl_BigIntHandle*
 yadsl_bigint_subtract(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2)
+	yadsl_BigIntHandle* _a,
+	yadsl_BigIntHandle* _b)
 {
-	return NULL;
+	BigInt* a = (BigInt*) _a, * b = (BigInt*) _b;
+	intptr_t na = SIZE(a), nb = SIZE(b);
+	if (na == 0) {
+		return yadsl_bigint_opposite(b);
+	} else if (nb == 0) {
+		return yadsl_bigint_copy(a);
+	} else if (ABS(na) <= 1 && ABS(nb) <= 1) {
+		return yadsl_bigint_from_int((intmax_t)DIGITVALUE(a) - (intmax_t)DIGITVALUE(b));
+	} else if (na > 0 && nb > 0) {
+		return digitsub(a->digits, na, b->digits, nb);
+	} else if (na < 0 && nb < 0) {
+		return digitsub(b->digits, -nb, a->digits, -na);
+	} else if (na > 0 && nb < 0) {
+		return digitadd(a->digits, na, b->digits, -nb);
+	} else { /* na < 0 && nb > 0 */
+		return digitaddneg(a->digits, -na, b->digits, nb);
+	}
 }
 
 yadsl_BigIntHandle*

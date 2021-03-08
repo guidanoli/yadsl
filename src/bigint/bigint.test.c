@@ -173,7 +173,7 @@ static void bigint_add()
 {
 	yadsl_BigIntHandle *bigint;
 	checkop(2);
-	bigint = yadsl_bigint_add(at(top-1), at(top-2));
+	bigint = yadsl_bigint_add(at(top-2), at(top-1));
 	checknull(bigint);
 	popx();
 	popx();
@@ -186,9 +186,32 @@ static void bigint_addip()
 	a = _bigint_push();
 	b = _bigint_push();
 	yadsl_tester_parse_n_arguments("I", &c);
-	yadsl_tester_asserteqI(c, a + b, "given parameters don't add up");
+	yadsl_tester_asserteqI(c, a + b, "parameters don't satisfy addition");
 	bigint_add();
-	yadsl_tester_asserteqI(c, get(top-1), "obtained and expected addiotion results differ");
+	yadsl_tester_asserteqI(c, get(top-1), "obtained and expected addition results differ");
+	popx();
+}
+
+static void bigint_sub()
+{
+	yadsl_BigIntHandle *bigint;
+	checkop(2);
+	bigint = yadsl_bigint_subtract(at(top-2), at(top-1));
+	checknull(bigint);
+	popx();
+	popx();
+	push(bigint);
+}
+
+static void bigint_subip()
+{
+	intmax_t a, b, c;
+	a = _bigint_push();
+	b = _bigint_push();
+	yadsl_tester_parse_n_arguments("I", &c);
+	yadsl_tester_asserteqI(c, a - b, "parameters don't satisfy subtraction");
+	bigint_sub();
+	yadsl_tester_asserteqI(c, get(top-1), "obtained and expected subtraction results differ");
 	popx();
 }
 
@@ -198,11 +221,13 @@ static yadsl_TesterUtilsCommand commands[] = {
 	CMD(add),
 	CMD(get),
 	CMD(pop),
+	CMD(sub),
 	CMD(copy),
 	CMD(push),
 	CMD(addip),
-	CMD(settop),
+	CMD(subip),
 	CMD(gettop),
+	CMD(settop),
 	CMD(opposite),
 	CMD(roundtrip),
 	CMD(copyroundtrip),
