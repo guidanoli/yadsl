@@ -144,6 +144,7 @@
  * @{
 */
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -171,7 +172,6 @@ typedef enum
 	YADSL_TESTER_RET_ARGUMENT, /**< Failed argument parsing */
 	YADSL_TESTER_RET_TOKEN, /**< Failed token parsing */
 	YADSL_TESTER_RET_RETURN, /**< Unexpected return */
-    YADSL_TESTER_RET_ARGCOMP, /*< Failed argument comparison */
 	YADSL_TESTER_RET_CATCH, /**< Unexpected catch (no error) */
 	YADSL_TESTER_RET_CUSTOM, /**< Custom error message */
 	YADSL_TESTER_RET_COUNT, /**< For internal use only */
@@ -266,12 +266,42 @@ yadsl_tester_parse_arguments(
 	...);
 
 /**
+ * @brief Throws an error number.
+ * @param errno error number
+*/
+void
+yadsl_tester_throw(
+        yadsl_TesterRet errno);
+
+/**
+ * @brief Throws an error message.
+ * Note: va_end(va) is called before doing
+ * the long jump to avoid memory leakage
+ * @param fmt error message format string
+ * @param va format arguments
+*/
+void
+yadsl_tester_vthrowf(
+        const char* fmt,
+        va_list va);
+
+/**
+ * @brief Throws an error message.
+ * @param fmt error message format string
+ * @param ... format arguments
+*/
+void
+yadsl_tester_throwf(
+        const char* fmt,
+        ...);
+
+/**
  * @brief Restrict form of yadsl_tester_parse_arguments
  * Asserts that all arguments in format string match.
  * If not, peforms a long jump and an "argument" error is raised.
  * @param fmt format string
  * @param ... pointers to arguments
- */
+*/
 #define yadsl_tester_parse_n_arguments(fmt, ...) \
     yadsl_tester_assert(yadsl_tester_parse_arguments(fmt, __VA_ARGS__) == (sizeof(fmt)-1), YADSL_TESTER_RET_ARGUMENT)
 
@@ -288,27 +318,62 @@ yadsl_tester_assert(
 
 /**
  * @brief Assert that condition is true.
- * If not, performs a long jump and the error is raised
+ * If not, calls va_end(va), performs a long jump
+ * and the error is raised
  * @param condition condition to be tester
- * @param errmsg error message
+ * @param fmt error message format string
+ * @param va format arguments
 */
 void
-yadsl_tester_assertx(
+yadsl_tester_vassertf(
     int condition,
-    const char* errmsg);
+    const char* fmt,
+    va_list va);
 
 /**
  * @brief Assert that condition is true.
  * If not, performs a long jump and the error is raised
  * @param condition condition to be tester
- * @param errmsg error message
- * @param errcb error callback
+ * @param fmt error message format string
+ * @param ... format arguments
 */
 void
 yadsl_tester_assertf(
     int condition,
-    const char* errmsg,
-    void (*errcb)());
+    const char* fmt,
+    ...);
+
+/**
+ * @brief Assert that condition is true.
+ * If not, calls callback, va_end(va), performs a long jump
+ * and the error is raised
+ * @param condition condition to be tester
+ * @param fmt error message format string
+ * @param falsecb callback called when condition is false
+ * @param va format arguments
+*/
+void
+yadsl_tester_vxassertf(
+    int condition,
+    const char* fmt,
+    void (*falsecb)(),
+    va_list va);
+
+/**
+ * @brief Assert that condition is true.
+ * If not, calls callback, performs a long jump
+ * and the error is raised
+ * @param condition condition to be tester
+ * @param fmt error message format string
+ * @param falsecb callback called when condition is false
+ * @param .. format arguments
+*/
+void
+yadsl_tester_xassertf(
+    int condition,
+    const char* fmt,
+    void (*falsecb)(),
+    ...);
 
 /**
  * @brief Asserts floats are equal

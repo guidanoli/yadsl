@@ -42,7 +42,8 @@ buffer[BUFSIZ], /* file line */
 buffer2[BUFSIZ], /* previous file line */
 command[BUFSIZ], /* command string */
 sep[BUFSIZ], /* separation characters */
-temp[BUFSIZ]; /* temporary variable */
+temp[BUFSIZ], /* temporary variable */
+assertmsg[BUFSIZ]; /* assert message */
 
 static char* cursor = buffer; /* buffer cursor */
 
@@ -60,9 +61,6 @@ do { \
 	if (!status) \
 		status = temp; \
 } while (0)
-
-#define YADSL_ERROR(err) \
-longjmp(env, err)
 
 /*****************************************************************************/
 /*                      STATIC FUNCTIONS DECLARATIONS                        */
@@ -434,51 +432,109 @@ void yadsl_tester_log(const char* message, ...)
 }
 
 void
+yadsl_tester_throw(
+        yadsl_TesterRet errno)
+{
+	if (errno == 0)
+		errno = yadsl_tester_error("error");
+	longjmp(env, errno);
+}
+
+void
+yadsl_tester_vthrowf(
+        const char* fmt,
+        va_list va)
+{
+	vsnprintf(assertmsg, sizeof(assertmsg), fmt, va);
+	va_end(va);
+	yadsl_tester_throw(yadsl_tester_error(assertmsg));
+}
+
+void
+yadsl_tester_throwf(
+        const char* fmt,
+        ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	yadsl_tester_vthrowf(fmt, va);	
+}
+
+void
 yadsl_tester_assert(
     int condition,
     yadsl_TesterRet errno)
 {
 	if (!condition)
-		YADSL_ERROR(errno ? errno :
-				yadsl_tester_error("assert"));
+		yadsl_tester_throw(errno);
 }
 
 void
-yadsl_tester_assertx(
+yadsl_tester_vassertf(
     int condition,
-    const char* errmsg)
+    const char* fmt,
+    va_list va)
 {
-	if (!condition)
-		YADSL_ERROR(yadsl_tester_error(errmsg));
+	if (!condition) {
+		vsnprintf(assertmsg, sizeof(assertmsg), fmt, va);
+		va_end(va);
+		yadsl_tester_assert(condition, yadsl_tester_error(assertmsg));
+	}
 }
 
 void
 yadsl_tester_assertf(
     int condition,
-    const char* errmsg,
-    void (*errcb)())
+    const char* fmt,
+    ...)
+{
+	if (!condition) {
+		va_list va;
+		va_start(va, fmt);
+		yadsl_tester_vassertf(condition, fmt, va);
+	}
+}
+
+void
+yadsl_tester_vxassertf(
+    int condition,
+    const char* fmt,
+    void (*falsecb)(),
+    va_list va)
 {
 	static int reclvl = 0;
 	if (!condition) {
 		if (reclvl == 0) {
 			++reclvl;
-			errcb();
+			falsecb();
 			--reclvl;
 		}
-		YADSL_ERROR(yadsl_tester_error(errmsg));
+		yadsl_tester_vthrowf(fmt, va);
+	}
+}
+
+void
+yadsl_tester_xassertf(
+    int condition,
+    const char* fmt,
+    void (*falsecb)(),
+    ...)
+{
+	if (!condition) {
+		va_list va;
+		va_start(va, falsecb);
+		yadsl_tester_vxassertf(condition, fmt, falsecb, va);
 	}
 }
 
 #define NORMALEQ(a, b) (a == b)
+#define string const char*
 #define STREQ(a, b) (strcmp(a, b) == 0)
 #define MAKE_ASSERTEQ(type, fmt, suffix, eqf) \
 void yadsl_tester_asserteq ## suffix (type a, type b, const char* errmsg) { \
 	if (!eqf(a, b)) { \
-		if (errmsg != NULL) \
-			yadsl_tester_log("%s (" fmt " != " fmt ")", errmsg, a, b); \
-		else \
-			yadsl_tester_log(fmt " != " fmt, a, b); \
-		YADSL_ERROR(YADSL_TESTER_RET_ARGCOMP); \
+		if (errmsg == NULL) errmsg = #type " inequality"; \
+		yadsl_tester_throwf("%s (" fmt " != " fmt ")", errmsg, a, b); \
 	} \
 }
 
@@ -486,9 +542,11 @@ MAKE_ASSERTEQ(float, "%f", f, NORMALEQ)
 MAKE_ASSERTEQ(int, "%d", i, NORMALEQ)
 MAKE_ASSERTEQ(long, "%ld", l, NORMALEQ)
 MAKE_ASSERTEQ(char, "%c", c, NORMALEQ)
-MAKE_ASSERTEQ(const char*, "%s", s, STREQ)
+MAKE_ASSERTEQ(string, "%s", s, STREQ)
 MAKE_ASSERTEQ(size_t, "%zu", z, NORMALEQ)
 MAKE_ASSERTEQ(intmax_t, "%" SCNdMAX, I, NORMALEQ)
+
+#undef string
 
 /*****************************************************************************/
 /*                      STATIC FUNCTIONS DEFINITIONS                         */
@@ -575,7 +633,6 @@ void yadsl_tester_load_return_values_internal()
 		{YADSL_TESTER_RET_ARGUMENT, "argument"},
 		{YADSL_TESTER_RET_TOKEN, "token"},
 		{YADSL_TESTER_RET_RETURN, "return"},
-		{YADSL_TESTER_RET_ARGCOMP, "argcomp"},
 		{YADSL_TESTER_RET_CATCH, "catch"},
 	};
 	for (i = 0; i < sizeof(nativeValues) / sizeof(nativeValues[0]); ++i) {

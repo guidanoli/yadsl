@@ -4,6 +4,7 @@
 #include <testerutils/testerutils.h>
 
 #include <stddef.h>
+#include <inttypes.h>
 
 #define MAXSTACKSIZE 16
 
@@ -31,7 +32,7 @@ yadsl_TesterRet yadsl_tester_init()
 
 static yadsl_BigIntHandle* pop()
 {
-	yadsl_tester_assertx(top > 0, "empty stack");
+	yadsl_tester_assertf(top > 0, "empty stack");
 	return stack[--top];
 }
 
@@ -42,7 +43,7 @@ static void popx()
 
 static void checkstack()
 {
-	yadsl_tester_assertf(top <= MAXSTACKSIZE, "stack overflow", popx);
+	yadsl_tester_xassertf(top <= MAXSTACKSIZE, "stack overflow", popx);
 }
 
 static void checknull(yadsl_BigIntHandle* bigint)
@@ -59,13 +60,13 @@ static void push(yadsl_BigIntHandle* bigint)
 
 static void checkindex(int index)
 {
-	yadsl_tester_assertx(index >= 0, "index < 0");
-	yadsl_tester_assertx(index < top, "index >= top");
+	yadsl_tester_assertf(index >= 0, "index < 0");
+	yadsl_tester_assertf(index < top, "index >= top");
 }
 
 static void checkop(int opcnt)
 {
-	yadsl_tester_assertx(top >= opcnt-1, "too few operands");
+	yadsl_tester_assertf(top >= opcnt-1, "too few operands");
 }
 
 static yadsl_BigIntHandle* at(int index)
@@ -215,10 +216,37 @@ static void bigint_subip()
 	popx();
 }
 
+static void bigint_cmp()
+{
+	intmax_t a, b;
+	char op;
+	int cmp;
+	a = _bigint_push();
+	yadsl_tester_parse_n_arguments("c", &op);
+	b = _bigint_push();
+	cmp = yadsl_bigint_compare(at(top-2), at(top-1));
+	popx();
+	popx();
+	switch (op) {
+	case '>':
+		yadsl_tester_assertf(cmp > 0, "%" PRIdMAX " <= %" PRIdMAX, a, b);
+		break;
+	case '<':
+		yadsl_tester_assertf(cmp < 0, "%" PRIdMAX " >= %" PRIdMAX, a, b);
+		break;
+	case '=':
+		yadsl_tester_assertf(cmp == 0, "%" PRIdMAX " != %" PRIdMAX, a, b);
+		break;
+	default:
+		yadsl_tester_throwf("'%c' is not a valid operator", op);
+	}
+}
+
 #define CMD(name) { #name, bigint_ ## name }
 
 static yadsl_TesterUtilsCommand commands[] = {
 	CMD(add),
+	CMD(cmp),
 	CMD(get),
 	CMD(pop),
 	CMD(sub),

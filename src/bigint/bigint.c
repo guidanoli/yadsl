@@ -209,15 +209,20 @@ digitaddneg(digit* a, intptr_t na, digit* b, intptr_t nb)
 static int
 digitcmp(digit* a, intptr_t na, digit* b, intptr_t nb)
 {
-	if (na == 0 && nb == 0)
-		return 0;
-	else if (na > nb)
+	if (na > nb)
 		return 1;
-	else if (nb > na)
+	else if (na < nb)
 		return -1;
+	else if (na == 0)
+		return 0;
 	else {
-		digit da = a[na-1], db = b[nb-1];
-		return (da > db) - (da < db);
+		int cmp;
+		int sign = na < 0 ? -1 : 1;
+		for (intptr_t i = ABS(na)-1; i >= 0; --i) {
+			cmp = (a[i] > b[i]) - (b[i] > a[i]);
+			if (cmp != 0) break;
+		}
+		return cmp * sign;
 	}
 }
 
@@ -327,10 +332,12 @@ yadsl_bigint_divide(
 
 int
 yadsl_bigint_compare(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2)
+	yadsl_BigIntHandle* _a,
+	yadsl_BigIntHandle* _b)
 {
-	return 0;
+	BigInt* a = (BigInt*) _a, * b = (BigInt*) _b;
+	intptr_t na = SIZE(a), nb = SIZE(b);
+	return digitcmp(a->digits, na, b->digits, nb);
 }
 
 char*

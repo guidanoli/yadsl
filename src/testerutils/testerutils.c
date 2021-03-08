@@ -153,5 +153,5 @@ yadsl_testerutils_parse_command(
 		}
 		++commands;
 	}
-	return YADSL_TESTER_RET_COUNT;
+	return YADSL_TESTER_RET_COMMAND;
 }
