@@ -126,6 +126,15 @@ void
 yadsl_bigint_destroy(
 	yadsl_BigIntHandle* bigint);
 
+/**
+ * @brief Dump bigint information
+ * @param bigint bigint to be dumped
+*/
+void
+yadsl_bigint_dump(
+    yadsl_BigIntHandle* bigint);
+
+
 /** @} */
 
 #endif
