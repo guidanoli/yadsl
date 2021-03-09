@@ -1,6 +1,6 @@
 # yadsl
 
-[![Build Status](https://travis-ci.com/guidanoli/yadsl.svg?branch=master)](https://travis-ci.com/guidanoli/yadsl)
+[![Continuous Integration](https://github.com/guidanoli/yadsl/actions/workflows/ci.yml/badge.svg)](https://github.com/guidanoli/yadsl/actions/workflows/ci.yml)
 [![Documentation](https://codedocs.xyz/guidanoli/yadsl.svg)](https://codedocs.xyz/guidanoli/yadsl/)
 
 **yadsl** is an acronym for [**Y**et **A**nother](https://en.wikipedia.org/wiki/Yet_another) **D**ata **S**tructures **L**ibrary.
