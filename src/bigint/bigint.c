@@ -247,24 +247,25 @@ static BigInt*
 digitstrictsub(digit* a, intptr_t na, digit* b, intptr_t nb)
 {
 	BigInt* bigint;
-	digit* c, da, db, dc, carry = 0;
+	digit* c, da, db, dc, borrow = 0;
 	intptr_t n = na > nb ? na : nb, m = 0;
 	for (intptr_t i = 0; i < n; ++i) {
 		da = i < na ? a[i] : 0;
 		db = i < nb ? b[i] : 0;
-		dc = (da | SIGN) - db - carry;
-		carry = ~(dc & SIGN) >> SHIFT;
+		dc = (da | SIGN) - db - borrow;
+		borrow = ~(dc & SIGN) >> SHIFT;
 		if (dc & ~SIGN != 0) m = i+1;
 	}
+	assert(borrow == 0);
 	bigint = bigint_new(m);
 	if (bigint == NULL) return NULL;
 	c = bigint->digits;
-	carry = 0;
+	borrow = 0;
 	for (intptr_t i = 0; i < m; ++i) {
 		da = i < na ? a[i] : 0;
 		db = i < nb ? b[i] : 0;
-		dc = (da | SIGN) - db - carry;
-		carry = ~(dc & SIGN) >> SHIFT;
+		dc = (da | SIGN) - db - borrow;
+		borrow = ~(dc & SIGN) >> SHIFT;
 		c[i] = dc & ~SIGN;
 	}
 	return bigint;

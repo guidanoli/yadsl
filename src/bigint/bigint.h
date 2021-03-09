@@ -149,7 +149,8 @@ yadsl_bigint_dump(
  * @return status code
 */
 yadsl_BigIntStatus
-yadsl_bigint_check(yadsl_BigIntHandle* _bigint);
+yadsl_bigint_check(
+        yadsl_BigIntHandle* bigint);
 
 /** @} */
 
