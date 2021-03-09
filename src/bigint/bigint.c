@@ -1,5 +1,6 @@
 #include <bigint/bigint.h>
 
+#include <stddef.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -19,6 +20,8 @@ typedef int32_t sdigit;
 #define SIGN ((digit)1 << SHIFT)
 #define ABS(num) ((num < 0) ? -(num) : (num))
 #define SIZE(bigint) (bigint->size)
+#define MALLOC_SIZE(ndigits) \
+	(offsetof(BigInt, digits) + sizeof(digit) * (ndigits))
 #define DIGITVALUE(bigint) \
 	(assert(-1 <= SIZE(bigint) && SIZE(bigint) <= 1), \
 		SIZE(bigint) < 0 ? -(sdigit)(bigint)->digits[0] : \
@@ -92,7 +95,7 @@ bigint_new(intptr_t size)
 	BigInt* bigint;
 	intptr_t ndigits = ABS(size);
 	if (ndigits < 0) return NULL;
-	bigint = malloc(sizeof(*bigint)+(ndigits-1)*sizeof(digit));
+	bigint = malloc(MALLOC_SIZE(ndigits));
 	if (bigint != NULL) SIZE(bigint) = size;
 	return bigint;
 }
@@ -170,7 +173,8 @@ yadsl_bigint_copy(
 	intptr_t ndigits;
 	bigint = (BigInt*) _bigint;
 	ndigits = ABS(SIZE(bigint));
-	size = sizeof(*copy)+(ndigits-1)*sizeof(digit);
+	assert(ndigits >= 0);
+	size = MALLOC_SIZE(ndigits);
 	copy = malloc(size);
 	if (copy != NULL) memcpy(copy, bigint, size);
 	return copy;
