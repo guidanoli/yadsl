@@ -15,7 +15,7 @@
 typedef uint32_t digit;
 typedef int32_t sdigit;
 
-#define SHIFT (sizeof(digit)*CHAR_BIT - 1)
+#define SHIFT 31
 #define SIGN ((digit)1 << SHIFT)
 #define ABS(num) ((num < 0) ? -(num) : (num))
 #define SIZE(bigint) (bigint->size)

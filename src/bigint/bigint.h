@@ -4,12 +4,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * @brief Status code for Big Integer representation
+ * correctness for debugging purposes.
+*/
 typedef enum
 {
-    YADSL_BIGINT_STATUS_OK,
-    YADSL_BIGINT_STATUS_INVALID_SIZE,
-    YADSL_BIGINT_STATUS_INVALID_DIGITS,
-    YADSL_BIGINT_STATUS_LEADING_ZEROS,
+    YADSL_BIGINT_STATUS_OK, /**< Correct representation */
+    YADSL_BIGINT_STATUS_INVALID_SIZE, /**< The 'size' field is invalid */
+    YADSL_BIGINT_STATUS_INVALID_DIGITS, /**< The 'digits' field is invalid */
+    YADSL_BIGINT_STATUS_LEADING_ZEROS, /**< There are excessive leading zeros */
 }
 yadsl_BigIntStatus;
 
