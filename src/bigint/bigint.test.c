@@ -36,6 +36,26 @@ static yadsl_BigIntHandle* pop()
 	return stack[--top];
 }
 
+static void bigintcheck()
+{
+	yadsl_BigIntStatus status = yadsl_bigint_check(at(top-1));
+	switch (status) {
+	case YADSL_BIGINT_STATUS_OK:
+		break;
+	case YADSL_BIGINT_STATUS_INVALID_SIZE:
+		yadsl_tester_throwf("CHECK: Invalid size");
+		break;
+	case YADSL_BIGINT_STATUS_INVALID_DIGITS:
+		yadsl_tester_throwf("CHECK: Invalid digits");
+		break;
+	case YADSL_BIGINT_STATUS_LEADING_ZEROS:
+		yadsl_tester_throwf("CHECK: Leading zeros");
+		break;
+	default:
+		yadsl_tester_throwf("CHECK: Unknown status code '%d'", status);
+	}
+}
+
 static void popx()
 {
 	yadsl_bigint_destroy(pop());
@@ -56,6 +76,7 @@ static void push(yadsl_BigIntHandle* bigint)
 	checknull(bigint);
 	stack[top++] = bigint;
 	checkstack();
+	bigintcheck();
 }
 
 static void checkindex(int index)

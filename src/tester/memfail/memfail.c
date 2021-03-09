@@ -12,7 +12,7 @@
  * This program intends to simulate memory allocation failure by
  * passing special arguments to the tester module that configure
  * the Memory Debugger in such a way that certain calls to malloc
- * and realloc will fail (malloc_index.e. return NULL)
+ * and realloc will fail
  * Usage:
  * 
  * memfail <tester-module-file-path> <tester-script>

@@ -58,6 +58,22 @@ static int getndigits(intmax_t i)
 	return ndigits;
 }
 
+yadsl_BigIntStatus
+yadsl_bigint_check(yadsl_BigIntHandle* _bigint)
+{
+	BigInt* bigint = (BigInt*) _bigint;
+	intptr_t ndigits = ABS(bigint->size);
+	digit* digits = bigint->digits;
+	if (ndigits < 0)
+		return YADSL_BIGINT_STATUS_INVALID_SIZE;
+	for (intptr_t i = 0; i < ndigits; ++i)
+		if (digits[i] & SIGN)
+			return YADSL_BIGINT_STATUS_INVALID_DIGITS;
+	if (ndigits > 0 && digits[ndigits-1] == 0)
+		return YADSL_BIGINT_STATUS_LEADING_ZEROS;
+	return YADSL_BIGINT_STATUS_OK;
+}
+
 void
 yadsl_bigint_dump(yadsl_BigIntHandle* _bigint)
 {

@@ -4,6 +4,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef enum
+{
+    YADSL_BIGINT_STATUS_OK,
+    YADSL_BIGINT_STATUS_INVALID_SIZE,
+    YADSL_BIGINT_STATUS_INVALID_DIGITS,
+    YADSL_BIGINT_STATUS_LEADING_ZEROS,
+}
+yadsl_BigIntStatus;
+
 /**
  * \defgroup bigint Big Integer
  * @brief Integer of arbitrary precision
@@ -134,6 +143,13 @@ void
 yadsl_bigint_dump(
     yadsl_BigIntHandle* bigint);
 
+/**
+ * @brief Check bigint correctness
+ * @param bigint bigint to be checked
+ * @return status code
+*/
+yadsl_BigIntStatus
+yadsl_bigint_check(yadsl_BigIntHandle* _bigint);
 
 /** @} */
 
