@@ -368,27 +368,25 @@ char*
 yadsl_bigint_to_string(
 	yadsl_BigIntHandle* _bigint)
 {
-	BigInt* bigint = (BigInt*) _bigint, * bigdec;
+	BigInt* bigint = (BigInt*) _bigint;
 	digit* pin, * pout, rem, tenpow;
-	intptr_t ndigits, size, strsize, i, j;
+	size_t ndigits, strsize, size, i, j;
 	int negative, d;
 	char* str = NULL, *p;
 
-	ndigits = ABS(SIZE(bigint));
+	ndigits = (size_t) ABS(SIZE(bigint));
 	negative = SIZE(bigint) < 0;
 
 	d = (33 * DECSHIFT) /
 		(10 * SHIFT - 33 * DECSHIFT);
-	assert(ndigits < INTPTR_MAX/2);
 	size = 1 + ndigits + ndigits / d;
-	bigdec = bigint_new(size);
+	pout = malloc(size * sizeof(digit));
 
-	if (bigdec == NULL) return NULL;
+	if (pout == NULL) return NULL;
 
 	pin = bigint->digits;
-	pout = bigdec->digits;
 	size = 0;
-	for (i = ndigits; --i >= 0; ) {
+	for (i = ndigits; i-- >= 1; ) {
 		digit hi = pin[i];
 		for (j = 0; j < size; ++j) {
 			twodigits z = (twodigits)pout[j] << SHIFT | hi;
@@ -439,7 +437,7 @@ yadsl_bigint_to_string(
 	assert(p == str);
 
 end:
-	yadsl_bigint_destroy(bigdec);
+	free(pout);
 	return str;
 }
 
