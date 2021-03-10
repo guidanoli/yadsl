@@ -10,6 +10,7 @@
 
 /* Static variables */
 static yadsl_BigIntHandle* stack[MAXSTACKSIZE+1];
+static char* s;
 static int top;
 
 /* Static functions */
@@ -66,9 +67,9 @@ static void checkstack()
 	yadsl_tester_xassertf(top <= MAXSTACKSIZE, "stack overflow", popx);
 }
 
-static void checknull(yadsl_BigIntHandle* bigint)
+static void checknull(void *p)
 {
-	yadsl_tester_assert(bigint != NULL, YADSL_TESTER_RET_MALLOC);
+	yadsl_tester_assert(p != NULL, YADSL_TESTER_RET_MALLOC);
 }
 
 static void push(yadsl_BigIntHandle* bigint)
@@ -105,9 +106,17 @@ static intmax_t get(int index)
 
 static intmax_t _bigint_push()
 {
-	intmax_t i;
+	intmax_t i, j;
 	yadsl_tester_parse_n_arguments("I", &i);
 	push(yadsl_bigint_from_int(i));
+	if (s != NULL) free(s);
+	s = yadsl_bigint_to_string(at(top-1));
+	checknull(s);
+	yadsl_tester_assertf(sscanf(s, "%" SCNdMAX, &j) == 1,
+			"yadsl_bigint_to_string returns invalid string");
+	free(s);
+	s = NULL;
+	yadsl_tester_asserteqI(i, j, NULL);
 	return i;
 }
 
@@ -293,6 +302,11 @@ yadsl_TesterRet yadsl_tester_release()
 {
 	while (top != 0)
 		yadsl_bigint_destroy(pop());
+
+	if (s != NULL) {
+		free(s);
+		s = NULL;
+	}
 
 	return YADSL_TESTER_RET_OK;
 }

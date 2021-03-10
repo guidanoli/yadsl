@@ -15,8 +15,11 @@
 
 typedef uint32_t digit;
 typedef int32_t sdigit;
+typedef uint64_t twodigits;
 
 #define SHIFT 31
+#define DECSHIFT 9
+#define DECBASE ((digit)1000000000)
 #define SIGN ((digit)1 << SHIFT)
 #define ABS(num) ((num < 0) ? -(num) : (num))
 #define SIZE(bigint) (bigint->size)
@@ -363,9 +366,81 @@ yadsl_bigint_compare(
 
 char*
 yadsl_bigint_to_string(
-	yadsl_BigIntHandle* bigint)
+	yadsl_BigIntHandle* _bigint)
 {
-	return NULL;
+	BigInt* bigint = (BigInt*) _bigint, * bigdec;
+	digit* pin, * pout, rem, tenpow;
+	intptr_t ndigits, size, strsize, i, j;
+	int negative, d;
+	char* str = NULL, *p;
+
+	ndigits = ABS(SIZE(bigint));
+	negative = SIZE(bigint) < 0;
+
+	d = (33 * DECSHIFT) /
+		(10 * SHIFT - 33 * DECSHIFT);
+	assert(ndigits < INTPTR_MAX/2);
+	size = 1 + ndigits + ndigits / d;
+	bigdec = bigint_new(size);
+
+	if (bigdec == NULL) return NULL;
+
+	pin = bigint->digits;
+	pout = bigdec->digits;
+	size = 0;
+	for (i = ndigits; --i >= 0; ) {
+		digit hi = pin[i];
+		for (j = 0; j < size; ++j) {
+			twodigits z = (twodigits)pout[j] << SHIFT | hi;
+			hi = (digit)(z / DECBASE);
+			pout[j] = (digit)(z - (twodigits)hi * DECBASE);
+		}
+		while (hi) {
+			pout[size++] = hi % DECBASE;
+			hi /= DECBASE;
+		}
+	}
+	
+	if (size == 0)
+		pout[size++] = 0;
+
+	strsize = negative + 1 + (size - 1) * DECSHIFT;
+	tenpow = 10;
+	rem = pout[size-1];
+	while (rem >= tenpow) {
+		tenpow *= 10;
+		strsize++;
+	}
+	
+	str = malloc(strsize + 1);
+	if (str == NULL)
+		goto end;
+
+	p = str + strsize;
+	*p = '\0';
+
+	for (i = 0; i < size - 1; i++) {
+		rem = pout[i];
+		for (j = 0; j < DECSHIFT; j++) {
+			*--p = '0' + rem % 10;
+			rem /= 10;
+		}
+	}
+
+	rem = pout[i];
+	do {
+		*--p = '0' + rem % 10;
+		rem /= 10;
+	} while (rem != 0);
+
+	if (negative)
+		*--p = '-';
+
+	assert(p == str);
+
+end:
+	yadsl_bigint_destroy(bigdec);
+	return str;
 }
 
 void
