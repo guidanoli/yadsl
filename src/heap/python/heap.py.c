@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <yadsl/pydefines.h>
+#include <yadsl/py.h>
 #include <heap/heap.h>
 
 #ifdef YADSL_DEBUG
@@ -31,7 +31,7 @@ static PyObject *PyExc_Full = NULL;
 static PyObject *PyExc_Lock = NULL;
 static PyObject *PyExc_Shrink = NULL;
 
-YADSL_PYDEFINES_EXCEPTION_METADATA()
+YADSL_PY_EXCEPTION_METADATA()
 
 static struct _exception_metadata exceptions[] = {
 	//
@@ -72,7 +72,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-YADSL_PYDEFINES_EXCEPTION_FUNCTIONS(Heap, exceptions)
+YADSL_PY_EXCEPTION_FUNCTIONS(Heap, exceptions)
 
 //
 // Callbacks
@@ -399,7 +399,7 @@ PyInit_pyheap(void)
 	m = PyModule_Create(&pyheap_module);
 	if (m == NULL)
 		return NULL;
-	YADSL_PYDEFINES_INIT_EXCEPTION_OBJECTS(m, _exc)
+	YADSL_PY_INIT_EXCEPTION_OBJECTS(m, _exc)
 	Py_INCREF(&HeapType);
 	if (PyModule_AddObject(m, "Heap", (PyObject *) &HeapType) < 0) {
 		Py_DECREF(&HeapType);

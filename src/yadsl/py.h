@@ -1,5 +1,5 @@
-#ifndef __YADSL_PYDEFINES_H__
-#define __YADSL_PYDEFINES_H__
+#ifndef __YADSL_PY_H__
+#define __YADSL_PY_H__
 
 /**
  * Python definitions header file
@@ -10,12 +10,12 @@
 #if defined(PY_MAJOR_VERSION) && ((PY_MAJOR_VERSION < 3) || \
     ((PY_MAJOR_VERSION == 3) && (PY_MINOR_VERSION < 7)))
 #pragma message("Py_UNREACHABLE() was not found, maybe your Python is of " \
-"version previous to v3.7. It will be then defined as a macro for abort().")
+"version previous to 3.7. It will be then defined as a macro for abort().")
 #define Py_UNREACHABLE() abort()
 #endif
 
 /* Define exception metadata struct */
-#define YADSL_PYDEFINES_EXCEPTION_METADATA() \
+#define YADSL_PY_EXCEPTION_METADATA() \
 struct _exception_metadata \
 { \
 	PyObject **obj;        /* reference to exception object */ \
@@ -29,7 +29,7 @@ struct _exception_metadata \
  * m is a prefix for your module
  * _exc_table is an array of struct _exception_metadata
 */
-#define YADSL_PYDEFINES_EXCEPTION_FUNCTIONS(m, _exc_table) \
+#define YADSL_PY_EXCEPTION_FUNCTIONS(m, _exc_table) \
 static const char * \
 _ ## m ## _get_exception_string(PyObject *exc) \
 { \
@@ -56,7 +56,7 @@ _ ## m ## _throw_error(PyObject *exc) \
  * m is your module object
  * _exc_ptr is an already declated struct _exception_metadata pointer
 */
-#define YADSL_PYDEFINES_INIT_EXCEPTION_OBJECTS(m, _exc_ptr) \
+#define YADSL_PY_INIT_EXCEPTION_OBJECTS(m, _exc_ptr) \
 for (_exc_ptr = exceptions; _exc_ptr->obj; ++_exc_ptr) { \
 	*_exc_ptr->obj = PyErr_NewExceptionWithDoc( \
 		_exc_ptr->fullname, /* name */ \

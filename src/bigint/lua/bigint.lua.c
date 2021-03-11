@@ -1,6 +1,6 @@
 #include "lauxlib.h"
 
-#include <yadsl/dlldefines.h>
+#include <yadsl/dll.h>
 
 #include <bigint/bigint.h>
 

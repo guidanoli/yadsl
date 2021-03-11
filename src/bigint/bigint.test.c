@@ -80,6 +80,14 @@ static void push(yadsl_BigIntHandle* bigint)
 	bigintcheck();
 }
 
+static void freestr()
+{
+	if (s != NULL) {
+		free(s);
+		s = NULL;
+	}
+}
+
 static void checkindex(int index)
 {
 	yadsl_tester_assertf(index >= 0, "index < 0");
@@ -104,19 +112,50 @@ static intmax_t get(int index)
 	return i;
 }
 
+static void check_to_int(intmax_t i, int index)
+{
+	yadsl_tester_asserteqI(i, get(index), "check_to_int failed");
+}
+
+static void check_to_string(intmax_t i, int index)
+{
+	intmax_t j;
+	int scanned;
+	freestr();
+	s = yadsl_bigint_to_string(at(index));
+	checknull(s);
+	scanned = sscanf(s, "%" SCNdMAX, &j);
+	yadsl_tester_assertf(scanned == 1, "sscanf returned %d", scanned);
+	yadsl_tester_asserteqI(i, j, "string check failed");
+}
+
+static void check_copy(intmax_t i, int index)
+{
+	intmax_t j;
+	int cmp;
+	push(yadsl_bigint_copy(at(index)));
+	cmp = yadsl_bigint_compare(at(index), at(top-1));
+	yadsl_tester_asserteqi(cmp, 0, "copy check failed");
+	j = get(top-1);
+	popx();
+	yadsl_tester_asserteqI(i, j, "copy check failed");
+
+}
+
+static void check_opposite(intmax_t i, int index)
+{
+	intmax_t j;
+	push(yadsl_bigint_opposite(at(index)));
+	j = get(top-1);
+	popx();
+	yadsl_tester_asserteqI(-i, j, "opposite check failed");
+}
+
 static intmax_t _bigint_push()
 {
 	intmax_t i, j;
 	yadsl_tester_parse_n_arguments("I", &i);
 	push(yadsl_bigint_from_int(i));
-	if (s != NULL) free(s);
-	s = yadsl_bigint_to_string(at(top-1));
-	checknull(s);
-	yadsl_tester_assertf(sscanf(s, "%" SCNdMAX, &j) == 1,
-			"yadsl_bigint_to_string returns invalid string");
-	free(s);
-	s = NULL;
-	yadsl_tester_asserteqI(i, j, NULL);
 	return i;
 }
 
@@ -153,11 +192,14 @@ static void bigint_get()
 	yadsl_tester_asserteqI(i, get(n), NULL);
 }
 
-static void bigint_roundtrip()
+static void bigint_check()
 {
-	intmax_t i;
+	intmax_t i, j;
 	i = _bigint_push();
-	yadsl_tester_asserteqI(i, get(top-1), NULL);
+	check_to_int(i, top-1);
+	check_to_string(i, top-1);
+	check_copy(i, top-1);
+	check_opposite(i, top-1);
 	popx();
 }
 
@@ -168,36 +210,10 @@ static void bigint_copy()
 	push(yadsl_bigint_copy(at(n)));
 }
 
-static void bigint_copyroundtrip()
-{
-	intmax_t i, j;
-	yadsl_BigIntHandle* copy;
-	i = _bigint_push();
-	copy = yadsl_bigint_copy(at(top-1));
-	popx();
-	push(copy);
-	j = get(top-1);
-	popx();
-	yadsl_tester_asserteqI(i, j, NULL);
-}
-
 static void bigint_opposite()
 {
 	checkop(1);
 	push(yadsl_bigint_opposite(at(top-1)));
-}
-
-static void bigint_oppositeroundtrip()
-{
-	intmax_t i, j;
-	yadsl_BigIntHandle* opposite;
-	i = _bigint_push();
-	opposite = yadsl_bigint_opposite(at(top-1));
-	popx();
-	push(opposite);
-	j = get(top-1);
-	popx();
-	yadsl_tester_asserteqI(-i, j, NULL);
 }
 
 static void bigint_add()
@@ -283,13 +299,11 @@ static yadsl_TesterUtilsCommand commands[] = {
 	CMD(copy),
 	CMD(push),
 	CMD(addip),
+	CMD(check),
 	CMD(subip),
 	CMD(gettop),
 	CMD(settop),
 	CMD(opposite),
-	CMD(roundtrip),
-	CMD(copyroundtrip),
-	CMD(oppositeroundtrip),
 	{ NULL, NULL },
 };
 
@@ -300,13 +314,8 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 
 yadsl_TesterRet yadsl_tester_release()
 {
+	freestr();
 	while (top != 0)
 		yadsl_bigint_destroy(pop());
-
-	if (s != NULL) {
-		free(s);
-		s = NULL;
-	}
-
 	return YADSL_TESTER_RET_OK;
 }

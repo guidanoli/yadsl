@@ -16,6 +16,7 @@ function(add_python_module target modulename)
 	# On Windows, it is required to link to the Python libraries
 	if(WIN32)
 		target_link_libraries(${target} ${Python_LIBRARIES})
+		set_target_properties(${target} PROPERTIES DEBUG_POSTFIX _d)
 	endif()
 	set_target_properties(${target} PROPERTIES FOLDER python)
 	

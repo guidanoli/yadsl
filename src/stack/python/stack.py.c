@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <yadsl/pydefines.h>
+#include <yadsl/py.h>
 #include <stack/stack.h>
 
 //
@@ -20,7 +20,7 @@ typedef struct
 
 static PyObject *PyExc_Empty = NULL;
 
-YADSL_PYDEFINES_EXCEPTION_METADATA()
+YADSL_PY_EXCEPTION_METADATA()
 
 static struct _exception_metadata exceptions[] = {
 	//
@@ -42,7 +42,7 @@ static struct _exception_metadata exceptions[] = {
 	},
 };
 
-YADSL_PYDEFINES_EXCEPTION_FUNCTIONS(stack, exceptions)
+YADSL_PY_EXCEPTION_FUNCTIONS(stack, exceptions)
 
 //
 // Callbacks
@@ -231,7 +231,7 @@ PyInit_pystack(void)
 	m = PyModule_Create(&pystack_module);
 	if (m == NULL)
 		return NULL;
-	YADSL_PYDEFINES_INIT_EXCEPTION_OBJECTS(m, _exc)
+	YADSL_PY_INIT_EXCEPTION_OBJECTS(m, _exc)
 		Py_INCREF(&stackType);
 	if (PyModule_AddObject(m, "stack", (PyObject *) &stackType) < 0) {
 		Py_DECREF(&stackType);

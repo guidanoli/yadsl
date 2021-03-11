@@ -1,7 +1,10 @@
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+#include <yadsl/utl.h>
 
 #if defined(_MSC_VER)
 # pragma warning(disable : 4996)
@@ -97,7 +100,7 @@ static size_t count_lines(const char* filename)
 */
 static char* get_filename(unsigned long num)
 {
-	char randnumstrbuf[sizeof(unsigned long)*3+1];
+	char randnumstrbuf[YADSL_BUFSIZ_FOR(unsigned long)];
 	char* filename;
 	sprintf(randnumstrbuf, "%lx", num);
 	filename = strcatdyn("memfail_", false, randnumstrbuf, false);

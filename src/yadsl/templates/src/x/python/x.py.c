@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-#include <yadsl/pydefines.h>
+#include <yadsl/py.h>
 
 #include <%name%/%name%.h>
 

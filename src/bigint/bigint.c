@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #endif
 
+#include <yadsl/utl.h>
+
 typedef uint32_t digit;
 typedef int32_t sdigit;
 typedef uint64_t twodigits;
@@ -21,7 +23,6 @@ typedef uint64_t twodigits;
 #define DECSHIFT 9
 #define DECBASE ((digit)1000000000)
 #define SIGN ((digit)1 << SHIFT)
-#define ABS(num) ((num < 0) ? -(num) : (num))
 #define SIZE(bigint) (bigint->size)
 #define MALLOC_SIZE(ndigits) \
 	(offsetof(BigInt, digits) + sizeof(digit) * (ndigits))
@@ -43,8 +44,8 @@ typedef uint64_t twodigits;
  *
  * Invariants:
  *
- * ABS(size) >= 0
- * SIGN & digits[i] == 0, for i in [0, ABS(size)]
+ * |size| >= 0
+ * SIGN & digits[i] == 0, for i in [0, |size|]
 */
 typedef struct
 {
@@ -55,7 +56,7 @@ BigInt;
 
 static int getndigits(intmax_t i)
 {
-	uintmax_t u = (uintmax_t)ABS(i);
+	uintmax_t u = (uintmax_t)YADSL_ABS(i);
 	int ndigits = 0;
 	while (u != 0) {
 		u >>= SHIFT;
@@ -68,7 +69,7 @@ yadsl_BigIntStatus
 yadsl_bigint_check(yadsl_BigIntHandle* _bigint)
 {
 	BigInt* bigint = (BigInt*) _bigint;
-	intptr_t ndigits = ABS(bigint->size);
+	intptr_t ndigits = YADSL_ABS(bigint->size);
 	digit* digits = bigint->digits;
 	if (ndigits < 0)
 		return YADSL_BIGINT_STATUS_INVALID_SIZE;
@@ -85,7 +86,7 @@ yadsl_bigint_dump(yadsl_BigIntHandle* _bigint)
 {
 	BigInt* bigint = (BigInt*) _bigint;
 	intptr_t size = SIZE(bigint);
-	intptr_t ndigits = ABS(size);
+	intptr_t ndigits = YADSL_ABS(size);
 	fprintf(stderr, "isnegative = %s\n", size < 0 ? "true" : "false");
 	fprintf(stderr, "ndigits = %zd\n", ndigits);
 	for (intptr_t i = 0; i < ndigits; ++i)
@@ -96,7 +97,7 @@ static BigInt*
 bigint_new(intptr_t size)
 {
 	BigInt* bigint;
-	intptr_t ndigits = ABS(size);
+	intptr_t ndigits = YADSL_ABS(size);
 	if (ndigits < 0) return NULL;
 	bigint = malloc(MALLOC_SIZE(ndigits));
 	if (bigint != NULL) SIZE(bigint) = size;
@@ -110,7 +111,7 @@ yadsl_bigint_from_int(intmax_t i)
 	int size = i > 0 ? ndigits : -ndigits;
 	BigInt* bigint = bigint_new((intptr_t) size);
 	if (bigint != NULL) {
-		if (ABS(i) < 0) {
+		if (YADSL_ABS(i) < 0) {
 			for (int ndigit = 0; ndigit < ndigits-1; ++ndigit)
 				bigint->digits[ndigit] = 0;
 			bigint->digits[ndigits-1] = 2;
@@ -148,7 +149,7 @@ yadsl_bigint_to_int(
 		break;
 	default:
 		size = SIZE(bigint);
-		ndigits = ABS(size);
+		ndigits = YADSL_ABS(size);
 		sign = size < 0 ? -1 : 1;
 		u = 0;
 		while (ndigits > 0) {
@@ -175,7 +176,7 @@ yadsl_bigint_copy(
 	size_t size;
 	intptr_t ndigits;
 	bigint = (BigInt*) _bigint;
-	ndigits = ABS(SIZE(bigint));
+	ndigits = YADSL_ABS(SIZE(bigint));
 	assert(ndigits >= 0);
 	size = MALLOC_SIZE(ndigits);
 	copy = malloc(size);
@@ -241,7 +242,7 @@ digitcmp(digit* a, intptr_t na, digit* b, intptr_t nb)
 	else {
 		int cmp;
 		int sign = na < 0 ? -1 : 1;
-		for (intptr_t i = ABS(na)-1; i >= 0; --i) {
+		for (intptr_t i = YADSL_ABS(na)-1; i >= 0; --i) {
 			cmp = (a[i] > b[i]) - (b[i] > a[i]);
 			if (cmp != 0) break;
 		}
@@ -301,7 +302,7 @@ yadsl_bigint_add(
 		return yadsl_bigint_copy(b);
 	} else if (nb == 0) {
 		return yadsl_bigint_copy(a);
-	} else if (ABS(na) <= 1 && ABS(nb) <= 1) {
+	} else if (YADSL_ABS(na) <= 1 && YADSL_ABS(nb) <= 1) {
 		return yadsl_bigint_from_int((intmax_t)DIGITVALUE(a) + (intmax_t)DIGITVALUE(b));
 	} else if (na > 0 && nb > 0) {
 		return digitadd(a->digits, na, b->digits, nb);
@@ -325,7 +326,7 @@ yadsl_bigint_subtract(
 		return yadsl_bigint_opposite(b);
 	} else if (nb == 0) {
 		return yadsl_bigint_copy(a);
-	} else if (ABS(na) <= 1 && ABS(nb) <= 1) {
+	} else if (YADSL_ABS(na) <= 1 && YADSL_ABS(nb) <= 1) {
 		return yadsl_bigint_from_int((intmax_t)DIGITVALUE(a) - (intmax_t)DIGITVALUE(b));
 	} else if (na > 0 && nb > 0) {
 		return digitsub(a->digits, na, b->digits, nb);
@@ -374,7 +375,7 @@ yadsl_bigint_to_string(
 	int negative, d;
 	char* str = NULL, *p;
 
-	ndigits = (size_t) ABS(SIZE(bigint));
+	ndigits = (size_t) YADSL_ABS(SIZE(bigint));
 	negative = SIZE(bigint) < 0;
 
 	d = (33 * DECSHIFT) /

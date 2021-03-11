@@ -50,41 +50,17 @@
 /pop
 /catch "empty stack"
 
-# Roundtrip
+# Checking
 
-/roundtrip 0
-/roundtrip 1
-/roundtrip -1
-/roundtrip 2147483647
-/roundtrip -2147483648
-/roundtrip 9223372036854775807
-/roundtrip -9223372036854775808
-/roundtrip 4611686018427387903
-/roundtrip -4611686018427387903
-
-# Copying
-
-/copyroundtrip 0
-/copyroundtrip 1
-/copyroundtrip -1
-/copyroundtrip 2147483647
-/copyroundtrip -2147483648
-/copyroundtrip 9223372036854775807
-/copyroundtrip -9223372036854775808
-/copyroundtrip 4611686018427387903
-/copyroundtrip -4611686018427387903
-
-# Opposite
-
-/oppositeroundtrip 0
-/oppositeroundtrip 1
-/oppositeroundtrip -1
-/oppositeroundtrip 2147483647
-/oppositeroundtrip -2147483647
-/oppositeroundtrip 9223372036854775807
-/oppositeroundtrip -9223372036854775807
-/oppositeroundtrip 4611686018427387903
-/oppositeroundtrip -4611686018427387903
+/check 0
+/check 1
+/check -1
+/check 2147483647
+/check -2147483648
+/check 9223372036854775807
+/check -9223372036854775807
+/check 4611686018427387903
+/check -4611686018427387903
 
 # Addition
 

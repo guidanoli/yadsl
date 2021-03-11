@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <math.h>
 
 #include <tester/tester.h>
@@ -39,9 +40,7 @@ yadsl_TesterRet yadsl_tester_init()
 
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
-	if (yadsl_testerutils_match(command, "help")) {
-		yadsl_tester_print_help_strings();
-	} else if (yadsl_testerutils_match(command, "print")) {
+	if (yadsl_testerutils_match(command, "print")) {
 		char dtype;
 		if (yadsl_tester_parse_arguments("c", &dtype) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
@@ -93,6 +92,15 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			yadsl_tester_log("Character: '%c'", c);
 			break;
 		}
+		case 'I':
+		{
+			intmax_t i;
+			if (yadsl_tester_parse_arguments("I", &i) != 1)
+				return YADSL_TESTER_RET_ARGUMENT;
+			yadsl_tester_log("Max. Integer: '%" PRIdMAX "'", i);
+			break;
+
+		}
 		default:
 			return YADSL_TESTER_RET_ARGUMENT;
 		}
@@ -101,9 +109,14 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 			return YADSL_TESTER_RET_ARGUMENT;
 		yadsl_tester_log(buffer);
 	} else if (yadsl_testerutils_match(command, "throw")) {
+		int errcode;
+		if (yadsl_tester_parse_arguments("i", &errcode) != 1)
+			return YADSL_TESTER_RET_ARGUMENT;
+		yadsl_tester_throw(errcode);
+	} else if (yadsl_testerutils_match(command, "throwf")) {
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
-		return yadsl_tester_error(buffer);
+		yadsl_tester_throwf(buffer);
 	} else if (yadsl_testerutils_match(command, "cmp-pld")) {
 		char dtype;
 		if (yadsl_tester_parse_arguments("c", &dtype) != 1)

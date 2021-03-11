@@ -1,4 +1,4 @@
-#include <yadsl/dlldefines.h>
+#include <yadsl/dll.h>
 
 #include "lauxlib.h"
 
