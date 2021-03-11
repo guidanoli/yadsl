@@ -93,7 +93,6 @@ static int yadsl_tester_parse_string_internal(char* arg, size_t* inc);
 static void yadsl_tester_print_return_value_info_internal(yadsl_TesterRet ret);
 static int yadsl_tester_parse_dtype_internal(const char** format_t, void* arg, size_t* inc);
 static const char* yadsl_tester_errinfo_internal(yadsl_TesterRet ret);
-static char* strncatx(char* dest, const char* src, size_t n);
 static void yadsl_tester_print_help_strings_internal();
 static void yadsl_tester_seterr_internal(const char* _errfile, int _errline);
 
@@ -853,21 +852,6 @@ const char* yadsl_tester_errinfo_internal(yadsl_TesterRet ret)
 	} else {
 		return "invalid error code";
 	}
-}
-
-/**
- * Similar to strncat, but n limits dest, not src.
-*/
-char* strncatx(char* dest, const char* src, size_t n)
-{
-	size_t dest_len = strlen(dest);
-	size_t i, j;
-
-	for (i = 0, j = dest_len; j < n && src[i] != '\0' ; i++, j++)
-	   dest[j] = src[i];
-	dest[j] = '\0';
-
-	return dest;
 }
 
 void yadsl_tester_print_help_strings_internal()
