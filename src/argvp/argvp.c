@@ -201,6 +201,20 @@ yadsl_argvp_parse_keyword_argument_value(
 	}
 }
 
+int
+yadsl_argvp_has_keyword_argument(
+    yadsl_ArgvParserHandle* argvp,
+    const char* kw)
+{
+	cast_(argvp);
+	for (int i = 0; i < argvp_->argc; ++i)
+		if (strcmp(argvp_->argv[i], kw) == 0 &&
+			argvp_->argv_types[i] == YADSL_ARGV_TYPE_KEYWORD) {
+			return 1;
+		}
+	return 0;
+}
+
 void
 yadsl_argvp_destroy(
 	yadsl_ArgvParserHandle* argvp)

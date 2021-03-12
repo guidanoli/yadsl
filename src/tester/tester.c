@@ -817,12 +817,13 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 yadsl_TesterRet yadsl_tester_argvp_release_internal()
 {
 	yadsl_argvp_destroy(argvp);
+	argvp = NULL;
 
 #ifdef YADSL_DEBUG
 	if (log_fp != NULL) {
 		fclose(log_fp);
-		log_fp = NULL;
 		yadsl_memdb_set_logger(NULL);
+		log_fp = NULL;
 	}
 #endif
 

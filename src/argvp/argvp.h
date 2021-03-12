@@ -131,6 +131,19 @@ yadsl_argvp_parse_keyword_argument_value(
 	...);
 
 /**
+ * @brief Check if keyword argument exists
+ * @param argvp argument vector parser
+ * @param kw keyword argument name
+ * @return whether keyword argument exists or not
+ * @see yadsl_argvp_add_keyword_argument
+ * @see yadsl_argvp_add_keyword_arguments
+*/
+int
+yadsl_argvp_has_keyword_argument(
+    yadsl_ArgvParserHandle* argvp,
+    const char* kw);
+
+/**
  * @brief Destroy argument vector parser
  * @param argvp argument vector parser
  * @see yadsl_argvp_create
