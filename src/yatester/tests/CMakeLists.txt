@@ -1,0 +1,16 @@
+# Add yatester module
+# add_yatester_selftest(source)
+function(add_yatester_selftest source)
+	get_filename_component(source_we ${source} NAME_WE)
+	string(CONCAT name ${source_we} test)
+	add_executable(${name} ${source})
+	target_link_libraries(${name} yatester)
+	set_target_properties(${name} PROPERTIES FOLDER tests)
+	string(CONCAT script_regex ${source_we} ".*.script")
+	file(GLOB SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${script_regex})
+	if(SCRIPTS)
+		add_tester_scripts(${name} SOURCES ${SCRIPTS})
+	endif()
+endfunction()
+
+add_yatester_selftest(empty.test.c)

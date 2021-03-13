@@ -1,4 +1,5 @@
 #include <yatester/cmdhdl.h>
+#include <yatester/builtins.h>
 #include <yatester/yatester.h>
 
 #include <string.h>
@@ -7,25 +8,6 @@
 
 static const yatester_command** commandtable;
 static size_t tablesize;
-
-static void throw_internal(const char** argv)
-{
-	int status;
-
-	if (sscanf(argv[0], "%d", &status) != 1)
-	{
-		fprintf(stderr, "Expected integer. Obtained: \"%s\"\n", argv[0]);
-		yatester_throw(YATESTER_ERR);
-	}
-
-	yatester_throw(status);
-}
-
-static const yatester_command builtin_commands[] =
-{
-	{ "throw", 1, throw_internal },
-	{ NULL, 0, NULL },
-};
 
 static unsigned long hash_string_internal(const char* str)
 {
@@ -42,9 +24,9 @@ static unsigned long hash_string_internal(const char* str)
 
 yatester_status yatester_initializecmdhdl()
 {
-	static const yatester_command* all_commands[] = 
+	const yatester_command* all_commands[] = 
 	{
-		builtin_commands,
+		yatester_builtin_commands,
 		yatester_commands,
 	};
 

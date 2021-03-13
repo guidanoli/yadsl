@@ -69,6 +69,11 @@ static yatester_status terminate_internal(yatester_status status)
 
 	status = check_memleak_internal(status);
 
+	if (status != YATESTER_OK)
+	{
+		fprintf(stderr, "Exited with status code %d\n", status);
+	}
+
 	return status;
 }
 
@@ -224,4 +229,5 @@ int main(int argc, char** argv)
 	CHECK(parse_arguments_internal(argc, argv));
 	CHECK(yatester_initializecmdhdl());
 	CHECK(yatester_parsescript(input_fp));
+	return terminate_internal(YATESTER_OK);
 }

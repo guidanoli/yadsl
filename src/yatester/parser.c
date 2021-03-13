@@ -1,6 +1,7 @@
 #include <yatester/parser.h>
 #include <yatester/cmdhdl.h>
 #include <yatester/runner.h>
+#include <yatester/builtins.h>
 
 #include <setjmp.h>
 #include <stdarg.h>
@@ -25,9 +26,24 @@ state;
 
 static char cmdbuf[MAXCMDLEN], argbuf[MAXARGLEN];
 static char* argvbuf[MAXARGCNT] = { argbuf };
+static yatester_status expected_status = YATESTER_OK;
+static yatester_status next_expected_status = YATESTER_OK;
 static size_t cmdlen, arglen;
 static int argc, xargc;
 static jmp_buf env;
+
+void yatester_builtin_expect(const char** argv)
+{
+	int status;
+
+	if (sscanf(argv[0], "%d", &status) != 1)
+	{
+		fprintf(stderr, "Expected integer. Obtained: \"%s\"\n", argv[0]);
+		yatester_throw(YATESTER_ERR);
+	}
+
+	next_expected_status = status;
+}
 
 static state error_internal(const char* fmt, ...)
 {
@@ -66,25 +82,48 @@ static void pushargument_internal()
 		error_internal("Argument vector buffer overflow\n");
 	}
 
-	writeargument_internal('\0');
+	argbuf[arglen] = '\0';
 	argvbuf[++argc] = argbuf;
+
+#ifdef YATESTER_PARSER_DEBUG
+	fprintf(stderr, "[PARSER] Pushed argument \"%s\"\n", argvbuf[argc-1]);
+#endif
 }
 
 static void runcommand_internal()
 {
 	yatester_status status;
 
+#ifdef YATESTER_PARSER_DEBUG
+	fprintf(stderr, "[PARSER] Calling command \"%s\" with:\n", cmdbuf);
+
+	for (int i = 0; i < argc; ++i)
+	{
+		fprintf(stderr, "[PARSER] [%d] \"%s\"\n", i+1, argvbuf[i]);
+	}
+#endif
+
 	status = yatester_runcommand(cmdbuf, argc, (const char**) argvbuf);
 
-	if (status == YATESTER_OK)
+	argc = 0;
+	xargc = 0;
+	cmdlen = 0;
+	arglen = 0;
+
+	if (status == expected_status)
 	{
-		argc = 0;
-		xargc = 0;
-		cmdlen = 0;
-		arglen = 0;
+		expected_status = next_expected_status;
+		next_expected_status = YATESTER_OK;
 	}
 	else
 	{
+		fprintf(stderr, "Expected status code of %d. Obtained: %d\n", expected_status, status);
+
+		if (status == YATESTER_OK)
+		{
+			status = YATESTER_ERR;
+		}
+
 		longjmp(env, status);
 	}
 }
@@ -105,6 +144,10 @@ static void pushcommand_internal()
 	{
 		xargc = command->argc;
 	}
+
+#ifdef YATESTER_PARSER_DEBUG
+	fprintf(stderr, "[PARSER] Pushed command \"%s\"\n", cmdbuf);
+#endif
 }
 
 static state transition_internal(state st, int c)
@@ -298,6 +341,13 @@ yatester_status yatester_parsescript(FILE *fp)
 		{
 			c = getc(fp);
 			st = transition_internal(st, c);
+
+#ifdef YATESTER_PARSER_DEBUG
+			if (c != EOF)
+				fprintf(stderr, "[PARSER] Char: '%c'\tState: %d\n", (char) c, st);
+			else
+				fprintf(stderr, "[PARSER] Char: EOF\tState: %d\n", st);
+#endif
 
 			if (IS_FINAL(st))
 			{
