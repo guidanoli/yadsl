@@ -12,3 +12,13 @@
 
 /expect 3
 /throw 3
+
+/expect 1
+/expect # Comment
+
+/expect 1
+/expect
+/expect 0
+
+/expect 1
+/expect

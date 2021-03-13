@@ -14,3 +14,4 @@ function(add_yatester_selftest source)
 endfunction()
 
 add_yatester_selftest(empty.test.c)
+add_yatester_selftest(arg.test.c)

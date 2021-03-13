@@ -26,9 +26,10 @@ state;
 
 static char cmdbuf[MAXCMDLEN], argbuf[MAXARGLEN];
 static char* argvbuf[MAXARGCNT] = { argbuf };
-static yatester_status expected_status = YATESTER_OK;
-static yatester_status next_expected_status = YATESTER_OK;
+static yatester_status expected_status, next_expected_status;
 static size_t cmdlen, arglen;
+static size_t line, col;
+static size_t tkline, tkcol;
 static int argc, xargc;
 static jmp_buf env;
 
@@ -63,6 +64,8 @@ static void writecommand_internal(char c)
 	}
 
 	cmdbuf[cmdlen++] = c;
+	tkline = line;
+	tkcol = col;
 }
 
 static void writeargument_internal(char c)
@@ -73,6 +76,8 @@ static void writeargument_internal(char c)
 	}
 
 	argbuf[arglen++] = c;
+	tkline = line;
+	tkcol = col;
 }
 
 static void pushargument_internal()
@@ -82,12 +87,34 @@ static void pushargument_internal()
 		error_internal("Argument vector buffer overflow\n");
 	}
 
-	argbuf[arglen] = '\0';
-	argvbuf[++argc] = argbuf;
+	argbuf[arglen++] = '\0';
+	argvbuf[++argc] = argbuf + arglen;
 
 #ifdef YATESTER_PARSER_DEBUG
 	fprintf(stderr, "[PARSER] Pushed argument \"%s\"\n", argvbuf[argc-1]);
 #endif
+}
+
+static yatester_status validatestatus_internal(yatester_status status)
+{
+	if (status == expected_status)
+	{
+		expected_status = next_expected_status;
+		next_expected_status = YATESTER_OK;
+
+		return YATESTER_OK;
+	}
+	else
+	{
+		if (status == YATESTER_OK)
+		{
+			return YATESTER_ERR;
+		}
+		else
+		{
+			return status;
+		}
+	}
 }
 
 static void runcommand_internal()
@@ -95,12 +122,14 @@ static void runcommand_internal()
 	yatester_status status;
 
 #ifdef YATESTER_PARSER_DEBUG
-	fprintf(stderr, "[PARSER] Calling command \"%s\" with:\n", cmdbuf);
+	fprintf(stderr, "[PARSER] Calling /%s", cmdbuf);
 
 	for (int i = 0; i < argc; ++i)
 	{
-		fprintf(stderr, "[PARSER] [%d] \"%s\"\n", i+1, argvbuf[i]);
+		fprintf(stderr, " \"%s\"", argvbuf[i]);
 	}
+
+	fprintf(stderr, "\n");
 #endif
 
 	status = yatester_runcommand(cmdbuf, argc, (const char**) argvbuf);
@@ -110,20 +139,15 @@ static void runcommand_internal()
 	cmdlen = 0;
 	arglen = 0;
 
-	if (status == expected_status)
+	status = validatestatus_internal(status);
+
+	if (status == YATESTER_OK)
 	{
-		expected_status = next_expected_status;
-		next_expected_status = YATESTER_OK;
+		tkline = 0;
+		tkcol = 0;
 	}
 	else
 	{
-		fprintf(stderr, "Expected status code of %d. Obtained: %d\n", expected_status, status);
-
-		if (status == YATESTER_OK)
-		{
-			status = YATESTER_ERR;
-		}
-
 		longjmp(env, status);
 	}
 }
@@ -329,17 +353,27 @@ static state transition_internal(state st, int c)
 yatester_status yatester_parsescript(FILE *fp)
 {
 	int c;
-	size_t line = 0, col = 1;
 	state st = ST_INITIAL;
 	yatester_status status;
 
-	status = setjmp(env);
+	status = validatestatus_internal(setjmp(env));
 
 	if (status == YATESTER_OK)
 	{
-		while (1)
+		do
 		{
 			c = getc(fp);
+
+			if (c == '\n')
+			{
+				++line;
+				col = 1;
+			}
+			else
+			{
+				++col;
+			}
+
 			st = transition_internal(st, c);
 
 #ifdef YATESTER_PARSER_DEBUG
@@ -348,29 +382,19 @@ yatester_status yatester_parsescript(FILE *fp)
 			else
 				fprintf(stderr, "[PARSER] Char: EOF\tState: %d\n", st);
 #endif
-
-			if (IS_FINAL(st))
-			{
-				break;
-			}
-			else
-			{
-				if (c == '\n')
-				{
-					++line;
-					col = 1;
-				}
-				else
-				{
-					++col;
-				}
-			}
 		}
+		while (!IS_FINAL(st));
 	}
-
-	if (status != YATESTER_OK)
+	else
 	{
-		fprintf(stderr, "Error in line %zu, column %zu\n", line, col);
+		/* If no token was read yet */
+		if (tkline == 0 && tkcol == 0)
+		{
+			tkline = line;
+			tkcol = col;
+		}
+
+		fprintf(stderr, "Error %d in line %zu, column %zu\n", status, tkline, tkcol);
 	}
 
 	return status;

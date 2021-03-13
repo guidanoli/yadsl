@@ -69,11 +69,6 @@ static yatester_status terminate_internal(yatester_status status)
 
 	status = check_memleak_internal(status);
 
-	if (status != YATESTER_OK)
-	{
-		fprintf(stderr, "Exited with status code %d\n", status);
-	}
-
 	return status;
 }
 
