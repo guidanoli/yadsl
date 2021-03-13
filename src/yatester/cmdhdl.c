@@ -8,6 +8,25 @@
 static const yatester_command** commandtable;
 static size_t tablesize;
 
+static void throw_internal(const char** argv)
+{
+	int status;
+
+	if (sscanf(argv[0], "%d", &status) != 1)
+	{
+		fprintf(stderr, "Expected integer. Obtained: \"%s\"\n", argv[0]);
+		yatester_throw(YATESTER_ERR);
+	}
+
+	yatester_throw(status);
+}
+
+static const yatester_command builtin_commands[] =
+{
+	{ "throw", 1, throw_internal },
+	{ NULL, 0, NULL },
+};
+
 static unsigned long hash_string_internal(const char* str)
 {
 	unsigned long hash = 5381;
@@ -23,13 +42,26 @@ static unsigned long hash_string_internal(const char* str)
 
 yatester_status yatester_initializecmdhdl()
 {
-	size_t i, j, ncommands;
-	const yatester_command* command;
+	static const yatester_command* all_commands[] = 
+	{
+		builtin_commands,
+		yatester_commands,
+	};
 
-	for (ncommands = 0; yatester_commands[ncommands].name != NULL ; ++ncommands);
+	tablesize = 0;
 
-	tablesize = 2 * ncommands; /* Load factor of 0.5 */
-	commandtable = calloc(tablesize, sizeof(yatester_command*));
+	for (size_t i = 0; i < sizeof(all_commands)/sizeof(*all_commands); ++i)
+	{
+		const yatester_command* commands = all_commands[i];
+
+		while (commands->name != NULL)
+		{
+			commands++;
+			tablesize += 2; /* Load factor of 0.5 */
+		}
+	}
+
+	commandtable = calloc(tablesize, sizeof *commandtable);
 
 	if (commandtable == NULL)
 	{
@@ -37,26 +69,45 @@ yatester_status yatester_initializecmdhdl()
 		return YATESTER_MEM;
 	}
 
-	for (i = 0; i < ncommands; ++i)
+	for (size_t i = 0; i < sizeof(all_commands)/sizeof(*all_commands); ++i)
 	{
-		command = &yatester_commands[i];
-		j = hash_string_internal(command->name) % tablesize;
+		const yatester_command* commands = all_commands[i];
 
-		/* Open addressing with linear probing */
-		while (commandtable[j] != NULL)
+		while (commands->name != NULL)
 		{
-			if (strcmp(commandtable[j]->name, command->name) == 0)
+			size_t j;
+
+			if (commands->argc < 0)
 			{
-				fprintf(stderr, "Found two commands named \"%s\"\n", command->name);
+				fprintf(stderr, "Command \"%s\" requires negative number of arguments\n", commands->name);
 				return YATESTER_ERR;
 			}
 
-			j = (j + 1) % tablesize;
+			if (commands->handler == NULL)
+			{
+				fprintf(stderr, "Command \"%s\" does not have a handler\n", commands->name);
+				return YATESTER_ERR;
+			}
+
+			j = hash_string_internal(commands->name) % tablesize;
+
+			/* Open addressing with linear probing */
+			while (commandtable[j] != NULL)
+			{
+				if (strcmp(commandtable[j]->name, commands->name) == 0)
+				{
+					fprintf(stderr, "Found two commands named \"%s\"\n", commands->name);
+					return YATESTER_ERR;
+				}
+
+				j = (j + 1) % tablesize;
+			}
+
+			commandtable[j] = commands;
+			++commands;
 		}
-
-		commandtable[j] = command;
 	}
-
+	
 	return YATESTER_OK;
 }
 

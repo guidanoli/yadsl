@@ -1,4 +1,5 @@
 #include <yatester/parser.h>
+#include <yatester/cmdhdl.h>
 #include <yatester/runner.h>
 
 #include <setjmp.h>
@@ -14,29 +15,19 @@ typedef enum
 	ST_ARGUMENT,
 	ST_QUOTED_ARGUMENT,
 	ST_QUOTED_ARGUMENT_END,
-	ST_OK,
-	ST_ERROR,
+	ST_EOF,
 }
 state;
 
-#define IS_FINAL(st) ((st) == ST_OK || (st) == ST_ERROR)
+#define IS_FINAL(st) ((st) == ST_EOF)
 #define IS_SEPARATOR(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
 #define IS_ALPHA(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 
-static char cmdbuf[MAXCMDLEN], argbuf[MAXARGCNT][MAXARGLEN];
+static char cmdbuf[MAXCMDLEN], argbuf[MAXARGLEN];
+static char* argvbuf[MAXARGCNT] = { argbuf };
 static size_t cmdlen, arglen;
-static int argc;
+static int argc, xargc;
 static jmp_buf env;
-
-static void throw_internal(yatester_status status)
-{
-	longjmp(env, status);
-}
-
-static yatester_status catch_internal()
-{
-	return setjmp(env);
-}
 
 static state error_internal(const char* fmt, ...)
 {
@@ -44,15 +35,15 @@ static state error_internal(const char* fmt, ...)
 	va_start(va, fmt);
 	vfprintf(stderr, fmt, va);
 	va_end(va);
-	throw_internal(YATESTER_OK);
-	return ST_ERROR; /* never reaches here */
+	longjmp(env, YATESTER_ERR);
+	return ST_EOF; /* never reaches here */
 }
 
 static void writecommand_internal(char c)
 {
 	if (cmdlen == MAXCMDLEN - 1)
 	{
-		error_internal("Command buffer overflow (too long)\n");
+		error_internal("Command buffer overflow\n");
 	}
 
 	cmdbuf[cmdlen++] = c;
@@ -62,42 +53,57 @@ static void writeargument_internal(char c)
 {
 	if (arglen == MAXARGLEN - 1)
 	{
-		error_internal("Argument buffer overflow (too long)\n");
+		error_internal("Argument buffer overflow\n");
 	}
 
-	argbuf[argc][arglen++] = c;
+	argbuf[arglen++] = c;
 }
 
 static void pushargument_internal()
 {
 	if (argc == MAXARGCNT)
 	{
-		error_internal("Argument buffer overflow (too many)\n");
+		error_internal("Argument vector buffer overflow\n");
 	}
 
-	argbuf[argc][arglen] = '\0';
-
-	argc++;
-	arglen = 0;
+	writeargument_internal('\0');
+	argvbuf[++argc] = argbuf;
 }
 
-static void pushcommand_internal()
+static void runcommand_internal()
 {
 	yatester_status status;
 
-	cmdbuf[cmdlen] = '\0';
-
-	status = yatester_runcommand((const char*) cmdbuf, argc, (const char**) argbuf);
+	status = yatester_runcommand(cmdbuf, argc, (const char**) argvbuf);
 
 	if (status == YATESTER_OK)
 	{
 		argc = 0;
+		xargc = 0;
 		cmdlen = 0;
 		arglen = 0;
 	}
 	else
 	{
-		throw_internal(status);
+		longjmp(env, status);
+	}
+}
+
+static void pushcommand_internal()
+{
+	const yatester_command* command;
+
+	cmdbuf[cmdlen] = '\0';
+
+	command = yatester_getcommand(cmdbuf);
+
+	if (command == NULL)
+	{
+		error_internal("Could not find command named \"%s\"\n", cmdbuf);
+	}
+	else
+	{
+		xargc = command->argc;
 	}
 }
 
@@ -120,7 +126,7 @@ static state transition_internal(state st, int c)
 		}
 		else if (c == EOF)
 		{
-			return ST_OK;
+			return ST_EOF;
 		}
 		else
 		{
@@ -134,7 +140,7 @@ static state transition_internal(state st, int c)
 		}
 		else if (c == EOF)
 		{
-			return ST_OK;
+			return ST_EOF;
 		}
 		else
 		{
@@ -145,7 +151,7 @@ static state transition_internal(state st, int c)
 		if (IS_ALPHA(c))
 		{
 			writecommand_internal(c);
-			return ST_SLASH;
+			return ST_COMMAND;
 		}
 		else
 		{
@@ -161,10 +167,12 @@ static state transition_internal(state st, int c)
 		else if (c == EOF)
 		{
 			pushcommand_internal();
-			return ST_OK;
+			runcommand_internal();
+			return ST_EOF;
 		}
 		else if (IS_SEPARATOR(c))
 		{
+			pushcommand_internal();
 			return ST_SEPARATOR;
 		}
 		else
@@ -175,12 +183,12 @@ static state transition_internal(state st, int c)
 	case ST_SEPARATOR:
 		if (c == '#')
 		{
-			pushcommand_internal();
+			runcommand_internal();
 			return ST_COMMENT;
 		}
 		else if (c == '/')
 		{
-			pushcommand_internal();
+			runcommand_internal();
 			return ST_SLASH;
 		}
 		else if (IS_SEPARATOR(c))
@@ -193,8 +201,8 @@ static state transition_internal(state st, int c)
 		}
 		else if (c == EOF)
 		{
-			pushcommand_internal();
-			return ST_OK;
+			runcommand_internal();
+			return ST_EOF;
 		}
 		else
 		{
@@ -206,13 +214,21 @@ static state transition_internal(state st, int c)
 		if (IS_SEPARATOR(c))
 		{
 			pushargument_internal();
-			return ST_SEPARATOR;
+			if (argc < xargc)
+			{
+				return ST_SEPARATOR;
+			}
+			else
+			{
+				runcommand_internal();
+				return ST_INITIAL;
+			}
 		}
 		else if (c == EOF)
 		{
 			pushargument_internal();
-			pushcommand_internal();
-			return ST_OK;
+			runcommand_internal();
+			return ST_EOF;
 		}
 		else
 		{
@@ -223,7 +239,6 @@ static state transition_internal(state st, int c)
 	case ST_QUOTED_ARGUMENT:
 		if (c == '"')
 		{
-			pushargument_internal();
 			return ST_QUOTED_ARGUMENT_END;
 		}
 		else if (c == EOF)
@@ -239,20 +254,30 @@ static state transition_internal(state st, int c)
 	case ST_QUOTED_ARGUMENT_END:
 		if (IS_SEPARATOR(c))
 		{
-			return ST_SEPARATOR;
+			pushargument_internal();
+			if (argc < xargc)
+			{
+				return ST_SEPARATOR;
+			}
+			else
+			{
+				runcommand_internal();
+				return ST_INITIAL;
+			}
 		}
 		else if (c == EOF)
 		{
-			pushcommand_internal();
-			return ST_OK;
+			pushargument_internal();
+			runcommand_internal();
+			return ST_EOF;
 		}
 		else
 		{
 			return error_internal("Expected separator or EOF\n");
 		}
 		break;
-	case ST_OK:
-		return ST_OK;
+	case ST_EOF:
+		return ST_EOF;
 	default:
 		return error_internal("Invalid state %d\n", st);
 	}
@@ -265,7 +290,7 @@ yatester_status yatester_parsescript(FILE *fp)
 	state st = ST_INITIAL;
 	yatester_status status;
 
-	status = catch_internal();
+	status = setjmp(env);
 
 	if (status == YATESTER_OK)
 	{
@@ -291,15 +316,11 @@ yatester_status yatester_parsescript(FILE *fp)
 				}
 			}
 		}
-
-		if (st == ST_ERROR)
-		{
-			fprintf(stderr, "Parsing error in line %zu, column %zu\n", line, col);
-		}
 	}
-	else
+
+	if (status != YATESTER_OK)
 	{
-		fprintf(stderr, "Command error in line %zu, column %zu\n", line, col);
+		fprintf(stderr, "Error in line %zu, column %zu\n", line, col);
 	}
 
 	return status;

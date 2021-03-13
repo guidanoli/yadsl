@@ -1,5 +1,5 @@
 #include <yatester/yatester.h>
-#include <yatester/errhdl.h>
+#include <yatester/err.h>
 #include <yatester/cmdhdl.h>
 #include <yatester/runner.h>
 #include <yatester/parser.h>
