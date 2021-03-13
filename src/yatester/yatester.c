@@ -44,6 +44,7 @@ static yatester_status terminate_internal(yatester_status status)
 {
 	yatester_terminatecmdhdl();
 
+#ifdef YADSL_DEBUG
 	if (log_file != NULL)
 	{
 		yadsl_memdb_set_logger(NULL);
@@ -51,6 +52,7 @@ static yatester_status terminate_internal(yatester_status status)
 		log_fp = NULL;
 		log_file = NULL;
 	}
+#endif
 
 	if (input_file != NULL)
 	{
