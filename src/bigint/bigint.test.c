@@ -153,7 +153,7 @@ static void check_opposite(intmax_t i, int index)
 
 static intmax_t _bigint_push()
 {
-	intmax_t i, j;
+	intmax_t i;
 	yadsl_tester_parse_n_arguments("I", &i);
 	push(yadsl_bigint_from_int(i));
 	return i;
@@ -194,7 +194,7 @@ static void bigint_get()
 
 static void bigint_check()
 {
-	intmax_t i, j;
+	intmax_t i;
 	i = _bigint_push();
 	check_to_int(i, top-1);
 	check_to_string(i, top-1);

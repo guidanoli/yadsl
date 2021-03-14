@@ -267,16 +267,16 @@ yadsl_tester_parse_arguments(
 
 /**
  * @brief Throws an error number.
- * @param errno error number
+ * @param errnum error number
 */
 void
 yadsl_tester_throw_func(
-        const char* errfile,
-        int errline,
-        yadsl_TesterRet errno);
+	const char* errfile,
+	int errline,
+	yadsl_TesterRet errnum);
 
 #define yadsl_tester_throw(...) \
-    yadsl_tester_throw_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_throw_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Throws an error message.
@@ -287,13 +287,13 @@ yadsl_tester_throw_func(
 */
 void
 yadsl_tester_vthrowf_func(
-        const char* errfile,
-        int errline,
-        const char* fmt,
-        va_list va);
+	const char* errfile,
+	int errline,
+	const char* fmt,
+	va_list va);
 
 #define yadsl_tester_vthrowf(...) \
-    yadsl_tester_vthrowf_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_vthrowf_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Throws an error message.
@@ -302,13 +302,13 @@ yadsl_tester_vthrowf_func(
 */
 void
 yadsl_tester_throwf_func(
-        const char* errfile,
-        int errline,
-        const char* fmt,
-        ...);
+	const char* errfile,
+	int errline,
+	const char* fmt,
+	...);
 
 #define yadsl_tester_throwf(...) \
-    yadsl_tester_throwf_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_throwf_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Restrict form of yadsl_tester_parse_arguments
@@ -318,24 +318,24 @@ yadsl_tester_throwf_func(
  * @param ... pointers to arguments
 */
 #define yadsl_tester_parse_n_arguments(fmt, ...) \
-    yadsl_tester_assert(yadsl_tester_parse_arguments(fmt, __VA_ARGS__) == \
-            (sizeof(fmt)-1), YADSL_TESTER_RET_ARGUMENT)
+	yadsl_tester_assert(yadsl_tester_parse_arguments(fmt, __VA_ARGS__) == \
+		(sizeof(fmt)-1), YADSL_TESTER_RET_ARGUMENT)
 
 /**
  * @brief Asserts that condition is true.
  * If not, performs a long jump and the error is raised.
  * @param condition condition to be tested
- * @param errno error number
+ * @param errnum error number
 */
 void
 yadsl_tester_assert_func(
-    const char* errfile,
-    int errline,
-    int condition,
-    yadsl_TesterRet errno);
+	const char* errfile,
+	int errline,
+	int condition,
+	yadsl_TesterRet errnum);
 
 #define yadsl_tester_assert(...) \
-    yadsl_tester_assert_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_assert_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Assert that condition is true.
@@ -347,14 +347,14 @@ yadsl_tester_assert_func(
 */
 void
 yadsl_tester_vassertf_func(
-    const char* errfile,
-    int errline,
-    int condition,
-    const char* fmt,
-    va_list va);
+	const char* errfile,
+	int errline,
+	int condition,
+	const char* fmt,
+	va_list va);
 
 #define yadsl_tester_vassertf(...) \
-    yadsl_tester_vassertf_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_vassertf_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Assert that condition is true.
@@ -365,14 +365,14 @@ yadsl_tester_vassertf_func(
 */
 void
 yadsl_tester_assertf_func(
-    const char* errfile,
-    int errline,
-    int condition,
-    const char* fmt,
-    ...);
+	const char* errfile,
+	int errline,
+	int condition,
+	const char* fmt,
+	...);
 
 #define yadsl_tester_assertf(...) \
-    yadsl_tester_assertf_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_assertf_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Assert that condition is true.
@@ -385,15 +385,15 @@ yadsl_tester_assertf_func(
 */
 void
 yadsl_tester_vxassertf_func(
-    const char* errfile,
-    int errline,
-    int condition,
-    const char* fmt,
-    void (*falsecb)(),
-    va_list va);
+	const char* errfile,
+	int errline,
+	int condition,
+	const char* fmt,
+	void (*falsecb)(),
+	va_list va);
 
 #define yadsl_tester_vxassertf(...) \
-    yadsl_tester_vxassertf_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_vxassertf_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Assert that condition is true.
@@ -406,113 +406,113 @@ yadsl_tester_vxassertf_func(
 */
 void
 yadsl_tester_xassertf_func(
-    const char* errfile,
-    int errline,
-    int condition,
-    const char* fmt,
-    void (*falsecb)(),
-    ...);
+	const char* errfile,
+	int errline,
+	int condition,
+	const char* fmt,
+	void (*falsecb)(),
+	...);
 
 #define yadsl_tester_xassertf(...) \
-    yadsl_tester_xassertf_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_xassertf_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Asserts floats are equal
 */
 void
 yadsl_tester_asserteqf_func(
-    const char* errfile,
-    int errline,
-    float a,
-    float b,
-    const char* errmsg);
+	const char* errfile,
+	int errline,
+	float a,
+	float b,
+	const char* errmsg);
 
 #define yadsl_tester_asserteqf(...) \
-    yadsl_tester_asserteqf_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_asserteqf_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Asserts integers are equal
 */
 void
 yadsl_tester_asserteqi_func(
-    const char* errfile,
-    int errline,
-    int a,
-    int b,
-    const char* errmsg);
+	const char* errfile,
+	int errline,
+	int a,
+	int b,
+	const char* errmsg);
 
 #define yadsl_tester_asserteqi(...) \
-    yadsl_tester_asserteqi_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_asserteqi_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Asserts longs are equal
 */
 void
 yadsl_tester_asserteql_func(
-    const char* errfile,
-    int errline,
-    long a,
-    long b,
-    const char* errmsg);
+	const char* errfile,
+	int errline,
+	long a,
+	long b,
+	const char* errmsg);
 
 #define yadsl_tester_asserteql(...) \
-    yadsl_tester_asserteql_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_asserteql_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Asserts characters are equal
 */
 void
 yadsl_tester_asserteqc_func(
-    const char* errfile,
-    int errline,
-    char a,
-    char b,
-    const char* errmsg);
+	const char* errfile,
+	int errline,
+	char a,
+	char b,
+	const char* errmsg);
 
 #define yadsl_tester_asserteqc(...) \
-    yadsl_tester_asserteqc_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_asserteqc_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Asserts strings are equal
 */
 void
 yadsl_tester_asserteqs_func(
-    const char* errfile,
-    int errline,
-    const char* a,
-    const char* b,
-    const char* errmsg);
+	const char* errfile,
+	int errline,
+	const char* a,
+	const char* b,
+	const char* errmsg);
 
 #define yadsl_tester_asserteqs(...) \
-    yadsl_tester_asserteqs_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_asserteqs_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Asserts size types are equal
 */
 void
 yadsl_tester_asserteqz_func(
-    const char* errfile,
-    int errline,
-    size_t a,
-    size_t b,
-    const char* errmsg);
+	const char* errfile,
+	int errline,
+	size_t a,
+	size_t b,
+	const char* errmsg);
 
 #define yadsl_tester_asserteqz(...) \
-    yadsl_tester_asserteqz_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_asserteqz_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Asserts max. integers are equal
 */
 void
 yadsl_tester_asserteqI_func(
-    const char* errfile,
-    int errline,
-    intmax_t a,
-    intmax_t b,
-    const char* errmsg);
+	const char* errfile,
+	int errline,
+	intmax_t a,
+	intmax_t b,
+	const char* errmsg);
 
 #define yadsl_tester_asserteqI(...) \
-    yadsl_tester_asserteqI_func(__FILE__, __LINE__, __VA_ARGS__)
+	yadsl_tester_asserteqI_func(__FILE__, __LINE__, __VA_ARGS__)
 
 /**
  * @brief Create an object
@@ -646,12 +646,12 @@ yadsl_tester_copy_argument(
 */
 yadsl_TesterRet
 yadsl_tester_error_func(
-	const char* errmsg,
-    const char* errfile,
-    int errline);
+	const char* errfile,
+	int errline,
+	const char* errmsg);
 
 #define yadsl_tester_error(errmsg) \
-    yadsl_tester_error_func(errmsg, __FILE__, __LINE__)
+	yadsl_tester_error_func(__FILE__, __LINE__, errmsg)
 
 /**
  * @brief Log a message with additional information about current

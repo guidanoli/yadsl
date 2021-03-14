@@ -402,7 +402,7 @@ const void* yadsl_tester_object_data(void* object)
 	return ((yadsl_TesterObject*) object)->data;
 }
 
-yadsl_TesterRet yadsl_tester_error_func(const char* _errmsg, const char* _errfile, int _errline)
+yadsl_TesterRet yadsl_tester_error_func(const char* _errfile, int _errline, const char* _errmsg)
 {
 	errmsg = _errmsg;
 	yadsl_tester_seterr_internal(_errfile, _errline);
@@ -424,14 +424,14 @@ void
 yadsl_tester_throw_func(
 	const char* errfile,
 	int errline,
-	yadsl_TesterRet errno)
+	yadsl_TesterRet errnum)
 {
-	if (errno == 0)
-		errno = yadsl_tester_error_func("error", errfile, errline);
+	if (errnum == 0)
+		errnum = yadsl_tester_error_func(errfile, errline, "error");
 	else
 		yadsl_tester_seterr_internal(errfile, errline);
 
-	longjmp(env, errno);
+	longjmp(env, errnum);
 }
 
 void
@@ -443,7 +443,7 @@ yadsl_tester_vthrowf_func(
 {
 	vsnprintf(errbuf, sizeof(errbuf), fmt, va);
 	va_end(va);
-	yadsl_tester_throw_func(errfile, errline, yadsl_tester_error(errbuf));
+	yadsl_tester_throw_func(errfile, errline, yadsl_tester_error_func(errfile, errline, errbuf));
 }
 
 void
@@ -462,25 +462,26 @@ void
 yadsl_tester_assert_func(
 	const char* errfile,
 	int errline,
-    int condition,
-    yadsl_TesterRet errno)
+	int condition,
+	yadsl_TesterRet errnum)
 {
 	if (!condition)
-		yadsl_tester_throw_func(errfile, errline, errno);
+		yadsl_tester_throw_func(errfile, errline, errnum);
 }
 
 void
 yadsl_tester_vassertf_func(
 	const char* errfile,
 	int errline,
-    int condition,
-    const char* fmt,
-    va_list va)
+	int condition,
+	const char* fmt,
+	va_list va)
 {
 	if (!condition) {
+
 		vsnprintf(errbuf, sizeof(errbuf), fmt, va);
 		va_end(va);
-		yadsl_tester_assert_func(errfile, errline, condition, yadsl_tester_error(errbuf));
+		yadsl_tester_assert_func(errfile, errline, condition, yadsl_tester_error_func(errfile, errline, errbuf));
 	}
 }
 
@@ -488,9 +489,9 @@ void
 yadsl_tester_assertf_func(
 	const char* errfile,
 	int errline,
-    int condition,
-    const char* fmt,
-    ...)
+	int condition,
+	const char* fmt,
+	...)
 {
 	if (!condition) {
 		va_list va;
@@ -503,10 +504,10 @@ void
 yadsl_tester_vxassertf_func(
 	const char* errfile,
 	int errline,
-    int condition,
-    const char* fmt,
-    void (*falsecb)(),
-    va_list va)
+	int condition,
+	const char* fmt,
+	void (*falsecb)(),
+	va_list va)
 {
 	static int reclvl = 0;
 	if (!condition) {
@@ -523,10 +524,10 @@ void
 yadsl_tester_xassertf_func(
 	const char* errfile,
 	int errline,
-    int condition,
-    const char* fmt,
-    void (*falsecb)(),
-    ...)
+	int condition,
+	const char* fmt,
+	void (*falsecb)(),
+	...)
 {
 	if (!condition) {
 		va_list va;
@@ -659,7 +660,7 @@ yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret)
 	if (yadsl_tester_parse_arguments("s", argbuf) == 1) {
 		if (ret == YADSL_TESTER_RET_CUSTOM) {
 			if (errmsg != NULL && strcmp(errmsg, argbuf) == 0) {
-				yadsl_tester_error_func(NULL, NULL, 0);
+				yadsl_tester_error_func(NULL, 0, NULL);
 				return YADSL_TESTER_RET_OK;
 			}
 		} else if (ret >= YADSL_TESTER_RET_OK && ret < YADSL_TESTER_RET_COUNT) {
