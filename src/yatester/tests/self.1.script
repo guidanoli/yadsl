@@ -1,3 +1,11 @@
+# Expect
+
+/expect 0
+/true
+
+/expect 1
+/false
+
 # Has command
 
 /hascommand "throw"

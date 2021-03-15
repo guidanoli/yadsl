@@ -1,4 +1,8 @@
-# Add yatester module
+# Add yatester module and all scripts too
+# Gets basename to name tester executable
+# Eg.: source = empty.test.c => name = empty => testername = emptytest
+# Adds all scripts that match $name.*.script
+# Adds all failing scripts that match $name.*.fail
 # add_yatester_selftest(source)
 function(add_yatester_selftest source)
 	get_filename_component(source_we ${source} NAME_WE)
@@ -11,9 +15,15 @@ function(add_yatester_selftest source)
 	if(SCRIPTS)
 		add_tester_scripts(${name} SOURCES ${SCRIPTS})
 	endif()
+	string(CONCAT failing_script_regex ${source_we} ".*.fail")
+	file(GLOB FAILING_SCRIPTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${failing_script_regex})
+	if(FAILING_SCRIPTS)
+		add_tester_scripts(${name} SOURCES ${FAILING_SCRIPTS})
+		set_tests_properties(${FAILING_SCRIPTS} PROPERTIES WILL_FAIL TRUE)
+	endif()
 endfunction()
 
-# Add failing test
+# Add failing test with explicit command
 # add_failing_test(NAME <name> COMMAND <command...>)
 function(add_failing_test)
 	set(multiValueArgs NAME COMMAND)

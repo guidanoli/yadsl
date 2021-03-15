@@ -2,6 +2,7 @@
 #include <yatester/parser.h>
 #include <yatester/err.h>
 #include <yatester/cmdhdl.h>
+#include <yatester/builtins.h>
 #include <yatester/yatester.h>
 
 #include <stdio.h>
@@ -9,6 +10,14 @@
 #include <setjmp.h>
 
 static jmp_buf env;
+yatester_status expected_status[2]; /* Queue */
+
+void yatester_builtin_expect(const char** argv)
+{
+	int status;
+	yatester_assert(sscanf(argv[0], "%d", &status) == 1);
+	expected_status[1] = status; /* Push to queue */
+}
 
 yatester_status yatester_runcommand(const char* commandname, size_t argc, const char** argv)
 {
@@ -36,7 +45,30 @@ yatester_status yatester_runcommand(const char* commandname, size_t argc, const 
 		command->handler((const char**) argv);
 	}
 
-	return status;
+	if (status == expected_status[0])
+	{
+		if (status != YATESTER_OK)
+		{
+			fprintf(stderr, "Previous error was expected\n");
+		}
+
+		/* Pop from queue */
+		expected_status[0] = expected_status[1];
+		expected_status[1] = YATESTER_OK;
+
+		return YATESTER_OK;
+	}
+	else
+	{
+		if (status == YATESTER_OK)
+		{
+			return YATESTER_ERR;
+		}
+		else
+		{
+			return status;
+		}
+	}
 }
 
 void yatester_throw(yatester_status status)

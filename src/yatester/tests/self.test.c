@@ -75,6 +75,15 @@ static void sum16_cmd(const char** argv)
 	yatester_assert(total == acc);
 }
 
+static void true_cmd(const char** argv)
+{
+}
+
+static void false_cmd(const char** argv)
+{
+	yatester_throw(YATESTER_ERR);
+}
+
 const yatester_command yatester_commands[] =
 {
 	{ "throw", 1, throw_cmd },
@@ -85,5 +94,7 @@ const yatester_command yatester_commands[] =
 	{ "streq", 2, streq_cmd },
 	{ "strlen", 2, strlen_cmd },
 	{ "sumsixteen", 17, sum16_cmd },
+	{ "true", 0, true_cmd },
+	{ "false", 0, false_cmd },
 	{ NULL, 0, NULL },
 };

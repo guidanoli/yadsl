@@ -1,7 +1,6 @@
 #include <yatester/parser.h>
 #include <yatester/cmdhdl.h>
 #include <yatester/runner.h>
-#include <yatester/builtins.h>
 #include <yatester/yatester.h>
 
 #include <setjmp.h>
@@ -33,13 +32,6 @@ static size_t cmdlen, arglen;
 static size_t line, col;
 static size_t tkline, tkcol;
 static jmp_buf env;
-
-void yatester_builtin_expect(const char** argv)
-{
-	int status;
-	yatester_assert(sscanf(argv[0], "%d", &status) == 1);
-	next_expected_status = status;
-}
 
 static state error_internal(const char* fmt, ...)
 {
@@ -121,33 +113,6 @@ static void pushargument_internal()
 #endif
 }
 
-static yatester_status validatestatus_internal(yatester_status status)
-{
-	if (status == expected_status)
-	{
-		if (expected_status != YATESTER_OK)
-		{
-			fprintf(stderr, "Previous error was expected\n");
-		}
-
-		expected_status = next_expected_status;
-		next_expected_status = YATESTER_OK;
-
-		return YATESTER_OK;
-	}
-	else
-	{
-		if (status == YATESTER_OK)
-		{
-			return YATESTER_ERR;
-		}
-		else
-		{
-			return status;
-		}
-	}
-}
-
 static void runcommand_internal()
 {
 	yatester_status status;
@@ -163,7 +128,7 @@ static void runcommand_internal()
 	fprintf(stderr, "\n");
 #endif
 
-	status = validatestatus_internal(yatester_runcommand(cmdbuf, argc, (const char**) argvbuf));
+	status = yatester_runcommand(cmdbuf, argc, (const char**) argvbuf);
 
 	argc = 0;
 	xargc = 0;
@@ -269,7 +234,15 @@ static state transition_internal(state st, int c)
 		else if (IS_SEPARATOR(c))
 		{
 			pushcommand_internal();
-			return ST_SEPARATOR;
+			if (xargc == 0)
+			{
+				runcommand_internal();
+				return ST_INITIAL;
+			}
+			else
+			{
+				return ST_SEPARATOR;
+			}
 		}
 		else
 		{
@@ -415,7 +388,7 @@ yatester_status yatester_parsescript(FILE *fp)
 
 	col = 0;
 	line = 1;
-	status = validatestatus_internal(setjmp(env));
+	status = setjmp(env);
 
 	if (status == YATESTER_OK)
 	{
