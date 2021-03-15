@@ -36,13 +36,7 @@ static jmp_buf env;
 void yatester_builtin_expect(const char** argv)
 {
 	int status;
-
-	if (sscanf(argv[0], "%d", &status) != 1)
-	{
-		fprintf(stderr, "Expected integer. Obtained: \"%s\"\n", argv[0]);
-		yatester_throw(YATESTER_ERR);
-	}
-
+	yatester_assert(sscanf(argv[0], "%d", &status) == 1);
 	next_expected_status = status;
 }
 

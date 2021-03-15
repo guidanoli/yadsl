@@ -5,30 +5,14 @@
 
 static void streq_cmd(const char** argv)
 {
-	if (strcmp(argv[0], argv[1]) != 0)
-	{
-		fprintf(stderr, "\"%s\" != \"%s\"\n", argv[0], argv[1]);
-		yatester_throw(YATESTER_ERR);
-	}
+	yatester_assert(strcmp(argv[0], argv[1]) == 0);
 }
 
 static void strlen_cmd(const char** argv)
 {
-	size_t expected, obtained;
-
-	if (sscanf(argv[0], "%zu", &expected) != 1)
-	{
-		fprintf(stderr, "\"%s\" is not an integer\n", argv[0]);
-		yatester_throw(YATESTER_ERR);
-	}
-
-	obtained = strlen(argv[1]);
-
-	if (expected != obtained)
-	{
-		fprintf(stderr, "%zu != %zu\n", expected, obtained);
-		yatester_throw(YATESTER_ERR);
-	}
+	size_t len;
+	yatester_assert(sscanf(argv[0], "%zu", &len) == 1);
+	yatester_assert(len == strlen(argv[1]));
 }
 
 const yatester_command yatester_commands[] =

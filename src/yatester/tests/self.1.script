@@ -1,0 +1,17 @@
+/hascommand "throw"
+/hascommand "expect"
+/hascommand "hascommand"
+
+/expect 1
+/hascommand "x"
+
+/expect 1
+/hascommand ""
+
+/assert 1
+
+/expect 1
+/assert 0
+
+/expect 1
+/assert abc

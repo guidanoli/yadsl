@@ -14,11 +14,21 @@
 /throw 3
 
 /expect 1
+/expect abc
+
+/expect 1
+/throw abc
+
+/expect 1
 /expect # Comment
 
 /expect 1
 /expect
 /expect 0
 
+/expect 0
+/expect 0
+
+# Leave this in the end
 /expect 1
 /expect

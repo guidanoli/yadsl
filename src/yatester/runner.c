@@ -46,3 +46,12 @@ void yatester_throw(yatester_status status)
 {
 	longjmp(env, status);
 }
+
+void yatester_assert_function(const char* code, const char* file, int line, int condition)
+{
+	if (!condition)
+	{
+		fprintf(stderr, "Assertion \"%s\" failed in \"%s\", line %d\n", code, file, line);
+		yatester_throw(YATESTER_ERR);
+	}
+}

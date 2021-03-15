@@ -20,5 +20,12 @@
 # Length
 
 /strlen 0 ""
+/strlen 1 A
 /strlen 1 "A"
+/strlen 1 " "
+/strlen 3 ABC
 /strlen 3 "ABC"
+/strlen 3 " 	 "
+
+/expect 1
+/strlen abc abc

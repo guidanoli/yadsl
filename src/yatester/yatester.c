@@ -13,7 +13,6 @@
 static jmp_buf env;
 static yadsl_ArgvParserHandle *argvp;
 static int list_commands;
-static int cmdlen;
 static const char *input_file;
 static FILE *input_fp;
 #ifdef YADSL_DEBUG
@@ -262,17 +261,7 @@ void assert_ok(yatester_status status)
 
 void printcmd_cb(const yatester_command* command)
 {
-	printf("%-*s\t%d\n", cmdlen, command->name, command->argc);
-}
-
-void getcmdlen_cb(const yatester_command* command)
-{
-	int len = strlen(command->name);
-
-	if (len > cmdlen)
-	{
-		cmdlen = len;
-	}
+	printf("%s\t%d\n", command->name, command->argc);
 }
 
 int main(int argc, char** argv)
@@ -290,7 +279,6 @@ int main(int argc, char** argv)
 
 	if (list_commands)
 	{
-		yatester_itercommands(getcmdlen_cb);
 		yatester_itercommands(printcmd_cb);
 		return YATESTER_ERR;
 	}
