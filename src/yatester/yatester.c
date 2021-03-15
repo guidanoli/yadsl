@@ -6,59 +6,40 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <setjmp.h>
 
 #include <argvp/argvp.h>
 
+static jmp_buf env;
 static yadsl_ArgvParserHandle *argvp;
-static const char *input_file, *log_file;
-static FILE *input_fp, *log_fp;
-
-static yatester_status check_memleak_internal(yatester_status status)
-{
+static const char *input_file;
+static FILE *input_fp;
 #ifdef YADSL_DEBUG
-	size_t amb_list_size = yadsl_memdb_amb_list_size();
-
-	if (amb_list_size > 0)
-	{
-		fprintf(stderr, "%zu items leaked\n", amb_list_size);
-		status |= YATESTER_ERR;
-	}
-	else if (yadsl_memdb_error_occurred())
-	{
-		fprintf(stderr, "The memory debugger has detected an error\n");
-		status |= YATESTER_ERR;
-	}
-
-	yadsl_memdb_clear_amb_list();
-
-	if (status & YATESTER_MEM && yadsl_memdb_fail_occurred())
-	{
-		status &= ~YATESTER_MEM;
-	}
+static const char *log_file;
+static FILE *log_fp;
 #endif
-
-	return status;
-}
 
 static yatester_status terminate_internal(yatester_status status)
 {
+#ifdef YADSL_DEBUG
+	size_t amb_list_size;
+#endif
+
 	yatester_terminatecmdhdl();
 
 #ifdef YADSL_DEBUG
-	if (log_file != NULL)
+	if (log_fp != NULL)
 	{
 		yadsl_memdb_set_logger(NULL);
 		fclose(log_fp);
 		log_fp = NULL;
-		log_file = NULL;
 	}
 #endif
 
-	if (input_file != NULL)
+	if (input_fp != NULL)
 	{
 		fclose(input_fp);
 		input_fp = NULL;
-		input_file = NULL;
 	}
 
 	if (argvp != NULL)
@@ -67,30 +48,54 @@ static yatester_status terminate_internal(yatester_status status)
 		argvp = NULL;
 	}
 
-	status = check_memleak_internal(status);
+#ifdef YADSL_DEBUG
+	amb_list_size = yadsl_memdb_amb_list_size();
+
+	if (amb_list_size > 0)
+	{
+		fprintf(stderr, "%zu items leaked\n", amb_list_size);
+		return YATESTER_ERR;
+	}
+	else if (yadsl_memdb_error_occurred())
+	{
+		fprintf(stderr, "The memory debugger has detected an error\n");
+		return YATESTER_ERR;
+	}
+
+	yadsl_memdb_clear_amb_list();
+
+	if (status == YATESTER_MEM && yadsl_memdb_fail_occurred())
+	{
+		return YATESTER_OK;
+	}
+#endif
 
 	return status;
 }
 
 static yatester_status parse_arguments_internal(int argc, char** argv)
 {
+#ifdef YADSL_DEBUG
+	int nmatches;
 	float malloc_failing_rate;
 	size_t malloc_failing_index;
 	unsigned int prng_seed;
 	const char *log_channel_name;
+#endif
 
 	yadsl_ArgvKeywordArgumentDef kwargsdef[] =
 	{
 		{ "--help", 0 },
 		{ "--input-file", 1 },
+#ifdef YADSL_DEBUG
 		{ "--log-file", 1 },
 		{ "--malloc-failing-rate", 1 },
 		{ "--malloc-failing-index", 1 },
 		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
+#endif
 		{ NULL, 0 }, /* End of definitions array */
 	};
-
 
 	argvp = yadsl_argvp_create(argc, argv);
 
@@ -110,14 +115,21 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 		fprintf(stderr, "\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "--help                          Prints usage information and exits\n");
-		fprintf(stderr, "--input-file <filepath>         Test script path\n");
+		fprintf(stderr, "--input-file <filepath>         Read commands from file instead of stdin\n");
 #ifdef YADSL_DEBUG
-		fprintf(stderr, "--log-file <filepath>           Log file path\n");
-		fprintf(stderr, "--malloc-failing-rate <rate>    Memory allocation failing rate\n");
-		fprintf(stderr, "--malloc-failing-index <index>  Memory allocation failing index\n");
-		fprintf(stderr, "--pnrg-seed <seed>              Pseudo-random number generator seed\n");
-		fprintf(stderr, "--enable-log-channel <channel>  Log channel\n");
+		fprintf(stderr, "--log-file <filepath>           Write log to file instead of stderr\n");
+		fprintf(stderr, "--malloc-failing-rate <rate>    Set memory allocation failing rate\n");
+		fprintf(stderr, "--malloc-failing-index <index>  Set memory allocation failing index\n");
+		fprintf(stderr, "--pnrg-seed <seed>              Set pseudorandom number generator seed\n");
+		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");
+		fprintf(stderr, "                                ALLOCATION, DEALLOCATION, LEAKAGE\n");
 #endif
+		fprintf(stderr, "\n");
+		fprintf(stderr, "Return codes:\n");
+		fprintf(stderr, "0 - success\n");
+		fprintf(stderr, "1 - generic error\n");
+		fprintf(stderr, "2 - memory error\n");
+		fprintf(stderr, "3 - input/output error\n");
 		return YATESTER_ERR;
 	}
 
@@ -156,28 +168,49 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 
 	yadsl_memdb_set_logger(log_fp);
 
-	if (yadsl_argvp_parse_keyword_argument_value(argvp,	"--malloc-failing-rate", 0, "%f", &malloc_failing_rate) == 1)
+	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp,	"--malloc-failing-rate", 0, "%f", &malloc_failing_rate);
+
+	if (nmatches == 1)
 	{
 		yadsl_memdb_set_fail_rate(malloc_failing_rate);
+	}
+	else if (nmatches == 0)
+	{
+		fprintf(stderr, "Invalid value passed to --malloc-failing-rate\n");
+		return YATESTER_ERR;
 	}
 	else
 	{
 		yadsl_memdb_set_fail_rate(0.f);
 	}
 
-	if (yadsl_argvp_parse_keyword_argument_value(argvp, "--malloc-failing-index", 0, "%zu", &malloc_failing_index) == 1)
+	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp, "--malloc-failing-index", 0, "%zu", &malloc_failing_index);
+
+	if (nmatches == 1)
 	{
 		yadsl_memdb_set_fail_by_index(true);
 		yadsl_memdb_set_fail_index(malloc_failing_index);
+	}
+	else if (nmatches == 0)
+	{
+		fprintf(stderr, "Invalid value passed to --malloc-failing-index\n");
+		return YATESTER_ERR;
 	}
 	else
 	{
 		yadsl_memdb_set_fail_by_index(false);
 	}
 
-	if (yadsl_argvp_parse_keyword_argument_value(argvp,	"--prng-seed", 0, "%u", &prng_seed) == 1)
+	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp,	"--prng-seed", 0, "%u", &prng_seed);
+
+	if (nmatches == 1)
 	{
 		yadsl_memdb_set_prng_seed(prng_seed);
+	}
+	else if (nmatches == 0)
+	{
+		fprintf(stderr, "Invalid value passed to --prng-seed\n");
+		return YATESTER_ERR;
 	}
 
 	log_channel_name = yadsl_argvp_get_keyword_argument_value(argvp, "--enable-log-channel", 0);
@@ -213,16 +246,27 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 	return YATESTER_OK;
 }
 
-#define CHECK(newstatus) \
-	do { \
-		yatester_status status = newstatus; \
-		if (status) return terminate_internal(status); \
-	} while (0)
+void assert_ok(yatester_status status)
+{
+	if (status != YATESTER_OK)
+	{
+		longjmp(env, status);
+	}
+}
 
 int main(int argc, char** argv)
 {
-	CHECK(parse_arguments_internal(argc, argv));
-	CHECK(yatester_initializecmdhdl());
-	CHECK(yatester_parsescript(input_fp));
-	return terminate_internal(YATESTER_OK);
+	yatester_status status = setjmp(env);
+
+	if (status != YATESTER_OK)
+	{
+		goto end;
+	}
+
+	assert_ok(parse_arguments_internal(argc, argv));
+	assert_ok(yatester_initializecmdhdl());
+	assert_ok(yatester_parsescript(input_fp));
+
+end:
+	return terminate_internal(status);
 }

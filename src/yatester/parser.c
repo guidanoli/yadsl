@@ -132,14 +132,12 @@ static void runcommand_internal()
 	fprintf(stderr, "\n");
 #endif
 
-	status = yatester_runcommand(cmdbuf, argc, (const char**) argvbuf);
+	status = validatestatus_internal(yatester_runcommand(cmdbuf, argc, (const char**) argvbuf));
 
 	argc = 0;
 	xargc = 0;
 	cmdlen = 0;
 	arglen = 0;
-
-	status = validatestatus_internal(status);
 
 	if (status == YATESTER_OK)
 	{
@@ -394,7 +392,7 @@ yatester_status yatester_parsescript(FILE *fp)
 			tkcol = col;
 		}
 
-		fprintf(stderr, "Error %d in line %zu, column %zu\n", status, tkline, tkcol);
+		fprintf(stderr, "Error %d raised in line %zu, column %zu\n", status, tkline, tkcol);
 	}
 
 	return status;

@@ -5,10 +5,10 @@
 
 typedef enum
 {
-	YATESTER_OK  = 0,      /**< No error */
-	YATESTER_ERR = 1 << 0, /**< Generic error */
-	YATESTER_MEM = 1 << 1, /**< Memory allocation error*/
-	YATESTER_IO  = 1 << 2, /**< I/O error */
+	YATESTER_OK,  /**< No error */
+	YATESTER_ERR, /**< Generic error */
+	YATESTER_MEM, /**< Memory allocation error*/
+	YATESTER_IO,  /**< I/O error */
 }
 yatester_status;
 

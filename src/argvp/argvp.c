@@ -135,7 +135,7 @@ yadsl_argvp_parse_positional_argument(
 		va_end(va);
 		return ret;
 	} else {
-		return 0;
+		return -1;
 	}
 }
 
@@ -197,7 +197,7 @@ yadsl_argvp_parse_keyword_argument_value(
 		va_end(va);
 		return ret;
 	} else {
-		return 0;
+		return -1;
 	}
 }
 

@@ -84,7 +84,7 @@ yadsl_argvp_get_positional_argument(
  * @param argi argument index
  * @param fmt format string passed to `vsscanf`
  * @param ... varadic arguments passed to `vsscanf`
- * @return return value of `vsscanf` or 0 if the index is invalid
+ * @return return value of `vsscanf` or -1 if the index is invalid
  * @see yadsl_argvp_get_positional_argument_count
  * @see yadsl_argvp_get_positional_argument
 */
@@ -117,7 +117,7 @@ yadsl_argvp_get_keyword_argument_value(
  * @param vali value index
  * @param fmt format string passed to `vsscanf`
  * @param ... varadic arguments passed to `vsscanf`
- * @return return value of `vsscanf` or 0 if the index is invalid or
+ * @return return value of `vsscanf` or -1 if the index is invalid or
  * if the keyword argument doesn't exist
  * @see yadsl_argvp_add_keyword_argument
  * @see yadsl_argvp_get_keyword_argument_value
