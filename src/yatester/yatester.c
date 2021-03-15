@@ -27,6 +27,7 @@ static yatester_status terminate_internal(yatester_status status)
 #endif
 
 	yatester_terminatecmdhdl();
+	yatester_terminateparser();
 
 #ifdef YADSL_DEBUG
 	if (log_fp != NULL)
@@ -261,7 +262,7 @@ void assert_ok(yatester_status status)
 
 void printcmd_cb(const yatester_command* command)
 {
-	printf("%s\t%d\n", command->name, command->argc);
+	printf("%s\t%zu\n", command->name, command->argc);
 }
 
 int main(int argc, char** argv)
@@ -275,6 +276,7 @@ int main(int argc, char** argv)
 
 	assert_ok(parse_arguments_internal(argc, argv));
 
+	assert_ok(yatester_initializeparser());
 	assert_ok(yatester_initializecmdhdl());
 
 	if (list_commands)

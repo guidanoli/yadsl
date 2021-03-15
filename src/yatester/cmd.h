@@ -3,10 +3,12 @@
 
 /* Commands */
 
+#include <stddef.h>
+
 typedef struct
 {
 	const char *name;
-	int argc;
+	size_t argc;
 	void (*handler)(const char** argv);
 }
 yatester_command;

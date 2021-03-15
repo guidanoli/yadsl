@@ -59,12 +59,6 @@ yatester_status yatester_initializecmdhdl()
 		{
 			size_t j;
 
-			if (commands->argc < 0)
-			{
-				fprintf(stderr, "Command \"%s\" requires negative number of arguments\n", commands->name);
-				return YATESTER_ERR;
-			}
-
 			if (commands->handler == NULL)
 			{
 				fprintf(stderr, "Command \"%s\" does not have a handler\n", commands->name);

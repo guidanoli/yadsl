@@ -10,9 +10,7 @@
 
 static jmp_buf env;
 
-#define PLURAL(n) ((n) == 1 ? "" : "s")
-
-yatester_status yatester_runcommand(const char* commandname, int argc, const char** argv)
+yatester_status yatester_runcommand(const char* commandname, size_t argc, const char** argv)
 {
 	const yatester_command* command;
 	yatester_status status;
@@ -27,8 +25,7 @@ yatester_status yatester_runcommand(const char* commandname, int argc, const cha
 
 	if (command->argc != argc)
 	{
-		const char* plural_ending = command->argc == 1 ? "" : "s";
-		fprintf(stderr, "Command \"%s\" expected %d argument%s but got %d\n", commandname, command->argc, PLURAL(command->argc), argc);
+		fprintf(stderr, "Command \"%s\" expected %zu argument(s) but got %zu\n", commandname, command->argc, argc);
 		return YATESTER_ERR;
 	}
 

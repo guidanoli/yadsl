@@ -7,10 +7,8 @@
 
 #include <stdio.h>
 
-#define MAXARGCNT 64
-#define MAXARGLEN BUFSIZ
-#define MAXCMDLEN BUFSIZ
-
+yatester_status yatester_initializeparser();
 yatester_status yatester_parsescript(FILE *fp);
+void yatester_terminateparser();
 
 #endif

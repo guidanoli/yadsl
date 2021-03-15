@@ -1,3 +1,5 @@
+# Has command
+
 /hascommand "throw"
 /hascommand "expect"
 /hascommand "hascommand"
@@ -8,6 +10,8 @@
 /expect 1
 /hascommand ""
 
+# Asserts
+
 /assert 1
 
 /expect 1
@@ -15,3 +19,75 @@
 
 /expect 1
 /assert abc
+
+# Throw
+
+/expect -1
+/throw -1
+
+/expect 1
+/throw 0
+
+/expect 1
+/throw 1
+
+/expect 2
+/throw 2
+
+/expect 3
+/throw 3
+
+/expect 1
+/expect abc
+
+/expect 1
+/throw abc
+
+# Equal
+
+/streq "" ""
+/streq "a" "a"
+/streq "a" a
+/streq a "a"
+/streq a a
+
+# Not equal
+
+/expect 1
+/streq a b
+
+/expect 1
+/streq " " ""
+
+/expect 1
+/streq "	" ""
+
+# Length
+
+/strlen 0 ""
+/strlen 1 A
+/strlen 1 "A"
+/strlen 1 " "
+/strlen 3 ABC
+/strlen 3 "ABC"
+/strlen 3 " 	 "
+
+/expect 1
+/strlen abc abc
+
+# Long commands
+
+/expect 1
+/assertlongcmdcalled
+
+/reallylongcommandwithmorecharactersthanthecommandbufferofsixtyfourcharacters
+/assertlongcmdcalled
+
+# Long arguments
+
+/strlen 78 reallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacters
+/strlen 234 reallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacterreallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacterssreallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacters
+
+# Many arguments
+
+/sumsixteen 16 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1

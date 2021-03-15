@@ -2,6 +2,7 @@
 #include <yatester/cmdhdl.h>
 #include <yatester/runner.h>
 #include <yatester/builtins.h>
+#include <yatester/yatester.h>
 
 #include <setjmp.h>
 #include <stdarg.h>
@@ -24,13 +25,13 @@ state;
 #define IS_SEPARATOR(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
 #define IS_ALPHA(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 
-static char cmdbuf[MAXCMDLEN], argbuf[MAXARGLEN];
-static char* argvbuf[MAXARGCNT] = { argbuf };
+static char *cmdbuf, *argbuf;
+static char **argvbuf;
+static size_t cmdbufsize, argbufsize, argvbufsize, argc, xargc;
 static yatester_status expected_status, next_expected_status;
 static size_t cmdlen, arglen;
 static size_t line, col;
 static size_t tkline, tkcol;
-static int argc, xargc;
 static jmp_buf env;
 
 void yatester_builtin_expect(const char** argv)
@@ -50,11 +51,35 @@ static state error_internal(const char* fmt, ...)
 	return ST_EOF; /* never reaches here */
 }
 
+static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* size_ptr)
+{
+	void *newbuffer;
+	size_t size = *size_ptr;
+	size_t newsize = size * 2;
+	
+	if (newsize * item_size <= size * item_size)
+	{
+		fprintf(stderr, "Buffer overflow\n");
+		longjmp(env, YATESTER_MEM);
+	}
+
+	newbuffer = realloc(*buffer_ptr, newsize * item_size);
+
+	if (newbuffer == NULL)
+	{
+		fprintf(stderr, "Could not resize buffer\n");
+		longjmp(env, YATESTER_MEM);
+	}
+
+	*buffer_ptr = newbuffer;
+	*size_ptr = newsize;
+}
+
 static void writecommand_internal(char c)
 {
-	if (cmdlen == MAXCMDLEN - 1)
+	if (cmdlen == cmdbufsize - 1)
 	{
-		error_internal("Command buffer overflow\n");
+		resizebuffer_internal((void**) &cmdbuf, sizeof *cmdbuf, &cmdbufsize);
 	}
 
 	cmdbuf[cmdlen++] = c;
@@ -64,9 +89,16 @@ static void writecommand_internal(char c)
 
 static void writeargument_internal(char c)
 {
-	if (arglen == MAXARGLEN - 1)
+	if (arglen == argbufsize - 1)
 	{
-		error_internal("Argument buffer overflow\n");
+		char* prevargbuf = argbuf;
+		
+		resizebuffer_internal((void**) &argbuf, sizeof *argbuf, &argbufsize);
+		
+		for (size_t i = 0; i < argvbufsize; ++i)
+		{
+			argvbuf[i] = (argvbuf[i] - prevargbuf) + argbuf;
+		}
 	}
 
 	argbuf[arglen++] = c;
@@ -76,9 +108,9 @@ static void writeargument_internal(char c)
 
 static void pushargument_internal()
 {
-	if (argc == MAXARGCNT)
+	if (argc == argvbufsize)
 	{
-		error_internal("Argument vector buffer overflow\n");
+		resizebuffer_internal((void**) &argvbuf, sizeof *argvbuf, &argvbufsize);
 	}
 
 	argbuf[arglen++] = '\0';
@@ -93,6 +125,11 @@ static yatester_status validatestatus_internal(yatester_status status)
 {
 	if (status == expected_status)
 	{
+		if (expected_status != YATESTER_OK)
+		{
+			fprintf(stderr, "Previous error was expected\n");
+		}
+
 		expected_status = next_expected_status;
 		next_expected_status = YATESTER_OK;
 
@@ -118,7 +155,7 @@ static void runcommand_internal()
 #ifdef YATESTER_PARSER_DEBUG
 	fprintf(stderr, "[PARSER] Calling /%s", cmdbuf);
 
-	for (int i = 0; i < argc; ++i)
+	for (size_t i = 0; i < argc; ++i)
 	{
 		fprintf(stderr, " \"%s\"", argvbuf[i]);
 	}
@@ -342,12 +379,42 @@ static state transition_internal(state st, int c)
 	}
 }
 
+yatester_status yatester_initializeparser()
+{
+	cmdbufsize = 64;
+	cmdbuf = malloc(sizeof(*cmdbuf) * cmdbufsize);
+	if (cmdbuf == NULL)
+	{
+		return YATESTER_MEM;
+	}
+
+	argbufsize = 64;
+	argbuf = malloc(sizeof(*argbuf) * argbufsize);
+	if (argbuf == NULL)
+	{
+		return YATESTER_MEM;
+	}
+
+	argvbufsize = 4;
+	argvbuf = malloc(sizeof(*argvbuf) * argvbufsize);
+	if (argvbuf == NULL)
+	{
+		return YATESTER_MEM;
+	}
+
+	argvbuf[0] = argbuf;
+
+	return YATESTER_OK;
+}
+
 yatester_status yatester_parsescript(FILE *fp)
 {
 	int c;
 	state st = ST_INITIAL;
 	yatester_status status;
 
+	col = 0;
+	line = 1;
 	status = validatestatus_internal(setjmp(env));
 
 	if (status == YATESTER_OK)
@@ -390,4 +457,25 @@ yatester_status yatester_parsescript(FILE *fp)
 	}
 
 	return status;
+}
+
+void yatester_terminateparser()
+{
+	if (cmdbuf != NULL)
+	{
+		free(cmdbuf);
+		cmdbuf = NULL;
+	}
+
+	if (argbuf != NULL)
+	{
+		free(argbuf);
+		argbuf = NULL;
+	}
+
+	if (argvbuf != NULL)
+	{
+		free(argvbuf);
+		argvbuf = NULL;
+	}
 }

@@ -40,5 +40,4 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
 	add_failing_test(NAME empty.7.fail COMMAND emptytest "--prng-seed" "x")
 endif()
 
-add_yatester_selftest(arg.test.c)
 add_yatester_selftest(self.test.c)

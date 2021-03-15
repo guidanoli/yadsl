@@ -1,24 +1,3 @@
-/expect -1
-/throw -1
-
-/expect 1
-/throw 0
-
-/expect 1
-/throw 1
-
-/expect 2
-/throw 2
-
-/expect 3
-/throw 3
-
-/expect 1
-/expect abc
-
-/expect 1
-/throw abc
-
 /expect 1
 /expect # Comment
 
