@@ -93,6 +93,19 @@ yatester_status yatester_initializecmdhdl()
 	return YATESTER_OK;
 }
 
+void yatester_itercommands(void (*callback)(const yatester_command*))
+{
+	size_t i;
+
+	for (i = 0; i < tablesize; ++i)
+	{
+		if (commandtable[i] != NULL)
+		{
+			callback(commandtable[i]);
+		}
+	}
+}
+
 const yatester_command* yatester_getcommand(const char* commandname)
 {
 	size_t j;

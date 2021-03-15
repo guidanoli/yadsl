@@ -7,6 +7,7 @@
 #include <yatester/err.h>
 
 yatester_status yatester_initializecmdhdl();
+void yatester_itercommands(void (*callback)(const yatester_command*));
 const yatester_command* yatester_getcommand(const char* commandname);
 void yatester_terminatecmdhdl();
 

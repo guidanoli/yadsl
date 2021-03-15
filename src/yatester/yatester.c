@@ -12,6 +12,8 @@
 
 static jmp_buf env;
 static yadsl_ArgvParserHandle *argvp;
+static int list_commands;
+static int cmdlen;
 static const char *input_file;
 static FILE *input_fp;
 #ifdef YADSL_DEBUG
@@ -86,6 +88,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 	yadsl_ArgvKeywordArgumentDef kwargsdef[] =
 	{
 		{ "--help", 0 },
+		{ "--list-commands", 0 },
 		{ "--input-file", 1 },
 #ifdef YADSL_DEBUG
 		{ "--log-file", 1 },
@@ -115,6 +118,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 		fprintf(stderr, "\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "--help                          Prints usage information and exits\n");
+		fprintf(stderr, "--list-commands                 Lists all valid commands and exits\n");
 		fprintf(stderr, "--input-file <filepath>         Read commands from file instead of stdin\n");
 #ifdef YADSL_DEBUG
 		fprintf(stderr, "--log-file <filepath>           Write log to file instead of stderr\n");
@@ -132,6 +136,8 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 		fprintf(stderr, "3 - input/output error\n");
 		return YATESTER_ERR;
 	}
+
+	list_commands = yadsl_argvp_has_keyword_argument(argvp, "--list-commands");
 
 	input_file = yadsl_argvp_get_keyword_argument_value(argvp, "--input-file", 0);
 	
@@ -168,7 +174,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 
 	yadsl_memdb_set_logger(log_fp);
 
-	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp,	"--malloc-failing-rate", 0, "%f", &malloc_failing_rate);
+	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp, "--malloc-failing-rate", 0, "%f", &malloc_failing_rate);
 
 	if (nmatches == 1)
 	{
@@ -201,7 +207,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 		yadsl_memdb_set_fail_by_index(false);
 	}
 
-	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp,	"--prng-seed", 0, "%u", &prng_seed);
+	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp, "--prng-seed", 0, "%u", &prng_seed);
 
 	if (nmatches == 1)
 	{
@@ -254,6 +260,21 @@ void assert_ok(yatester_status status)
 	}
 }
 
+void printcmd_cb(const yatester_command* command)
+{
+	printf("%-*s\t%d\n", cmdlen, command->name, command->argc);
+}
+
+void getcmdlen_cb(const yatester_command* command)
+{
+	int len = strlen(command->name);
+
+	if (len > cmdlen)
+	{
+		cmdlen = len;
+	}
+}
+
 int main(int argc, char** argv)
 {
 	yatester_status status = setjmp(env);
@@ -264,7 +285,16 @@ int main(int argc, char** argv)
 	}
 
 	assert_ok(parse_arguments_internal(argc, argv));
+
 	assert_ok(yatester_initializecmdhdl());
+
+	if (list_commands)
+	{
+		yatester_itercommands(getcmdlen_cb);
+		yatester_itercommands(printcmd_cb);
+		return YATESTER_ERR;
+	}
+
 	assert_ok(yatester_parsescript(input_fp));
 
 end:

@@ -27,6 +27,7 @@ function(add_failing_test)
 endfunction()
 
 add_yatester_selftest(empty.test.c)
+add_failing_test(NAME empty.fail.0.script COMMAND emptytest "--list-commands")
 add_failing_test(NAME empty.fail.1.script COMMAND emptytest "--input-file" "x")
 
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
