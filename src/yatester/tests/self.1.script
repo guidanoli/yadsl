@@ -77,3 +77,7 @@
 # Many arguments
 
 /sumsixteen 16 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+
+# Not null
+
+/notnull 1

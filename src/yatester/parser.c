@@ -71,8 +71,7 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 	/* Check if new size fits in a size_t */
 	if (newsize * item_size <= size * item_size)
 	{
-		fprintf(stderr, "Reached maximum buffer size\n");
-		longjmp(env, YATESTER_NOMEM);
+		error_internal(YATESTER_NOMEM, "Reached maximum buffer size of %zu\n", size);
 	}
 
 	/* Resize buffer to fit newsize items */
@@ -80,8 +79,7 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 
 	if (newbuffer == NULL)
 	{
-		fprintf(stderr, "Could not reallocate buffer\n");
-		longjmp(env, YATESTER_NOMEM);
+		error_internal(YATESTER_NOMEM, "Could not reallocate buffer\n");
 	}
 
 	/* Update buffer and size pointers */

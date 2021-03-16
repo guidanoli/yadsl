@@ -98,8 +98,8 @@ static yatester_status terminate_internal(yatester_status status)
  */
 static yatester_status parse_arguments_internal(int argc, char** argv)
 {
-#ifdef YADSL_DEBUG
 	int nmatches;
+#ifdef YADSL_DEBUG
 	float malloc_failing_rate;
 	size_t malloc_failing_index;
 	unsigned int prng_seed;

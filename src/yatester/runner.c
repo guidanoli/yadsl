@@ -51,7 +51,7 @@ void yatester_assert_function(const char* code, const char* file, int line, int 
 	}
 }
 
-void yatester_notnull_func(const char* code, const char* file, int line, void* p)
+void yatester_notnull_function(const char* code, const char* file, int line, void* p)
 {
 	if (p == NULL)
 	{

@@ -2,6 +2,7 @@
 #include <yatester/cmdhdl.h>
 
 #include <string.h>
+#include <stdio.h>
 
 static const char* commandname_;
 static int hascommand_;
@@ -77,6 +78,29 @@ static void noerr_cmd(const char** argv)
 {
 }
 
+static void notnull_cmd(const char** argv)
+{
+	int i;
+
+	yatester_assert(sscanf(argv[0], "%d", &i) == 1);
+
+	if (i)
+	{
+		yatester_notnull(&i);
+	}
+	else
+	{
+		yatester_notnull(NULL);
+	}
+}
+
+static void malloc_cmd(const char** argv)
+{
+	size_t size;
+	yatester_assert(sscanf(argv[0], "%zu", &size) == 1);
+	yatester_notnull(malloc(size));
+}
+
 const yatester_command yatester_commands[] =
 {
 	{ "throw", 0, throw_cmd },
@@ -88,5 +112,7 @@ const yatester_command yatester_commands[] =
 	{ "strlen", 2, strlen_cmd },
 	{ "sumsixteen", 17, sum16_cmd },
 	{ "noerror", 0, noerr_cmd },
+	{ "notnull", 1, notnull_cmd },
+	{ "malloc", 1, malloc_cmd },
 	{ NULL, 0, NULL },
 };
