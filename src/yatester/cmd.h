@@ -5,11 +5,14 @@
 
 #include <stddef.h>
 
+/**
+ * @brief Command definition
+ */
 typedef struct
 {
-	const char *name;
-	size_t argc;
-	void (*handler)(const char** argv);
+	const char *name; /**< Command name */
+	size_t argc; /**< Number of arguments */
+	void (*handler)(const char** argv); /**< Command handler */
 }
 yatester_command;
 

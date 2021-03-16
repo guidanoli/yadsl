@@ -20,6 +20,11 @@ static const char *log_file;
 static FILE *log_fp;
 #endif
 
+/**
+ * @brief Terminate internal components and variables
+ * @param status current status code
+ * @return processed status code
+ */
 static yatester_status terminate_internal(yatester_status status)
 {
 #ifdef YADSL_DEBUG
@@ -75,6 +80,12 @@ static yatester_status terminate_internal(yatester_status status)
 	return status;
 }
 
+/**
+ * @brief Parse command line arguments
+ * @param argc argument count
+ * @param argv argument vector
+ * @return operation status code
+ */
 static yatester_status parse_arguments_internal(int argc, char** argv)
 {
 #ifdef YADSL_DEBUG
@@ -252,6 +263,10 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 	return YATESTER_OK;
 }
 
+/**
+ * @brief Asserts status is OK
+ * @note If not, performs a long jump
+ */
 void assert_ok(yatester_status status)
 {
 	if (status != YATESTER_OK)
@@ -260,6 +275,10 @@ void assert_ok(yatester_status status)
 	}
 }
 
+/**
+ * @brief Print command and the number of arguments it expects
+ * @param command
+ */
 void printcmd_cb(const yatester_command* command)
 {
 	printf("%s\t%zu\n", command->name, command->argc);

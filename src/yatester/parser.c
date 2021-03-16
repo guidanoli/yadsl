@@ -6,6 +6,9 @@
 #include <setjmp.h>
 #include <stdarg.h>
 
+/**
+ * @brief Parser state
+ */
 typedef enum
 {
 	ST_INITIAL,
@@ -33,6 +36,13 @@ static size_t line, col;
 static size_t tkline, tkcol;
 static jmp_buf env;
 
+/**
+ * @brief Throws an internal parsing error
+ * @note Performs a long jump
+ * @param fmt error message format
+ * @param ... format arguments
+ * @return ST_EOF
+ */
 static state error_internal(const char* fmt, ...)
 {
 	va_list va;
@@ -43,18 +53,28 @@ static state error_internal(const char* fmt, ...)
 	return ST_EOF; /* never reaches here */
 }
 
+/**
+ * @brief Resize buffer, updating pointer to buffer and pointer to size
+ * @note New buffer might be moved to a new location
+ * @note On error, performs a long jump
+ * @param buffer_ptr buffer address
+ * @param item_size item size
+ * @param size_ptr buffer size address
+ */
 static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* size_ptr)
 {
 	void *newbuffer;
 	size_t size = *size_ptr;
 	size_t newsize = size * 2;
 	
+	/* Check if new size fits in a size_t */
 	if (newsize * item_size <= size * item_size)
 	{
 		fprintf(stderr, "Buffer overflow\n");
 		longjmp(env, YATESTER_MEM);
 	}
 
+	/* Resize buffer to fit newsize items */
 	newbuffer = realloc(*buffer_ptr, newsize * item_size);
 
 	if (newbuffer == NULL)
@@ -63,10 +83,16 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 		longjmp(env, YATESTER_MEM);
 	}
 
+	/* Update buffer and size pointers */
 	*buffer_ptr = newbuffer;
 	*size_ptr = newsize;
 }
 
+/**
+ * @brief Write character to command buffer
+ * @note On error, performs a long jump
+ * @param c character to be written
+ */
 static void writecommand_internal(char c)
 {
 	if (cmdlen == cmdbufsize - 1)
@@ -79,6 +105,13 @@ static void writecommand_internal(char c)
 	tkcol = col;
 }
 
+/**
+ * @brief Write character to argument buffer
+ * @note If argument buffer is resized, updates argvbuf too
+ * since it might have been moved when reallocated
+ * @note On error, performs a long jump
+ * @param c character to be written
+ */
 static void writeargument_internal(char c)
 {
 	if (arglen == argbufsize - 1)
@@ -98,6 +131,10 @@ static void writeargument_internal(char c)
 	tkcol = col;
 }
 
+/**
+ * @brief Push argument to argument vector buffer
+ * @note On error, performs a long jump
+ */
 static void pushargument_internal()
 {
 	if (argc == argvbufsize)
@@ -113,6 +150,36 @@ static void pushargument_internal()
 #endif
 }
 
+/**
+ * @brief Push command and stores command metadata
+ * @note If the command could not be found, performs a long jump
+ */
+static void pushcommand_internal()
+{
+	const yatester_command* command;
+
+	cmdbuf[cmdlen] = '\0';
+
+	command = yatester_getcommand(cmdbuf);
+
+	if (command == NULL)
+	{
+		error_internal("Could not find command named \"%s\"\n", cmdbuf);
+	}
+	else
+	{
+		xargc = command->argc;
+	}
+
+#ifdef YATESTER_PARSER_DEBUG
+	fprintf(stderr, "[PARSER] Pushed command \"%s\"\n", cmdbuf);
+#endif
+}
+
+/**
+ * @brief Run command with pushed command and arguments
+ * @note If command fails, performs a long jump
+ */
 static void runcommand_internal()
 {
 	yatester_status status;
@@ -146,28 +213,13 @@ static void runcommand_internal()
 	}
 }
 
-static void pushcommand_internal()
-{
-	const yatester_command* command;
-
-	cmdbuf[cmdlen] = '\0';
-
-	command = yatester_getcommand(cmdbuf);
-
-	if (command == NULL)
-	{
-		error_internal("Could not find command named \"%s\"\n", cmdbuf);
-	}
-	else
-	{
-		xargc = command->argc;
-	}
-
-#ifdef YATESTER_PARSER_DEBUG
-	fprintf(stderr, "[PARSER] Pushed command \"%s\"\n", cmdbuf);
-#endif
-}
-
+/**
+ * @brief State machine transition function
+ * @note On error, performs a long jump
+ * @param st current state
+ * @param c last character read
+ * @return new state
+ */
 static state transition_internal(state st, int c)
 {
 	switch (st)
