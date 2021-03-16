@@ -6,7 +6,7 @@
 #include <yatester/cmd.h>
 
 /**
- * @brief Expect next command's status code
+ * @brief Expect next command fails
  * @param argv argument vector
  */
 void yatester_builtin_expect(const char** argv);

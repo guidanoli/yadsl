@@ -37,19 +37,20 @@ static size_t tkline, tkcol;
 static jmp_buf env;
 
 /**
- * @brief Throws an internal parsing error
+ * @brief Throws an error
  * @note Performs a long jump
+ * @param status error status code
  * @param fmt error message format
  * @param ... format arguments
  * @return ST_EOF
  */
-static state error_internal(const char* fmt, ...)
+static state error_internal(yatester_status status, const char* fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
 	vfprintf(stderr, fmt, va);
 	va_end(va);
-	longjmp(env, YATESTER_ERR);
+	longjmp(env, status);
 	return ST_EOF; /* never reaches here */
 }
 
@@ -70,8 +71,8 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 	/* Check if new size fits in a size_t */
 	if (newsize * item_size <= size * item_size)
 	{
-		fprintf(stderr, "Buffer overflow\n");
-		longjmp(env, YATESTER_MEM);
+		fprintf(stderr, "Reached maximum buffer size\n");
+		longjmp(env, YATESTER_NOMEM);
 	}
 
 	/* Resize buffer to fit newsize items */
@@ -79,8 +80,8 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 
 	if (newbuffer == NULL)
 	{
-		fprintf(stderr, "Could not resize buffer\n");
-		longjmp(env, YATESTER_MEM);
+		fprintf(stderr, "Could not reallocate buffer\n");
+		longjmp(env, YATESTER_NOMEM);
 	}
 
 	/* Update buffer and size pointers */
@@ -164,7 +165,7 @@ static void pushcommand_internal()
 
 	if (command == NULL)
 	{
-		error_internal("Could not find command named \"%s\"\n", cmdbuf);
+		error_internal(YATESTER_NOCMD, "Could not find command named \"%s\"\n", cmdbuf);
 	}
 	else
 	{
@@ -243,7 +244,7 @@ static state transition_internal(state st, int c)
 		}
 		else
 		{
-			return error_internal("Expected '#', '/' or EOF\n");
+			return error_internal(YATESTER_STXERR, "Expected '#', '/' or EOF\n");
 		}
 		break;
 	case ST_COMMENT:
@@ -268,7 +269,7 @@ static state transition_internal(state st, int c)
 		}
 		else
 		{
-			return error_internal("Expected an alphabetic character\n");
+			return error_internal(YATESTER_STXERR, "Expected an alphabetic character\n");
 		}
 		break;
 	case ST_COMMAND:
@@ -298,7 +299,7 @@ static state transition_internal(state st, int c)
 		}
 		else
 		{
-			return error_internal("Expected an alphabetic character, EOF or '-'\n");
+			return error_internal(YATESTER_STXERR, "Expected an alphabetic character, EOF or '-'\n");
 		}
 		break;
 	case ST_SEPARATOR:
@@ -364,7 +365,7 @@ static state transition_internal(state st, int c)
 		}
 		else if (c == EOF)
 		{
-			return error_internal("Unexpected EOF\n");
+			return error_internal(YATESTER_STXERR, "Unexpected EOF\n");
 		}
 		else
 		{
@@ -394,13 +395,13 @@ static state transition_internal(state st, int c)
 		}
 		else
 		{
-			return error_internal("Expected separator or EOF\n");
+			return error_internal(YATESTER_STXERR, "Expected separator or EOF\n");
 		}
 		break;
 	case ST_EOF:
 		return ST_EOF;
 	default:
-		return error_internal("Invalid state %d\n", st);
+		return error_internal(YATESTER_FTLERR, "Invalid state %d\n", st);
 	}
 }
 
@@ -410,21 +411,21 @@ yatester_status yatester_initializeparser()
 	cmdbuf = malloc(sizeof(*cmdbuf) * cmdbufsize);
 	if (cmdbuf == NULL)
 	{
-		return YATESTER_MEM;
+		return YATESTER_NOMEM;
 	}
 
 	argbufsize = 64;
 	argbuf = malloc(sizeof(*argbuf) * argbufsize);
 	if (argbuf == NULL)
 	{
-		return YATESTER_MEM;
+		return YATESTER_NOMEM;
 	}
 
 	argvbufsize = 4;
 	argvbuf = malloc(sizeof(*argvbuf) * argvbufsize);
 	if (argvbuf == NULL)
 	{
-		return YATESTER_MEM;
+		return YATESTER_NOMEM;
 	}
 
 	argvbuf[0] = argbuf;

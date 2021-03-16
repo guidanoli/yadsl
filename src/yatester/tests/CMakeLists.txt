@@ -1,6 +1,7 @@
 # Add yatester module
-# add_yatester_selftest(source)
-function(add_yatester_selftest source)
+#   source - source file
+# add_yatester_module(source)
+function(add_yatester_module source)
 	get_filename_component(source_we ${source} NAME_WE)
 	string(CONCAT name ${source_we} test)
 	add_executable(${name} ${source})
@@ -8,35 +9,13 @@ function(add_yatester_selftest source)
 	set_target_properties(${name} PROPERTIES FOLDER tests)
 endfunction()
 
-# Add smart test with plenty of options
-# If WILL_FAIL is added, the test must fail. It is not necessary to specify this argument
-# if the REGEX argument is specific
-# If REGEX is specified, test only passes if output matches on of the comma separated regexes
-# add_smart_test(NAME <name> COMMAND <command...> [REGEX <regexes>] [WILL_FAIL])
-function(add_smart_test)
-	set(options WILL_FAIL)
-	set(one_value_keywords NAME REGEX)
-	set(multi_value_keywords COMMAND)
-	cmake_parse_arguments(ARG "${options}" "${one_value_keywords}" "${multi_value_keywords}" ${ARGN})
-	if(NOT DEFINED ARG_NAME)
-		message(FATAL_ERROR "NAME not defined")
-	endif()
-	if(NOT DEFINED ARG_COMMAND)
-		message(FATAL_ERROR "COMMAND not defined")
-	endif()
-	add_test(NAME ${ARG_NAME} COMMAND ${ARG_COMMAND})
-	if(DEFINED ARG_REGEX)
-		set_tests_properties(${ARG_NAME} PROPERTIES PASS_REGULAR_EXPRESSION ${ARG_REGEX})
-	else()
-		set_tests_properties(${ARG_NAME} PROPERTIES WILL_FAIL ${ARG_WILL_FAIL})
-	endif()
-endfunction()
-
-# Add smart test with plenty of options for yatester scripts
-# Passes aditional arguments to add_smart_test
-# add_smart_script_test(TARGET <tgt> SOURCE <script> [options...])
-function(add_smart_script_test)
-	set(one_value_keywords TARGET SOURCE)
+# Add a test script for a yatester module
+#   tgt - target created by add_yatester_module
+#   script - script that will be run on the test
+#   value - expected return value of the tester
+# add_yatester_script(TARGET <tgt> SOURCE <script> [VALUE <value>])
+function(add_yatester_script)
+	set(one_value_keywords TARGET SOURCE VALUE)
 	cmake_parse_arguments(ARG "" "${one_value_keywords}" "" "${ARGN}")
 	if(NOT DEFINED ARG_TARGET)
 		message(FATAL_ERROR "TARGET not defined")
@@ -45,41 +24,51 @@ function(add_smart_script_test)
 		message(FATAL_ERROR "SOURCE not defined")
 	endif()
 	get_filename_component(SOURCE_ABSOLUTE ${ARG_SOURCE} ABSOLUTE)
-	set(COMMAND_ARGS ${ARG_TARGET} "--input-file" "${SOURCE_ABSOLUTE}")
+	set(COMMAND_ARGS ${ARG_TARGET} --input-file "${SOURCE_ABSOLUTE}")
 	if(CMAKE_BUILD_TYPE STREQUAL Debug)
-		list(APPEND COMMAND_ARGS "--enable-log-channel" "LEAKAGE")
+		list(APPEND COMMAND_ARGS --enable-log-channel LEAKAGE)
 	endif()
-	add_smart_test(NAME ${ARG_SOURCE} COMMAND ${COMMAND_ARGS} ${ARG_UNPARSED_ARGUMENTS})
+	if(DEFINED ARG_VALUE)
+		list(APPEND COMMAND_ARGS --expect ${ARG_VALUE})
+	endif()
+	add_test(NAME ${ARG_SOURCE} COMMAND ${COMMAND_ARGS})
 endfunction()
 
-add_yatester_selftest(empty.test.c)
-add_smart_script_test(TARGET emptytest SOURCE empty.1.script)
-add_smart_script_test(TARGET emptytest SOURCE empty.2.script)
-add_smart_script_test(TARGET emptytest SOURCE empty.3.script)
-add_smart_test(NAME empty.1.fail COMMAND emptytest "--list-commands" REGEX "expect	1")
-add_smart_test(NAME empty.2.fail COMMAND emptytest "--input-file" "x" REGEX "Could not open file \"x\" in reading mode")
+add_yatester_module(empty.test.c)
+add_yatester_script(TARGET emptytest SOURCE empty.1.script)
+add_yatester_script(TARGET emptytest SOURCE empty.2.script)
+add_yatester_script(TARGET emptytest SOURCE empty.3.script)
+
+add_test(NAME empty.1.fail COMMAND emptytest --list-commands --expect 10)
+
+# No --expect will fail
+add_test(NAME no_expect COMMAND emptytest --list-commands)
+set_tests_properties(no_expect PROPERTIES WILL_FAIL TRUE)
+
+# Wrong --expect will fail
+add_test(NAME wrong_expect COMMAND emptytest --list-commands --expect 9)
+set_tests_properties(wrong_expect PROPERTIES WILL_FAIL TRUE)
+
+add_test(NAME empty.2.fail COMMAND emptytest --input-file x --expect 6)
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
-	add_smart_test(NAME empty.3.fail COMMAND emptytest "--log-file" "/" REGEX "Could not open file \"/\" in writing mode")
-	add_smart_test(NAME empty.4.fail COMMAND emptytest "--enable-log-channel" "x" REGEX "Log channel name \"x\" is invalid")
-	add_smart_test(NAME empty.5.fail COMMAND emptytest "--malloc-failing-rate" "x" REGEX "Invalid value passed to --malloc-failing-rate")
-	add_smart_test(NAME empty.6.fail COMMAND emptytest "--malloc-failing-index" "x" REGEX "Invalid value passed to --malloc-failing-index")
-	add_smart_test(NAME empty.7.fail COMMAND emptytest "--prng-seed" "x" REGEX "Invalid value passed to --prng-seed")
+	add_test(NAME empty.3.fail COMMAND emptytest --log-file / --expect 6)
+	add_test(NAME empty.4.fail COMMAND emptytest --enable-log-channel x --expect 8)
+	add_test(NAME empty.5.fail COMMAND emptytest --malloc-failing-rate x --expect 8)
+	add_test(NAME empty.6.fail COMMAND emptytest --malloc-failing-index x --expect 8)
+	add_test(NAME empty.7.fail COMMAND emptytest --prng-seed x --expect 8)
 endif()
 
-add_yatester_selftest(self.test.c)
-add_smart_script_test(TARGET selftest SOURCE self.1.script)
-add_smart_script_test(TARGET selftest SOURCE self.1.fail WILL_FAIL)
-add_smart_script_test(TARGET selftest SOURCE self.2.fail WILL_FAIL)
-add_smart_script_test(TARGET selftest SOURCE self.3.fail WILL_FAIL)
-add_smart_script_test(TARGET selftest SOURCE self.4.fail WILL_FAIL)
-add_smart_script_test(TARGET selftest SOURCE self.5.fail REGEX "Command \"expect\" expected 1 argument\\(s\\) but got 0")
-add_smart_script_test(TARGET selftest SOURCE self.6.fail REGEX "Unexpected EOF")
+add_yatester_module(self.test.c)
+add_yatester_script(TARGET selftest SOURCE self.1.script)
+add_yatester_script(TARGET selftest SOURCE self.1.fail VALUE 1)
+add_yatester_script(TARGET selftest SOURCE self.2.fail VALUE 16)
+add_yatester_script(TARGET selftest SOURCE self.3.fail VALUE 7)
 
-add_yatester_selftest(badcommand1.test.c)
-add_smart_script_test(TARGET badcommand1test SOURCE badcommand1.1.fail REGEX "Command with empty string as name")
+add_yatester_module(badcommand1.test.c)
+add_yatester_script(TARGET badcommand1test SOURCE badcommand1.1.fail VALUE 13)
 
-add_yatester_selftest(badcommand2.test.c)
-add_smart_script_test(TARGET badcommand2test SOURCE badcommand2.1.fail REGEX "Found two commands named \"expect\"")
+add_yatester_module(badcommand2.test.c)
+add_yatester_script(TARGET badcommand2test SOURCE badcommand2.1.fail VALUE 14)
 
-add_yatester_selftest(badcommand3.test.c)
-add_smart_script_test(TARGET badcommand3test SOURCE badcommand3.1.fail REGEX "Command \"mycmd\" does not have a handler")
+add_yatester_module(badcommand3.test.c)
+add_yatester_script(TARGET badcommand3test SOURCE badcommand3.1.fail VALUE 12)

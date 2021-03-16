@@ -1,48 +1,27 @@
 #include <yatester/errhdl.h>
+#include <yatester/builtins.h>
 
-#include <stdio.h>
+static yatester_status expected_status[2];
 
-static yatester_status expected_status[2]; /* Queue */
-
-void yatester_pushexpectedstatus(yatester_status status)
+void yatester_builtin_expect(const char** argv)
 {
-	expected_status[1] = status; /* Push to queue */
-}
-
-yatester_status yatester_getexpectedstatus()
-{
-	return expected_status[0];
-}
-
-void yatester_popexpectedstatus()
-{
-	/* Pop from queue */
-	expected_status[0] = expected_status[1];
-	expected_status[1] = YATESTER_OK;
+	expected_status[1] = YATESTER_ERROR;
 }
 
 yatester_status yatester_evaluatestatus(yatester_status status)
 {
-	if (status == yatester_getexpectedstatus())
+	if (status == expected_status[0])
 	{
-		if (status != YATESTER_OK)
-		{
-			fprintf(stderr, "Previous error was expected\n");
-		}
-
-		yatester_popexpectedstatus();
-
+		expected_status[0] = expected_status[1];
+		expected_status[1] = YATESTER_OK;
 		return YATESTER_OK;
+	}
+	else if (status == YATESTER_OK)
+	{
+		return YATESTER_NOERROR;
 	}
 	else
 	{
-		if (status == YATESTER_OK)
-		{
-			return YATESTER_ERR;
-		}
-		else
-		{
-			return status;
-		}
+		return status;
 	}
 }

@@ -1,23 +1,12 @@
 #include <yatester/runner.h>
-#include <yatester/parser.h>
-#include <yatester/err.h>
-#include <yatester/cmdhdl.h>
-#include <yatester/builtins.h>
-#include <yatester/errhdl.h>
 #include <yatester/yatester.h>
+#include <yatester/cmdhdl.h>
+#include <yatester/errhdl.h>
 
 #include <stdio.h>
-#include <string.h>
 #include <setjmp.h>
 
 static jmp_buf env;
-
-void yatester_builtin_expect(const char** argv)
-{
-	int status;
-	yatester_assert(sscanf(argv[0], "%d", &status) == 1);
-	yatester_pushexpectedstatus(status);
-}
 
 yatester_status yatester_runcommand(const char* commandname, size_t argc, const char** argv)
 {
@@ -29,13 +18,13 @@ yatester_status yatester_runcommand(const char* commandname, size_t argc, const 
 	if (command == NULL)
 	{
 		fprintf(stderr, "Could not find command named \"%s\"\n", commandname);
-		return YATESTER_ERR;
+		return YATESTER_NOCMD;
 	}
 
 	if (command->argc != argc)
 	{
 		fprintf(stderr, "Command \"%s\" expected %zu argument(s) but got %zu\n", commandname, command->argc, argc);
-		return YATESTER_ERR;
+		return YATESTER_CMDARGCMM;
 	}
 
 	status = setjmp(env);
@@ -48,9 +37,9 @@ yatester_status yatester_runcommand(const char* commandname, size_t argc, const 
 	return yatester_evaluatestatus(status);
 }
 
-void yatester_throw(yatester_status status)
+void yatester_throw()
 {
-	longjmp(env, status);
+	longjmp(env, YATESTER_ERROR);
 }
 
 void yatester_assert_function(const char* code, const char* file, int line, int condition)
@@ -58,6 +47,15 @@ void yatester_assert_function(const char* code, const char* file, int line, int 
 	if (!condition)
 	{
 		fprintf(stderr, "Assertion \"%s\" failed in \"%s\", line %d\n", code, file, line);
-		yatester_throw(YATESTER_ERR);
+		longjmp(env, YATESTER_ERROR);
+	}
+}
+
+void yatester_notnull_func(const char* code, const char* file, int line, void* p)
+{
+	if (p == NULL)
+	{
+		fprintf(stderr, "Null pointer \"%s\" caught in \"%s\", line %d\n", code, file, line);
+		longjmp(env, YATESTER_NOMEM);
 	}
 }

@@ -32,9 +32,7 @@ static void assert_cmd(const char** argv)
 
 static void throw_cmd(const char** argv)
 {
-	int status;
-	yatester_assert(sscanf(argv[0], "%d", &status) == 1);
-	yatester_throw(status);
+	yatester_throw();
 }
 
 static void long_cmd(const char** argv)
@@ -75,18 +73,13 @@ static void sum16_cmd(const char** argv)
 	yatester_assert(total == acc);
 }
 
-static void true_cmd(const char** argv)
+static void noerr_cmd(const char** argv)
 {
-}
-
-static void false_cmd(const char** argv)
-{
-	yatester_throw(YATESTER_ERR);
 }
 
 const yatester_command yatester_commands[] =
 {
-	{ "throw", 1, throw_cmd },
+	{ "throw", 0, throw_cmd },
 	{ "hascommand", 1, hascommand_cmd },
 	{ "assert", 1, assert_cmd },
 	{ "reallylongcommandwithmorecharactersthanthecommandbufferofsixtyfourcharacters", 0, long_cmd },
@@ -94,7 +87,6 @@ const yatester_command yatester_commands[] =
 	{ "streq", 2, streq_cmd },
 	{ "strlen", 2, strlen_cmd },
 	{ "sumsixteen", 17, sum16_cmd },
-	{ "true", 0, true_cmd },
-	{ "false", 0, false_cmd },
+	{ "noerror", 0, noerr_cmd },
 	{ NULL, 0, NULL },
 };
