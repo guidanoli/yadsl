@@ -71,6 +71,12 @@ yatester_status yatester_initializecmdhdl()
 				return YATESTER_ERR;
 			}
 
+			if (command->name[0] == '\0')
+			{
+				fprintf(stderr, "Command with empty string as name\n");
+				return YATESTER_ERR;
+			}
+
 			/* Hash command name to calculate table index */
 			j = hash_string_internal(command->name) % tablesize;
 

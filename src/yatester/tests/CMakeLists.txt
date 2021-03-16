@@ -51,3 +51,6 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
 endif()
 
 add_yatester_selftest(self.test.c)
+add_yatester_selftest(badcommand1.test.c)
+add_yatester_selftest(badcommand2.test.c)
+add_yatester_selftest(badcommand3.test.c)
