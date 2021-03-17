@@ -32,7 +32,7 @@ yatester_status yatester_initializecmdhdl()
 	size_t i, j;
 	const yatester_command* command;
 
-	/* List of all commands added to the command table */
+	/* List of all commands to be added to the command table */
 	const yatester_command* all_commands[] = 
 	{
 		yatester_builtin_commands,
@@ -81,6 +81,7 @@ yatester_status yatester_initializecmdhdl()
 			j = hash_string_internal(command->name) % tablesize;
 
 			/* Open addressing with linear probing */
+			/* Since load factor < 1, it will eventually stumble upon a hole */
 			while (commandtable[j] != NULL)
 			{
 				if (strcmp(commandtable[j]->name, command->name) == 0)

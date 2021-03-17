@@ -4,7 +4,7 @@
 /* Command Handler */
 
 #include <yatester/cmd.h>
-#include <yatester/err.h>
+#include <yatester/status.h>
 
 /**
  * @brief Initialize command handler

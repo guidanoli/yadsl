@@ -1,5 +1,4 @@
 #include <yatester/parser.h>
-#include <yatester/cmdhdl.h>
 #include <yatester/runner.h>
 #include <yatester/yatester.h>
 
@@ -24,16 +23,14 @@ typedef enum
 state;
 
 #define IS_FINAL(st) ((st) == ST_EOF)
-#define IS_SEPARATOR(c) ((c) == ' ' || (c) == '\t' || (c) == '\n')
+#define IS_SEPARATOR(c) ((c) == ' ' || (c) == '\t')
+#define IS_NEWLINE(c) ((c) == '\n')
 #define IS_ALPHA(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 
 static char *cmdbuf, *argbuf;
 static char **argvbuf;
-static size_t cmdbufsize, argbufsize, argvbufsize, argc, xargc;
-static yatester_status expected_status, next_expected_status;
-static size_t cmdlen, arglen;
-static size_t line, col;
-static size_t tkline, tkcol;
+static size_t cmdbufsize, argbufsize, argvbufsize, argc, cmdlen, arglen;
+static size_t line, col, tkline, tkcol;
 static jmp_buf env;
 
 /**
@@ -150,25 +147,11 @@ static void pushargument_internal()
 }
 
 /**
- * @brief Push command and stores command metadata
- * @note If the command could not be found, performs a long jump
+ * @brief Push command
  */
 static void pushcommand_internal()
 {
-	const yatester_command* command;
-
 	cmdbuf[cmdlen] = '\0';
-
-	command = yatester_getcommand(cmdbuf);
-
-	if (command == NULL)
-	{
-		error_internal(YATESTER_NOCMD, "Could not find command named \"%s\"\n", cmdbuf);
-	}
-	else
-	{
-		xargc = command->argc;
-	}
 
 #ifdef YATESTER_PARSER_DEBUG
 	fprintf(stderr, "[PARSER] Pushed command \"%s\"\n", cmdbuf);
@@ -197,7 +180,6 @@ static void runcommand_internal()
 	status = yatester_runcommand(cmdbuf, argc, (const char**) argvbuf);
 
 	argc = 0;
-	xargc = 0;
 	cmdlen = 0;
 	arglen = 0;
 
@@ -232,7 +214,7 @@ static state transition_internal(state st, int c)
 		{
 			return ST_SLASH;
 		}
-		else if (IS_SEPARATOR(c))
+		else if (IS_SEPARATOR(c) || IS_NEWLINE(c))
 		{
 			return ST_INITIAL;
 		}
@@ -246,7 +228,7 @@ static state transition_internal(state st, int c)
 		}
 		break;
 	case ST_COMMENT:
-		if (c == '\n')
+		if (IS_NEWLINE(c))
 		{
 			return ST_INITIAL;
 		}
@@ -282,22 +264,20 @@ static state transition_internal(state st, int c)
 			runcommand_internal();
 			return ST_EOF;
 		}
+		else if (IS_NEWLINE(c))
+		{
+			pushcommand_internal();
+			runcommand_internal();
+			return ST_INITIAL;
+		}
 		else if (IS_SEPARATOR(c))
 		{
 			pushcommand_internal();
-			if (xargc == 0)
-			{
-				runcommand_internal();
-				return ST_INITIAL;
-			}
-			else
-			{
-				return ST_SEPARATOR;
-			}
+			return ST_SEPARATOR;
 		}
 		else
 		{
-			return error_internal(YATESTER_STXERR, "Expected an alphabetic character, EOF or '-'\n");
+			return error_internal(YATESTER_STXERR, "Expected an alphabetic character, '-' or EOF\n");
 		}
 		break;
 	case ST_SEPARATOR:
@@ -319,6 +299,11 @@ static state transition_internal(state st, int c)
 		{
 			return ST_QUOTED_ARGUMENT;
 		}
+		else if (IS_NEWLINE(c))
+		{
+			runcommand_internal();
+			return ST_INITIAL;
+		}
 		else if (c == EOF)
 		{
 			runcommand_internal();
@@ -334,15 +319,13 @@ static state transition_internal(state st, int c)
 		if (IS_SEPARATOR(c))
 		{
 			pushargument_internal();
-			if (argc < xargc)
-			{
-				return ST_SEPARATOR;
-			}
-			else
-			{
-				runcommand_internal();
-				return ST_INITIAL;
-			}
+			return ST_SEPARATOR;
+		}
+		else if (IS_NEWLINE(c))
+		{
+			pushargument_internal();
+			runcommand_internal();
+			return ST_INITIAL;
 		}
 		else if (c == EOF)
 		{
@@ -375,15 +358,13 @@ static state transition_internal(state st, int c)
 		if (IS_SEPARATOR(c))
 		{
 			pushargument_internal();
-			if (argc < xargc)
-			{
-				return ST_SEPARATOR;
-			}
-			else
-			{
-				runcommand_internal();
-				return ST_INITIAL;
-			}
+			return ST_SEPARATOR;
+		}
+		else if (IS_NEWLINE(c))
+		{
+			pushargument_internal();
+			runcommand_internal();
+			return ST_INITIAL;
 		}
 		else if (c == EOF)
 		{
@@ -447,10 +428,10 @@ yatester_status yatester_parsescript(FILE *fp)
 		{
 			c = getc(fp);
 
-			if (c == '\n')
+			if (IS_NEWLINE(c))
 			{
 				++line;
-				col = 1;
+				col = 0;
 			}
 			else
 			{

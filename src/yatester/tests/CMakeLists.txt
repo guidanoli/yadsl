@@ -77,6 +77,8 @@ add_yatester_script(TARGET selftest SOURCE self.9.fail VALUE 7)
 add_yatester_script(TARGET selftest SOURCE self.10.fail VALUE 11)
 add_yatester_script(TARGET selftest SOURCE self.11.fail VALUE 15)
 add_yatester_script(TARGET selftest SOURCE self.12.fail VALUE 2)
+add_yatester_script(TARGET selftest SOURCE self.13.fail VALUE 15)
+add_yatester_script(TARGET selftest SOURCE self.14.fail VALUE 15)
 
 add_yatester_module(badcommand1.test.c)
 add_yatester_script(TARGET badcommand1test SOURCE badcommand1.1.fail VALUE 13)

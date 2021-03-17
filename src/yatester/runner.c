@@ -1,12 +1,37 @@
 #include <yatester/runner.h>
 #include <yatester/yatester.h>
 #include <yatester/cmdhdl.h>
-#include <yatester/errhdl.h>
+#include <yatester/err.h>
+#include <yatester/builtins.h>
 
 #include <stdio.h>
 #include <setjmp.h>
 
 static jmp_buf env;
+static yatester_status statusq[2];
+
+void yatester_builtin_expect(const char** argv)
+{
+	statusq[1] = YATESTER_ERROR;
+}
+
+static yatester_status evalstatus_internal(yatester_status status)
+{
+	if (status == statusq[0])
+	{
+		status = YATESTER_OK;
+	}
+	else if (status == YATESTER_OK)
+	{
+		status = YATESTER_NOERROR;
+	}
+
+	statusq[0] = statusq[1];
+	statusq[1] = YATESTER_OK;
+
+	return status;
+}
+
 
 yatester_status yatester_runcommand(const char* commandname, size_t argc, const char** argv)
 {
@@ -34,7 +59,7 @@ yatester_status yatester_runcommand(const char* commandname, size_t argc, const 
 		command->handler((const char**) argv);
 	}
 
-	return yatester_evaluatestatus(status);
+	return evalstatus_internal(status);
 }
 
 void yatester_throw()

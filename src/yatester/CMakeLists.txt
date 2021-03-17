@@ -1,8 +1,10 @@
 add_yadsl_library(yatester STATIC
     SOURCES
-    yatester.c parser.c runner.c cmdhdl.c builtins.c errhdl.c
-    cmd.h err.h parser.h runner.h yatester.h cmdhdl.h builtins.h errhdl.h)
+    yatester.c parser.c runner.c cmdhdl.c builtins.c
+    cmd.h err.h parser.h runner.h yatester.h cmdhdl.h builtins.h status.h)
 
 target_link_libraries(yatester argvp)
 
-add_subdirectory(tests)
+if(YADSL_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

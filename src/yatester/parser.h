@@ -3,7 +3,7 @@
 
 /* Script Parser */
 
-#include <yatester/err.h>
+#include <yatester/status.h>
 
 #include <stdio.h>
 

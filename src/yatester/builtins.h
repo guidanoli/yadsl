@@ -7,6 +7,7 @@
 
 /**
  * @brief Expect next command fails
+ * @note Only handles YATESTER_ERROR
  * @param argv argument vector
  */
 void yatester_builtin_expect(const char** argv);

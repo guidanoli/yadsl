@@ -3,7 +3,7 @@
 
 /* Test Runner */
 
-#include <yatester/err.h>
+#include <yatester/status.h>
 
 #include <stddef.h>
 
