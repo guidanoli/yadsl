@@ -10,7 +10,7 @@
 static jmp_buf env;
 static yatester_status statusq[2];
 
-void yatester_builtin_expect(size_t argc, const char** argv)
+void yatester_builtin_expect(size_t argc, char** argv)
 {
 	int status;
 	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &status) == 1);
@@ -35,7 +35,7 @@ static yatester_status evalstatus_internal(yatester_status status)
 }
 
 
-yatester_status yatester_call(const char* commandname, size_t argc, const char** argv)
+yatester_status yatester_call(const char* commandname, size_t argc, char** argv)
 {
 	const yatester_command* command;
 	yatester_status status;
@@ -56,7 +56,7 @@ yatester_status yatester_call(const char* commandname, size_t argc, const char**
 
 	if (status == YATESTER_OK)
 	{
-		command->handler(argc, (const char**) argv);
+		command->handler(argc, argv);
 	}
 
 	return evalstatus_internal(status);

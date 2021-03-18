@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-static const char* commandname_;
+static char* commandname_;
 static int hascommand_;
 static int longcmdcalled;
 
@@ -16,7 +16,7 @@ static void hascommandaux(const yatester_command* command)
 	}
 }
 
-static void hascommand_cmd(size_t argc, const char** argv)
+static void hascommand_cmd(size_t argc, char** argv)
 {
 	commandname_ = argv[0];
 	hascommand_ = 0;
@@ -25,43 +25,43 @@ static void hascommand_cmd(size_t argc, const char** argv)
 	yatester_assert(YATESTER_ERROR, hascommand_);
 }
 
-static void assert_cmd(size_t argc, const char** argv)
+static void assert_cmd(size_t argc, char** argv)
 {
 	int condition;
 	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &condition) == 1);
 	yatester_assert(YATESTER_ERROR, condition);
 }
 
-static void raise_cmd(size_t argc, const char** argv)
+static void raise_cmd(size_t argc, char** argv)
 {
 	int status;
 	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &status) == 1);
 	yatester_raise(status);
 }
 
-static void long_cmd(size_t argc, const char** argv)
+static void long_cmd(size_t argc, char** argv)
 {
 	longcmdcalled = 1;
 }
 
-static void assertlongcmdcalled_cmd(size_t argc, const char** argv)
+static void assertlongcmdcalled_cmd(size_t argc, char** argv)
 {
 	yatester_assert(YATESTER_ERROR, longcmdcalled);
 }
 
-static void streq_cmd(size_t argc, const char** argv)
+static void streq_cmd(size_t argc, char** argv)
 {
 	yatester_assert(YATESTER_ERROR, strcmp(argv[0], argv[1]) == 0);
 }
 
-static void strlen_cmd(size_t argc, const char** argv)
+static void strlen_cmd(size_t argc, char** argv)
 {
 	size_t len;
 	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%zu", &len) == 1);
 	yatester_assert(YATESTER_ERROR, len == strlen(argv[1]));
 }
 
-static void sum_cmd(size_t argc, const char** argv)
+static void sum_cmd(size_t argc, char** argv)
 {
 	int total;
 
@@ -77,11 +77,11 @@ static void sum_cmd(size_t argc, const char** argv)
 	yatester_assert(YATESTER_ERROR, total == 0);
 }
 
-static void noerr_cmd(size_t argc, const char** argv)
+static void noerr_cmd(size_t argc, char** argv)
 {
 }
 
-static void malloc_cmd(size_t argc, const char** argv)
+static void malloc_cmd(size_t argc, char** argv)
 {
 	size_t size;
 	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%zu", &size) == 1);

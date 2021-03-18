@@ -14,6 +14,6 @@
  * @param argv argument vector
  * @return operation status code
  */
-yatester_status yatester_call(const char* commandname, size_t argc, const char** argv);
+yatester_status yatester_call(const char* commandname, size_t argc, char** argv);
 
 #endif

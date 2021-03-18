@@ -85,6 +85,14 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 	*size_ptr = newsize;
 }
 
+static void reset_internal()
+{
+	argc = 0;
+	cmdlen = 0;
+	arglen = 0;
+	argvbuf[0] = argbuf;
+}
+
 /**
  * @brief Write character to command buffer
  * @note On error, performs a long jump
@@ -178,12 +186,10 @@ static void call_internal()
 	fprintf(stderr, "\n");
 #endif
 
-	status = yatester_call(cmdbuf, argc, (const char**) argvbuf);
+	status = yatester_call(cmdbuf, argc, argvbuf);
 
-	argc = 0;
-	cmdlen = 0;
-	arglen = 0;
-
+	reset_internal();
+	
 	if (status == YATESTER_OK)
 	{
 		tkline = 0;
@@ -408,8 +414,6 @@ yatester_status yatester_initializeparser()
 		return YATESTER_NOMEM;
 	}
 
-	argvbuf[0] = argbuf;
-
 	return YATESTER_OK;
 }
 
@@ -418,6 +422,8 @@ yatester_status yatester_parsescript(FILE *fp)
 	int c;
 	state st = ST_INITIAL;
 	yatester_status status;
+
+	reset_internal();
 
 	col = 0;
 	line = 1;
