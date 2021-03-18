@@ -6,11 +6,10 @@
 #include <yatester/cmd.h>
 
 /**
- * @brief Expect next command fails
- * @note Only handles YATESTER_ERROR
- * @param argv argument vector
+ * @brief Expect next command status code
+ * @note Usage: /expect <status-code>
  */
-void yatester_builtin_expect(const char** argv);
+void yatester_builtin_expect(size_t argc, const char** argv);
 
 /**
  * @brief NULL-terminated array of built-in commands

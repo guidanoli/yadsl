@@ -56,8 +56,7 @@ yatester_status yatester_initializecmdhdl()
 
 	if (commandtable == NULL)
 	{
-		fprintf(stderr, "Could not allocate command table\n");
-		return YATESTER_NOMEM;
+		return yatester_report(YATESTER_NOMEM, "could not allocate command table\n");
 	}
 
 	/* Populate the table with all commands */
@@ -67,14 +66,12 @@ yatester_status yatester_initializecmdhdl()
 		{
 			if (command->name[0] == '\0')
 			{
-				fprintf(stderr, "Command without name\n");
-				return YATESTER_NOCMDNAME;
+				return yatester_report(YATESTER_BADCMD, "empty command name\n");
 			}
 
 			if (command->handler == NULL)
 			{
-				fprintf(stderr, "Command \"%s\" does not have a handler\n", command->name);
-				return YATESTER_NOCMDHDL;
+				return yatester_report(YATESTER_BADCMD, "command \"%s\" does not have a handler\n", command->name);
 			}
 
 			/* Hash command name to calculate table index */
@@ -86,8 +83,7 @@ yatester_status yatester_initializecmdhdl()
 			{
 				if (strcmp(commandtable[j]->name, command->name) == 0)
 				{
-					fprintf(stderr, "Found two commands named \"%s\"\n", command->name);
-					return YATESTER_CMDNMCFLT;
+					return yatester_report(YATESTER_BADCMD, "command \"%s\" already exists\n", command->name);
 				}
 
 				/* Visit next entry (wrapping around) */

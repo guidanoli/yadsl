@@ -11,8 +11,8 @@
 typedef struct
 {
 	const char *name; /**< Command name */
-	size_t argc; /**< Number of arguments */
-	void (*handler)(const char** argv); /**< Command handler */
+	size_t minargc; /**< Minimum number of arguments */
+	void (*handler)(size_t argc, const char** argv); /**< Command handler */
 }
 yatester_command;
 

@@ -16,103 +16,91 @@ static void hascommandaux(const yatester_command* command)
 	}
 }
 
-static void hascommand_cmd(const char** argv)
+static void hascommand_cmd(size_t argc, const char** argv)
 {
 	commandname_ = argv[0];
 	hascommand_ = 0;
 	yatester_itercommands(hascommandaux);
-	yatester_assert(hascommand_);
+	commandname_ = NULL;
+	yatester_assert(YATESTER_ERROR, hascommand_);
 }
 
-static void assert_cmd(const char** argv)
+static void assert_cmd(size_t argc, const char** argv)
 {
 	int condition;
-	yatester_assert(sscanf(argv[0], "%d", &condition) == 1);
-	yatester_assert(condition);
+	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &condition) == 1);
+	yatester_assert(YATESTER_ERROR, condition);
 }
 
-static void throw_cmd(const char** argv)
+static void raise_cmd(size_t argc, const char** argv)
 {
-	yatester_throw();
+	int status;
+	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &status) == 1);
+	yatester_raise(status);
 }
 
-static void long_cmd(const char** argv)
+static void long_cmd(size_t argc, const char** argv)
 {
 	longcmdcalled = 1;
 }
 
-static void assertlongcmdcalled_cmd(const char** argv)
+static void assertlongcmdcalled_cmd(size_t argc, const char** argv)
 {
-	yatester_assert(longcmdcalled);
+	yatester_assert(YATESTER_ERROR, longcmdcalled);
 }
 
-static void streq_cmd(const char** argv)
+static void streq_cmd(size_t argc, const char** argv)
 {
-	yatester_assert(strcmp(argv[0], argv[1]) == 0);
+	yatester_assert(YATESTER_ERROR, strcmp(argv[0], argv[1]) == 0);
 }
 
-static void strlen_cmd(const char** argv)
+static void strlen_cmd(size_t argc, const char** argv)
 {
 	size_t len;
-	yatester_assert(sscanf(argv[0], "%zu", &len) == 1);
-	yatester_assert(len == strlen(argv[1]));
+	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%zu", &len) == 1);
+	yatester_assert(YATESTER_ERROR, len == strlen(argv[1]));
 }
 
-static void sum16_cmd(const char** argv)
+static void sum_cmd(size_t argc, const char** argv)
 {
-	int total, acc = 0;
+	int total;
 
-	yatester_assert(sscanf(argv[0], "%d", &total) == 1);
+	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &total) == 1);
 
-	for (int i = 0; i < 16; ++i)
+	for (size_t argi = 1; argi < argc; ++argi)
 	{
 		int num;
-		yatester_assert(sscanf(argv[i+1], "%d", &num) == 1);
-		acc += num;
+		yatester_assert(YATESTER_ERROR, sscanf(argv[argi], "%d", &num) == 1);
+		total -= num;
 	}
 
-	yatester_assert(total == acc);
+	yatester_assert(YATESTER_ERROR, total == 0);
 }
 
-static void noerr_cmd(const char** argv)
+static void noerr_cmd(size_t argc, const char** argv)
 {
 }
 
-static void notnull_cmd(const char** argv)
-{
-	int i;
-
-	yatester_assert(sscanf(argv[0], "%d", &i) == 1);
-
-	if (i)
-	{
-		yatester_notnull(&i);
-	}
-	else
-	{
-		yatester_notnull(NULL);
-	}
-}
-
-static void malloc_cmd(const char** argv)
+static void malloc_cmd(size_t argc, const char** argv)
 {
 	size_t size;
-	yatester_assert(sscanf(argv[0], "%zu", &size) == 1);
-	yatester_notnull(malloc(size));
+	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%zu", &size) == 1);
+	yatester_assert(YATESTER_NOMEM, malloc(size) != NULL);
 }
 
 const yatester_command yatester_commands[] =
 {
-	{ "throw", 0, throw_cmd },
+	{ "raise", 1, raise_cmd },
+	{ "r-a-i-s-e", 1, raise_cmd },
+	{ "r4153", 1, raise_cmd },
 	{ "hascommand", 1, hascommand_cmd },
 	{ "assert", 1, assert_cmd },
 	{ "reallylongcommandwithmorecharactersthanthecommandbufferofsixtyfourcharacters", 0, long_cmd },
 	{ "assertlongcmdcalled", 0, assertlongcmdcalled_cmd },
 	{ "streq", 2, streq_cmd },
 	{ "strlen", 2, strlen_cmd },
-	{ "sumsixteen", 17, sum16_cmd },
+	{ "sum", 1, sum_cmd },
 	{ "noerror", 0, noerr_cmd },
-	{ "notnull", 1, notnull_cmd },
 	{ "malloc", 1, malloc_cmd },
 	{ NULL, 0, NULL },
 };

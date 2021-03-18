@@ -1,6 +1,6 @@
 #include <yatester/yatester.h>
 
-static void expect_cmd(const char** argv)
+static void expect_cmd(size_t argc, const char** argv)
 {
 }
 

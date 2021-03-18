@@ -1,6 +1,6 @@
 #include <yatester/yatester.h>
 
-static void emptystringname_cmd(const char** argv)
+static void emptystringname_cmd(size_t argc, const char** argv)
 {
 }
 

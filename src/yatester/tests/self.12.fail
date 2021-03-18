@@ -1,2 +1,2 @@
-/expect
-/notnull 0
+/expect 0
+/raise 0

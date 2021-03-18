@@ -1,41 +1,33 @@
 #ifndef yatester_err_h
 #define yatester_err_h
 
-/* Errors */
+/* Error Interface */
+
+#include <yatester/status.h>
 
 /**
- * @brief Throw error
+ * @brief Raise error
  * @note Performs a long jump
+ * @param status error status code
+ * @note If status is 0, throws 1
  */
-void yatester_throw();
+void yatester_raise(yatester_status status);
 
 /**
  * @brief Assert condition is true
- * @note If not true, prints a message and throws error
+ * @note If not true, print a message and raise error
  * @param code condition code
  * @param file file in which the assertion was made
  * @param line line in file in which assertion was made
+ * @param status error status code
  * @param condition condition being tested
+ * @note If status is 0, throws 1
  * @seealso yatester_assert
- * @seealso yatester_throw
+ * @seealso yatester_raise
  */
-void yatester_assert_function(const char* code, const char* file, int line, int condition);
+void yatester_assert_function(const char* code, const char* file, int line, yatester_status status, int condition);
 
-#define yatester_assert(condition) \
-	yatester_assert_function(#condition, __FILE__, __LINE__, condition)
-
-/**
- * @brief Assert pointer is not null
- * @note If null, prints a message and throws memory error
- * @param code pointer code
- * @param file file in which function was called
- * @param line line in file in which function was called
- * @param p pointer
- * @seealso yatester_notnull
- */
-void yatester_notnull_function(const char* code, const char* file, int line, void* p);
-
-#define yatester_notnull(p) \
-	yatester_notnull_function(#p, __FILE__, __LINE__, p)
+#define yatester_assert(status, condition) \
+	yatester_assert_function(#condition, __FILE__, __LINE__, status, condition)
 
 #endif

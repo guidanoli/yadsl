@@ -1,1 +1,2 @@
-/notnull 0
+/expect 1
+/raise 2

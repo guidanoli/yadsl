@@ -2,31 +2,43 @@
 
 /noerror
 
-# Expect and throw
+# Expect and raise
 
-/expect
-/throw
+/expect 1
+/raise 1
+
+/expect 1
+/raise 0
+
+/expect 2
+/raise 2
+
+/expect -1
+/raise -1
+
+/expect 0
+/noerror
 
 # Has command
 
-/hascommand "throw"
+/hascommand "raise"
 /hascommand "expect"
 /hascommand "hascommand"
 
-/expect
+/expect 1
 /hascommand "x"
 
-/expect
+/expect 1
 /hascommand ""
 
 # Asserts
 
 /assert 1
 
-/expect
+/expect 1
 /assert 0
 
-/expect
+/expect 1
 /assert abc
 
 # Equal
@@ -39,13 +51,13 @@
 
 # Not equal
 
-/expect
+/expect 1
 /streq a b
 
-/expect
+/expect 1
 /streq " " ""
 
-/expect
+/expect 1
 /streq "	" ""
 
 # Length
@@ -58,12 +70,12 @@
 /strlen 3 "ABC"
 /strlen 3 " 	 "
 
-/expect
+/expect 1
 /strlen abc abc
 
 # Long commands
 
-/expect
+/expect 1
 /assertlongcmdcalled
 
 /reallylongcommandwithmorecharactersthanthecommandbufferofsixtyfourcharacters
@@ -76,8 +88,16 @@
 
 # Many arguments
 
-/sumsixteen 16 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+/sum 0
+/sum 0 0 0 0 0 0 0
+/sum 0 1 -1 2 -2 3 -3
+/sum 1 -1 1 -2 2 3 -2
+/sum 20 2 1 1 2 1 1 1 2 4 -2 1 1 2 1 1 1
 
-# Not null
+# Numbers and - in command names
 
-/notnull 1
+/expect 7
+/r-a-i-s-e 7
+
+/expect -3
+/r4153 -3

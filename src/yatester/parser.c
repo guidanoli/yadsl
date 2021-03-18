@@ -25,6 +25,7 @@ state;
 #define IS_FINAL(st) ((st) == ST_EOF)
 #define IS_SEPARATOR(c) ((c) == ' ' || (c) == '\t')
 #define IS_NEWLINE(c) ((c) == '\n')
+#define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
 #define IS_ALPHA(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 
 static char *cmdbuf, *argbuf;
@@ -41,11 +42,11 @@ static jmp_buf env;
  * @param ... format arguments
  * @return ST_EOF
  */
-static state error_internal(yatester_status status, const char* fmt, ...)
+static state raise_internal(yatester_status status, const char* fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	vfprintf(stderr, fmt, va);
+	yatester_vreport(status, fmt, va);
 	va_end(va);
 	longjmp(env, status);
 	return ST_EOF; /* never reaches here */
@@ -68,7 +69,7 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 	/* Check if new size fits in a size_t */
 	if (newsize * item_size <= size * item_size)
 	{
-		error_internal(YATESTER_NOMEM, "Reached maximum buffer size of %zu\n", size);
+		raise_internal(YATESTER_NOMEM, "Reached maximum buffer size of %zu\n", size);
 	}
 
 	/* Resize buffer to fit newsize items */
@@ -76,7 +77,7 @@ static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* s
 
 	if (newbuffer == NULL)
 	{
-		error_internal(YATESTER_NOMEM, "Could not reallocate buffer\n");
+		raise_internal(YATESTER_NOMEM, "Could not reallocate buffer\n");
 	}
 
 	/* Update buffer and size pointers */
@@ -159,10 +160,10 @@ static void pushcommand_internal()
 }
 
 /**
- * @brief Run command with pushed command and arguments
- * @note If command fails, performs a long jump
+ * @brief Call command with pushed arguments
+ * @note If call fails, performs a long jump
  */
-static void runcommand_internal()
+static void call_internal()
 {
 	yatester_status status;
 
@@ -177,7 +178,7 @@ static void runcommand_internal()
 	fprintf(stderr, "\n");
 #endif
 
-	status = yatester_runcommand(cmdbuf, argc, (const char**) argvbuf);
+	status = yatester_call(cmdbuf, argc, (const char**) argvbuf);
 
 	argc = 0;
 	cmdlen = 0;
@@ -224,7 +225,7 @@ static state transition_internal(state st, int c)
 		}
 		else
 		{
-			return error_internal(YATESTER_STXERR, "Expected '#', '/' or EOF\n");
+			return raise_internal(YATESTER_STXERR, "Expected '#', '/' or EOF\n");
 		}
 		break;
 	case ST_COMMENT:
@@ -249,11 +250,11 @@ static state transition_internal(state st, int c)
 		}
 		else
 		{
-			return error_internal(YATESTER_STXERR, "Expected an alphabetic character\n");
+			return raise_internal(YATESTER_STXERR, "Expected an alphabetic character\n");
 		}
 		break;
 	case ST_COMMAND:
-		if (IS_ALPHA(c) || c == '-')
+		if (IS_DIGIT(c) || IS_ALPHA(c) || c == '-')
 		{
 			writecommand_internal(c);
 			return ST_COMMAND;
@@ -261,13 +262,13 @@ static state transition_internal(state st, int c)
 		else if (c == EOF)
 		{
 			pushcommand_internal();
-			runcommand_internal();
+			call_internal();
 			return ST_EOF;
 		}
 		else if (IS_NEWLINE(c))
 		{
 			pushcommand_internal();
-			runcommand_internal();
+			call_internal();
 			return ST_INITIAL;
 		}
 		else if (IS_SEPARATOR(c))
@@ -277,18 +278,18 @@ static state transition_internal(state st, int c)
 		}
 		else
 		{
-			return error_internal(YATESTER_STXERR, "Expected an alphabetic character, '-' or EOF\n");
+			return raise_internal(YATESTER_STXERR, "Expected an alphanumeric character, '-' or EOF\n");
 		}
 		break;
 	case ST_SEPARATOR:
 		if (c == '#')
 		{
-			runcommand_internal();
+			call_internal();
 			return ST_COMMENT;
 		}
 		else if (c == '/')
 		{
-			runcommand_internal();
+			call_internal();
 			return ST_SLASH;
 		}
 		else if (IS_SEPARATOR(c))
@@ -301,12 +302,12 @@ static state transition_internal(state st, int c)
 		}
 		else if (IS_NEWLINE(c))
 		{
-			runcommand_internal();
+			call_internal();
 			return ST_INITIAL;
 		}
 		else if (c == EOF)
 		{
-			runcommand_internal();
+			call_internal();
 			return ST_EOF;
 		}
 		else
@@ -324,13 +325,13 @@ static state transition_internal(state st, int c)
 		else if (IS_NEWLINE(c))
 		{
 			pushargument_internal();
-			runcommand_internal();
+			call_internal();
 			return ST_INITIAL;
 		}
 		else if (c == EOF)
 		{
 			pushargument_internal();
-			runcommand_internal();
+			call_internal();
 			return ST_EOF;
 		}
 		else
@@ -346,7 +347,7 @@ static state transition_internal(state st, int c)
 		}
 		else if (c == EOF)
 		{
-			return error_internal(YATESTER_STXERR, "Unexpected EOF\n");
+			return raise_internal(YATESTER_STXERR, "Unexpected EOF\n");
 		}
 		else
 		{
@@ -363,24 +364,24 @@ static state transition_internal(state st, int c)
 		else if (IS_NEWLINE(c))
 		{
 			pushargument_internal();
-			runcommand_internal();
+			call_internal();
 			return ST_INITIAL;
 		}
 		else if (c == EOF)
 		{
 			pushargument_internal();
-			runcommand_internal();
+			call_internal();
 			return ST_EOF;
 		}
 		else
 		{
-			return error_internal(YATESTER_STXERR, "Expected separator or EOF\n");
+			return raise_internal(YATESTER_STXERR, "Expected separator or EOF\n");
 		}
 		break;
 	case ST_EOF:
 		return ST_EOF;
 	default:
-		return error_internal(YATESTER_FTLERR, "Invalid state %d\n", st);
+		return raise_internal(YATESTER_FTLERR, "Invalid state %d\n", st);
 	}
 }
 
@@ -458,7 +459,7 @@ yatester_status yatester_parsescript(FILE *fp)
 			tkcol = col;
 		}
 
-		fprintf(stderr, "Error %d raised in line %zu, column %zu\n", status, tkline, tkcol);
+		status = yatester_report(status, "error raised in line %zu, column %zu\n", tkline, tkcol);
 	}
 
 	return status;

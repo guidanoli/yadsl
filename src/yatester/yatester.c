@@ -12,12 +12,13 @@
 
 static jmp_buf env;
 static yadsl_ArgvParserHandle *argvp;
+static int is_expecting_status;
 static yatester_status expected_status;
 static int list_commands;
-static const char *input_file;
+static const char *input_fname;
 static FILE *input_fp;
 #ifdef YADSL_DEBUG
-static const char *log_file;
+static const char *log_fname;
 static FILE *log_fp;
 #endif
 
@@ -28,10 +29,6 @@ static FILE *log_fp;
  */
 static yatester_status terminate_internal(yatester_status status)
 {
-#ifdef YADSL_DEBUG
-	size_t amb_list_size;
-#endif
-
 	yatester_terminatecmdhdl();
 	yatester_terminateparser();
 
@@ -57,17 +54,18 @@ static yatester_status terminate_internal(yatester_status status)
 	}
 
 #ifdef YADSL_DEBUG
-	amb_list_size = yadsl_memdb_amb_list_size();
+	if (status == YATESTER_OK)
+	{
+		size_t amb_list_size = yadsl_memdb_amb_list_size();
 
-	if (amb_list_size > 0)
-	{
-		fprintf(stderr, "%zu items leaked\n", amb_list_size);
-		status = YATESTER_MEMLK;
-	}
-	else if (yadsl_memdb_error_occurred())
-	{
-		fprintf(stderr, "The memory debugger has detected an error\n");
-		status = YATESTER_MEMERR;
+		if (amb_list_size > 0)
+		{
+			status = yatester_report(YATESTER_MEMLK, "%zu items leaked\n", amb_list_size);
+		}
+		else if (yadsl_memdb_error_occurred())
+		{
+			status = yatester_report(YATESTER_FTLERR, "memory debugger has detected an error\n");
+		}
 	}
 
 	yadsl_memdb_clear_amb_list();
@@ -78,13 +76,16 @@ static yatester_status terminate_internal(yatester_status status)
 	}
 #endif
 
-	if (status == expected_status)
+	if (is_expecting_status)
 	{
-		status = YATESTER_OK;
-	}
-	else if (status == YATESTER_OK)
-	{
-		status = YATESTER_NOERROR;
+		if (status == expected_status)
+		{
+			status = YATESTER_OK;
+		}
+		else
+		{
+			status = yatester_report(YATESTER_ERROR, "expected and real status codes differ\n");
+		}
 	}
 
 	return status;
@@ -126,8 +127,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 
 	if (argvp == NULL)
 	{
-		fprintf(stderr, "Could not allocate argument vector parser\n");
-		return YATESTER_NOMEM;
+		return yatester_report(YATESTER_NOMEM, "could not allocate argument vector parser\n");
 	}
 
 	yadsl_argvp_add_keyword_arguments(argvp, kwargsdef);
@@ -136,8 +136,11 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 
 	if (nmatches == 0)
 	{
-		fprintf(stderr, "Invalid value passed to --expect\n");
-		return YATESTER_CLARGERR;
+		return yatester_report(YATESTER_ERROR, "invalid value passed to --expect option\n");
+	}
+	else if (nmatches == 1)
+	{
+		is_expecting_status = 1;
 	}
 
 	if (yadsl_argvp_has_keyword_argument(argvp, "--help"))
@@ -147,8 +150,8 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 		fprintf(stderr, "Usage: %s [options]\n", argv[0]);
 		fprintf(stderr, "\n");
 		fprintf(stderr, "Options:\n");
-		fprintf(stderr, "--help                          Prints usage information and exits\n");
-		fprintf(stderr, "--list-commands                 Lists all valid commands and exits\n");
+		fprintf(stderr, "--help                          Print usage information and exit\n");
+		fprintf(stderr, "--list-commands                 List all valid commands and exit\n");
 		fprintf(stderr, "--input-file <filepath>         Read commands from file instead of stdin\n");
 		fprintf(stderr, "--expect <status>               Expect the tester to return a status code\n");
 #ifdef YADSL_DEBUG
@@ -159,47 +162,39 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");
 		fprintf(stderr, "                                ALLOCATION, DEALLOCATION, LEAKAGE\n");
 #endif
-		fprintf(stderr, "\n");
-		fprintf(stderr, "Return codes:\n");
-		fprintf(stderr, "0 - success\n");
-		fprintf(stderr, "1 - generic error\n");
-		fprintf(stderr, "2 - memory error\n");
-		fprintf(stderr, "3 - input/output error\n");
-		return YATESTER_HELPCMD;
+		return YATESTER_ERROR;
 	}
 
 	list_commands = yadsl_argvp_has_keyword_argument(argvp, "--list-commands");
 
-	input_file = yadsl_argvp_get_keyword_argument_value(argvp, "--input-file", 0);
+	input_fname = yadsl_argvp_get_keyword_argument_value(argvp, "--input-file", 0);
 	
-	if (input_file == NULL)
+	if (input_fname == NULL)
 	{
 		input_fp = stdin;
 	}
 	else
 	{
-		input_fp = fopen(input_file, "r");
+		input_fp = fopen(input_fname, "r");
 		if (input_fp == NULL)
 		{
-			fprintf(stderr, "Could not open file \"%s\" in reading mode\n", input_file);
-			return YATESTER_IOERR;
+			return yatester_report(YATESTER_IOERR, "could not open file \"%s\" in reading mode\n", input_fname);
 		}
 	}
 
 #ifdef YADSL_DEBUG
-	log_file = yadsl_argvp_get_keyword_argument_value(argvp, "--log-file", 0);
+	log_fname = yadsl_argvp_get_keyword_argument_value(argvp, "--log-file", 0);
 
-	if (log_file == NULL)
+	if (log_fname == NULL)
 	{
 		log_fp = NULL;
 	}
 	else
 	{
-		log_fp = fopen(log_file, "w");
+		log_fp = fopen(log_fname, "w");
 		if (log_fp == NULL)
 		{
-			fprintf(stderr, "Could not open file \"%s\" in writing mode\n", log_file);
-			return YATESTER_IOERR;
+			return yatester_report(YATESTER_IOERR, "could not open file \"%s\" in writing mode\n", log_fname);
 		}
 	}
 
@@ -213,8 +208,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 	}
 	else if (nmatches == 0)
 	{
-		fprintf(stderr, "Invalid value passed to --malloc-failing-rate\n");
-		return YATESTER_CLARGERR;
+		return yatester_report(YATESTER_ERROR, "invalid value passed to --malloc-failing-rate option\n");
 	}
 	else
 	{
@@ -230,8 +224,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 	}
 	else if (nmatches == 0)
 	{
-		fprintf(stderr, "Invalid value passed to --malloc-failing-index\n");
-		return YATESTER_CLARGERR;
+		return yatester_report(YATESTER_ERROR, "invalid value passed to --malloc-failing-index option\n");
 	}
 	else
 	{
@@ -246,8 +239,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 	}
 	else if (nmatches == 0)
 	{
-		fprintf(stderr, "Invalid value passed to --prng-seed\n");
-		return YATESTER_CLARGERR;
+		return yatester_report(YATESTER_ERROR, "invalid value passed to --prng-seed option\n");
 	}
 
 	log_channel_name = yadsl_argvp_get_keyword_argument_value(argvp, "--enable-log-channel", 0);
@@ -270,8 +262,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 		}
 		else
 		{
-			fprintf(stderr, "Log channel name \"%s\" is invalid\n", log_channel_name);
-			return YATESTER_CLARGERR;
+			return yatester_report(YATESTER_ERROR, "invalid value \"%s\" passed to --enable-log-channel option\n", log_channel_name);
 		}
 
 		yadsl_memdb_log_channel_set(log_channel_value, true);
@@ -301,7 +292,7 @@ void assert_ok(yatester_status status)
  */
 void printcmd_cb(const yatester_command* command)
 {
-	printf("%s\t%zu\n", command->name, command->argc);
+	printf("%s\n", command->name);
 }
 
 int main(int argc, char** argv)
@@ -321,7 +312,7 @@ int main(int argc, char** argv)
 	if (list_commands)
 	{
 		yatester_itercommands(printcmd_cb);
-		longjmp(env, YATESTER_LSTCMDS);
+		longjmp(env, YATESTER_ERROR);
 	}
 
 	assert_ok(yatester_parsescript(input_fp));

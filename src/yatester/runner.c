@@ -10,9 +10,11 @@
 static jmp_buf env;
 static yatester_status statusq[2];
 
-void yatester_builtin_expect(const char** argv)
+void yatester_builtin_expect(size_t argc, const char** argv)
 {
-	statusq[1] = YATESTER_ERROR;
+	int status;
+	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &status) == 1);
+	statusq[1] = status;
 }
 
 static yatester_status evalstatus_internal(yatester_status status)
@@ -21,9 +23,9 @@ static yatester_status evalstatus_internal(yatester_status status)
 	{
 		status = YATESTER_OK;
 	}
-	else if (status == YATESTER_OK)
+	else if (statusq[0] != YATESTER_OK)
 	{
-		status = YATESTER_NOERROR;
+		status = yatester_report(YATESTER_ERROR, "expected and real status codes differ\n");
 	}
 
 	statusq[0] = statusq[1];
@@ -33,7 +35,7 @@ static yatester_status evalstatus_internal(yatester_status status)
 }
 
 
-yatester_status yatester_runcommand(const char* commandname, size_t argc, const char** argv)
+yatester_status yatester_call(const char* commandname, size_t argc, const char** argv)
 {
 	const yatester_command* command;
 	yatester_status status;
@@ -42,45 +44,70 @@ yatester_status yatester_runcommand(const char* commandname, size_t argc, const 
 
 	if (command == NULL)
 	{
-		fprintf(stderr, "Could not find command named \"%s\"\n", commandname);
-		return YATESTER_NOCMD;
+		return yatester_report(YATESTER_BADCALL, "command \"%s\" not found\n", commandname);
 	}
 
-	if (command->argc != argc)
+	if (argc < command->minargc)
 	{
-		fprintf(stderr, "Command \"%s\" expected %zu argument(s) but got %zu\n", commandname, command->argc, argc);
-		return YATESTER_CMDARGCMM;
+		return yatester_report(YATESTER_BADCALL, "command \"%s\" expected %zu argument(s), but got %zu\n", commandname, command->minargc, argc);
 	}
 
 	status = setjmp(env);
 
 	if (status == YATESTER_OK)
 	{
-		command->handler((const char**) argv);
+		command->handler(argc, (const char**) argv);
 	}
 
 	return evalstatus_internal(status);
 }
 
-void yatester_throw()
+void yatester_raise(yatester_status status)
 {
-	longjmp(env, YATESTER_ERROR);
+	longjmp(env, status);
 }
 
-void yatester_assert_function(const char* code, const char* file, int line, int condition)
+void yatester_assert_function(const char* code, const char* file, int line, yatester_status status, int condition)
 {
 	if (!condition)
 	{
-		fprintf(stderr, "Assertion \"%s\" failed in \"%s\", line %d\n", code, file, line);
-		longjmp(env, YATESTER_ERROR);
+		yatester_raise(yatester_report(status, "failed assertion \"%s\" in \"%s\", line %d\n", code, file, line));
 	}
 }
 
-void yatester_notnull_function(const char* code, const char* file, int line, void* p)
+yatester_status yatester_report(yatester_status status, const char* fmt, ...)
 {
-	if (p == NULL)
+	va_list va;
+	va_start(va, fmt);
+	status = yatester_vreport(status, fmt, va);
+	va_end(va);
+	return status;
+}
+
+yatester_status yatester_vreport(yatester_status status, const char* fmt, va_list va)
+{
+	static const char* preffixes[] =
 	{
-		fprintf(stderr, "Null pointer \"%s\" caught in \"%s\", line %d\n", code, file, line);
-		longjmp(env, YATESTER_NOMEM);
+		[YATESTER_OK] = "Ok",
+		[YATESTER_ERROR] = "Error",
+		[YATESTER_NOMEM] = "No memory",
+		[YATESTER_FTLERR] = "Fatal error",
+		[YATESTER_MEMLK] = "Memory leak",
+		[YATESTER_IOERR] = "I/O error",
+		[YATESTER_STXERR] = "Syntax error",
+		[YATESTER_BADCMD] = "Bad command",
+		[YATESTER_BADCALL] = "Bad call",
+	};
+
+	if (status >= 0 && status < sizeof(preffixes)/sizeof(*preffixes))
+	{
+		fprintf(stderr, "%s: ", preffixes[status]);
+		vfprintf(stderr, fmt, va);
+		return status;
+	}
+	else
+	{
+		return yatester_report(YATESTER_ERROR, "bad status code %d\n", status);
 	}
 }
+

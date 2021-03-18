@@ -8,12 +8,12 @@
 #include <stddef.h>
 
 /**
- * @brief Run command by name and passing its arguments
+ * @brief Call command
  * @param commandname command name
  * @param argc argument count
  * @param argv argument vector
  * @return operation status code
  */
-yatester_status yatester_runcommand(const char* commandname, size_t argc, const char** argv);
+yatester_status yatester_call(const char* commandname, size_t argc, const char** argv);
 
 #endif

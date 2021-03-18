@@ -1,28 +1,45 @@
 #ifndef yatester_status_h
 #define yatester_status_h
 
-/* Status code */
+/* Status */
 
+#include <stdarg.h>
+
+/**
+ * @brief Status code
+ */
 typedef enum
 {
-	YATESTER_OK,        /**< Ok */
-	YATESTER_ERROR,     /**< Error */
-	YATESTER_NOMEM,     /**< No memory */
-    YATESTER_FTLERR,    /**< Fatal error */
-    YATESTER_MEMLK,     /**< Memory leak */
-    YATESTER_MEMERR,    /**< Memory error */
-	YATESTER_IOERR,     /**< I/O error */
-    YATESTER_STXERR,    /**< Syntax error */
-    YATESTER_CLARGERR,  /**< Command line argument error*/
-    YATESTER_HELPCMD,   /**< Help command */
-    YATESTER_LSTCMDS,   /**< List commands */
-    YATESTER_NOCMD,     /**< No command */
-    YATESTER_NOCMDHDL,  /**< No command handler */
-    YATESTER_NOCMDNAME, /**< No command name */
-    YATESTER_CMDNMCFLT, /**< Command name conflict */
-    YATESTER_CMDARGCMM, /**< Command argument count mismatch */
-    YATESTER_NOERROR,   /**< Expected error but didn't happen */
+	YATESTER_OK, /**< Ok */
+	YATESTER_ERROR, /**< Error */
+	YATESTER_NOMEM, /**< No memory */
+	YATESTER_FTLERR, /**< Fatal error */
+	YATESTER_MEMLK, /**< Memory leak */
+	YATESTER_IOERR, /**< I/O error */
+	YATESTER_STXERR, /**< Syntax error */
+	YATESTER_BADCMD, /**< Bad command */
+	YATESTER_BADCALL, /**< Bad call */
 }
 yatester_status;
+
+/**
+ * @brief Report error
+ * @note Prints to standard error
+ * @param status error status
+ * @param fmt error message format
+ * @param ... format arguments
+ * @return status
+ */
+yatester_status yatester_report(yatester_status status, const char* fmt, ...);
+
+/**
+ * @brief Report error
+ * @note Prints to standard error
+ * @param status error status
+ * @param fmt error message format
+ * @param va format arguments
+ * @return status
+ */
+yatester_status yatester_vreport(yatester_status status, const char* fmt, va_list va);
 
 #endif
