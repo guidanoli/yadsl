@@ -9,7 +9,7 @@
  * @brief Raise error
  * @note Performs a long jump
  * @param status error status code
- * @note If status is 0, throws 1
+ * @note status != YATESTER_OK
  */
 void yatester_raise(yatester_status status);
 
@@ -20,8 +20,8 @@ void yatester_raise(yatester_status status);
  * @param file file in which the assertion was made
  * @param line line in file in which assertion was made
  * @param status error status code
+ * @note status != YATESTER_OK
  * @param condition condition being tested
- * @note If status is 0, throws 1
  * @seealso yatester_assert
  * @seealso yatester_raise
  */

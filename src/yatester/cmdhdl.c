@@ -64,11 +64,6 @@ yatester_status yatester_initializecmdhdl()
 	{
 		for (command = all_commands[i]; command->name != NULL; ++command)
 		{
-			if (command->name[0] == '\0')
-			{
-				return yatester_report(YATESTER_BADCMD, "empty command name\n");
-			}
-
 			if (command->handler == NULL)
 			{
 				return yatester_report(YATESTER_BADCMD, "command \"%s\" does not have a handler\n", command->name);

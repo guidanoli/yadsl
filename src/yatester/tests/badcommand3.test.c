@@ -2,6 +2,6 @@
 
 const yatester_command yatester_commands[] =
 {
-	{ "mycmd", 0, NULL },
+	{ "mycmd", AT_LEAST(0), NULL },
 	{ NULL, 0, NULL },
 };

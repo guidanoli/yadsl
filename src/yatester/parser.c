@@ -22,17 +22,29 @@ typedef enum
 }
 state;
 
+/**
+ * @brief String
+ */
+typedef struct
+{
+	char* ptr; /**< Buffer */
+	size_t size; /**< Buffer size */
+	size_t length; /**< String length */
+}
+string_t;
+
 #define IS_FINAL(st) ((st) == ST_EOF)
 #define IS_SEPARATOR(c) ((c) == ' ' || (c) == '\t')
 #define IS_NEWLINE(c) ((c) == '\n')
 #define IS_DIGIT(c) ((c) >= '0' && (c) <= '9')
 #define IS_ALPHA(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
+#define MAX_ARGC 64
 
-static char *cmdbuf, *argbuf;
-static char **argvbuf;
-static size_t cmdbufsize, argbufsize, argvbufsize, argc, cmdlen, arglen;
-static size_t line, col, tkline, tkcol;
-static jmp_buf env;
+static string_t cmdstr, argstr; /* Command and argument strings */
+static size_t argidx[MAX_ARGC]; /* Argument indices */
+static int argc; /* Argument count */
+static size_t line, col, tkline, tkcol; /* Line and column counters */
+static jmp_buf env; /* Long jump buffer */
 
 /**
  * @brief Throws an error
@@ -53,105 +65,117 @@ static state raise_internal(yatester_status status, const char* fmt, ...)
 }
 
 /**
- * @brief Resize buffer, updating pointer to buffer and pointer to size
- * @note New buffer might be moved to a new location
- * @note On error, performs a long jump
- * @param buffer_ptr buffer address
- * @param item_size item size
- * @param size_ptr buffer size address
+ * @brief Initialize string with size
+ * @param string
+ * @return failure
  */
-static void resizebuffer_internal(void** buffer_ptr, size_t item_size, size_t* size_ptr)
+static int string_initialize(string_t *string)
 {
-	void *newbuffer;
-	size_t size = *size_ptr;
-	size_t newsize = size * 2;
-	
-	/* Check if new size fits in a size_t */
-	if (newsize * item_size <= size * item_size)
-	{
-		raise_internal(YATESTER_NOMEM, "Reached maximum buffer size of %zu\n", size);
-	}
-
-	/* Resize buffer to fit newsize items */
-	newbuffer = realloc(*buffer_ptr, newsize * item_size);
-
-	if (newbuffer == NULL)
-	{
-		raise_internal(YATESTER_NOMEM, "Could not reallocate buffer\n");
-	}
-
-	/* Update buffer and size pointers */
-	*buffer_ptr = newbuffer;
-	*size_ptr = newsize;
-}
-
-static void reset_internal()
-{
-	argc = 0;
-	cmdlen = 0;
-	arglen = 0;
-	argvbuf[0] = argbuf;
+	string->size = 1;
+	string->length = 0;
+	string->ptr = malloc(1);
+	return string->ptr == NULL;
 }
 
 /**
- * @brief Write character to command buffer
+ * @brief Check if string will overflow, and allocate more space if necessary
+ * @note Buffer might be moved
+ * @note On error, performs a long jump
+ * @param string
+ */
+static void string_check(string_t *string)
+{
+	char *newptr;
+	size_t size = string->size;
+	size_t newsize = size | (size << 1);
+	
+	/* Check if string will overflow */
+	if (string->length < size - 1)
+	{
+		return;
+	}
+
+	/* Check if new size fits in a size_t */
+	if (newsize <= size)
+	{
+		raise_internal(YATESTER_NOMEM, "Reached maximum string size of %zu\n", size);
+	}
+
+	/* Resize string to fit newsize items */
+	newptr = realloc(string->ptr, newsize);
+
+	/* Check if realloc failed */
+	if (newptr == NULL)
+	{
+		raise_internal(YATESTER_NOMEM, "Could not resize string\n");
+	}
+
+	/* Update string */
+	string->ptr = newptr;
+	string->size = newsize;
+}
+
+/**
+ * @brief Free string
+ * @param string
+ */
+static void string_terminate(string_t *string)
+{
+	if (string->ptr != NULL)
+	{
+		free(string->ptr);
+		string->length = 0;
+		string->size = 0;
+		string->ptr = NULL;
+	}
+}
+
+/**
+ * @brief Write character to command string
  * @note On error, performs a long jump
  * @param c character to be written
  */
 static void writecommand_internal(char c)
 {
-	if (cmdlen == cmdbufsize - 1)
-	{
-		resizebuffer_internal((void**) &cmdbuf, sizeof *cmdbuf, &cmdbufsize);
-	}
-
-	cmdbuf[cmdlen++] = c;
+	string_check(&cmdstr);
+	cmdstr.ptr[cmdstr.length++] = c;
 	tkline = line;
 	tkcol = col;
 }
 
 /**
- * @brief Write character to argument buffer
- * @note If argument buffer is resized, updates argvbuf too
- * since it might have been moved when reallocated
+ * @brief Write character to argument string
  * @note On error, performs a long jump
  * @param c character to be written
  */
 static void writeargument_internal(char c)
 {
-	if (arglen == argbufsize - 1)
-	{
-		char* prevargbuf = argbuf;
-		
-		resizebuffer_internal((void**) &argbuf, sizeof *argbuf, &argbufsize);
-		
-		for (size_t i = 0; i < argvbufsize; ++i)
-		{
-			argvbuf[i] = (argvbuf[i] - prevargbuf) + argbuf;
-		}
-	}
-
-	argbuf[arglen++] = c;
+	string_check(&argstr);
+	argstr.ptr[argstr.length++] = c;
 	tkline = line;
 	tkcol = col;
 }
 
 /**
- * @brief Push argument to argument vector buffer
+ * @brief Push argument
  * @note On error, performs a long jump
  */
 static void pushargument_internal()
 {
-	if (argc == argvbufsize)
+	if (argc == MAX_ARGC)
 	{
-		resizebuffer_internal((void**) &argvbuf, sizeof *argvbuf, &argvbufsize);
+		raise_internal(YATESTER_BADCALL, "too many arguments\n");
 	}
 
-	argbuf[arglen++] = '\0';
-	argvbuf[++argc] = argbuf + arglen;
+	argstr.ptr[argstr.length++] = '\0';
+
+	if (++argc < MAX_ARGC)
+	{
+		argidx[argc] = argstr.length;
+	}
 
 #ifdef YATESTER_PARSER_DEBUG
-	fprintf(stderr, "[PARSER] Pushed argument \"%s\"\n", argvbuf[argc-1]);
+	fprintf(stderr, "[PARSER] Pushed argument \"%s\"\n", &argstr.ptr[argstr.length]);
 #endif
 }
 
@@ -160,10 +184,10 @@ static void pushargument_internal()
  */
 static void pushcommand_internal()
 {
-	cmdbuf[cmdlen] = '\0';
+	cmdstr.ptr[cmdstr.length] = '\0';
 
 #ifdef YATESTER_PARSER_DEBUG
-	fprintf(stderr, "[PARSER] Pushed command \"%s\"\n", cmdbuf);
+	fprintf(stderr, "[PARSER] Pushed command \"%s\"\n", cmdstr.ptr);
 #endif
 }
 
@@ -174,21 +198,29 @@ static void pushcommand_internal()
 static void call_internal()
 {
 	yatester_status status;
+	static char *argv[MAX_ARGC];
+
+	for (int i = 0; i < argc; ++i)
+	{
+		argv[i] = argstr.ptr + argidx[i];
+	}
 
 #ifdef YATESTER_PARSER_DEBUG
-	fprintf(stderr, "[PARSER] Calling /%s", cmdbuf);
+	fprintf(stderr, "[PARSER] Calling /%s", cmdstr.ptr);
 
-	for (size_t i = 0; i < argc; ++i)
+	for (int i = 0; i < argc; ++i)
 	{
-		fprintf(stderr, " \"%s\"", argvbuf[i]);
+		fprintf(stderr, " \"%s\"", argv[i]);
 	}
 
 	fprintf(stderr, "\n");
 #endif
 
-	status = yatester_call(cmdbuf, argc, argvbuf);
+	status = yatester_call(cmdstr.ptr, argc, argv);
 
-	reset_internal();
+	argc = 0;
+	cmdstr.length = 0;
+	argstr.length = 0;
 	
 	if (status == YATESTER_OK)
 	{
@@ -393,23 +425,12 @@ static state transition_internal(state st, int c)
 
 yatester_status yatester_initializeparser()
 {
-	cmdbufsize = 64;
-	cmdbuf = malloc(sizeof(*cmdbuf) * cmdbufsize);
-	if (cmdbuf == NULL)
+	if (string_initialize(&cmdstr))
 	{
 		return YATESTER_NOMEM;
 	}
 
-	argbufsize = 64;
-	argbuf = malloc(sizeof(*argbuf) * argbufsize);
-	if (argbuf == NULL)
-	{
-		return YATESTER_NOMEM;
-	}
-
-	argvbufsize = 4;
-	argvbuf = malloc(sizeof(*argvbuf) * argvbufsize);
-	if (argvbuf == NULL)
+	if (string_initialize(&argstr))
 	{
 		return YATESTER_NOMEM;
 	}
@@ -422,8 +443,6 @@ yatester_status yatester_parsescript(FILE *fp)
 	int c;
 	state st = ST_INITIAL;
 	yatester_status status;
-
-	reset_internal();
 
 	col = 0;
 	line = 1;
@@ -473,21 +492,6 @@ yatester_status yatester_parsescript(FILE *fp)
 
 void yatester_terminateparser()
 {
-	if (cmdbuf != NULL)
-	{
-		free(cmdbuf);
-		cmdbuf = NULL;
-	}
-
-	if (argbuf != NULL)
-	{
-		free(argbuf);
-		argbuf = NULL;
-	}
-
-	if (argvbuf != NULL)
-	{
-		free(argvbuf);
-		argvbuf = NULL;
-	}
+	string_terminate(&cmdstr);
+	string_terminate(&argstr);
 }

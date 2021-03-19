@@ -1,7 +1,9 @@
 #include <yatester/builtins.h>
 
+#include <stddef.h>
+
 const yatester_command yatester_builtin_commands[] =
 {
-	{ "expect", 0, yatester_builtin_expect },
+	{ "expect", AT_LEAST(1), yatester_builtin_expect },
 	{ NULL, 0, NULL },
 };

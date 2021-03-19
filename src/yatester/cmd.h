@@ -3,16 +3,18 @@
 
 /* Commands */
 
-#include <stddef.h>
+#define AT_LEAST(argc) (argc)
+#define AT_MOST(argc) (-(argc)-1)
 
 /**
  * @brief Command definition
+ * @note Use AT_LEAST and AT_MOST for tuning the argc field
  */
 typedef struct
 {
 	const char *name; /**< Command name */
-	size_t minargc; /**< Minimum number of arguments */
-	void (*handler)(size_t argc, char** argv); /**< Command handler */
+	int argc; /**< Minimum/maximum number of arguments */
+	void (*handler)(int argc, char** argv); /**< Command handler */
 }
 yatester_command;
 

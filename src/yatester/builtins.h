@@ -9,7 +9,7 @@
  * @brief Expect next command status code
  * @note Usage: /expect <status-code>
  */
-void yatester_builtin_expect(size_t argc, char** argv);
+void yatester_builtin_expect(int argc, char** argv);
 
 /**
  * @brief NULL-terminated array of built-in commands

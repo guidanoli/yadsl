@@ -19,6 +19,7 @@ typedef enum
 	YATESTER_STXERR, /**< Syntax error */
 	YATESTER_BADCMD, /**< Bad command */
 	YATESTER_BADCALL, /**< Bad call */
+	YATESTER_BADARG, /**< Bad argument */
 }
 yatester_status;
 

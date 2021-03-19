@@ -10,7 +10,7 @@
 static jmp_buf env;
 static yatester_status statusq[2];
 
-void yatester_builtin_expect(size_t argc, char** argv)
+void yatester_builtin_expect(int argc, char** argv)
 {
 	int status;
 	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &status) == 1);
@@ -35,7 +35,7 @@ static yatester_status evalstatus_internal(yatester_status status)
 }
 
 
-yatester_status yatester_call(const char* commandname, size_t argc, char** argv)
+yatester_status yatester_call(const char* commandname, int argc, char** argv)
 {
 	const yatester_command* command;
 	yatester_status status;
@@ -47,9 +47,20 @@ yatester_status yatester_call(const char* commandname, size_t argc, char** argv)
 		return yatester_report(YATESTER_BADCALL, "command \"%s\" not found\n", commandname);
 	}
 
-	if (argc < command->minargc)
+	/* Assumes AT_MOST and AT_LEAST are involutions */
+	if (command->argc < 0)
 	{
-		return yatester_report(YATESTER_BADCALL, "command \"%s\" expected %zu argument(s), but got %zu\n", commandname, command->minargc, argc);
+		if (argc > AT_MOST(command->argc))
+		{
+			return yatester_report(YATESTER_BADCALL, "command \"%s\" expected at most %d argument(s), but got %d\n", commandname, AT_MOST(command->argc), argc);
+		}
+	}
+	else
+	{
+		if (argc < AT_LEAST(command->argc))
+		{
+			return yatester_report(YATESTER_BADCALL, "command \"%s\" expected at least %d argument(s), but got %d\n", commandname, AT_LEAST(command->argc), argc);
+		}
 	}
 
 	status = setjmp(env);
@@ -64,12 +75,15 @@ yatester_status yatester_call(const char* commandname, size_t argc, char** argv)
 
 void yatester_raise(yatester_status status)
 {
-	longjmp(env, status);
+	if (status != YATESTER_OK)
+	{
+		longjmp(env, status);
+	}
 }
 
 void yatester_assert_function(const char* code, const char* file, int line, yatester_status status, int condition)
 {
-	if (!condition)
+	if (!condition && status != YATESTER_OK)
 	{
 		yatester_raise(yatester_report(status, "failed assertion \"%s\" in \"%s\", line %d\n", code, file, line));
 	}
@@ -88,7 +102,6 @@ yatester_status yatester_vreport(yatester_status status, const char* fmt, va_lis
 {
 	static const char* preffixes[] =
 	{
-		[YATESTER_OK] = "Ok",
 		[YATESTER_ERROR] = "Error",
 		[YATESTER_NOMEM] = "No memory",
 		[YATESTER_FTLERR] = "Fatal error",
@@ -97,6 +110,7 @@ yatester_status yatester_vreport(yatester_status status, const char* fmt, va_lis
 		[YATESTER_STXERR] = "Syntax error",
 		[YATESTER_BADCMD] = "Bad command",
 		[YATESTER_BADCALL] = "Bad call",
+		[YATESTER_BADARG] = "Bad argument",
 	};
 
 	if (status >= 0 && status < sizeof(preffixes)/sizeof(*preffixes))

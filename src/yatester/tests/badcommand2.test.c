@@ -1,11 +1,11 @@
 #include <yatester/yatester.h>
 
-static void expect_cmd(size_t argc, char** argv)
+static void expect_cmd(int argc, char** argv)
 {
 }
 
 const yatester_command yatester_commands[] =
 {
-	{ "expect", 0, expect_cmd },
+	{ "expect", AT_LEAST(1), expect_cmd },
 	{ NULL, 0, NULL },
 };

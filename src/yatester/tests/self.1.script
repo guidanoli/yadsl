@@ -7,7 +7,6 @@
 /expect 1
 /raise 1
 
-/expect 1
 /raise 0
 
 /expect 2
@@ -33,13 +32,25 @@
 
 # Asserts
 
-/assert 1
+/assert 1 0
+
+/assert 0 0
+
+/assert 1 1
 
 /expect 1
-/assert 0
+/assert 0 1
 
-/expect 1
-/assert abc
+/assert 1 2
+
+/expect 2
+/assert 0 2
+
+/expect 9
+/assert abc 1
+
+/expect 9
+/assert 1 abc
 
 # Equal
 
@@ -70,7 +81,7 @@
 /strlen 3 "ABC"
 /strlen 3 " 	 "
 
-/expect 1
+/expect 9
 /strlen abc abc
 
 # Long commands
@@ -93,6 +104,7 @@
 /sum 0 1 -1 2 -2 3 -3
 /sum 1 -1 1 -2 2 3 -2
 /sum 20 2 1 1 2 1 1 1 2 4 -2 1 1 2 1 1 1
+/sum 63 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 
 # Numbers and - in command names
 
@@ -101,3 +113,19 @@
 
 /expect -3
 /r4153 -3
+
+# At least x arguments
+
+/atleast0
+/atleast0 abc
+/atleast0 abc def
+
+/atleast1 abc
+/atleast1 abc def
+
+# At most x arguments
+
+/atmost0
+
+/atmost1
+/atmost1 abc
