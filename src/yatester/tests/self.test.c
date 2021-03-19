@@ -90,6 +90,16 @@ static void malloc_cmd(int argc, char** argv)
 	yatester_assert(YATESTER_NOMEM, malloc(size) != NULL);
 }
 
+static void messwithargv_cmd(int argc, char** argv)
+{
+	for (int argi = 0; argi < argc; ++argi)
+	{
+		size_t arg;
+		yatester_assert(YATESTER_BADARG, sscanf(argv[argi], "%zu", &arg) == 1);
+		argv[argi] = (char*) arg;
+	}
+}
+
 const yatester_command yatester_commands[] =
 {
 	{ "raise", AT_LEAST(1), raise_cmd },
@@ -108,5 +118,6 @@ const yatester_command yatester_commands[] =
 	{ "atmost0", AT_MOST(0), noerr_cmd },
 	{ "atleast1", AT_LEAST(1), noerr_cmd },
 	{ "atmost1", AT_MOST(1), noerr_cmd },
+	{ "messwithargv", AT_LEAST(0), messwithargv_cmd },
 	{ NULL, AT_LEAST(0), NULL },
 };

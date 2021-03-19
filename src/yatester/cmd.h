@@ -8,7 +8,7 @@
 
 /**
  * @brief Command definition
- * @note Use AT_LEAST and AT_MOST for tuning the argc field
+ * @note Use AT_LEAST and AT_MOST for the argc field
  */
 typedef struct
 {

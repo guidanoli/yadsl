@@ -1,3 +1,9 @@
+# Mess with argument vector
+
+/messwithargv 0
+/messwithargv 64 32
+/streq abcdef abcdef
+
 # No error
 
 /noerror

@@ -2,6 +2,7 @@
 #include <yatester/builtins.h>
 #include <yatester/yatester.h>
 
+#include <math.h>
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -10,13 +11,11 @@ static const yatester_command** commandtable;
 static size_t tablesize;
 
 /**
- * @brief Hashes string into an unsigned long
- * @param str string to be hashed
- * @return hash
+ * @brief djb2 hash function
  */
-static unsigned long hash_string_internal(const char* str)
+static size_t djb2_hash(const char* str)
 {
-	unsigned long hash = 5381;
+	size_t hash = 5381;
 	char c;
 
 	while (c = *str++)
@@ -25,6 +24,42 @@ static unsigned long hash_string_internal(const char* str)
 	}
 
 	return hash;
+}
+
+/**
+ * @brief Check if n is prime
+ */
+static int is_prime(size_t n)
+{
+	if (n < 2)
+	{
+		return 0;
+	}
+	else if (n == 2)
+	{
+		return 1;
+	}
+	else /* n > 2 */
+	{
+		for (size_t i = 3; i * i <= n; i += 2)
+		{
+			if (n % i == 0)
+			{
+				return 0;
+			}
+		}
+		return 1;
+	}
+}
+
+/**
+ * @brief Get next prime after n
+ */
+static size_t next_prime(size_t n)
+{
+	while (!is_prime(++n));
+
+	return n;
 }
 
 yatester_status yatester_initializecmdhdl()
@@ -39,17 +74,18 @@ yatester_status yatester_initializecmdhdl()
 		yatester_commands,
 	};
 
-	tablesize = 1; /* malloc(0) is undefined behaviour */
+	tablesize = 0;
 
-	/* Calculate the table size in terms of the desired load factor
-	 * and the total number of commands (which does not change) */
+	/* Count the number of commands */
 	for (i = 0; i < sizeof(all_commands)/sizeof(*all_commands); ++i)
 	{
 		for (command = all_commands[i]; command->name != NULL; ++command)
 		{
-			tablesize += 2; /* Load factor of 0.5 */
+			tablesize += 4; /* Load factor < 1/4 */
 		}
 	}
+
+	tablesize = next_prime(tablesize);
 
 	/* Allocate zero-initialized table */
 	commandtable = calloc(tablesize, sizeof *commandtable);
@@ -70,7 +106,7 @@ yatester_status yatester_initializecmdhdl()
 			}
 
 			/* Hash command name to calculate table index */
-			j = hash_string_internal(command->name) % tablesize;
+			j = djb2_hash(command->name) % tablesize;
 
 			/* Open addressing with linear probing */
 			/* Since load factor < 1, it will eventually stumble upon a hole */
@@ -110,7 +146,7 @@ const yatester_command* yatester_getcommand(const char* commandname)
 {
 	size_t j;
 
-	j = hash_string_internal(commandname) % tablesize;
+	j = djb2_hash(commandname) % tablesize;
 
 	/* Since load factor < 1, it will eventually stumble upon a hole */
 	while (commandtable[j] != NULL && strcmp(commandname, commandtable[j]->name) != 0)
