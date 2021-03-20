@@ -2,6 +2,7 @@
 #include <yatester/builtins.h>
 #include <yatester/yatester.h>
 
+#include <stdbool.h>
 #include <math.h>
 #include <string.h>
 #include <stddef.h>
@@ -29,31 +30,39 @@ static size_t djb2_hash(const char* str)
 /**
  * @brief Check if n is prime
  */
-static int is_prime(size_t n)
+static bool is_prime(size_t n)
 {
 	if (n < 2)
 	{
-		return 0;
+		return false;
 	}
 	else if (n == 2)
 	{
-		return 1;
+		return true;
 	}
-	else /* n > 2 */
+	else if (n % 2 == 0)
 	{
-		for (size_t i = 3; i * i <= n; i += 2)
+		return false;
+	}
+	else /* n > 2 && n % 2 == 1 */
+	{
+		/* Here we avoid multiplication overflow (i * i <= n)
+		 * for large enough values of i by using division */
+		for (size_t i = 3; i <= n / i; i += 2)
 		{
 			if (n % i == 0)
 			{
-				return 0;
+				return false;
 			}
 		}
-		return 1;
+		return true;
 	}
 }
 
 /**
  * @brief Get next prime after n
+ * @note If n is greater than the biggest prime representable
+ * in size_t, the function returns 2 (the smallest prime).
  */
 static size_t next_prime(size_t n)
 {
@@ -64,7 +73,7 @@ static size_t next_prime(size_t n)
 
 yatester_status yatester_initializecmdhdl()
 {
-	size_t i, j;
+	size_t i, j, k, commandcnt = 0;
 	const yatester_command* command;
 
 	/* List of all commands to be added to the command table */
@@ -74,18 +83,40 @@ yatester_status yatester_initializecmdhdl()
 		yatester_commands,
 	};
 
-	tablesize = 0;
-
 	/* Count the number of commands */
 	for (i = 0; i < sizeof(all_commands)/sizeof(*all_commands); ++i)
 	{
 		for (command = all_commands[i]; command->name != NULL; ++command)
 		{
-			tablesize += 4; /* Load factor < 1/4 */
+			/* If all command tables are NULL-terminated, commandcnt should
+			 * not overflow since size_t should be able to contain all 
+			 * addressable memory space */
+			commandcnt++;
 		}
 	}
 
-	tablesize = next_prime(tablesize);
+	/* Find the biggest k <= 4 such that k * commandcnt doesn't overflow
+	 * On small command tables, k = 4 */
+	for (k = 4; k > 1; --k)
+	{
+		if (commandcnt * k > commandcnt)
+		{
+			commandcnt *= k;
+			break;
+		}
+	}
+
+	/* We choose the next prime for the table size for better statistical
+	 * results on reducing collision in the hash table */
+	tablesize = next_prime(commandcnt);
+
+	/* If commandcnt is greater than the greatest prime representable in size_t,
+	 * we simply use commandcnt for the table size and deal with suboptimal
+	 * collision rates... */
+	if (tablesize < commandcnt)
+	{
+		tablesize = commandcnt;
+	}
 
 	/* Allocate zero-initialized table */
 	commandtable = calloc(tablesize, sizeof *commandtable);
