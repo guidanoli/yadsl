@@ -1,9 +1,9 @@
 #include <yatester/cmdhdl.h>
 #include <yatester/builtins.h>
 #include <yatester/yatester.h>
+#include <yatester/parser.h>
 
 #include <stdbool.h>
-#include <math.h>
 #include <string.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -13,6 +13,7 @@ static size_t tablesize;
 
 /**
  * @brief djb2 hash function
+ * @author Daniel J. Bernstein
  */
 static size_t djb2_hash(const char* str)
 {
@@ -21,7 +22,7 @@ static size_t djb2_hash(const char* str)
 
 	while (c = *str++)
 	{
-		hash = ((hash << 5) + hash) + c;
+		hash = ((hash << 5) + hash) + c; /* hash = 33 * hash + c */
 	}
 
 	return hash;
@@ -75,6 +76,7 @@ yatester_status yatester_initializecmdhdl()
 {
 	size_t i, j, k, commandcnt = 0;
 	const yatester_command* command;
+	yatester_status status;
 
 	/* List of all commands to be added to the command table */
 	const yatester_command* all_commands[] = 
@@ -88,6 +90,20 @@ yatester_status yatester_initializecmdhdl()
 	{
 		for (command = all_commands[i]; command->name != NULL; ++command)
 		{
+			/* Check if command has handler */
+			if (command->handler == NULL)
+			{
+				return yatester_report(YATESTER_BADCMD, "command \"%s\" does not have a handler", command->name);
+			}
+
+			/* Check if command name is valid */
+			status = yatester_iscommandnamevalid(command->name);
+
+			if (status != YATESTER_OK)
+			{
+				return status;
+			}
+
 			/* If all command tables are NULL-terminated, commandcnt should
 			 * not overflow since size_t should be able to contain all 
 			 * addressable memory space */
@@ -95,8 +111,10 @@ yatester_status yatester_initializecmdhdl()
 		}
 	}
 
-	/* Find the biggest k <= 4 such that k * commandcnt doesn't overflow
-	 * On small command tables, k = 4 */
+	/* Find the biggest 1 <= k <= 4 such that k * commandcnt doesn't overflow
+	 * This leads to a constant load factor < 1/k 
+	 * On small command tables, k = 4 and load factor < 0.25
+	 */
 	for (k = 4; k > 1; --k)
 	{
 		if (commandcnt * k > commandcnt)
@@ -111,19 +129,18 @@ yatester_status yatester_initializecmdhdl()
 	tablesize = next_prime(commandcnt);
 
 	/* If commandcnt is greater than the greatest prime representable in size_t,
-	 * we simply use commandcnt for the table size and deal with suboptimal
-	 * collision rates... */
+	 * we simply throw an error, because we need the load factor to be < 1 */
 	if (tablesize < commandcnt)
 	{
-		tablesize = commandcnt;
+		return yatester_report(YATESTER_NOMEM, "command table is too large");
 	}
 
-	/* Allocate zero-initialized table */
+	/* Allocate zero-initialized table with tablesize entries */
 	commandtable = calloc(tablesize, sizeof *commandtable);
 
 	if (commandtable == NULL)
 	{
-		return yatester_report(YATESTER_NOMEM, "could not allocate command table\n");
+		return yatester_report(YATESTER_NOMEM, "could not allocate command table");
 	}
 
 	/* Populate the table with all commands */
@@ -131,11 +148,6 @@ yatester_status yatester_initializecmdhdl()
 	{
 		for (command = all_commands[i]; command->name != NULL; ++command)
 		{
-			if (command->handler == NULL)
-			{
-				return yatester_report(YATESTER_BADCMD, "command \"%s\" does not have a handler\n", command->name);
-			}
-
 			/* Hash command name to calculate table index */
 			j = djb2_hash(command->name) % tablesize;
 
@@ -145,7 +157,7 @@ yatester_status yatester_initializecmdhdl()
 			{
 				if (strcmp(commandtable[j]->name, command->name) == 0)
 				{
-					return yatester_report(YATESTER_BADCMD, "command \"%s\" already exists\n", command->name);
+					return yatester_report(YATESTER_BADCMD, "command \"%s\" already exists", command->name);
 				}
 
 				/* Visit next entry (wrapping around) */

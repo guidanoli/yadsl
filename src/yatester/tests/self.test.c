@@ -6,7 +6,6 @@
 
 static char* commandname_;
 static int hascommand_;
-static int longcmdcalled;
 
 static void hascommandaux(const yatester_command* command)
 {
@@ -39,16 +38,6 @@ static void raise_cmd(int argc, char** argv)
 	int status;
 	yatester_assert(YATESTER_BADARG, sscanf(argv[0], "%d", &status) == 1);
 	yatester_raise(status);
-}
-
-static void long_cmd(int argc, char** argv)
-{
-	longcmdcalled = 1;
-}
-
-static void assertlongcmdcalled_cmd(int argc, char** argv)
-{
-	yatester_assert(YATESTER_ERROR, longcmdcalled);
 }
 
 static void streq_cmd(int argc, char** argv)
@@ -103,12 +92,11 @@ static void messwithargv_cmd(int argc, char** argv)
 const yatester_command yatester_commands[] =
 {
 	{ "raise", AT_LEAST(1), raise_cmd },
-	{ "r-a-i-s-e", AT_LEAST(1), raise_cmd },
+	{ "RAISE", AT_LEAST(1), raise_cmd },
 	{ "r4153", AT_LEAST(1), raise_cmd },
+	{ "good-day-sir-could-you-raise-an-error-for-me-please-i-really-need-that-error-to-be-raised", AT_LEAST(1), raise_cmd },
 	{ "hascommand", AT_LEAST(1), hascommand_cmd },
 	{ "assert", AT_LEAST(2), assert_cmd },
-	{ "reallylongcommandwithmorecharactersthanthecommandbufferofsixtyfourcharacters", AT_LEAST(0), long_cmd },
-	{ "assertlongcmdcalled", AT_LEAST(0), assertlongcmdcalled_cmd },
 	{ "streq", AT_LEAST(2), streq_cmd },
 	{ "strlen", AT_LEAST(2), strlen_cmd },
 	{ "sum", AT_LEAST(1), sum_cmd },

@@ -25,7 +25,7 @@ static yatester_status evalstatus_internal(yatester_status status)
 	}
 	else if (statusq[0] != YATESTER_OK)
 	{
-		status = yatester_report(YATESTER_ERROR, "expected and real status codes differ\n");
+		status = yatester_report(YATESTER_ERROR, "expected and real status codes differ");
 	}
 
 	statusq[0] = statusq[1];
@@ -44,7 +44,7 @@ yatester_status yatester_call(const char* commandname, int argc, char** argv)
 
 	if (command == NULL)
 	{
-		return yatester_report(YATESTER_BADCALL, "command \"%s\" not found\n", commandname);
+		return yatester_report(YATESTER_BADCALL, "command \"%s\" not found", commandname);
 	}
 
 	/* Assumes AT_MOST and AT_LEAST are involutions */
@@ -52,14 +52,14 @@ yatester_status yatester_call(const char* commandname, int argc, char** argv)
 	{
 		if (argc > AT_MOST(command->argc))
 		{
-			return yatester_report(YATESTER_BADCALL, "command \"%s\" expected at most %d argument(s), but got %d\n", commandname, AT_MOST(command->argc), argc);
+			return yatester_report(YATESTER_BADCALL, "command \"%s\" expected at most %d argument(s), but got %d", commandname, AT_MOST(command->argc), argc);
 		}
 	}
 	else
 	{
 		if (argc < AT_LEAST(command->argc))
 		{
-			return yatester_report(YATESTER_BADCALL, "command \"%s\" expected at least %d argument(s), but got %d\n", commandname, AT_LEAST(command->argc), argc);
+			return yatester_report(YATESTER_BADCALL, "command \"%s\" expected at least %d argument(s), but got %d", commandname, AT_LEAST(command->argc), argc);
 		}
 	}
 
@@ -85,7 +85,7 @@ void yatester_assert_function(const char* code, const char* file, int line, yate
 {
 	if (!condition && status != YATESTER_OK)
 	{
-		yatester_raise(yatester_report(status, "failed assertion \"%s\" in \"%s\", line %d\n", code, file, line));
+		yatester_raise(yatester_report(status, "failed assertion \"%s\" in \"%s\", line %d", code, file, line));
 	}
 }
 
@@ -102,6 +102,7 @@ yatester_status yatester_vreport(yatester_status status, const char* fmt, va_lis
 {
 	static const char* preffixes[] =
 	{
+		[YATESTER_OK] = "Report",
 		[YATESTER_ERROR] = "Error",
 		[YATESTER_NOMEM] = "No memory",
 		[YATESTER_FTLERR] = "Fatal error",
@@ -117,11 +118,12 @@ yatester_status yatester_vreport(yatester_status status, const char* fmt, va_lis
 	{
 		fprintf(stderr, "%s: ", preffixes[status]);
 		vfprintf(stderr, fmt, va);
+		fprintf(stderr, "\n");
 		return status;
 	}
 	else
 	{
-		return yatester_report(YATESTER_ERROR, "bad status code %d\n", status);
+		return yatester_report(YATESTER_ERROR, "bad status code %d", status);
 	}
 }
 

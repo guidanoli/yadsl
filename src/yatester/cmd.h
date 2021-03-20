@@ -3,6 +3,10 @@
 
 /* Commands */
 
+/**
+ * @brief Argument count restriction macros
+ * Where 0 <= argc <= INT_MAX
+ */
 #define AT_LEAST(argc) (argc)
 #define AT_MOST(argc) (-(argc)-1)
 
@@ -18,7 +22,10 @@ typedef struct
 }
 yatester_command;
 
-/* Terminates on command with name = NULL */
+/**
+ * @brief Command table
+ * @note The last command with have name = NULL
+ */
 extern const yatester_command yatester_commands[];
 
 #endif

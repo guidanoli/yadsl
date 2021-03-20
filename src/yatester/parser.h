@@ -16,6 +16,13 @@
 yatester_status yatester_initializeparser();
 
 /**
+ * @brief Check if command name is valid
+ * @param commandname command name
+ * @return operation status
+ */
+yatester_status yatester_iscommandnamevalid(const char* commandname);
+
+/**
  * @brief Parse script
  * @param fp script file pointer
  * @return operation status

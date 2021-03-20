@@ -92,11 +92,8 @@
 
 # Long commands
 
-/expect 1
-/assertlongcmdcalled
-
-/reallylongcommandwithmorecharactersthanthecommandbufferofsixtyfourcharacters
-/assertlongcmdcalled
+/expect 2
+/good-day-sir-could-you-raise-an-error-for-me-please-i-really-need-that-error-to-be-raised 2
 
 # Long arguments
 
@@ -112,10 +109,10 @@
 /sum 20 2 1 1 2 1 1 1 2 4 -2 1 1 2 1 1 1
 /sum 63 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 
-# Numbers and - in command names
+# Command names
 
 /expect 7
-/r-a-i-s-e 7
+/RAISE 7
 
 /expect -3
 /r4153 -3
