@@ -343,9 +343,10 @@ yadsl_memdb_clear_amb_list()
 
 		/* Log leakage */
 		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_LEAKAGE,
-			"%zu leaks detected:", amb_list_size);
+			"%zu leak(s) detected:", amb_list_size);
 	}
 
+	/* Temporarily turn on the deallocation log channel */
 	temp = yadsl_memdb_log_channel_get(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION);
 	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, true);
 
@@ -376,7 +377,7 @@ yadsl_memdb_clear_amb_list_from_file(const char* file)
 
 		/* Log leakage */
 		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_LEAKAGE,
-			"%zu leaks detected:", mem_leaks);
+			"%zu leak(s) detected:", mem_leaks);
 	}
 
 	for (node = amb_list_head; node; node = next) {

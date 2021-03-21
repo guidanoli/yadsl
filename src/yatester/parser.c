@@ -540,7 +540,7 @@ yatester_status yatester_parsescript(FILE *fp)
 			tkcol = col;
 		}
 
-		status = yatester_report(status, "error raised in line %zu, column %zu", tkline, tkcol);
+		status = yatester_report(status, "Error raised in line %zu, column %zu", tkline, tkcol);
 	}
 
 	return status;
@@ -576,7 +576,7 @@ yatester_status yatester_iscommandnamevalid(const char* commandname)
 		}
 	}
 
-	return yatester_report(YATESTER_BADCMD, "invalid command name \"%s\" (invalid character at position %zu)", commandname, col);
+	return yatester_report(YATESTER_BADCMD, "Invalid command name \"%s\" (invalid character at position %zu)", commandname, col);
 }
 
 void yatester_terminateparser()
