@@ -40,7 +40,7 @@ yadsl_argvp_create(
 void
 yadsl_argvp_add_keyword_arguments(
 	yadsl_ArgvParserHandle* argvp,
-	yadsl_ArgvKeywordArgumentDef kwargdefs[]);
+	const yadsl_ArgvKeywordArgumentDef kwargdefs[]);
 
 /**
  * @brief Add a keyword argument

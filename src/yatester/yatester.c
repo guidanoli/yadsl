@@ -23,80 +23,12 @@ static FILE *log_fp;
 #endif
 
 /**
- * @brief Terminate modules and variables
- * @param status current status code
- * @return processed status code
- */
-static yatester_status terminate_internal(yatester_status status)
-{
-	/* Terminate modules */
-	yatester_terminatecmdhdl();
-	yatester_terminateparser();
-
-#ifdef YADSL_DEBUG
-	if (log_fp != NULL)
-	{
-		yadsl_memdb_set_logger(NULL);
-		fclose(log_fp);
-		log_fp = NULL;
-	}
-#endif
-
-	if (input_fp != NULL)
-	{
-		fclose(input_fp);
-		input_fp = NULL;
-	}
-
-	if (argvp != NULL)
-	{
-		yadsl_argvp_destroy(argvp);
-		argvp = NULL;
-	}
-
-#ifdef YADSL_DEBUG
-	if (status == YATESTER_OK)
-	{
-		if (yadsl_memdb_amb_list_size() > 0)
-		{
-			status = yatester_report(YATESTER_MEMLK, "The memory debugger has detected a leakage");
-		}
-		else if (yadsl_memdb_error_occurred())
-		{
-			status = yatester_report(YATESTER_FTLERR, "The memory debugger has detected an error");
-		}
-	}
-
-	yadsl_memdb_clear_amb_list();
-
-	if (status == YATESTER_NOMEM && yadsl_memdb_fail_occurred())
-	{
-		status = YATESTER_OK;
-	}
-#endif
-
-	if (is_expecting_status)
-	{
-		if (status == expected_status)
-		{
-			status = YATESTER_OK;
-		}
-		else
-		{
-			status = yatester_report(YATESTER_ERROR, "Expected and real status codes differ");
-		}
-	}
-
-	return status;
-}
-
-/**
- * @brief Parse command line arguments
+ * @brief Initialize program
  * @param argc argument count
  * @param argv argument vector
  * @return operation status code
  */
-static yatester_status parse_arguments_internal(int argc, char** argv)
+static yatester_status initialize_internal(int argc, char** argv)
 {
 	int nmatches;
 #ifdef YADSL_DEBUG
@@ -106,7 +38,7 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 	const char *log_channel_name;
 #endif
 
-	yadsl_ArgvKeywordArgumentDef kwargsdef[] =
+	static const yadsl_ArgvKeywordArgumentDef kwargsdef[] =
 	{
 		{ "--help", 0 },
 		{ "--list-commands", 0 },
@@ -250,45 +182,80 @@ static yatester_status parse_arguments_internal(int argc, char** argv)
 }
 
 /**
+ * @brief Terminate program
+ * @param status current status code
+ * @return processed status code
+ */
+static yatester_status terminate_internal(yatester_status status)
+{
+	/* Terminate modules */
+	yatester_terminatecmdhdl();
+	yatester_terminateparser();
+
+#ifdef YADSL_DEBUG
+	if (log_fp != NULL)
+	{
+		yadsl_memdb_set_logger(NULL);
+		fclose(log_fp);
+		log_fp = NULL;
+	}
+#endif
+
+	if (input_fp != NULL)
+	{
+		fclose(input_fp);
+		input_fp = NULL;
+	}
+
+	if (argvp != NULL)
+	{
+		yadsl_argvp_destroy(argvp);
+		argvp = NULL;
+	}
+
+#ifdef YADSL_DEBUG
+	if (status == YATESTER_OK)
+	{
+		if (yadsl_memdb_amb_list_size() > 0)
+		{
+			status = yatester_report(YATESTER_MEMLK, "The memory debugger has detected a leakage");
+		}
+		else if (yadsl_memdb_error_occurred())
+		{
+			status = yatester_report(YATESTER_FTLERR, "The memory debugger has detected an error");
+		}
+	}
+
+	yadsl_memdb_clear_amb_list();
+
+	if (status == YATESTER_NOMEM && yadsl_memdb_fail_occurred())
+	{
+		status = YATESTER_OK;
+	}
+#endif
+
+	if (is_expecting_status)
+	{
+		if (status == expected_status)
+		{
+			status = YATESTER_OK;
+		}
+		else
+		{
+			status = yatester_report(YATESTER_ERROR, "Expected and real status codes differ");
+		}
+	}
+
+	return status;
+}
+
+/**
  * @brief Print command and the number of arguments it expects
  * @param command
  */
 static void printcmd_cb(const yatester_command* command)
 {
 	printf("%s\n", command->name);
-}
-
-static yatester_status do_lookups()
-{
-	if (yadsl_argvp_has_keyword_argument(argvp, "--help"))
-	{
-		fprintf(stderr, "Yet Another Tester\n");
-		fprintf(stderr, "\n");
-		fprintf(stderr, "Usage: %s [options]\n", yadsl_argvp_get_positional_argument(argvp, 0));
-		fprintf(stderr, "\n");
-		fprintf(stderr, "Options:\n");
-		fprintf(stderr, "--help                          Print usage information and exit\n");
-		fprintf(stderr, "--list-commands                 List all valid commands and exit\n");
-		fprintf(stderr, "--input-file <filepath>         Read commands from file instead of stdin\n");
-		fprintf(stderr, "--expect <status>               Expect the tester to return a status code\n");
-#ifdef YADSL_DEBUG
-		fprintf(stderr, "--log-file <filepath>           Write log to file instead of stderr\n");
-		fprintf(stderr, "--malloc-failing-rate <rate>    Set memory allocation failing rate\n");
-		fprintf(stderr, "--malloc-failing-index <index>  Set memory allocation failing index\n");
-		fprintf(stderr, "--prng-seed <seed>              Set pseudorandom number generator seed\n");
-		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");
-		fprintf(stderr, "                                ALLOCATION, DEALLOCATION, LEAKAGE\n");
-#endif
-		return YATESTER_ERROR;
-	}
-
-	if (yadsl_argvp_has_keyword_argument(argvp, "--list-commands"))
-	{
-		yatester_itercommands(printcmd_cb);
-		return YATESTER_ERROR;
-	}
-
-	return YATESTER_OK;
 }
 
 /**
@@ -305,22 +272,49 @@ static void assert_ok(yatester_status status)
 
 int main(int argc, char** argv)
 {
+	/* Set jump buffer */
 	yatester_status status = setjmp(env);
 
+	/* If long jump was performed */
 	if (status != YATESTER_OK)
 	{
 		goto end;
 	}
 
-	/* Parse command line arguments */
-	assert_ok(parse_arguments_internal(argc, argv));
+	/* Initialize program */
+	assert_ok(initialize_internal(argc, argv));
+
+	if (yadsl_argvp_has_keyword_argument(argvp, "--help"))
+	{
+		fprintf(stderr, "Yet Another Tester\n");
+		fprintf(stderr, "\n");
+		fprintf(stderr, "Usage: %s [options]\n", argv[0]);
+		fprintf(stderr, "\n");
+		fprintf(stderr, "Options:\n");
+		fprintf(stderr, "--help                          Print usage information and exit\n");
+		fprintf(stderr, "--list-commands                 List all valid commands and exit\n");
+		fprintf(stderr, "--input-file <filepath>         Read commands from file instead of stdin\n");
+		fprintf(stderr, "--expect <status>               Expect the tester to return a status code\n");
+#ifdef YADSL_DEBUG
+		fprintf(stderr, "--log-file <filepath>           Write log to file instead of stderr\n");
+		fprintf(stderr, "--malloc-failing-rate <rate>    Set memory allocation failing rate\n");
+		fprintf(stderr, "--malloc-failing-index <index>  Set memory allocation failing index\n");
+		fprintf(stderr, "--prng-seed <seed>              Set pseudorandom number generator seed\n");
+		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");
+		fprintf(stderr, "                                ALLOCATION, DEALLOCATION, LEAKAGE\n");
+#endif
+		goto end;
+	}
 
 	/* Initialize modules */
 	assert_ok(yatester_initializeparser());
 	assert_ok(yatester_initializecmdhdl());
 
-	/* Do lookups */
-	assert_ok(do_lookups());
+	if (yadsl_argvp_has_keyword_argument(argvp, "--list-commands"))
+	{
+		yatester_itercommands(printcmd_cb);
+		goto end;
+	}
 
 	/* Parse script */
 	assert_ok(yatester_parsescript(input_fp));

@@ -53,7 +53,7 @@ fail:
 void
 yadsl_argvp_add_keyword_arguments(
 	yadsl_ArgvParserHandle* argvp,
-	yadsl_ArgvKeywordArgumentDef kwargdefs[])
+	const yadsl_ArgvKeywordArgumentDef kwargdefs[])
 {
 	for (; kwargdefs->kw; ++kwargdefs)
 		yadsl_argvp_add_keyword_argument(argvp, kwargdefs->kw, kwargdefs->valc);

@@ -43,18 +43,18 @@ add_yatester_script(TARGET emptytest SOURCE empty.script NAME empty.1.script)
 add_yatester_script(TARGET emptytest SOURCE empty.2.script)
 add_yatester_script(TARGET emptytest SOURCE empty.3.script)
 
-add_test(NAME empty.1.fail COMMAND emptytest --help --expect 1)
-add_test(NAME empty.2.fail COMMAND emptytest --list-commands --expect 1)
+add_test(NAME empty.1.fail COMMAND emptytest --help)
+add_test(NAME empty.2.fail COMMAND emptytest --list-commands)
+add_test(NAME empty.3.fail COMMAND emptytest --input-file x --expect 5)
 
 # No --expect will fail
-add_test(NAME no_expect COMMAND emptytest --list-commands)
+add_test(NAME no_expect COMMAND emptytest --input-file x)
 set_tests_properties(no_expect PROPERTIES WILL_FAIL TRUE)
 
 # Wrong --expect will fail
-add_test(NAME wrong_expect COMMAND emptytest --list-commands --expect 2)
+add_test(NAME wrong_expect COMMAND emptytest --input-file x --expect 2)
 set_tests_properties(wrong_expect PROPERTIES WILL_FAIL TRUE)
 
-add_test(NAME empty.3.fail COMMAND emptytest --input-file x --expect 5)
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
 	add_test(NAME empty.4.fail COMMAND emptytest --log-file / --expect 5)
 	add_test(NAME empty.5.fail COMMAND emptytest --enable-log-channel x --expect 1)
