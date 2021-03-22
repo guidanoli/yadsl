@@ -529,7 +529,7 @@ yatester_status yatester_parsescript(FILE *fp)
 				fprintf(stderr, "[PARSER] Char: EOF\tState: %d\n", st);
 #endif
 		}
-		while (!IS_FINAL(st));
+		while (!IS_FINAL(st) && !signo);
 	}
 	else
 	{

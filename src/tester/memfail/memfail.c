@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <signal.h>
 
 #include <yadsl/utl.h>
 
@@ -14,8 +15,8 @@
  * @brief Memory Failing Simulator
  * This program intends to simulate memory allocation failure by
  * passing special arguments to the tester module that configure
- * the Memory Debugger in such a way that certain calls to malloc
- * and realloc will fail
+ * the Memory Debugger in such a way that certain calls to malloc,
+ * realloc and calloc will fail
  * Usage:
  * 
  * memfail <tester-module-file-path> <tester-script>
@@ -23,6 +24,7 @@
  * Returns the number of tests that have failed.
 */
 
+static volatile bool interrupted; /**< Interrupt flag */
 static char* tmpfilename; /**< Temporary file name */
 static char* command; /**< Command */
 static char* tester; /**< Tester */
@@ -40,6 +42,11 @@ static void release_resources()
 		remove(tmpfilename);
 		free(tmpfilename);
 	}
+}
+
+static void interrupt_handler(int sig)
+{
+	interrupted = true;
 }
 
 /**
@@ -153,7 +160,7 @@ static void run_tester(tester_arguments* args)
 	command = strcatdyn(command, true, tmpfilename, false);
 
 	if (args->fail_by_index) {
-        char subcommand[26+sizeof(size_t)*3];
+        char subcommand[26 + YADSL_BUFSIZ_FOR(size_t)];
 		sprintf(subcommand, " --malloc-failing-index %zu", args->malloc_index);
 		command = strcatdyn(command, true, subcommand, false);
 	}
@@ -189,6 +196,9 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
+	// Set signal handler
+	signal(SIGINT, interrupt_handler);
+
 	// Store arguments
 	tester = argv[1];
 	script = argv[2];
@@ -210,7 +220,7 @@ int main(int argc, char** argv)
 	malloc_count = count_lines(tmpfilename);
 	
 	// Check for memory leaks with memory failing
-	for (size_t malloc_index = 0; malloc_index < malloc_count; ++malloc_index) {
+	for (size_t malloc_index = 0; malloc_index < malloc_count && !interrupted; ++malloc_index) {
 		args = (tester_arguments) { .fail_by_index = true,
 		                            .malloc_index = malloc_index,
 		                            .log_leakage = true };
@@ -220,6 +230,14 @@ int main(int argc, char** argv)
 	// Release resources
 	release_resources();
 
-	// Exit with success
-	return EXIT_SUCCESS;
+	if (interrupted)
+	{
+		// Exit with failure
+		return EXIT_FAILURE;
+	}
+	else
+	{
+		// Exit with success
+		return EXIT_SUCCESS;
+	}
 }

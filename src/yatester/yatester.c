@@ -4,6 +4,7 @@
 #include <yatester/runner.h>
 #include <yatester/parser.h>
 
+#include <signal.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +12,7 @@
 
 #include <argvp/argvp.h>
 
+volatile int signo;
 static jmp_buf env;
 static yadsl_ArgvParserHandle *argvp;
 static int is_expecting_status;
@@ -21,6 +23,15 @@ static FILE *input_fp;
 static const char *log_fname;
 static FILE *log_fp;
 #endif
+
+/**
+ * @brief Handles interrupts
+ * @param sig signal number
+ */
+static void interrupt_handler(int sig)
+{
+	signo = sig;
+}
 
 /**
  * @brief Initialize program
@@ -53,6 +64,8 @@ static yatester_status initialize_internal(int argc, char** argv)
 #endif
 		{ NULL, 0 }, /* End of definitions array */
 	};
+
+	signal(SIGINT, interrupt_handler);
 
 	argvp = yadsl_argvp_create(argc, argv);
 
@@ -211,6 +224,11 @@ static yatester_status terminate_internal(yatester_status status)
 	{
 		yadsl_argvp_destroy(argvp);
 		argvp = NULL;
+	}
+
+	if (signo != 0)
+	{
+		status = yatester_report(YATESTER_ERROR, "Signal %d was raised", signo);
 	}
 
 #ifdef YADSL_DEBUG
