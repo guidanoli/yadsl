@@ -6,11 +6,6 @@
 #include <yatester/status.h>
 
 /**
- * @brief Last raised signal
- */
-extern volatile int signo;
-
-/**
  * @brief Raise error
  * @note Performs a long jump
  * @param status error status code

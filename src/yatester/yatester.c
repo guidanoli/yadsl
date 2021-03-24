@@ -4,16 +4,12 @@
 #include <yatester/runner.h>
 #include <yatester/parser.h>
 
-#include <signal.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <setjmp.h>
 
 #include <argvp/argvp.h>
 
-volatile int signo;
-static jmp_buf env;
 static yadsl_ArgvParserHandle *argvp;
 static int is_expecting_status;
 static yatester_status expected_status;
@@ -23,15 +19,6 @@ static FILE *input_fp;
 static const char *log_fname;
 static FILE *log_fp;
 #endif
-
-/**
- * @brief Handles interrupts
- * @param sig signal number
- */
-static void interrupt_handler(int sig)
-{
-	signo = sig;
-}
 
 /**
  * @brief Initialize program
@@ -62,10 +49,8 @@ static yatester_status initialize_internal(int argc, char** argv)
 		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
 #endif
-		{ NULL, 0 }, /* End of definitions array */
+		{ NULL, 0 },
 	};
-
-	signal(SIGINT, interrupt_handler);
 
 	argvp = yadsl_argvp_create(argc, argv);
 
@@ -201,7 +186,6 @@ static yatester_status initialize_internal(int argc, char** argv)
  */
 static yatester_status terminate_internal(yatester_status status)
 {
-	/* Terminate modules */
 	yatester_terminatecmdhdl();
 	yatester_terminateparser();
 
@@ -224,11 +208,6 @@ static yatester_status terminate_internal(yatester_status status)
 	{
 		yadsl_argvp_destroy(argvp);
 		argvp = NULL;
-	}
-
-	if (signo != 0)
-	{
-		status = yatester_report(YATESTER_ERROR, "Signal %d was raised", signo);
 	}
 
 #ifdef YADSL_DEBUG
@@ -277,30 +256,19 @@ static void printcmd_cb(const yatester_command* command)
 }
 
 /**
- * @brief Asserts status is OK
- * @note If not, performs a long jump
+ * @brief Run program
+ * @param argc argument count
+ * @param argv argument vector
+ * @return status
  */
-static void assert_ok(yatester_status status)
+static yatester_status run_internal(int argc, char** argv)
 {
-	if (status != YATESTER_OK)
+	yatester_status status;
+
+	if(status = initialize_internal(argc, argv))
 	{
-		longjmp(env, status);
+		return status;
 	}
-}
-
-int main(int argc, char** argv)
-{
-	/* Set jump buffer */
-	yatester_status status = setjmp(env);
-
-	/* If long jump was performed */
-	if (status != YATESTER_OK)
-	{
-		goto end;
-	}
-
-	/* Initialize program */
-	assert_ok(initialize_internal(argc, argv));
 
 	if (yadsl_argvp_has_keyword_argument(argvp, "--help"))
 	{
@@ -321,22 +289,38 @@ int main(int argc, char** argv)
 		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");
 		fprintf(stderr, "                                ALLOCATION, DEALLOCATION, LEAKAGE\n");
 #endif
-		goto end;
+		return YATESTER_OK;
 	}
 
-	/* Initialize modules */
-	assert_ok(yatester_initializeparser());
-	assert_ok(yatester_initializecmdhdl());
+	if(status = yatester_initializeparser())
+	{
+		return status;
+	}
+
+	if(status = yatester_initializecmdhdl())
+	{
+		return status;
+	}
 
 	if (yadsl_argvp_has_keyword_argument(argvp, "--list-commands"))
 	{
 		yatester_itercommands(printcmd_cb);
-		goto end;
+		return YATESTER_OK;
 	}
 
-	/* Parse script */
-	assert_ok(yatester_parsescript(input_fp));
+	if(status = yatester_parsescript(input_fp))
+	{
+		return status;
+	}
 
-end:
+	return YATESTER_OK;
+}
+
+int main(int argc, char** argv)
+{
+	yatester_status status;
+
+	status = run_internal(argc, argv);
+
 	return terminate_internal(status);
 }
