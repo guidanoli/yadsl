@@ -1,0 +1,53 @@
+digraph parser {
+	rankdir=LR;
+
+	Initial [shape=doublecircle];
+	Comment;
+	Slash;
+	Command;
+	Separator;
+	Argument;
+	QuotedArgument;
+	QuotedArgumentEnd;
+	Ok [shape=doublecircle];
+	Error [shape=doublecircle];
+
+	node [shape = point ]; Start
+    Start -> Initial;
+
+	Initial -> Initial [ label="[ \\t\\n]     " ];
+	Initial -> Comment [ label="#" ];
+	Initial -> Slash [ label="/" ];
+	Initial -> Ok [ label="EOF" ];
+	Initial -> Error [ style=dashed ];
+	Comment -> Initial [ label="\\n" ];
+	Comment -> Ok [ label="EOF" ];
+	Comment -> Comment [ label="\\n" ];
+	Slash -> Command [ label="[a-zA-Z]" ];
+	Slash -> Error [ style=dashed ];
+	Command -> Command [ label="[a-zA-Z0-9-]" ];
+	Command -> Ok [ label="EOF" ];
+	Command -> Initial [ label="\\n" ];
+	Command -> Separator [ label="[ \\t]" ];
+	Command -> Error [ style=dashed ];
+	Separator -> Comment [ label="#" ];
+	Separator -> Slash [ label="/" ];
+	Separator -> Separator [ label="[ \\t]" ];
+	Separator -> QuotedArgument [ label="\"" ];
+	Separator -> Initial [ label="\\n" ];
+	Separator -> Ok [ label="EOF" ];
+	Separator -> Argument [ style=dashed ];
+	Argument -> Separator [ label="[ \\t]" ];
+	Argument -> Initial [ label="\\n" ];
+	Argument -> Ok [ label="EOF" ];
+	Argument -> Argument [ style=dashed ];
+	QuotedArgument -> QuotedArgumentEnd [ label="\"" ];
+	QuotedArgument -> Error [ label="EOF" ];
+	QuotedArgument -> QuotedArgument [ style=dashed ];
+	QuotedArgumentEnd -> Separator [ label="[ \\t]" ];
+	QuotedArgumentEnd -> Initial [ label="\\n" ];
+	QuotedArgumentEnd -> Ok [ label="EOF" ];
+	QuotedArgumentEnd -> Error [ style=dashed ];
+	Ok -> Ok [ style=dashed ];
+	Error -> Error [ style=dashed ];
+}
