@@ -3,7 +3,6 @@ digraph parser {
 
 	Initial [shape=doublecircle];
 	Comment;
-	Slash;
 	Command;
 	Separator;
 	Argument;
@@ -17,21 +16,19 @@ digraph parser {
 
 	Initial -> Initial [ label="[ \\t\\n]     " ];
 	Initial -> Comment [ label="#" ];
-	Initial -> Slash [ label="/" ];
+	Initial -> Command [ label="[a-zA-Z]" ];
 	Initial -> Ok [ label="EOF" ];
 	Initial -> Error [ style=dashed ];
 	Comment -> Initial [ label="\\n" ];
 	Comment -> Ok [ label="EOF" ];
 	Comment -> Comment [ label="\\n" ];
-	Slash -> Command [ label="[a-zA-Z]" ];
-	Slash -> Error [ style=dashed ];
 	Command -> Command [ label="[a-zA-Z0-9-]" ];
 	Command -> Ok [ label="EOF" ];
 	Command -> Initial [ label="\\n" ];
 	Command -> Separator [ label="[ \\t]" ];
 	Command -> Error [ style=dashed ];
 	Separator -> Comment [ label="#" ];
-	Separator -> Slash [ label="/" ];
+	Separator -> Command [ label="[a-zA-Z]" ];
 	Separator -> Separator [ label="[ \\t]" ];
 	Separator -> QuotedArgument [ label="\"" ];
 	Separator -> Initial [ label="\\n" ];

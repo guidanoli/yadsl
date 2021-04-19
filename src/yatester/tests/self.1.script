@@ -1,134 +1,134 @@
 # Mess with argument vector
 
-/messwithargv 0
-/messwithargv 64 32
-/streq abcdef abcdef
+messwithargv 0
+messwithargv 64 32
+streq abcdef abcdef
 
 # No error
 
-/noerror
+noerror
 
 # Expect and raise
 
-/expect 1
-/raise 1
+expect 1
+raise 1
 
-/raise 0
+raise 0
 
-/expect 2
-/raise 2
+expect 2
+raise 2
 
-/expect -1
-/raise -1
+expect -1
+raise -1
 
-/expect 0
-/noerror
+expect 0
+noerror
 
 # Has command
 
-/hascommand "raise"
-/hascommand "expect"
-/hascommand "hascommand"
+hascommand "raise"
+hascommand "expect"
+hascommand "hascommand"
 
-/expect 1
-/hascommand "x"
+expect 1
+hascommand "x"
 
-/expect 1
-/hascommand ""
+expect 1
+hascommand ""
 
 # Asserts
 
-/assert 1 0
+assert 1 0
 
-/assert 0 0
+assert 0 0
 
-/assert 1 1
+assert 1 1
 
-/expect 1
-/assert 0 1
+expect 1
+assert 0 1
 
-/assert 1 2
+assert 1 2
 
-/expect 2
-/assert 0 2
+expect 2
+assert 0 2
 
-/expect 9
-/assert abc 1
+expect 9
+assert abc 1
 
-/expect 9
-/assert 1 abc
+expect 9
+assert 1 abc
 
 # Equal
 
-/streq "" ""
-/streq "a" "a"
-/streq "a" a
-/streq a "a"
-/streq a a
+streq "" ""
+streq "a" "a"
+streq "a" a
+streq a "a"
+streq a a
 
 # Not equal
 
-/expect 1
-/streq a b
+expect 1
+streq a b
 
-/expect 1
-/streq " " ""
+expect 1
+streq " " ""
 
-/expect 1
-/streq "	" ""
+expect 1
+streq "	" ""
 
 # Length
 
-/strlen 0 ""
-/strlen 1 A
-/strlen 1 "A"
-/strlen 1 " "
-/strlen 3 ABC
-/strlen 3 "ABC"
-/strlen 3 " 	 "
+strlen 0 ""
+strlen 1 A
+strlen 1 "A"
+strlen 1 " "
+strlen 3 ABC
+strlen 3 "ABC"
+strlen 3 " 	 "
 
-/expect 9
-/strlen abc abc
+expect 9
+strlen abc abc
 
 # Long commands
 
-/expect 2
-/good-day-sir-could-you-raise-an-error-for-me-please-i-really-need-that-error-to-be-raised 2
+expect 2
+good-day-sir-could-you-raise-an-error-for-me-please-i-really-need-that-error-to-be-raised 2
 
 # Long arguments
 
-/strlen 78 reallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacters
-/strlen 234 reallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacterreallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacterssreallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacters
+strlen 78 reallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacters
+strlen 234 reallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacterreallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacterssreallylongargumentwithmorecharactersthantheargumentbufferofsixtyfourcharacters
 
 # Many arguments
 
-/sum 0
-/sum 0 0 0 0 0 0 0
-/sum 0 1 -1 2 -2 3 -3
-/sum 1 -1 1 -2 2 3 -2
-/sum 20 2 1 1 2 1 1 1 2 4 -2 1 1 2 1 1 1
-/sum 63 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+sum 0
+sum 0 0 0 0 0 0 0
+sum 0 1 -1 2 -2 3 -3
+sum 1 -1 1 -2 2 3 -2
+sum 20 2 1 1 2 1 1 1 2 4 -2 1 1 2 1 1 1
+sum 63 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 
 # Command names
 
-/expect 7
-/RAISE 7
+expect 7
+RAISE 7
 
-/expect -3
-/r4153 -3
+expect -3
+r4153 -3
 
 # At least x arguments
 
-/atleast0
-/atleast0 abc
-/atleast0 abc def
+atleast0
+atleast0 abc
+atleast0 abc def
 
-/atleast1 abc
-/atleast1 abc def
+atleast1 abc
+atleast1 abc def
 
 # At most x arguments
 
-/atmost0
+atmost0
 
-/atmost1
-/atmost1 abc
+atmost1
+atmost1 abc

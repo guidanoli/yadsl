@@ -1,1 +1,1 @@
-/streq "a" "a"x
+streq "a" "a"x

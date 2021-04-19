@@ -13,7 +13,6 @@ typedef enum
 {
 	ST_INITIAL,
 	ST_COMMENT,
-	ST_SLASH,
 	ST_COMMAND,
 	ST_SEPARATOR,
 	ST_ARGUMENT,
@@ -176,7 +175,7 @@ static void pushargument_internal()
 	}
 
 #ifdef YATESTER_PARSER_DEBUG
-	fprintf(stderr, "[PARSER] Pushed argument \"%s\"\n", &argstr.ptr[argstr.length]);
+	fprintf(stderr, "[PARSER] Pushed argument \"%s\"\n", &argstr.ptr[argidx[argc-1]]);
 #endif
 }
 
@@ -251,9 +250,13 @@ static state transition_internal(state st, int c, bool pure)
 		{
 			return ST_COMMENT;
 		}
-		else if (c == '/')
+		else if (IS_ALPHA(c))
 		{
-			return ST_SLASH;
+			if (!pure)
+			{
+				writecommand_internal(c);
+			}
+			return ST_COMMAND;
 		}
 		else if (IS_SEPARATOR(c) || IS_NEWLINE(c))
 		{
@@ -265,7 +268,7 @@ static state transition_internal(state st, int c, bool pure)
 		}
 		else
 		{
-			return raise_internal(YATESTER_STXERR, "Expected '#', '/' or EOF");
+			return raise_internal(YATESTER_STXERR, "Expected '#', EOF or an alphabetic character");
 		}
 		break;
 	case ST_COMMENT:
@@ -280,20 +283,6 @@ static state transition_internal(state st, int c, bool pure)
 		else
 		{
 			return ST_COMMENT;
-		}
-		break;
-	case ST_SLASH:
-		if (IS_ALPHA(c))
-		{
-			if (!pure)
-			{
-				writecommand_internal(c);
-			}
-			return ST_COMMAND;
-		}
-		else
-		{
-			return raise_internal(YATESTER_STXERR, "Expected an alphabetic character");
 		}
 		break;
 	case ST_COMMAND:
@@ -344,14 +333,6 @@ static state transition_internal(state st, int c, bool pure)
 				call_internal();
 			}
 			return ST_COMMENT;
-		}
-		else if (c == '/')
-		{
-			if (!pure)
-			{
-				call_internal();
-			}
-			return ST_SLASH;
 		}
 		else if (IS_SEPARATOR(c))
 		{
@@ -550,7 +531,7 @@ yatester_status yatester_iscommandnamevalid(const char* commandname)
 {
 	char c;
 	const char* p = commandname;
-	state st = ST_SLASH;
+	state st = ST_INITIAL;
 	yatester_status status;
 
 	col = 0;

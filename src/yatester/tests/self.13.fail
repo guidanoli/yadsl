@@ -1,2 +1,2 @@
-/expect 1
-/raise 0
+expect 1
+raise 0
