@@ -11,7 +11,7 @@
 #define AT_MOST(argc) (-(argc)-1)
 
 /**
- * @brief NULL-terminated command definition table
+ * @brief Command definition
  * @note Use AT_LEAST and AT_MOST for the argc field
  */
 typedef struct
@@ -24,7 +24,7 @@ yatester_command;
 
 /**
  * @brief Command table
- * @note The last command with have name = NULL
+ * @note The last command must have name = NULL
  */
 extern const yatester_command yatester_commands[];
 

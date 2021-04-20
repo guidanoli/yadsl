@@ -93,7 +93,7 @@ yatester_status yatester_initializecmdhdl()
 			/* Check if command has handler */
 			if (command->handler == NULL)
 			{
-				return yatester_report(YATESTER_BADCMD, "Command \"%s\" does not have a handler", command->name);
+				return yatester_report(YATESTER_BADCMD, "command \"%s\" does not have a handler", command->name);
 			}
 
 			/* Check if command name is valid */
@@ -119,20 +119,19 @@ yatester_status yatester_initializecmdhdl()
 	{
 		if (commandcnt * k > commandcnt)
 		{
-			commandcnt *= k;
 			break;
 		}
 	}
 
 	/* We choose the next prime for the table size for better statistical
 	 * results on reducing collision in the hash table */
-	tablesize = next_prime(commandcnt);
+	tablesize = next_prime(commandcnt * k);
 
 	/* If commandcnt is greater than the greatest prime representable in size_t,
 	 * we simply throw an error, because we need the load factor to be < 1 */
-	if (tablesize < commandcnt)
+	if (tablesize < commandcnt * k)
 	{
-		return yatester_report(YATESTER_NOMEM, "Command table is too large");
+		return yatester_report(YATESTER_NOMEM, "command table is too large");
 	}
 
 	/* Allocate zero-initialized table with tablesize entries */
@@ -140,7 +139,7 @@ yatester_status yatester_initializecmdhdl()
 
 	if (commandtable == NULL)
 	{
-		return yatester_report(YATESTER_NOMEM, "Could not allocate command table");
+		return yatester_report(YATESTER_NOMEM, "could not allocate command table");
 	}
 
 	/* Populate the table with all commands */
@@ -157,7 +156,7 @@ yatester_status yatester_initializecmdhdl()
 			{
 				if (strcmp(commandtable[j]->name, command->name) == 0)
 				{
-					return yatester_report(YATESTER_BADCMD, "Command \"%s\" already exists", command->name);
+					return yatester_report(YATESTER_BADCMD, "command \"%s\" already exists", command->name);
 				}
 
 				/* Visit next entry (wrapping around) */

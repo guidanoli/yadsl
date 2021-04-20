@@ -98,7 +98,7 @@ static void string_check(string_t *string)
 	/* Check if new size fits in a size_t */
 	if (newsize <= size)
 	{
-		raise_internal(YATESTER_NOMEM, "Reached maximum string size of %zu", size);
+		raise_internal(YATESTER_NOMEM, "reached maximum string size of %zu", size);
 	}
 
 	/* Resize string to fit newsize items */
@@ -107,7 +107,7 @@ static void string_check(string_t *string)
 	/* Check if realloc failed */
 	if (newptr == NULL)
 	{
-		raise_internal(YATESTER_NOMEM, "Could not resize string");
+		raise_internal(YATESTER_NOMEM, "could not resize string");
 	}
 
 	/* Update string */
@@ -268,7 +268,7 @@ static state transition_internal(state st, int c, bool pure)
 		}
 		else
 		{
-			return raise_internal(YATESTER_STXERR, "Expected '#', EOF or an alphabetic character");
+			return raise_internal(YATESTER_STXERR, "expected '#', EOF or an alphabetic character");
 		}
 		break;
 	case ST_COMMENT:
@@ -322,7 +322,7 @@ static state transition_internal(state st, int c, bool pure)
 		}
 		else
 		{
-			return raise_internal(YATESTER_STXERR, "Expected an alphanumeric character, '-' or EOF");
+			return raise_internal(YATESTER_STXERR, "expected an alphanumeric character, '-' or EOF");
 		}
 		break;
 	case ST_SEPARATOR:
@@ -410,7 +410,7 @@ static state transition_internal(state st, int c, bool pure)
 		}
 		else if (c == EOF)
 		{
-			return raise_internal(YATESTER_STXERR, "Unexpected EOF");
+			return raise_internal(YATESTER_STXERR, "unexpected EOF");
 		}
 		else
 		{
@@ -450,13 +450,13 @@ static state transition_internal(state st, int c, bool pure)
 		}
 		else
 		{
-			return raise_internal(YATESTER_STXERR, "Expected separator or EOF");
+			return raise_internal(YATESTER_STXERR, "expected separator or EOF");
 		}
 		break;
 	case ST_EOF:
 		return ST_EOF;
 	default:
-		return raise_internal(YATESTER_FTLERR, "Invalid state %d", st);
+		return raise_internal(YATESTER_FTLERR, "invalid state %d", st);
 	}
 }
 
@@ -521,7 +521,7 @@ yatester_status yatester_parsescript(FILE *fp)
 			tkcol = col;
 		}
 
-		status = yatester_report(status, "Error raised in line %zu, column %zu", tkline, tkcol);
+		status = yatester_report(status, "error raised in line %zu, column %zu", tkline, tkcol);
 	}
 
 	return status;
@@ -557,7 +557,7 @@ yatester_status yatester_iscommandnamevalid(const char* commandname)
 		}
 	}
 
-	return yatester_report(YATESTER_BADCMD, "Invalid command name \"%s\" (invalid character at position %zu)", commandname, col);
+	return yatester_report(YATESTER_BADCMD, "invalid command name \"%s\" (invalid character at position %zu)", commandname, col);
 }
 
 void yatester_terminateparser()

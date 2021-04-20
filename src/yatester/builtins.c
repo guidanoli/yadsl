@@ -13,10 +13,7 @@ static void yatester_builtin_expect(int argc, char** argv)
 	int expected_status;
 	yatester_status obtained_status;
 
-	if (sscanf(argv[0], "%d", &expected_status) != 1)
-	{
-		yatester_raise(yatester_report(YATESTER_BADARG, "\"%s\" isn't integer", argv[0]));
-	}
+	yatester_assert(YATESTER_BADARG, sscanf(argv[0], "%d", &expected_status) == 1);
 
 	obtained_status = yatester_call(argv[1], argc-2, argv+2);
 
