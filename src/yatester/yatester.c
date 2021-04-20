@@ -113,7 +113,7 @@ static yatester_status initialize_internal(int argc, char** argv)
 	}
 	else if (nmatches == 0)
 	{
-		return yatester_report(YATESTER_ERROR, "invalid number \"%s\" for --malloc-failing-rate option", yadsl_argvp_get_keyword_argument_value(argvp, "--malloc-failing-rate", 0);
+		return yatester_report(YATESTER_ERROR, "invalid number \"%s\" for --malloc-failing-rate option", yadsl_argvp_get_keyword_argument_value(argvp, "--malloc-failing-rate", 0));
 	}
 	else
 	{
