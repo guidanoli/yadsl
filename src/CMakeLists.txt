@@ -23,3 +23,5 @@ add_subdirectory(string)
 add_subdirectory(vector)
 
 add_subdirectory(yatester)
+
+add_subdirectory(lt)
