@@ -252,7 +252,17 @@ static yatester_status terminate_internal(yatester_status status)
  */
 static void printcmd_cb(const yatester_command* command)
 {
-	printf("%s\n", command->name);
+	int argc = command->argc;
+
+	/* Assumes AT_MOST and AT_LEAST are involutions */
+	if (argc < 0)
+	{
+		printf("%s expects at most %d arguments\n", command->name, AT_MOST(argc));
+	}
+	else
+	{
+		printf("%s expects at least %d arguments\n", command->name, AT_LEAST(argc));
+	}
 }
 
 /**

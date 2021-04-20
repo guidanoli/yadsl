@@ -7,38 +7,13 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-static jmp_buf env;
-static yatester_status statusq[2];
-
-void yatester_builtin_expect(int argc, char** argv)
-{
-	int status;
-	yatester_assert(YATESTER_ERROR, sscanf(argv[0], "%d", &status) == 1);
-	statusq[1] = status;
-}
-
-static yatester_status evalstatus_internal(yatester_status status)
-{
-	if (status == statusq[0])
-	{
-		status = YATESTER_OK;
-	}
-	else if (statusq[0] != YATESTER_OK)
-	{
-		status = yatester_report(YATESTER_ERROR, "Expected and real status codes differ");
-	}
-
-	statusq[0] = statusq[1];
-	statusq[1] = YATESTER_OK;
-
-	return status;
-}
-
+static jmp_buf* env_ptr;
 
 yatester_status yatester_call(const char* commandname, int argc, char** argv)
 {
 	const yatester_command* command;
 	yatester_status status;
+	jmp_buf env, *old_env_ptr;
 
 	command = yatester_getcommand(commandname);
 
@@ -63,6 +38,9 @@ yatester_status yatester_call(const char* commandname, int argc, char** argv)
 		}
 	}
 
+	old_env_ptr = env_ptr;
+	env_ptr = &env;
+
 	status = setjmp(env);
 
 	if (status == YATESTER_OK)
@@ -70,14 +48,16 @@ yatester_status yatester_call(const char* commandname, int argc, char** argv)
 		command->handler(argc, argv);
 	}
 
-	return evalstatus_internal(status);
+	env_ptr = old_env_ptr;
+
+	return status;
 }
 
 void yatester_raise(yatester_status status)
 {
 	if (status != YATESTER_OK)
 	{
-		longjmp(env, status);
+		longjmp(*env_ptr, status);
 	}
 }
 

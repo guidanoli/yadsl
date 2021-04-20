@@ -11,7 +11,7 @@
 #define AT_MOST(argc) (-(argc)-1)
 
 /**
- * @brief Command definition
+ * @brief NULL-terminated command definition table
  * @note Use AT_LEAST and AT_MOST for the argc field
  */
 typedef struct

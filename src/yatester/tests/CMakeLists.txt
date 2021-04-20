@@ -68,7 +68,7 @@ add_yatester_script(TARGET selftest SOURCE self.1.script)
 add_yatester_script(TARGET selftest SOURCE self.1.fail VALUE 1)
 add_yatester_script(TARGET selftest SOURCE self.2.fail VALUE 1)
 add_yatester_script(TARGET selftest SOURCE self.3.fail VALUE 6)
-add_yatester_script(TARGET selftest SOURCE self.4.fail VALUE 1)
+add_yatester_script(TARGET selftest SOURCE self.4.fail VALUE 2)
 
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
 	add_yatester_script(TARGET selftest SOURCE self.5.fail VALUE 4)

@@ -1,2 +1,1 @@
-expect 1
-noerror
+expect 1 noerror

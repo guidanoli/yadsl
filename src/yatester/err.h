@@ -8,8 +8,10 @@
 /**
  * @brief Raise error
  * @note Performs a long jump
+ * @note Can only be called inside a command call
  * @param status error status code
  * @note status != YATESTER_OK
+ * @see yatester_call
  */
 void yatester_raise(yatester_status status);
 
