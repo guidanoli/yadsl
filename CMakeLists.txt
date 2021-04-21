@@ -46,8 +46,12 @@ if(YADSL_PYTHON_SUPPORT)
 	include(AddPythonModule)
 endif()
 
+find_package(Lua 5.2 MODULE)
+
 if (YADSL_LUA_SUPPORT)
-	find_package(Lua 5.0 REQUIRED MODULE)
+	if (NOT LUA_FOUND)
+		message(FATAL_ERROR "Lua supported but not found")
+	endif()
 
 	# Add 'add_lua_module' function
 	include(AddLuaModule)

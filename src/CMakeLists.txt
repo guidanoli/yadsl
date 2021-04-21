@@ -4,6 +4,8 @@ add_subdirectory(tester)
 add_subdirectory(testerutils)
 add_subdirectory(memdb)
 add_subdirectory(argvp)
+add_subdirectory(yatester)
+add_subdirectory(lt)
 
 # Modules
 add_subdirectory(avl)
@@ -21,7 +23,3 @@ add_subdirectory(set)
 add_subdirectory(stack)
 add_subdirectory(string)
 add_subdirectory(vector)
-
-add_subdirectory(yatester)
-
-add_subdirectory(lt)

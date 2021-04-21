@@ -198,10 +198,11 @@ static yatester_status terminate_internal(yatester_status status)
 	}
 #endif
 
-	if (input_fp != NULL)
+	if (input_fname != NULL && input_fp != NULL)
 	{
 		fclose(input_fp);
 		input_fp = NULL;
+		input_fname = NULL;
 	}
 
 	if (argvp != NULL)
