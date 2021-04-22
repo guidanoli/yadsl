@@ -1,5 +1,10 @@
 if(LUA_FOUND)
-    add_yadsl_library(lt STATIC SOURCES lt.c lt.h)
+    add_executable(lt lt.c)
     target_include_directories(lt PUBLIC ${LUA_INCLUDE_DIR})
     target_link_libraries(lt ${LUA_LIBRARIES})
+	set_target_properties(lt PROPERTIES FOLDER tests)
+
+    if(YADSL_BUILD_TESTS)
+        add_subdirectory(tests)
+    endif()
 endif()
