@@ -38,6 +38,10 @@ function(add_yatester_script)
 	add_test(NAME ${ARG_NAME} COMMAND ${COMMAND_ARGS})
 endfunction()
 
+if(NOT YADSL_BUILD_SELF_TESTS)
+	return()
+endif()
+
 add_yatester_module(empty.test.c)
 add_yatester_script(TARGET emptytest SOURCE empty.script NAME empty.1.script)
 add_yatester_script(TARGET emptytest SOURCE empty.2.script)

@@ -6,11 +6,17 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(YADSL_BUILD_TESTS "Build unit tests" ON)
+option(YADSL_BUILD_ALL_TESTS "Build all unit tests" OFF)
 option(YADSL_BUILD_LONG_TESTS "Build long unit tests" OFF)
+option(YADSL_BUILD_SELF_TESTS "Build self tests" OFF)
 option(YADSL_PYTHON_SUPPORT "Build Python C extension modules" OFF)
 option(YADSL_LUA_SUPPORT "Build Lua C bindings" OFF)
-
 option(YADSL_GENERATE_DOCS "Generate documentation" OFF)
+
+if(YADSL_BUILD_TESTS AND YADSL_BUILD_ALL_TESTS)
+	set(YADSL_BUILD_LONG_TESTS ON)
+	set(YADSL_BUILD_SELF_TESTS ON)
+endif()
 
 # Allow hierarchical solution
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
