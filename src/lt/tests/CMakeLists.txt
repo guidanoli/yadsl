@@ -1,12 +1,15 @@
 # Add an lt script
-# Optionally, you can specify a passing regex (default: "")
+# Optionally, you can specify passing regexes (default: no regex match)
 # and whether the script is going to fail (default: false)
 # and even the test name (default: script path)
-# add_lt_script(script [REGEX regex] [WILL_FAIL] [NAME name])
+# add_lt_script(script [PASS_REGULAR_EXPRESSION regex1 regex2 ...]
+#                      [FAIL_REGULAR_EXPRESSION regex1 regex2 ...]
+#                      [WILL_FAIL] [NAME name])
 function(add_lt_test script)
 	set(options WILL_FAIL)
-	set(oneValueArgs REGEX NAME)
-	cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "" ${ARGN})
+	set(oneValueArgs NAME)
+	set(multiValueArgs PASS_REGULAR_EXPRESSION FAIL_REGULAR_EXPRESSION)
+	cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
 	get_filename_component(script_path "${script}" ABSOLUTE)
 
@@ -24,29 +27,89 @@ function(add_lt_test script)
 		set_tests_properties("${testname}" PROPERTIES WILL_FAIL "${ARG_WILL_FAIL}")
 	endif()
 
-	if(ARG_REGEX)
-		add_lt_test("${script}" NAME "${testname}.regex")
-		set_tests_properties("${testname}.regex" PROPERTIES PASS_REGULAR_EXPRESSION "${ARG_REGEX}")
-	endif()
+	set(REGEX_COUNTER 1)
+
+	foreach(REGEX ${ARG_PASS_REGULAR_EXPRESSION})
+		set(regex_testname "${testname}/regex/${REGEX_COUNTER}")
+		add_lt_test("${script}" NAME "${regex_testname}")
+		set_tests_properties("${regex_testname}" PROPERTIES PASS_REGULAR_EXPRESSION "${REGEX}")
+		math(EXPR REGEX_COUNTER "${REGEX_COUNTER}+1")
+	endforeach()
+
+	foreach(REGEX ${ARG_FAIL_REGULAR_EXPRESSION})
+		set(regex_testname "${testname}/regex/${REGEX_COUNTER}")
+		add_lt_test("${script}" NAME "${regex_testname}")
+		set_tests_properties("${regex_testname}" PROPERTIES FAIL_REGULAR_EXPRESSION "${REGEX}" WILL_FAIL "${ARG_WILL_FAIL}")
+		math(EXPR REGEX_COUNTER "${REGEX_COUNTER}+1")
+	endforeach()
 endfunction()
 
 if(NOT YADSL_BUILD_SELF_TESTS)
 	return()
 endif()
 
-add_lt_test(return_nil.lua REGEX "test bench must be table, not nil" WILL_FAIL)
-add_lt_test(return_number.lua REGEX "test bench must be table, not number" WILL_FAIL)
-add_lt_test(return_array.lua REGEX "test case name must be string, not number" WILL_FAIL)
-add_lt_test(return_table_with_numbers.lua REGEX "test case must be function, not number" WILL_FAIL)
-add_lt_test(return_table.lua REGEX "mytest \\.\\.\\. my test called\nok")
-add_lt_test(failing_test.lua NAME lt_fail1 REGEX "mytest \\.\\.\\. my test called\nFAIL" WILL_FAIL)
-add_lt_test(failing_test.lua NAME lt_fail2 REGEX "FAIL: mytest" WILL_FAIL)
-add_lt_test(syntax_error.lua REGEX "unexpected symbol" WILL_FAIL)
-add_lt_test(cannot_open.lua REGEX "cannot open" WILL_FAIL)
-add_lt_test("${CMAKE_CURRENT_SOURCE_DIR}" REGEX "cannot read" WILL_FAIL) # directory
-add_lt_test(empty.lua REGEX "hello world")
-add_lt_test(runtime_error.lua REGEX "my error message" WILL_FAIL)
-add_lt_test(ok_fail.lua NAME lt_ok_fail1 REGEX "ok \\.\\.\\. ok called\nok" WILL_FAIL)
-add_lt_test(ok_fail.lua NAME lt_ok_fail2 REGEX "fail \\.\\.\\. fail also called\nFAIL" WILL_FAIL)
-add_lt_test(ok_fail.lua NAME lt_ok_fail3 REGEX "FAIL: fail" WILL_FAIL)
-add_lt_test(ok_fail.lua NAME lt_ok_fail4 REGEX "my error message" WILL_FAIL)
+add_lt_test(return_nil.lua WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"the test script must return a table")
+
+add_lt_test(return_number.lua WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"the test script must return a table")
+
+add_lt_test(return_array.lua
+	PASS_REGULAR_EXPRESSION
+	"1 ... ok"
+	"1 passed"
+	FAIL_REGULAR_EXPRESSION
+	"failed")
+
+add_lt_test(return_table_with_numbers.lua
+	FAIL_REGULAR_EXPRESSION
+	"failed"
+	"passed")
+
+add_lt_test(return_table.lua
+	PASS_REGULAR_EXPRESSION
+	"mytest \\.\\.\\. my test called\nok"
+	"1 passed"
+	FAIL_REGULAR_EXPRESSION
+	"failed")
+
+add_lt_test(failing_test.lua WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"mytest \\.\\.\\. my test called\nFAIL"
+	"FAIL: mytest"
+	FAIL_REGULAR_EXPRESSION
+	"passed")
+
+add_lt_test(syntax_error.lua WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"unexpected symbol")
+
+add_lt_test(cannot_open.lua WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"cannot open")
+
+add_lt_test("${CMAKE_CURRENT_SOURCE_DIR}" WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"cannot read")
+
+add_lt_test(empty.lua
+	PASS_REGULAR_EXPRESSION
+	"hello world")
+
+add_lt_test(runtime_error.lua WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"my error message")
+
+add_lt_test(ok_fail.lua WILL_FAIL
+	PASS_REGULAR_EXPRESSION
+	"ok \\.\\.\\. ok called\nok"
+	"fail \\.\\.\\. fail also called\nFAIL"
+	"FAIL: fail"
+	"my error message"
+	"1 failed, 1 passed")
+
+add_lt_test(check_param.lua
+	PASS_REGULAR_EXPRESSION
+	"mytest \\.\\.\\. my test called\nok")
