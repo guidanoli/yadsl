@@ -72,6 +72,6 @@ It provides more power and flexiblity to the C programmer too
 
 ## Disadvantages of using lt over tester
 
-It adds Lua as one more dependency (although very lightweight?).
-It requires previous knowledge of Lua (although very simple?)
-It adds a new layer for errors (although very stable?)
+* It adds Lua as one more dependency (although very lightweight?).
+* It requires previous knowledge of Lua (although very simple?)
+* It adds a new layer for errors (although very stable?)
