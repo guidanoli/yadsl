@@ -151,6 +151,7 @@ static int lt_main(lua_State* L)
 	{
 		lua_pop(L, 1);
 		lua_concat(L, strcnt - 1);
+		fputs("\n", stderr);
 	}
 
 	if (failedcnt == 0)
@@ -164,7 +165,6 @@ static int lt_main(lua_State* L)
 	}
 	else
 	{
-		fputs("\n", stderr);
 		return lua_error(L);
 	}
 }
