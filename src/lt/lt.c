@@ -5,60 +5,70 @@
 #include "lauxlib.h"
 
 /**
- * Run the main Lua program
+ * Main Lua routine
+ *
  * Arguments:
- * [1] = script file name (string or nil)
+ * [1] = script file path (string or nil)
+ *
+ * Returns:
+ * [1] = brief message (string)
  */
 static int lt_main(lua_State* L)
 {
-	/* Lua stack indices */
 	const int script = 1;
-	int traceback = 0;
-	const int namestbl = 3;
-	const int errorstbl = 4;
-	const int testbenchtbl = 5;
+	int msgh = 0;
+	int names, errors, testbench;
+	lua_Integer passedcnt, failedcnt;
 
-	/* Local variables */
-	const char* scriptname;
-	int strcnt = 0;
-	lua_Integer i, passedcnt = 0, failedcnt = 0;
+	lua_settop(L, 1);
 
-	/* Note: if a script file is not specified,
-	 * then Lua will read from standard input */
+	/* Try to get a message handler for generating
+	 * more informative error messages on protected calls.
+	 * If a message handler could not be found, pushes nil. */
 
-	scriptname = lua_tostring(L, script);           /* script */
-	
-	/* Get debug.traceback for more informative
-	 * error messages on protected calls */
-
-	lua_getglobal(L, "debug");                      /* script debug */
+	lua_getglobal(L, "debug");
 
 	if (lua_istable(L, -1))
 	{
-		lua_getfield(L, -1, "traceback");           /* script debug traceback */
+		lua_getfield(L, -1, "traceback");
 
 		if (lua_isfunction(L, -1))
 		{
-			traceback = 2;
-		}
+			/* If 'debug.traceback' is a function, use it as a
+			 * message handler for protected calls */
 
-		lua_remove(L, -2);                          /* script traceback */
+			lua_remove(L, -2);
+			msgh = lua_gettop(L);
+		}
+		else
+		{
+			lua_pop(L, 2);
+			lua_pushnil(L);
+		}
+	}
+	else
+	{
+		lua_pop(L, 1);
+		lua_pushnil(L);
 	}
 
-	/* Push tables for storing errors and failing
-	 * function names in order (i.e. as an array) */
+	/* Push arrays for storing error messages and failing
+	 * test case names in order of occurence */
 
-	lua_newtable(L);                                /* script traceback namestbl */
-	lua_newtable(L);                                /* script traceback namestbl errorstbl */
+	lua_newtable(L);
+	errors = lua_gettop(L);
+
+	lua_newtable(L);
+	names = lua_gettop(L);
 
 	/* Load script from file (or from standard input,
-	 * if the script name is NULL) and execute it
-	 * in protected mode and with traceback */
+	 * if the script file path is missing) and execute it
+	 * in protected mode */
 
-	if (luaL_loadfile(L, scriptname) ||             /* chunk */
-	    lua_pcall(L, 0, 1, traceback))              /* testbenchtbl */
+	if (luaL_loadfile(L, lua_tostring(L, script)) ||
+		lua_pcall(L, 0, 1, msgh))
 	{
-		return lua_error(L);                        /* errmsg */
+		return lua_error(L);
 	}
 
 	if (!lua_istable(L, -1))
@@ -66,111 +76,107 @@ static int lt_main(lua_State* L)
 		return luaL_error(L, "the test script must return a table");
 	}
 
+	testbench = lua_gettop(L);
+
 	/* Traverse the test bench table and call each
-	 * function in protected mode and with traceback,
-	 * storing any errors in the errors table and
-	 * the failing function name in the names table */
+	 * function in protected mode */
 
-	lua_pushnil(L);                                 /* nil */
+	passedcnt = 0;
+	failedcnt = 0;
 
-	while (lua_next(L, testbenchtbl))               /* key value */
+	lua_pushnil(L);
+
+	while (lua_next(L, testbench))
 	{
+		/* Ignore table entries whose keys aren't strings or
+		 * whose values aren't functions */
+
 		if (!lua_isfunction(L, -1) || !lua_isstring(L, -2))
 		{
 			lua_pop(L, 1);
 			continue;
 		}
 
-		/* Take care not to convert numbers to strings in-place */
+		/* Print the name of each test case
+		 * (Take care not to convert numbers into strings in-place) */
 
-		lua_pushvalue(L, -2);                       /* key value key */
+		lua_pushvalue(L, -2);
 		fprintf(stderr, "%s ... ", lua_tostring(L, -1));
-		lua_pop(L, 1);                              /* key value */
+		lua_pop(L, 1);
 		
-		lua_pushvalue(L, testbenchtbl);             /* key value testbenchtbl */
+		/* Call each test case function with the test bench table */
 
-		if (lua_pcall(L, 1, 0, traceback))          /* key */
+		lua_pushvalue(L, testbench);
+
+		if (lua_pcall(L, 1, 0, msgh))
 		{
-			failedcnt++;                            /* key err */
-			lua_rawseti(L, errorstbl, failedcnt);   /* key */
-			lua_pushvalue(L, -1);                   /* key key */
-			lua_rawseti(L, namestbl, failedcnt);    /* key */
+			/* For each failing test case, append the error message to
+			 * the 'errors' array, and the name of the test case to the
+			 * 'names' array. */
+
+			failedcnt++;
+			lua_rawseti(L, errors, failedcnt);
+			lua_pushvalue(L, -1);
+			lua_rawseti(L, names, failedcnt);
 			fputs("FAIL\n", stderr);
+
+			if (failedcnt < 0)
+			{
+				return luaL_error(L, "failed tests counter overflew");
+			}
 		}
 		else
 		{
 			passedcnt++;
 			fputs("ok\n", stderr);
+
+			if (passedcnt < 0)
+			{
+				return luaL_error(L, "passed tests counter overflew");
+			}
 		}
 
 	}
 
-	/* Print the error messages in order of occurrance,
-	 * if any, plus the failing function name */
+	/* For each failing test case, print its name and the error message
+	 * related to it, in same order of occurence */
 
-	for (i = 1; i <= failedcnt; ++i)
+	for (lua_Integer i = 1; i <= failedcnt; ++i)
 	{
-		lua_rawgeti(L, namestbl, i);                /* name */
-		lua_rawgeti(L, errorstbl, i);               /* name err */
-
-		if (lua_isstring(L, -1))
-		{
-			fprintf(stderr, "\nFAIL: %s\n%s\n", lua_tostring(L, -2),
-												lua_tostring(L, -1));
-		}
-		else
-		{
-			fprintf(stderr, "\nFAIL: %s\n", lua_tostring(L, -2));
-		}
-
-		lua_pop(L, 2);                              /* */
+		lua_rawgeti(L, names, i);
+		lua_rawgeti(L, errors, i);
+		fprintf(stderr, "\nFAIL: %s\n%s\n", lua_tostring(L, -2),
+		                                    lua_tostring(L, -1));
+		lua_pop(L, 2);
 	}
 
-	/* Print brief summary of the test bench run in
-	 * terms of passed and failed test cases and
-	 * raise an error if any test case has failed */
+	/* Print separator */
 
-	if (failedcnt > 0)
+	if (failedcnt > 0 || passedcnt > 0)
 	{
-		lua_pushfstring(L, "%I failed", failedcnt);
-		lua_pushliteral(L, ", ");
-		strcnt += 2;
-	}
-
-	if (passedcnt > 0)
-	{
-		lua_pushfstring(L, "%I passed", passedcnt);
-		lua_pushliteral(L, ", ");
-		strcnt += 2;
-	}
-
-	/* Join strings with commas by popping the
-	 * last comma and concatenating the rest */
-
-	if (strcnt >= 2)
-	{
-		lua_pop(L, 1);
-		lua_concat(L, strcnt - 1);
 		fputs("\n", stderr);
 	}
 
+	/* Push brief message */
+
+	lua_pushfstring(L, "%I failed, %I passed", failedcnt, passedcnt);
+
 	if (failedcnt == 0)
 	{
-		if (passedcnt > 0)
-		{
-			fprintf(stderr, "%s\n", lua_tostring(L, -1));
-		}
+		/* Return brief message */
 
-		return 0;
+		return 1;
 	}
 	else
 	{
+		/* Raise error with brief message */
+
 		return lua_error(L);
 	}
 }
 
 /**
- * Main program flow
+ * Main routine
  * Usage: lt [script]
  */
 int main(int argc, char** argv)
@@ -208,8 +214,7 @@ int main(int argc, char** argv)
 
 	luaL_openlibs(L);
 	
-	/* Call lt_main in protected mode with the script name
-	 * or with nil, if not provided */
+	/* Call lt_main with the script file path or with nil if not provided */
 
 	lua_pushcfunction(L, lt_main);
 
@@ -222,14 +227,11 @@ int main(int argc, char** argv)
 		lua_pushnil(L);
 	}
 
-	status = lua_pcall(L, 1, 0, 0);
+	status = lua_pcall(L, 1, 1, 0);
 	
-	/* Handle errors, if any */
+	/* Print brief message */
 
-	if (status)
-	{
-		fprintf(stderr, "%s: %s\n", program, lua_tostring(L, -1));
-	}
+	fprintf(stderr, "%s: %s\n", program, lua_tostring(L, -1));
 
 	/* Close the Lua state */
 

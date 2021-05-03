@@ -9,8 +9,9 @@ $ lt [script]
 
 Where `script` is the path to a Lua script file.
 If ommitted, the program reads from the standard input, instead.
-The program traverses the table, calling every function whose key is a string or a number,
-and passes the table itself as argument as if it were calling it with the `:` syntax.
+The script should return a table.
+The program traverses this table, calling every function whose key is either a string or a number,
+and passes the table itself as argument as if it were called with the `:` syntax.
 
 An example of Lua script:
 

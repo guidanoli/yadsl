@@ -59,21 +59,14 @@ add_lt_test(return_number.lua WILL_FAIL
 add_lt_test(return_array.lua
 	PASS_REGULAR_EXPRESSION
 	"1 ... ok"
-	"1 passed"
-	FAIL_REGULAR_EXPRESSION
-	"failed")
+	"0 failed, 1 passed")
 
-add_lt_test(return_table_with_numbers.lua
-	FAIL_REGULAR_EXPRESSION
-	"failed"
-	"passed")
+add_lt_test(return_table_with_numbers.lua)
 
 add_lt_test(return_table.lua
 	PASS_REGULAR_EXPRESSION
 	"mytest \\.\\.\\. my test called\nok"
-	"1 passed"
-	FAIL_REGULAR_EXPRESSION
-	"failed")
+	"0 failed, 1 passed")
 
 add_lt_test(failing_test.lua WILL_FAIL
 	PASS_REGULAR_EXPRESSION
