@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "lua.h"
 #include "lualib.h"
@@ -17,7 +18,7 @@ static int lt_main(lua_State* L)
 {
 	const int script = 1;
 	int msgh = 0;
-	int names, errors, testbench;
+	int names, errors, testcase;
 	lua_Integer passedcnt, failedcnt;
 
 	lua_settop(L, 1);
@@ -53,7 +54,7 @@ static int lt_main(lua_State* L)
 	}
 
 	/* Push arrays for storing error messages and failing
-	 * test case names in order of occurence */
+	 * test function names in order of occurence */
 
 	lua_newtable(L);
 	errors = lua_gettop(L);
@@ -76,9 +77,9 @@ static int lt_main(lua_State* L)
 		return luaL_error(L, "the test script must return a table");
 	}
 
-	testbench = lua_gettop(L);
+	testcase = lua_gettop(L);
 
-	/* Traverse the test bench table and call each
+	/* Traverse the test case table and call each
 	 * function in protected mode */
 
 	passedcnt = 0;
@@ -86,32 +87,41 @@ static int lt_main(lua_State* L)
 
 	lua_pushnil(L);
 
-	while (lua_next(L, testbench))
+	while (lua_next(L, testcase))
 	{
+		const char* name;
+
 		/* Ignore table entries whose keys aren't strings or
 		 * whose values aren't functions */
 
-		if (!lua_isfunction(L, -1) || !lua_isstring(L, -2))
+		if (!lua_isfunction(L, -1) || lua_type(L, -2) != LUA_TSTRING)
 		{
 			lua_pop(L, 1);
 			continue;
 		}
 
-		/* Print the name of each test case
-		 * (Take care not to convert numbers into strings in-place) */
+		/* Check if function name starts with "test" */
 
-		lua_pushvalue(L, -2);
-		fprintf(stderr, "%s ... ", lua_tostring(L, -1));
-		lua_pop(L, 1);
+		name = lua_tostring(L, -2);
+
+		if (strstr(name, "test") != name)
+		{
+			lua_pop(L, 1);
+			continue;
+		}
+
+		/* Print function name */
+
+		fprintf(stderr, "%s ... ", name);
 		
-		/* Call each test case function with the test bench table */
+		/* Call each test function with the test case */
 
-		lua_pushvalue(L, testbench);
+		lua_pushvalue(L, testcase);
 
 		if (lua_pcall(L, 1, 0, msgh))
 		{
-			/* For each failing test case, append the error message to
-			 * the 'errors' array, and the name of the test case to the
+			/* For each failing test function, append the error message to
+			 * the 'errors' array, and the name of the test function to the
 			 * 'names' array. */
 
 			failedcnt++;
@@ -138,7 +148,7 @@ static int lt_main(lua_State* L)
 
 	}
 
-	/* For each failing test case, print its name and the error message
+	/* For each failing test function, print its name and the error message
 	 * related to it, in same order of occurence */
 
 	for (lua_Integer i = 1; i <= failedcnt; ++i)

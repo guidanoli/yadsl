@@ -1,0 +1,1 @@
+return { mytest = function() end }

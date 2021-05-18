@@ -1,1 +1,1 @@
-return { myfailingtest = 1 }
+return { testfail = 1 }

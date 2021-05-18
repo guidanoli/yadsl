@@ -58,22 +58,24 @@ add_lt_test(return_number.lua WILL_FAIL
 
 add_lt_test(return_array.lua
 	PASS_REGULAR_EXPRESSION
-	"1 ... ok"
-	"0 failed, 1 passed")
+	"0 failed, 0 passed")
+
+add_lt_test(function_name.lua
+	PASS_REGULAR_EXPRESSION
+	"0 failed, 0 passed")
 
 add_lt_test(return_table_with_numbers.lua)
 
 add_lt_test(return_table.lua
 	PASS_REGULAR_EXPRESSION
-	"mytest \\.\\.\\. my test called\nok"
+	"test \\.\\.\\. my test called\nok"
 	"0 failed, 1 passed")
 
 add_lt_test(failing_test.lua WILL_FAIL
 	PASS_REGULAR_EXPRESSION
-	"mytest \\.\\.\\. my test called\nFAIL"
-	"FAIL: mytest"
-	FAIL_REGULAR_EXPRESSION
-	"passed")
+	"test \\.\\.\\. my test called\nFAIL"
+	"FAIL: test"
+	"1 failed, 0 passed")
 
 add_lt_test(syntax_error.lua WILL_FAIL
 	PASS_REGULAR_EXPRESSION
@@ -89,7 +91,8 @@ add_lt_test("${CMAKE_CURRENT_SOURCE_DIR}" WILL_FAIL
 
 add_lt_test(empty.lua
 	PASS_REGULAR_EXPRESSION
-	"hello world")
+	"hello world"
+	"0 failed, 0 passed")
 
 add_lt_test(runtime_error.lua WILL_FAIL
 	PASS_REGULAR_EXPRESSION
@@ -97,12 +100,12 @@ add_lt_test(runtime_error.lua WILL_FAIL
 
 add_lt_test(ok_fail.lua WILL_FAIL
 	PASS_REGULAR_EXPRESSION
-	"ok \\.\\.\\. ok called\nok"
-	"fail \\.\\.\\. fail also called\nFAIL"
-	"FAIL: fail"
+	"testok \\.\\.\\. ok called\nok"
+	"testfail \\.\\.\\. fail also called\nFAIL"
+	"FAIL: testfail"
 	"my error message"
 	"1 failed, 1 passed")
 
 add_lt_test(check_param.lua
 	PASS_REGULAR_EXPRESSION
-	"mytest \\.\\.\\. my test called\nok")
+	"test \\.\\.\\. my test called\nok")

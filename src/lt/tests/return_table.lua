@@ -1,1 +1,1 @@
-return { mytest = function() print('my test called') end }
+return { test = function() print('my test called') end }
