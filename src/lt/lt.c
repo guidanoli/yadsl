@@ -5,6 +5,8 @@
 #include "lualib.h"
 #include "lauxlib.h"
 
+#include "ltlib.h"
+
 /**
  * Main Lua routine
  *
@@ -61,6 +63,19 @@ static int lt_main(lua_State* L)
 
 	lua_newtable(L);
 	names = lua_gettop(L);
+
+	/* Open lt library */
+
+	lua_pushcfunction(L, luaopen_lt);
+	
+	if (lua_pcall(L, 0, 1, msgh))
+	{
+		return lua_error(L);
+	}
+	else
+	{
+		lua_setglobal(L, "lt");
+	}
 
 	/* Load script from file (or from standard input,
 	 * if the script file path is missing) and execute it

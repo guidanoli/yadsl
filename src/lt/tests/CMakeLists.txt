@@ -109,3 +109,5 @@ add_lt_test(ok_fail.lua WILL_FAIL
 add_lt_test(check_param.lua
 	PASS_REGULAR_EXPRESSION
 	"test \\.\\.\\. my test called\nok")
+
+add_lt_test(lt_lib.lua)
