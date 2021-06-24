@@ -1,11 +1,86 @@
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "lua.h"
 #include "lualib.h"
 #include "lauxlib.h"
 
 #include "ltlib.h"
+
+static int g_failed_tests;
+static int g_passed_tests;
+static int g_test_suite;
+static int g_msg_hdlr;
+static int g_errors;
+static int g_names;
+
+static int get_test_suite_field(lua_State* L, const char* field)
+{
+	assert((L != NULL) && "Lua state isn't NULL");
+	assert((g_test_suite != 0) && "Test suite exists");
+	assert((field != NULL) && "Field isn't NULL");
+
+	lua_getfield(L, g_test_suite, field);
+
+	if (lua_isnil(L, -1))
+	{
+		lua_pop(L, 1);
+		return 0;
+	}
+	else
+	{
+		return lua_gettop(L);
+	}
+}
+
+static int call_test_suite_method(lua_State* L, const char* method)
+{
+	assert((L != NULL) && "Lua state isn't NULL");
+	assert((method != NULL) && "Method name isn't NULL");
+
+	int index = get_test_suite_field(L, method);
+	if (index == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		lua_pushvalue(L, g_test_suite);
+		return lua_pcall(L, 1, 0, g_msg_hdlr);
+	}
+}
+
+static int run_test_case(lua_State* L)
+{
+	assert((L != NULL) && "Lua state isn't NULL");
+
+	/* stack: name function */
+
+	if (call_test_suite_method(L, "beforeEach"))
+	{
+		lua_remove(L, -2); /* stack: name function error */
+		return 1;          /* stack: name error */
+	}
+
+	/* stack: name function */
+
+	lua_pushvalue(L, g_test_suite); /* stack: name function suite */
+
+	if (lua_pcall(L, 1, 0, g_msg_hdlr))
+	{
+		return 1; /* stack: name error */
+	}
+
+	/* stack: name */
+
+	if (call_test_suite_method(L, "afterEach"))
+	{
+		return 1; /* stack: name error */
+	}
+
+	return 0; /* stack: name */
+}
 
 /**
  * Main Lua routine
@@ -18,11 +93,6 @@
  */
 static int lt_main(lua_State* L)
 {
-	const int script = 1;
-	int msgh = 0;
-	int names, errors, testcase;
-	lua_Integer passedcnt, failedcnt;
-
 	lua_settop(L, 1);
 
 	/* Try to get a message handler for generating
@@ -41,7 +111,7 @@ static int lt_main(lua_State* L)
 			 * message handler for protected calls */
 
 			lua_remove(L, -2);
-			msgh = lua_gettop(L);
+			g_msg_hdlr = lua_gettop(L);
 		}
 		else
 		{
@@ -59,16 +129,16 @@ static int lt_main(lua_State* L)
 	 * test function names in order of occurence */
 
 	lua_newtable(L);
-	errors = lua_gettop(L);
+	g_errors = lua_gettop(L);
 
 	lua_newtable(L);
-	names = lua_gettop(L);
+	g_names = lua_gettop(L);
 
 	/* Open lt library */
 
 	lua_pushcfunction(L, luaopen_lt);
 	
-	if (lua_pcall(L, 0, 1, msgh))
+	if (lua_pcall(L, 0, 1, g_msg_hdlr))
 	{
 		return lua_error(L);
 	}
@@ -81,8 +151,8 @@ static int lt_main(lua_State* L)
 	 * if the script file path is missing) and execute it
 	 * in protected mode */
 
-	if (luaL_loadfile(L, lua_tostring(L, script)) ||
-		lua_pcall(L, 0, 1, msgh))
+	if (luaL_loadfile(L, lua_tostring(L, 1)) ||
+		lua_pcall(L, 0, 1, g_msg_hdlr))
 	{
 		return lua_error(L);
 	}
@@ -92,17 +162,21 @@ static int lt_main(lua_State* L)
 		return luaL_error(L, "the test script must return a table");
 	}
 
-	testcase = lua_gettop(L);
+	g_test_suite = lua_gettop(L);
+
+	/* Call before all function */
+
+	if (call_test_suite_method(L, "beforeAll"))
+	{
+		return lua_error(L);
+	}
 
 	/* Traverse the test case table and call each
 	 * function in protected mode */
 
-	passedcnt = 0;
-	failedcnt = 0;
-
 	lua_pushnil(L);
 
-	while (lua_next(L, testcase))
+	while (lua_next(L, g_test_suite))
 	{
 		const char* name;
 
@@ -129,47 +203,35 @@ static int lt_main(lua_State* L)
 
 		fprintf(stderr, "%s ... ", name);
 		
-		/* Call each test function with the test case */
-
-		lua_pushvalue(L, testcase);
-
-		if (lua_pcall(L, 1, 0, msgh))
+		if (run_test_case(L))
 		{
-			/* For each failing test function, append the error message to
-			 * the 'errors' array, and the name of the test function to the
-			 * 'names' array. */
-
-			failedcnt++;
-			lua_rawseti(L, errors, failedcnt);
+			g_failed_tests++;
+			lua_rawseti(L, g_errors, g_failed_tests);
 			lua_pushvalue(L, -1);
-			lua_rawseti(L, names, failedcnt);
+			lua_rawseti(L, g_names, g_failed_tests);
 			fputs("FAIL\n", stderr);
-
-			if (failedcnt < 0)
-			{
-				return luaL_error(L, "failed tests counter overflew");
-			}
 		}
 		else
 		{
-			passedcnt++;
+			g_passed_tests++;
 			fputs("ok\n", stderr);
-
-			if (passedcnt < 0)
-			{
-				return luaL_error(L, "passed tests counter overflew");
-			}
 		}
+	}
 
+	/* Call after all function */
+
+	if (call_test_suite_method(L, "afterAll"))
+	{
+		return lua_error(L);
 	}
 
 	/* For each failing test function, print its name and the error message
 	 * related to it, in same order of occurence */
 
-	for (lua_Integer i = 1; i <= failedcnt; ++i)
+	for (int i = 1; i <= g_failed_tests; ++i)
 	{
-		lua_rawgeti(L, names, i);
-		lua_rawgeti(L, errors, i);
+		lua_rawgeti(L, g_names, i);
+		lua_rawgeti(L, g_errors, i);
 		fprintf(stderr, "\nFAIL: %s\n%s\n", lua_tostring(L, -2),
 		                                    lua_tostring(L, -1));
 		lua_pop(L, 2);
@@ -177,16 +239,16 @@ static int lt_main(lua_State* L)
 
 	/* Print separator */
 
-	if (failedcnt > 0 || passedcnt > 0)
+	if (g_failed_tests > 0 || g_passed_tests > 0)
 	{
 		fputs("\n", stderr);
 	}
 
 	/* Push brief message */
 
-	lua_pushfstring(L, "%I failed, %I passed", failedcnt, passedcnt);
+	lua_pushfstring(L, "%I failed, %I passed", (lua_Integer)g_failed_tests, (lua_Integer)g_passed_tests);
 
-	if (failedcnt == 0)
+	if (g_failed_tests == 0)
 	{
 		/* Return brief message */
 

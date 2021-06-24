@@ -111,3 +111,7 @@ add_lt_test(check_param.lua
 	"test \\.\\.\\. my test called\nok")
 
 add_lt_test(lt_lib.lua)
+
+add_lt_test(before_and_after.lua
+	PASS_REGULAR_EXPRESSION
+	"0 failed, 10 passed")
