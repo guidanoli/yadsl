@@ -28,4 +28,4 @@ Tools necessary to generate the library documentation, if you wish to.
 Languages that allow dynamic linking of extension modules binding **yadsl**.
 
 * [CPython](https://www.python.org/) >= 3.6
-* [Lua](https://www.lua.org/) >= 5.3
+* [Lua](https://www.lua.org/) >= 5.4

@@ -52,7 +52,7 @@ if(YADSL_PYTHON_SUPPORT)
 	include(AddPythonModule)
 endif()
 
-find_package(Lua 5.2 MODULE)
+find_package(Lua 5.4 MODULE)
 
 if (YADSL_LUA_SUPPORT)
 	if (NOT LUA_FOUND)
