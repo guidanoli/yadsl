@@ -120,4 +120,4 @@ jobs:
       - name: Test Lua
         run: |
           cd src
-          LUA_CPATH="$LIBDIR/?.so" lua lt/run.lua
+          LUA_CPATH="../$LIBDIR/?.so" lua lt/run.lua
