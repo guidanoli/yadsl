@@ -1,4 +1,4 @@
-local t = { n = 0, m = 0, numbers = {}, min = 1, max = 10 }
+local t = { n = 0, m = 0, numbers = {}, min = 1, max = 10, passed = 10 }
 
 function t:beforeAll()
 	lt.assertEqual(self.n, 0)

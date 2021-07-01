@@ -1,1 +1,0 @@
-return { testfail = 1 }

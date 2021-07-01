@@ -1,4 +1,4 @@
-local t = {}
+local t = { passed = 13 }
 
 --------------------------
 --  Tests

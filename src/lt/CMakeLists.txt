@@ -1,6 +1,3 @@
 if(LUA_FOUND)
     add_lua_module(lt lt lt.c)
-    if(YADSL_BUILD_TESTS)
-        add_subdirectory(tests)
-    endif()
 endif()

@@ -2,6 +2,7 @@ local driver = require "lt.driver"
 
 local testscripts = {
 	"diff.lua.test",
+	"lt.tests.test",
 }
 
 local errors = 0
