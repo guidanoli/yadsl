@@ -22,21 +22,6 @@ typedef enum
 }
 yadsl_MemDebugRet;
 
-/**
- * @brief List of allocated memory blocks (AMB)
-*/
-struct yadsl_MemDebugAMB_s
-{
-	struct yadsl_MemDebugAMB_s* next; /**< Next node (nullable) */
-	const char* funcname; /**< Name of function called to allocate it */
-	const char* file; /**< File where function was called */
-	int line; /**< Line where function was called, in file */
-	size_t size; /**< Size of memory block */
-	void* amb; /**< Pointer to memory block (unique) */
-};
-
-typedef struct yadsl_MemDebugAMB_s yadsl_MemDebugAMB;
-
 /* Globals */
 
 static yadsl_MemDebugAMB* amb_list_head; /**< AMB list head (nullable) */
@@ -55,6 +40,12 @@ static size_t fail_index; /**< Allocation fail_by_prng index */
 static unsigned int prng_state; /**< PRNG seed */
 
 /* Functions */
+
+yadsl_MemDebugAMB*
+yadsl_memdb_get_amb_list()
+{
+	return amb_list_head;
+}
 
 static int
 yadsl_memdb_prng_internal()

@@ -119,5 +119,5 @@ jobs:
 
       - name: Test Lua
         run: |
-          chmod +x src/yadsl/luatest
-          LUA_CPATH="$LIBDIR/?.so" src/yadsl/luatest
+          cd src
+          LUA_CPATH="$LIBDIR/?.so" lua lt/run.lua

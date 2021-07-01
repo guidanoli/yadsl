@@ -16,12 +16,12 @@ static int l_diff(lua_State* L) {
     return 1;
 }
 
-static const struct luaL_Reg luadiff[] = {
+static const struct luaL_Reg difflib[] = {
         {"diff", l_diff},
         {NULL, NULL}  /* sentinel */
 };
 
-YADSL_EXPORT int luaopen_luadiff(lua_State* L) {
-    luaL_newlib(L, luadiff);
+YADSL_EXPORT int luaopen_diff(lua_State* L) {
+    luaL_newlib(L, difflib);
     return 1;
 }

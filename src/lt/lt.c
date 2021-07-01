@@ -1,328 +1,251 @@
-#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-#include "lua.h"
-#include "lualib.h"
 #include "lauxlib.h"
 
-#include "ltlib.h"
-
-static int g_failed_tests;
-static int g_passed_tests;
-static int g_test_suite;
-static int g_msg_hdlr;
-static int g_errors;
-static int g_names;
-
-static int get_test_suite_field(lua_State* L, const char* field)
+static int lt_assertEqual(lua_State* L)
 {
-	assert((L != NULL) && "Lua state isn't NULL");
-	assert((g_test_suite != 0) && "Test suite exists");
-	assert((field != NULL) && "Field isn't NULL");
-
-	lua_getfield(L, g_test_suite, field);
-
-	if (lua_isnil(L, -1))
-	{
-		lua_pop(L, 1);
-		return 0;
-	}
-	else
-	{
-		return lua_gettop(L);
-	}
-}
-
-static int call_test_suite_method(lua_State* L, const char* method)
-{
-	assert((L != NULL) && "Lua state isn't NULL");
-	assert((method != NULL) && "Method name isn't NULL");
-
-	int index = get_test_suite_field(L, method);
-	if (index == 0)
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (lua_compare(L, 1, 2, LUA_OPEQ))
 	{
 		return 0;
 	}
 	else
 	{
-		lua_pushvalue(L, g_test_suite);
-		return lua_pcall(L, 1, 0, g_msg_hdlr);
+		return luaL_error(L, "%s != %s", luaL_tolstring(L, 1, NULL),
+		                                 luaL_tolstring(L, 2, NULL));
 	}
 }
 
-static int run_test_case(lua_State* L)
+static int lt_assertNotEqual(lua_State* L)
 {
-	assert((L != NULL) && "Lua state isn't NULL");
-
-	/* stack: name function */
-
-	if (call_test_suite_method(L, "beforeEach"))
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (!lua_compare(L, 1, 2, LUA_OPEQ))
 	{
-		lua_remove(L, -2); /* stack: name function error */
-		return 1;          /* stack: name error */
+		return 0;
 	}
-
-	/* stack: name function */
-
-	lua_pushvalue(L, g_test_suite); /* stack: name function suite */
-
-	if (lua_pcall(L, 1, 0, g_msg_hdlr))
+	else
 	{
-		return 1; /* stack: name error */
+		return luaL_error(L, "%s == %s", luaL_tolstring(L, 1, NULL),
+		                                 luaL_tolstring(L, 2, NULL));
 	}
-
-	/* stack: name */
-
-	if (call_test_suite_method(L, "afterEach"))
-	{
-		return 1; /* stack: name error */
-	}
-
-	return 0; /* stack: name */
 }
 
-/**
- * Main Lua routine
- *
- * Arguments:
- * [1] = script file path (string or nil)
- *
- * Returns:
- * [1] = brief message (string)
- */
-static int lt_main(lua_State* L)
+static int lt_assertRawEqual(lua_State* L)
 {
-	lua_settop(L, 1);
-
-	/* Try to get a message handler for generating
-	 * more informative error messages on protected calls.
-	 * If a message handler could not be found, pushes nil. */
-
-	lua_getglobal(L, "debug");
-
-	if (lua_istable(L, -1))
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (lua_rawequal(L, 1, 2))
 	{
-		lua_getfield(L, -1, "traceback");
-
-		if (lua_isfunction(L, -1))
-		{
-			/* If 'debug.traceback' is a function, use it as a
-			 * message handler for protected calls */
-
-			lua_remove(L, -2);
-			g_msg_hdlr = lua_gettop(L);
-		}
-		else
-		{
-			lua_pop(L, 2);
-			lua_pushnil(L);
-		}
+		return 0;
 	}
 	else
 	{
-		lua_pop(L, 1);
-		lua_pushnil(L);
+		return luaL_error(L, "%s != %s (raw)", luaL_tolstring(L, 1, NULL),
+		                                       luaL_tolstring(L, 2, NULL));
 	}
+}
 
-	/* Push arrays for storing error messages and failing
-	 * test function names in order of occurence */
-
-	lua_newtable(L);
-	g_errors = lua_gettop(L);
-
-	lua_newtable(L);
-	g_names = lua_gettop(L);
-
-	/* Open lt library */
-
-	lua_pushcfunction(L, luaopen_lt);
-	
-	if (lua_pcall(L, 0, 1, g_msg_hdlr))
+static int lt_assertRawNotEqual(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (!lua_rawequal(L, 1, 2))
 	{
-		return lua_error(L);
+		return 0;
 	}
 	else
 	{
-		lua_setglobal(L, "lt");
+		return luaL_error(L, "%s == %s (raw)", luaL_tolstring(L, 1, NULL),
+		                                       luaL_tolstring(L, 2, NULL));
 	}
+}
 
-	/* Load script from file (or from standard input,
-	 * if the script file path is missing) and execute it
-	 * in protected mode */
-
-	if (luaL_loadfile(L, lua_tostring(L, 1)) ||
-		lua_pcall(L, 0, 1, g_msg_hdlr))
+static int lt_assertTrue(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected 1 argument");
+	if (lua_toboolean(L, 1))
 	{
-		return lua_error(L);
+		return 0;
 	}
-
-	if (!lua_istable(L, -1))
+	else
 	{
-		return luaL_error(L, "the test script must return a table");
+		return luaL_error(L, "%s is false", luaL_tolstring(L, 1, NULL));
 	}
+}
 
-	g_test_suite = lua_gettop(L);
-
-	/* Call before all function */
-
-	if (call_test_suite_method(L, "beforeAll"))
+static int lt_assertFalse(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected 1 argument");
+	if (!lua_toboolean(L, 1))
 	{
-		return lua_error(L);
+		return 0;
 	}
+	else
+	{
+		return luaL_error(L, "%s is true", luaL_tolstring(L, 1, NULL));
+	}
+}
 
-	/* Traverse the test case table and call each
-	 * function in protected mode */
+static int lt_assertIsOfType(lua_State* L)
+{
+	const char* obtained, * expected;
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	luaL_argexpected(L, lua_type(L, 2) == LUA_TSTRING, 2, "string");
+	obtained = luaL_typename(L, 1);
+	expected = lua_tostring(L, 2);
+	assert(obtained != NULL);
+	assert(expected != NULL);
+	if (strcmp(obtained, expected) == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s is of type %s, not %s", luaL_tolstring(L, 1, NULL),
+		                                                 obtained,
+														 expected);
+	}
+}
 
+static int lt_assertIsNotOfType(lua_State* L)
+{
+	const char* obtained, * expected;
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	luaL_argexpected(L, lua_type(L, 2) == LUA_TSTRING, 2, "string");
+	obtained = luaL_typename(L, 1);
+	expected = lua_tostring(L, 2);
+	assert(obtained != NULL);
+	assert(expected != NULL);
+	if (strcmp(obtained, expected) != 0)
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s is of type %s", luaL_tolstring(L, 1, NULL),
+		                                         obtained);
+	}
+}
+
+static int lt_assertIsIn(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	luaL_argexpected(L, lua_type(L, 2) == LUA_TTABLE, 2, "table");
 	lua_pushnil(L);
-
-	while (lua_next(L, g_test_suite))
+	while (lua_next(L, 2) != 0)
 	{
-		const char* name;
-
-		/* Ignore table entries whose keys aren't strings or
-		 * whose values aren't functions */
-
-		if (!lua_isfunction(L, -1) || lua_type(L, -2) != LUA_TSTRING)
+		if (lua_compare(L, 1, 4, LUA_OPEQ))
 		{
-			lua_pop(L, 1);
-			continue;
+			return 0;
 		}
+		lua_pop(L, 1);
+	}
+	return luaL_error(L, "%s is not in %s", luaL_tolstring(L, 1, NULL),
+	                                        luaL_tolstring(L, 2, NULL));
+}
 
-		/* Check if function name starts with "test" */
-
-		name = lua_tostring(L, -2);
-
-		if (strstr(name, "test") != name)
+static int lt_assertIsNotIn(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	luaL_argexpected(L, lua_type(L, 2) == LUA_TTABLE, 2, "table");
+	lua_pushnil(L);
+	while (lua_next(L, 2) != 0)
+	{
+		if (lua_compare(L, 1, 4, LUA_OPEQ))
 		{
-			lua_pop(L, 1);
-			continue;
+			return luaL_error(L, "%s is in %s (key is %s)", luaL_tolstring(L, 1, NULL),
+			                                                luaL_tolstring(L, 2, NULL),
+															luaL_tolstring(L, 3, NULL));
 		}
-
-		/* Print function name */
-
-		fprintf(stderr, "%s ... ", name);
-		
-		if (run_test_case(L))
-		{
-			g_failed_tests++;
-			lua_rawseti(L, g_errors, g_failed_tests);
-			lua_pushvalue(L, -1);
-			lua_rawseti(L, g_names, g_failed_tests);
-			fputs("FAIL\n", stderr);
-		}
-		else
-		{
-			g_passed_tests++;
-			fputs("ok\n", stderr);
-		}
+		lua_pop(L, 1);
 	}
+	return 0;
+}
 
-	/* Call after all function */
-
-	if (call_test_suite_method(L, "afterAll"))
+static int lt_assertRaises(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected 1 argument");
+	if (lua_pcall(L, lua_gettop(L) - 1, 0, 0))
 	{
-		return lua_error(L);
-	}
-
-	/* For each failing test function, print its name and the error message
-	 * related to it, in same order of occurence */
-
-	for (int i = 1; i <= g_failed_tests; ++i)
-	{
-		lua_rawgeti(L, g_names, i);
-		lua_rawgeti(L, g_errors, i);
-		fprintf(stderr, "\nFAIL: %s\n%s\n", lua_tostring(L, -2),
-		                                    lua_tostring(L, -1));
-		lua_pop(L, 2);
-	}
-
-	/* Print separator */
-
-	if (g_failed_tests > 0 || g_passed_tests > 0)
-	{
-		fputs("\n", stderr);
-	}
-
-	/* Push brief message */
-
-	lua_pushfstring(L, "%I failed, %I passed", (lua_Integer)g_failed_tests, (lua_Integer)g_passed_tests);
-
-	if (g_failed_tests == 0)
-	{
-		/* Return brief message */
-
-		return 1;
+		return 0;
 	}
 	else
 	{
-		/* Raise error with brief message */
-
-		return lua_error(L);
+		return luaL_error(L, "expected error");
 	}
 }
 
-/**
- * Main routine
- * Usage: lt [script]
- */
-int main(int argc, char** argv)
+static int lt_assertRaisesRegex(lua_State* L)
 {
-	const char* program;
-	lua_State* L;
-	int status;
-
-	/* Specified in 5.1.2.2.1 (Program Startup) of ISO/IEC 9899:TC3
-	 *
-	 * If the value of argc is greater than zero, the string pointed to by argv[0]
-	 * represents the program name; argv[0][0] shall be the null character if the
-	 * program name is not available from the host environment. */
-	
-	if (argc > 0 && argv[0][0] != '\0')
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (lua_pcall(L, lua_gettop(L) - 2, 0, 0))
 	{
-		program = argv[0];
+		if (lua_type(L, -1) != LUA_TSTRING)
+		{
+			return luaL_error(L, "error object is not a string");
+		}
+
+		lua_getglobal(L, "string");
+
+		if (lua_type(L, -1) != LUA_TTABLE)
+		{
+			return luaL_error(L, "string library is missing");
+		}
+
+		lua_getfield(L, -1, "find");
+		
+		if (lua_type(L, -1) != LUA_TFUNCTION)
+		{
+			return luaL_error(L, "string.find function is missing");
+		}
+
+		lua_remove(L, -2);
+		lua_pushvalue(L, 2);
+		lua_pushvalue(L, 1);
+
+		if (lua_pcall(L, 2, 1, 0))
+		{
+			return lua_error(L);
+		}
+
+		if (lua_isnil(L, -1))
+		{
+			return luaL_error(L, "regex doesn't match");
+		}
+
+		return 0;
 	}
 	else
 	{
-		program = "lt";
+		return luaL_error(L, "expected error");
 	}
+}
 
-	/* Create a Lua state */
 
-	L = luaL_newstate();
+static int lt_udata(lua_State* L)
+{
+	lua_newuserdata(L, 0);
+	return 1;
+}
 
-	if (L == NULL)
-	{
-		fprintf(stderr, "%s: Failed memory allocation for Lua state\n", program);
-		return LUA_ERRMEM;
-	}
+static luaL_Reg ltlib[] = {
+	{ "assertEqual", lt_assertEqual },
+	{ "assertNotEqual", lt_assertNotEqual },
+	{ "assertRawEqual", lt_assertRawEqual },
+	{ "assertRawNotEqual", lt_assertRawNotEqual },
+	{ "assertTrue", lt_assertTrue },
+	{ "assertFalse", lt_assertFalse },
+	{ "assertIsOfType", lt_assertIsOfType },
+	{ "assertIsNotOfType", lt_assertIsNotOfType },
+	{ "assertIsIn", lt_assertIsIn },
+	{ "assertIsNotIn", lt_assertIsNotIn },
+	{ "assertRaises", lt_assertRaises },
+	{ "assertRaisesRegex", lt_assertRaisesRegex },
+	{ "udata", lt_udata },
+	{ NULL, NULL },
+};
 
-	/* Open standard libraries */
-
-	luaL_openlibs(L);
-	
-	/* Call lt_main with the script file path or with nil if not provided */
-
-	lua_pushcfunction(L, lt_main);
-
-	if (argc >= 2)
-	{
-		lua_pushstring(L, argv[1]);
-	}
-	else
-	{
-		lua_pushnil(L);
-	}
-
-	status = lua_pcall(L, 1, 1, 0);
-	
-	/* Print brief message */
-
-	fprintf(stderr, "%s: %s\n", program, lua_tostring(L, -1));
-
-	/* Close the Lua state */
-
-	lua_close(L);
-
-	return status;
+int luaopen_lt(lua_State* L)
+{
+	luaL_newlib(L, ltlib);
+	return 1;
 }

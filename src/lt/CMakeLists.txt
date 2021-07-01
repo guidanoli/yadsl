@@ -1,9 +1,5 @@
 if(LUA_FOUND)
-    add_executable(lt lt.c ltlib.c ltlib.h)
-    target_include_directories(lt PUBLIC ${LUA_INCLUDE_DIR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(lt ${LUA_LIBRARIES})
-	set_target_properties(lt PROPERTIES FOLDER tests)
-
+    add_lua_module(lt lt lt.c)
     if(YADSL_BUILD_TESTS)
         add_subdirectory(tests)
     endif()

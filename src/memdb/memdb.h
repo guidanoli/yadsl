@@ -34,6 +34,28 @@ typedef enum
 yadsl_MemDebugLogChannel;
 
 /**
+ * @brief List of allocated memory blocks (AMB)
+*/
+struct yadsl_MemDebugAMB_s
+{
+	struct yadsl_MemDebugAMB_s* next; /**< Next node (nullable) */
+	const char* funcname; /**< Name of function called to allocate it */
+	const char* file; /**< File where function was called */
+	int line; /**< Line where function was called, in file */
+	size_t size; /**< Size of memory block */
+	void* amb; /**< Pointer to memory block (unique) */
+};
+
+typedef struct yadsl_MemDebugAMB_s yadsl_MemDebugAMB;
+
+/**
+ * @brief Get allocated memory block list
+ * @ return list or NULL if list is empty
+ */
+yadsl_MemDebugAMB*
+yadsl_memdb_get_amb_list();
+
+/**
  * @brief Check if log channels is enabled
  * @param log_channel log channel
  * @return whether log channel is enabled or not
