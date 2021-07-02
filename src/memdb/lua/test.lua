@@ -1,7 +1,7 @@
 local lt = require "lt"
 local memdb = require "memdb"
 
-local t = { size = 1 }
+local t = { size = 1, afterAll = memdb.afterAll }
 
 function t:testLogChannels()
 	local channels = memdb.get_log_channel_list()
@@ -71,10 +71,6 @@ function t:testSafePointer()
 	p = nil
 	collectgarbage()
 	lt.assertNil(self:getAMBbySize(size))
-end
-
-function t:afterAll()
-	lt.assertEqual(memdb.get_amb_list_size(), 0)
 end
 
 return t

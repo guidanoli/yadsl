@@ -1,10 +1,10 @@
-add_lua_module(luamemdbdyn memdb memdb.lua.c)
-target_link_libraries(luamemdbdyn memdb yadsl)
-
-add_library(luamemdb memdb.lua.c)
-target_include_directories(luamemdb PUBLIC ${LUA_INCLUDE_DIR})
-target_link_libraries(luamemdb memdb yadsl)
+add_library(luamemdbstatic STATIC memdb.c)
+target_include_directories(luamemdbstatic PUBLIC ${LUA_INCLUDE_DIR})
+target_link_libraries(luamemdbstatic memdb yadsl)
 if(WIN32)
-	target_link_libraries(luamemdb ${LUA_LIBRARIES})
+	target_link_libraries(luamemdbstatic ${LUA_LIBRARIES})
 endif()
-set_target_properties(luamemdb PROPERTIES FOLDER lua)
+set_target_properties(luamemdbstatic PROPERTIES FOLDER libraries)
+
+add_lua_module(luamemdbshared memdb memdb.lua.c)
+target_link_libraries(luamemdbshared memdb)
