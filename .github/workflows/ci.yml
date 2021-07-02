@@ -115,9 +115,9 @@ jobs:
         run: CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config "$CONFIG" --target test
 
       - name: Test Python
-        run: PYTHONPATH="$LIBDIR" pyenv exec pytest -s src --ignore=src/yadsl/templates
+        run: PYTHONPATH="$LIBDIR/python" pyenv exec pytest -s src --ignore=src/yadsl/templates
 
       - name: Test Lua
         run: |
           cd src
-          LUA_CPATH="../$LIBDIR/?.so" lua lt/run.lua
+          LUA_CPATH="../$LIBDIR/lua/?.so" lua lt/run.lua

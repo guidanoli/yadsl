@@ -21,5 +21,5 @@ function(add_python_module target modulename)
 	set_target_properties(${target} PROPERTIES FOLDER python)
 	
 	include(CopyTargetFileDirectory)
-	copy_target_file_directory(${target})
+	copy_target_file_directory(${target} FOLDER python)
 endfunction()

@@ -19,5 +19,5 @@ function(add_lua_module target modulename)
 	set_target_properties(${target} PROPERTIES FOLDER lua)
 	
 	include(CopyTargetFileDirectory)
-	copy_target_file_directory(${target})
+	copy_target_file_directory(${target} FOLDER lua)
 endfunction()

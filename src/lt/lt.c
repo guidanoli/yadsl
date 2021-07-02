@@ -31,6 +31,32 @@ static int lt_assertNotEqual(lua_State* L)
 	}
 }
 
+static int lt_assertNil(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected 1 argument");
+	if (lua_isnil(L, 1))
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s is not nil", luaL_tolstring(L, 1, NULL));
+	}
+}
+
+static int lt_assertNotNil(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected 1 argument");
+	if (!lua_isnil(L, 1))
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s is nil", luaL_tolstring(L, 1, NULL));
+	}
+}
+
 static int lt_assertRawEqual(lua_State* L)
 {
 	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
@@ -230,6 +256,8 @@ static int lt_udata(lua_State* L)
 static luaL_Reg ltlib[] = {
 	{ "assertEqual", lt_assertEqual },
 	{ "assertNotEqual", lt_assertNotEqual },
+	{ "assertNil", lt_assertNil },
+	{ "assertNotNil", lt_assertNotNil },
 	{ "assertRawEqual", lt_assertRawEqual },
 	{ "assertRawNotEqual", lt_assertRawNotEqual },
 	{ "assertTrue", lt_assertTrue },

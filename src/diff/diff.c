@@ -19,7 +19,7 @@
 #define DELTA (5.0)
 #define ALPHA (1.0)
 
-static int yadsl_utils_diff_coord_internal(char c, size_t* x, size_t* y)
+static int charcoord(char c, size_t* x, size_t* y)
 {
 	static const char* loc[] = {
 		"\"!@#$%*()_+",
@@ -44,22 +44,22 @@ static int yadsl_utils_diff_coord_internal(char c, size_t* x, size_t* y)
 	return 1;
 }
 
-static size_t yadsl_utils_diff_modsub_internal(size_t a, size_t b)
+static size_t modsub(size_t a, size_t b)
 {
 	return (a > b) ? (a - b) : (b - a);
 }
 
-static double yadsl_utils_diff_alpha_internal(char a, char b)
+static double alpha(char a, char b)
 {
 	size_t posa[2], posb[2], di, dj;
 	if (a == b)
 		return 0.0;
-	if (yadsl_utils_diff_coord_internal(a, &posa[0], &posa[1]))
+	if (charcoord(a, &posa[0], &posa[1]))
 		return ALPHA;
-	if (yadsl_utils_diff_coord_internal(b, &posb[0], &posb[1]))
+	if (charcoord(b, &posb[0], &posb[1]))
 		return ALPHA;
-	di = yadsl_utils_diff_modsub_internal(posa[0], posb[0]);
-	dj = yadsl_utils_diff_modsub_internal(posa[1], posb[1]);
+	di = modsub(posa[0], posb[0]);
+	dj = modsub(posa[1], posb[1]);
 	return sqrt(di * di + dj * dj);
 }
 
@@ -88,7 +88,7 @@ double yadsl_utils_diff(const char* s1, const char* s2)
 			N[i] = M[i];
 		M[0] = j * DELTA;
 		for (i = 1; i < l1; i++) {
-			v[0] = yadsl_utils_diff_alpha_internal(s1[j - 1], s2[i - 1]) + N[i - 1];
+			v[0] = alpha(s1[j - 1], s2[i - 1]) + N[i - 1];
 			v[1] = DELTA + M[i - 1];
 			v[2] = DELTA + N[i];
 			lv = v[0];

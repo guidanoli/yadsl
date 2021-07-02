@@ -706,7 +706,7 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		{ "--input-file", 1 },
 		{ "--log-file", 1 },
 		{ "--malloc-failing-rate", 1 },
-		{ "--malloc-failing-index", 1 },
+		{ "--malloc-failing-countdown", 1 },
 		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
 		{ NULL, 0 }, /* End of definitions array */
@@ -770,13 +770,13 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 #endif
 
 #ifdef YADSL_DEBUG
-	size_t malloc_failing_index;
+	size_t malloc_failing_countdown;
 	if (yadsl_argvp_parse_keyword_argument_value(argvp,
-		"--malloc-failing-index", 0, "%zu", &malloc_failing_index) == 1) {
-		yadsl_memdb_set_fail_by_index(true);
-		yadsl_memdb_set_fail_index(malloc_failing_index);
+		"--malloc-failing-countdown", 0, "%zu", &malloc_failing_countdown) == 1) {
+		yadsl_memdb_set_fail_by_countdown(true);
+		yadsl_memdb_set_fail_countdown(malloc_failing_countdown);
 	} else {
-		yadsl_memdb_set_fail_by_index(false);
+		yadsl_memdb_set_fail_by_countdown(false);
 	}
 #endif
 

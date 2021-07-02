@@ -1,3 +1,10 @@
-add_lua_module(luamemdb memdb memdb.lua.c)
-target_link_libraries(luamemdb memdb yadsl)
+add_lua_module(luamemdbdyn memdb memdb.lua.c)
+target_link_libraries(luamemdbdyn memdb yadsl)
 
+add_library(luamemdb memdb.lua.c)
+target_include_directories(luamemdb PUBLIC ${LUA_INCLUDE_DIR})
+target_link_libraries(luamemdb memdb yadsl)
+if(WIN32)
+	target_link_libraries(luamemdb ${LUA_LIBRARIES})
+endif()
+set_target_properties(luamemdb PROPERTIES FOLDER lua)

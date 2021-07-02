@@ -3,6 +3,7 @@
 #include "lauxlib.h"
 
 #include <diff/diff.h>
+#include <memdb/lua/memdb.lua.h>
 
 static int l_diff(lua_State* L) {
     const char* s1 = luaL_checkstring(L, 1);
@@ -23,5 +24,7 @@ static const struct luaL_Reg difflib[] = {
 
 YADSL_EXPORT int luaopen_diff(lua_State* L) {
     luaL_newlib(L, difflib);
+    luaopen_memdb(L);
+    lua_setfield(L, -2, "memdb");
     return 1;
 }

@@ -10,8 +10,14 @@ set(YADSL_LIBDIR ${YADSL_LIBDIR} PARENT_SCOPE)
 # Copy target file directory to appropriate folder
 # copy_target_file_directory(mylib)
 function(copy_target_file_directory target)
+	cmake_parse_arguments(OPTS "" FOLDER "" ${ARGN})
+	if(OPTS_FOLDER)
+		set(TARGET_FOLDER "${YADSL_LIBDIR}/${OPTS_FOLDER}")
+	else()
+		set(TARGET_FOLDER "${YADSL_LIBDIR}")
+	endif()
 	add_custom_command(TARGET ${target} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 			"$<TARGET_FILE_DIR:${target}>"
-			"${YADSL_LIBDIR}")
+			"${TARGET_FOLDER}")
 endfunction()

@@ -129,8 +129,8 @@ static unsigned long get_string_digest(char* str)
 */
 typedef struct
 {
-	bool fail_by_index;
-	size_t malloc_index;
+	bool fail_by_countdown;
+	size_t malloc_countdown;
 	bool log_allocation;
 	bool log_deallocation;
 	bool log_leakage;
@@ -139,8 +139,8 @@ tester_arguments;
 
 /**
  * @brief Runs tester with different parameters
- * @param fail_by_index fail by index
- * @param malloc_index memory allocation failing index
+ * @param fail_by_countdown fail by countdown
+ * @param malloc_countdown memory allocation failing countdown
  * @param log_allocation log allocation to log file
  * @param log_leakage log leakage to log file
  * @return log file line count
@@ -159,9 +159,9 @@ static void run_tester(tester_arguments* args)
 	command = strcatdyn(command, true, " --log-file ", false);
 	command = strcatdyn(command, true, tmpfilename, false);
 
-	if (args->fail_by_index) {
+	if (args->fail_by_countdown) {
         char subcommand[26 + YADSL_BUFSIZ_FOR(size_t)];
-		sprintf(subcommand, " --malloc-failing-index %zu", args->malloc_index);
+		sprintf(subcommand, " --malloc-failing-countdown %zu", args->malloc_countdown);
 		command = strcatdyn(command, true, subcommand, false);
 	}
 	
@@ -220,9 +220,9 @@ int main(int argc, char** argv)
 	malloc_count = count_lines(tmpfilename);
 	
 	// Check for memory leaks with memory failing
-	for (size_t malloc_index = 0; malloc_index < malloc_count && !interrupted; ++malloc_index) {
-		args = (tester_arguments) { .fail_by_index = true,
-		                            .malloc_index = malloc_index,
+	for (size_t malloc_countdown = 1; malloc_countdown <= malloc_count && !interrupted; ++malloc_countdown) {
+		args = (tester_arguments) { .fail_by_countdown = true,
+		                            .malloc_countdown = malloc_countdown,
 		                            .log_leakage = true };
 		run_tester(&args);
 	}

@@ -90,34 +90,34 @@ yadsl_memdb_set_fail_rate(
 		float fail_rate);
 
 /**
- * @brief Get whether fial by index is enabled or not
+ * @brief Get whether fial by countdown is enabled or not
  * @return enabled (true) or disabled (false)
 */
 bool
-yadsl_memdb_get_fail_by_index();
+yadsl_memdb_get_fail_by_countdown();
 
 /**
- * @brief Fail by (re)allocation index
- * @param fail_by_index enable (true) or disable (false)
+ * @brief Fail by (re)allocation countdown
+ * @param fail_by_countdown enable (true) or disable (false)
 */
 void
-yadsl_memdb_set_fail_by_index(
-		bool fail_by_index);
+yadsl_memdb_set_fail_by_countdown(
+		bool fail_by_countdown);
 
 /**
- * @brief Get (re)allocation fail index
- * @return index
+ * @brief Get (re)allocation fail countdown
+ * @return countdown
 */
 size_t
-yadsl_memdb_get_fail_index();
+yadsl_memdb_get_fail_countdown();
 
 /**
- * @brief Set (re)allocation fail index
- * @param fail_index index
+ * @brief Set (re)allocation fail countdown
+ * @param fail_countdown countdown
 */
 void
-yadsl_memdb_set_fail_index(
-		size_t fail_index);
+yadsl_memdb_set_fail_countdown(
+		size_t fail_countdown);
 
 /**
  * @brief Get size of list of allocated memory blocks

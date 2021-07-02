@@ -26,17 +26,16 @@ yadsl_MemDebugRet;
 
 static yadsl_MemDebugAMB* amb_list_head; /**< AMB list head (nullable) */
 static size_t amb_list_size; /**< AMB list size */
-static size_t amb_total_count; /**< AMB total count */
 
 static uint8_t log_channels; /**< Log channels bitmap */
 static FILE* log_fp; /**< Log file pointer (nullable) */
 
-static bool fail_by_index; /**< Fail by index flag */
+static bool fail_by_countdown; /**< Fail by countdown flag */
 static bool error_occurred; /**< Error occurred flag */
 static bool fail_occurred; /**< Fail occurred flag */
 
 static float fail_rate; /**< Allocation fail rate */
-static size_t fail_index; /**< Allocation fail_by_prng index */
+static size_t fail_countdown; /**< Allocation fail countdown */
 static unsigned int prng_state; /**< PRNG seed */
 
 /* Functions */
@@ -158,14 +157,14 @@ yadsl_memdb_fail_by_prng_internal()
 }
 
 /**
- * @brief Checks if AMB total count coincides with failing index and
- *        whether failing by index is enabled
+ * @brief Checks if AMB total count coincides with failing countdown and
+ *        whether failing by countdown is enabled
  * @return whether allocation should fail (true) or not (false)
 */
 static bool
-yadsl_memdb_fail_by_index_internal()
+yadsl_memdb_fail_by_countdown_internal()
 {
-	return fail_by_index && (amb_total_count == fail_index);
+	return fail_by_countdown && (fail_countdown == 1);
 }
 
 /**
@@ -176,7 +175,7 @@ static bool
 yadsl_memdb_fail_internal()
 {
 	bool fail = yadsl_memdb_fail_by_prng_internal() ||
-	            yadsl_memdb_fail_by_index_internal();
+	            yadsl_memdb_fail_by_countdown_internal();
 	fail_occurred = fail_occurred || fail;
 	return fail;
 }
@@ -252,7 +251,10 @@ yadsl_memdb_add_amb_internal(
 		/* Append node to AMB list */
 		amb_list_head = node;
 		++amb_list_size;
-		++amb_total_count;
+
+		/* Decrement countdown */
+		if (fail_countdown > 0)
+		 --fail_countdown;
 
 		/* Log allocation */
 		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
@@ -402,29 +404,29 @@ yadsl_memdb_set_fail_rate(
 }
 
 bool
-yadsl_memdb_get_fail_by_index()
+yadsl_memdb_get_fail_by_countdown()
 {
-	return fail_by_index;
+	return fail_by_countdown;
 }
 
 void
-yadsl_memdb_set_fail_by_index(
+yadsl_memdb_set_fail_by_countdown(
 		bool enable)
 {
-	fail_by_index = enable;
+	fail_by_countdown = enable;
 }
 
 size_t
-yadsl_memdb_get_fail_index()
+yadsl_memdb_get_fail_countdown()
 {
-	return fail_index;
+	return fail_countdown;
 }
 
 void
-yadsl_memdb_set_fail_index(
-		size_t index)
+yadsl_memdb_set_fail_countdown(
+		size_t countdown)
 {
-	fail_index = index;
+	fail_countdown = countdown;
 }
 
 size_t
