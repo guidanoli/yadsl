@@ -213,12 +213,8 @@ int yadsl_memdb_openlib(lua_State* L)
 	lua_setfield(L, LUA_REGISTRYINDEX, PTR);
 
 	/* register the UNSAFE_PTR metatable */
-	lua_createtable(L, 0, 2);
-	lua_pushboolean(L, 0);
-	lua_setfield(L, -2, "__metatable");
-	lua_pushstring(L, UNSAFE_PTR);
-	lua_setfield(L, -2, "__name");
-	lua_setfield(L, LUA_REGISTRYINDEX, UNSAFE_PTR);
+	luaL_newmetatable(L, UNSAFE_PTR);
+	lua_pop(L, 1);
 
     return 1;
 }

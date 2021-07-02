@@ -5,6 +5,7 @@ local testscripts = {
 	"memdb.lua.test",
 	"diff.lua.test",
 	"string.lua.test",
+	"argvp.lua.test",
 }
 
 local errors = 0
