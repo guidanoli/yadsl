@@ -31,6 +31,62 @@ static int lt_assertNotEqual(lua_State* L)
 	}
 }
 
+static int lt_assertGreaterThan(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (!lua_compare(L, 1, 2, LUA_OPLE))
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s <= %s", luaL_tolstring(L, 1, NULL),
+		                                 luaL_tolstring(L, 2, NULL));
+	}
+}
+
+static int lt_assertGreaterEqual(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (!lua_compare(L, 1, 2, LUA_OPLT))
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s < %s", luaL_tolstring(L, 1, NULL),
+		                                luaL_tolstring(L, 2, NULL));
+	}
+}
+
+static int lt_assertLessThan(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (lua_compare(L, 1, 2, LUA_OPLT))
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s >= %s", luaL_tolstring(L, 1, NULL),
+		                                 luaL_tolstring(L, 2, NULL));
+	}
+}
+
+static int lt_assertLessEqual(lua_State* L)
+{
+	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
+	if (lua_compare(L, 1, 2, LUA_OPLE))
+	{
+		return 0;
+	}
+	else
+	{
+		return luaL_error(L, "%s > %s", luaL_tolstring(L, 1, NULL),
+		                                luaL_tolstring(L, 2, NULL));
+	}
+}
+
 static int lt_assertNil(lua_State* L)
 {
 	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected 1 argument");
@@ -256,6 +312,10 @@ static int lt_udata(lua_State* L)
 static luaL_Reg ltlib[] = {
 	{ "assertEqual", lt_assertEqual },
 	{ "assertNotEqual", lt_assertNotEqual },
+	{ "assertGreaterThan", lt_assertGreaterThan },
+	{ "assertGreaterEqual", lt_assertGreaterEqual },
+	{ "assertLessThan", lt_assertLessThan },
+	{ "assertLessEqual", lt_assertLessEqual },
 	{ "assertNil", lt_assertNil },
 	{ "assertNotNil", lt_assertNotNil },
 	{ "assertRawEqual", lt_assertRawEqual },

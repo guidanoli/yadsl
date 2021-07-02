@@ -1,4 +1,4 @@
-local t = { passed = 13 }
+local t = { passed = 19 }
 
 --------------------------
 --  Tests
@@ -10,6 +10,59 @@ function t:testEqual()
 		predicate = function(a, b)
 			return a == b
 		end,
+	}
+end
+
+function t:testNotEqual()
+	self:compareBinOp{
+		assertion = lt.assertNotEqual,
+		predicate = function(a, b)
+			return a ~= b
+		end,
+	}
+end
+
+function t:testGreaterThan()
+	local elems = self:getSequence(5)
+	self:compareBinOp{
+		assertion = lt.assertGreaterThan,
+		predicate = function(a, b)
+			return a > b
+		end,
+		arguments = { elems, elems },
+	}
+end
+
+function t:testGreaterEqual()
+	local elems = self:getSequence(5)
+	self:compareBinOp{
+		assertion = lt.assertGreaterEqual,
+		predicate = function(a, b)
+			return a >= b
+		end,
+		arguments = { elems, elems },
+	}
+end
+
+function t:testLessThan()
+	local elems = self:getSequence(5)
+	self:compareBinOp{
+		assertion = lt.assertLessThan,
+		predicate = function(a, b)
+			return a < b
+		end,
+		arguments = { elems, elems },
+	}
+end
+
+function t:testLessEqual()
+	local elems = self:getSequence(5)
+	self:compareBinOp{
+		assertion = lt.assertLessEqual,
+		predicate = function(a, b)
+			return a <= b
+		end,
+		arguments = { elems, elems },
 	}
 end
 
@@ -36,6 +89,24 @@ function t:testRawNotEqual()
 		assertion = lt.assertRawNotEqual,
 		predicate = function(a, b)
 			return not rawequal(a, b)
+		end,
+	}
+end
+
+function t:testNil()
+	self:compareOp{
+		assertion = lt.assertNil,
+		predicate = function(a)
+			return a == nil
+		end,
+	}
+end
+
+function t:testNotNil()
+	self:compareOp{
+		assertion = lt.assertNotNil,
+		predicate = function(a)
+			return a ~= nil
 		end,
 	}
 end

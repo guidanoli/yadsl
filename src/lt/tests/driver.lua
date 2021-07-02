@@ -25,26 +25,19 @@ function driver:_testmodule(module, expected_failed, expected_passed, expected_e
 	local function errhdlr(err) return err end
 	local tmpfp = io.tmpfile()
 	local failed, passed, errors = realdriver:runmodule(module, errhdlr, tmpfp)
-	tmpfp:seek("set") -- Rollback to the begging of the file
+	tmpfp:close()
 	if failed ~= expected_failed then
-		io.stderr:write(tmpfp:read())
-		tmpfp:close()
 		return false, "failed = " .. failed
 	elseif passed ~= expected_passed then
-		io.stderr:write(tmpfp:read())
-		tmpfp:close()
 		return false, "passed = " .. passed
 	else
 		for k, v in pairs(errors) do
 			local w = expected_errors[k]
 			assert(type(v) == 'string')
 			if not v:find(w) then
-				io.stderr:write(tmpfp:read())
-				tmpfp:close()
 				return false, "errors differ by key " .. tostring(key)
 			end
 		end
-		tmpfp:close()
 		return true
 	end
 end
