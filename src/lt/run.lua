@@ -1,12 +1,14 @@
 local driver = require "lt.driver"
 
 local testscripts = {
+	-- Base modules
 	"lt.tests.test",
 	"memdb.lua.test",
-	"diff.lua.test",
-	"string.lua.test",
+	-- Other modules
 	"argvp.lua.test",
 	"avl.lua.test",
+	"diff.lua.test",
+	"string.lua.test",
 }
 
 local errors = 0

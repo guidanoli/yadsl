@@ -154,7 +154,7 @@ static int after_all(lua_State* L) {
 		if (size >= INT_MAX)
 			return luaL_error(L, "integer overflow");
 		int n = (int)size;
-		lua_checkstack(L, n+1);
+		luaL_checkstack(L, n+1, NULL);
 		yadsl_MemDebugAMB* list = yadsl_memdb_get_amb_list();
 		while (list != NULL)
 		{

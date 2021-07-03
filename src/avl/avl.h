@@ -34,6 +34,7 @@ yadsl_AVLTreeVisitingOrder;
 typedef void yadsl_AVLTreeHandle; /**< AVL tree handle */
 typedef void yadsl_AVLTreeObject; /**< AVL tree object (user data) */
 typedef void yadsl_AVLTreeCmpObjsArg; /**< AVL tree object comparison function user argument */
+typedef void yadsl_AVLTreeFreeObjArg; /**< AVL tree object freeing function user argument */
 
 /**
  * @brief AVL tree object comparison function
@@ -57,7 +58,8 @@ typedef int
 */
 typedef void
 (*yadsl_AVLTreeFreeObjFunc)(
-	yadsl_AVLTreeObject* obj);
+	yadsl_AVLTreeObject* obj,
+    yadsl_AVLTreeFreeObjArg* arg);
 
 typedef void yadsl_AVLTreeVisitObjArg; /**< AVL tree visiting function user argument */
 typedef void yadsl_AVLTreeVisitObjRet; /**< AVL tree visiting function return type */
@@ -84,7 +86,8 @@ yadsl_AVLTreeHandle*
 yadsl_avltree_tree_create(
 	yadsl_AVLTreeCmpObjsFunc cmp_objs_func,
 	yadsl_AVLTreeCmpObjsArg* cmp_objs_arg,
-	yadsl_AVLTreeFreeObjFunc free_obj_func);
+	yadsl_AVLTreeFreeObjFunc free_obj_func,
+    yadsl_AVLTreeFreeObjArg* free_obj_arg);
 
 /**
  * @brief Insert object in tree

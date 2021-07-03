@@ -70,6 +70,7 @@ typedef struct
 	yadsl_AVLTreeCmpObjsFunc cmp_objs_func; /**< AVL tree object comparison function */
 	yadsl_AVLTreeCmpObjsArg* cmp_objs_arg;  /**< AVL tree object comparison function user argument */
 	yadsl_AVLTreeFreeObjFunc free_obj_func; /**< AVL tree object freeing function */
+	yadsl_AVLTreeFreeObjArg* free_obj_arg; /**< AVL tree object freeing function user argument */
 }
 yadsl_AVLTree;
 
@@ -132,7 +133,8 @@ static void yadsl_avltree_subtree_destroy_internal(
 yadsl_AVLTreeHandle* yadsl_avltree_tree_create(
 	yadsl_AVLTreeCmpObjsFunc cmp_objs_func,
 	yadsl_AVLTreeCmpObjsArg* cmp_objs_arg,
-	yadsl_AVLTreeFreeObjFunc free_obj_func)
+	yadsl_AVLTreeFreeObjFunc free_obj_func,
+	yadsl_AVLTreeFreeObjArg* free_obj_arg)
 {
 	yadsl_AVLTree* tree = malloc(sizeof * tree);
 	if (tree) {
@@ -140,6 +142,7 @@ yadsl_AVLTreeHandle* yadsl_avltree_tree_create(
 		tree->cmp_objs_func = cmp_objs_func;
 		tree->free_obj_func = free_obj_func;
 		tree->cmp_objs_arg = cmp_objs_arg;
+		tree->free_obj_arg = free_obj_arg;
 	}
 	return tree;
 }
@@ -518,7 +521,7 @@ yadsl_AVLSubtree* yadsl_avltree_subtree_node_remove_internal(
 		}
 		if (free_obj) {
 			if (tree->free_obj_func)
-				tree->free_obj_func(x->object);
+				tree->free_obj_func(x->object, tree->free_obj_arg);
 			free(x);
 		}
 		x = retnode;
@@ -628,7 +631,7 @@ void yadsl_avltree_subtree_destroy_internal(
 	left = x->left;
 	right = x->right;
 	if (tree->free_obj_func)
-		tree->free_obj_func(x->object);
+		tree->free_obj_func(x->object, tree->free_obj_arg);
 	free(x);
 	yadsl_avltree_subtree_destroy_internal(tree, left);
 	yadsl_avltree_subtree_destroy_internal(tree, right);

@@ -64,9 +64,14 @@ static void *visit_cb(void *object, void *cmp_objs_arg)
 	return 0;
 }
 
+static void my_free(void* obj, void* arg)
+{
+	free(obj);
+}
+
 yadsl_TesterRet yadsl_tester_init()
 {
-	if (!(pTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, free)))
+	if (!(pTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, my_free, NULL)))
 		return YADSL_TESTER_RET_MALLOC;
 	return YADSL_TESTER_RET_OK;
 }
@@ -88,7 +93,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 	yadsl_AVLTreeRet returnId = YADSL_AVLTREE_RET_OK;
 	if (yadsl_testerutils_match(command, "new")) {
 		yadsl_AVLTreeHandle *newTree;
-		if (!(newTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, free))) {
+		if (!(newTree = yadsl_avltree_tree_create(cmp_objs_func, &pTree, my_free, NULL))) {
 			return YADSL_TESTER_RET_MALLOC;
 		} else {
 			yadsl_avltree_destroy(pTree);

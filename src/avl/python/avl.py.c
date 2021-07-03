@@ -57,7 +57,7 @@ YADSL_PY_EXCEPTION_FUNCTIONS(yadsl_AVLTreePythonObject, exceptions)
 //
 
 static void
-decRefCallback(void *object)
+decRefCallback(void *object, void *arg)
 {
 	Py_XDECREF((PyObject *) object);
 }
@@ -219,7 +219,7 @@ AVL_init(yadsl_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 			return -1;
 		}
 	}
-	if (!(self->ob_tree = yadsl_avltree_tree_create(cmpCallback, self, decRefCallback))) {
+	if (!(self->ob_tree = yadsl_avltree_tree_create(cmpCallback, self, decRefCallback, NULL))) {
 		PyErr_SetString(PyExc_MemoryError, "Could not create avl tree");
 		return -1;
 	}
