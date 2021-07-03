@@ -9,6 +9,7 @@ local testscripts = {
 }
 
 local errors = 0
+local before = os.clock()
 for _, testscript in pairs(testscripts) do
 	local ok, err = driver:runscript(testscript)
 	if not ok then
@@ -16,6 +17,11 @@ for _, testscript in pairs(testscripts) do
 		errors = errors + 1
 	end
 end
-if errors > 0 then
+local after = os.clock()
+local dt = after - before
+local dtmsg = string.format('(%g s)', dt)
+local errmsg = errors .. ' error' .. ((errors == 1) and '' or 's')
+io.stderr:write(driver:center(errmsg .. ' ' .. dtmsg, 80, '='), '\n')
+if errors ~= 0 then
 	os.exit(1)
 end
