@@ -24,6 +24,16 @@ typedef struct
 }
 argvp_udata;
 
+/* Utility functions */
+
+static int check_int(lua_State* L, int i)
+{
+    lua_Integer integer = luaL_checkinteger(L, i);
+    if (integer < INT_MIN || integer > INT_MAX)
+        return luaL_error(L, "integer overflow (%I too large for int)", integer);
+    return (int)integer;
+}
+
 /* Module functions */
 
 static int copy_string(lua_State* L, int s, int i, char** argv)
@@ -210,13 +220,45 @@ static int argvp_posarg(lua_State* L)
 {
     yadsl_ArgvKeywordArgumentDef* kwargsdef;
     argvp_udata* udata = check_argvp(L, 1);
-    lua_Integer integer = luaL_checkinteger(L, 2);
-    if (integer < INT_MIN || integer > INT_MAX)
-        return luaL_error(L, "integer overflow");
-    const char* posarg = yadsl_argvp_get_positional_argument(udata->argvp, (int)integer-1);
+    int argi = check_int(L, 2);
+    const char* posarg = yadsl_argvp_get_positional_argument(udata->argvp, argi-1);
     if (posarg == NULL)
-        return luaL_error(L, "invalid index");
-    lua_pushstring(L, posarg);
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+    else
+    {
+        lua_pushstring(L, posarg);
+        return 1;
+    }
+}
+
+static int argvp_kwarg_val(lua_State* L)
+{
+    argvp_udata* udata = check_argvp(L, 1);
+    const char* kw = luaL_checkstring(L, 2);
+    int vali = check_int(L, 3);
+    const char* val;
+    val = yadsl_argvp_get_keyword_argument_value(udata->argvp, kw, vali-1);
+    if (val == NULL)
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+    else
+    {
+        lua_pushstring(L, val);
+        return 1;
+    }
+}
+
+static int argvp_has_kwarg(lua_State* L)
+{
+    argvp_udata* udata = check_argvp(L, 1);
+    const char* kw = luaL_checkstring(L, 2);
+    int has = yadsl_argvp_has_keyword_argument(udata->argvp, kw);
+    lua_pushboolean(L, has);
     return 1;
 }
 
@@ -226,6 +268,8 @@ static const struct luaL_Reg argvpmethods[] =
     {"addKeywordArgument", argvp_add_kwarg},
     {"getPositionalArgumentCount", argvp_posarg_cnt},
     {"getPositionalArgument", argvp_posarg},
+    {"getKeywordArgumentValue", argvp_kwarg_val},
+    {"hasKeywordArgument", argvp_has_kwarg},
     {NULL, NULL} /* sentinel */
 };
 

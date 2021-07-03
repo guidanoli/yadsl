@@ -3,6 +3,8 @@
 
 #include "lauxlib.h"
 
+#define DEFAULT "assertion failed"
+
 static int lt_assertEqual(lua_State* L)
 {
 	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
@@ -12,8 +14,9 @@ static int lt_assertEqual(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s != %s", luaL_tolstring(L, 1, NULL),
-		                                 luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s != %s: %s", luaL_tolstring(L, 1, NULL),
+		                                     luaL_tolstring(L, 2, NULL),
+											 luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -26,8 +29,9 @@ static int lt_assertNotEqual(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s == %s", luaL_tolstring(L, 1, NULL),
-		                                 luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s == %s: %s", luaL_tolstring(L, 1, NULL),
+		                                     luaL_tolstring(L, 2, NULL),
+											 luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -40,8 +44,9 @@ static int lt_assertGreaterThan(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s <= %s", luaL_tolstring(L, 1, NULL),
-		                                 luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s <= %s: %s", luaL_tolstring(L, 1, NULL),
+		                                     luaL_tolstring(L, 2, NULL),
+											 luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -54,8 +59,9 @@ static int lt_assertGreaterEqual(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s < %s", luaL_tolstring(L, 1, NULL),
-		                                luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s < %s: %s", luaL_tolstring(L, 1, NULL),
+		                                    luaL_tolstring(L, 2, NULL),
+											luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -68,8 +74,9 @@ static int lt_assertLessThan(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s >= %s", luaL_tolstring(L, 1, NULL),
-		                                 luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s >= %s: %s", luaL_tolstring(L, 1, NULL),
+		                                     luaL_tolstring(L, 2, NULL),
+											 luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -82,8 +89,9 @@ static int lt_assertLessEqual(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s > %s", luaL_tolstring(L, 1, NULL),
-		                                luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s > %s: %s", luaL_tolstring(L, 1, NULL),
+		                                    luaL_tolstring(L, 2, NULL),
+											luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -96,7 +104,8 @@ static int lt_assertNil(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s is not nil", luaL_tolstring(L, 1, NULL));
+		return luaL_error(L, "%s is not nil: %s", luaL_tolstring(L, 1, NULL),
+		                                          luaL_optstring(L, 2, DEFAULT));
 	}
 }
 
@@ -109,7 +118,8 @@ static int lt_assertNotNil(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s is nil", luaL_tolstring(L, 1, NULL));
+		return luaL_error(L, "%s is nil: %s", luaL_tolstring(L, 1, NULL),
+		                                      luaL_optstring(L, 2, DEFAULT));
 	}
 }
 
@@ -122,8 +132,9 @@ static int lt_assertRawEqual(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s != %s (raw)", luaL_tolstring(L, 1, NULL),
-		                                       luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s != %s (raw): %s", luaL_tolstring(L, 1, NULL),
+		                                           luaL_tolstring(L, 2, NULL),
+												   luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -136,8 +147,9 @@ static int lt_assertRawNotEqual(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s == %s (raw)", luaL_tolstring(L, 1, NULL),
-		                                       luaL_tolstring(L, 2, NULL));
+		return luaL_error(L, "%s == %s (raw): %s", luaL_tolstring(L, 1, NULL),
+		                                           luaL_tolstring(L, 2, NULL),
+												   luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -150,7 +162,8 @@ static int lt_assertTrue(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s is false", luaL_tolstring(L, 1, NULL));
+		return luaL_error(L, "%s is false: %s", luaL_tolstring(L, 1, NULL),
+		                                        luaL_optstring(L, 2, DEFAULT));
 	}
 }
 
@@ -163,7 +176,8 @@ static int lt_assertFalse(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s is true", luaL_tolstring(L, 1, NULL));
+		return luaL_error(L, "%s is true: %s", luaL_tolstring(L, 1, NULL),
+		                                       luaL_optstring(L, 2, DEFAULT));
 	}
 }
 
@@ -182,9 +196,10 @@ static int lt_assertIsOfType(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s is of type %s, not %s", luaL_tolstring(L, 1, NULL),
-		                                                 obtained,
-														 expected);
+		return luaL_error(L, "%s is of type %s, not %s: %s", luaL_tolstring(L, 1, NULL),
+		                                                     obtained,
+														     expected,
+															 luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -203,8 +218,9 @@ static int lt_assertIsNotOfType(lua_State* L)
 	}
 	else
 	{
-		return luaL_error(L, "%s is of type %s", luaL_tolstring(L, 1, NULL),
-		                                         obtained);
+		return luaL_error(L, "%s is of type %s: %s", luaL_tolstring(L, 1, NULL),
+		                                             obtained,
+													 luaL_optstring(L, 3, DEFAULT));
 	}
 }
 
@@ -212,31 +228,35 @@ static int lt_assertIsIn(lua_State* L)
 {
 	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
 	luaL_argexpected(L, lua_type(L, 2) == LUA_TTABLE, 2, "table");
+	const char* msg = luaL_optstring(L, 3, DEFAULT);
 	lua_pushnil(L);
 	while (lua_next(L, 2) != 0)
 	{
-		if (lua_compare(L, 1, 4, LUA_OPEQ))
+		if (lua_compare(L, 1, -1, LUA_OPEQ))
 		{
 			return 0;
 		}
 		lua_pop(L, 1);
 	}
-	return luaL_error(L, "%s is not in %s", luaL_tolstring(L, 1, NULL),
-	                                        luaL_tolstring(L, 2, NULL));
+	return luaL_error(L, "%s is not in %s: %s", luaL_tolstring(L, 1, NULL),
+	                                            luaL_tolstring(L, 2, NULL),
+											    msg);
 }
 
 static int lt_assertIsNotIn(lua_State* L)
 {
 	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected 2 arguments");
 	luaL_argexpected(L, lua_type(L, 2) == LUA_TTABLE, 2, "table");
+	const char* msg = luaL_optstring(L, 3, DEFAULT);
 	lua_pushnil(L);
 	while (lua_next(L, 2) != 0)
 	{
-		if (lua_compare(L, 1, 4, LUA_OPEQ))
+		if (lua_compare(L, 1, -1, LUA_OPEQ))
 		{
 			return luaL_error(L, "%s is in %s (key is %s)", luaL_tolstring(L, 1, NULL),
 			                                                luaL_tolstring(L, 2, NULL),
-															luaL_tolstring(L, 3, NULL));
+															luaL_tolstring(L, -2, NULL),
+															msg);
 		}
 		lua_pop(L, 1);
 	}

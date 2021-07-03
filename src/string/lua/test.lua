@@ -9,8 +9,6 @@ for i = 48,  57 do table.insert(t.charset, string.char(i)) end
 for i = 65,  90 do table.insert(t.charset, string.char(i)) end
 for i = 97, 122 do table.insert(t.charset, string.char(i)) end
 
-math.randomseed(os.time())
-
 function t:testDuplicate()
 	local strings = {
 		"",
@@ -36,6 +34,7 @@ function t:generateString()
 end
 
 function t:testDuplicateMetamorphic()
+	math.randomseed(os.time())
 	local TEST_CASES = 1000
 	for TEST_CASE_INDEX = 1, TEST_CASES do
 		local str = self:generateString()
@@ -62,6 +61,7 @@ function t:testCompareIgnoringCase()
 end
 
 function t:testCompareIgnoreCaseMetamorphic()
+	math.randomseed(os.time())
 	local TEST_CASES = 1000
 	for TEST_CASE_INDEX = 1, TEST_CASES do
 		local str = self:generateString()
