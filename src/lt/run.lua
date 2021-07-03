@@ -6,6 +6,7 @@ local testscripts = {
 	"diff.lua.test",
 	"string.lua.test",
 	"argvp.lua.test",
+	"avl.lua.test",
 }
 
 local errors = 0
