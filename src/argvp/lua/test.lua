@@ -144,4 +144,33 @@ function t:testKwargsMetamorphic()
 	end
 end
 
+function t:testOverlapingKeywordArguments()
+	local p = argvp.ArgumentParser{'-x', 'a', 'b', '-y', 'c'}
+	p:addKeywordArgument('-x', 3)
+	p:addKeywordArgument('-y', 1)
+	lt.assertEqual(p:getKeywordArgumentValue('-x', 3), '-y')
+	lt.assertFalse(p:hasKeywordArgument('-y'))
+end
+
+function t:testKeywordArgumentsAlreadyTaken()
+	local p = argvp.ArgumentParser{'-x', 'a', 'b', '-y', 'c'}
+	p:addKeywordArgument('-y', 1)
+	p:addKeywordArgument('-x', 3)
+	lt.assertEqual(p:getKeywordArgumentValue('-y', 1), 'c')
+	lt.assertFalse(p:hasKeywordArgument('-x'))
+end
+
+function t:testKeywordArgumentsOverTheEdge()
+	local p = argvp.ArgumentParser{'-x', 'a'}
+	p:addKeywordArgument('-x', 2)
+	lt.assertFalse(p:hasKeywordArgument('-x'))
+end
+
+function t:testRepeatedKeywords()
+	local p = argvp.ArgumentParser{'-x', 'a', '-x', 'b'}
+	p:addKeywordArgument('-x', 1)
+	lt.assertEqual(p:getKeywordArgumentValue('-x', 1), 'a')
+	lt.assertNil(p:getKeywordArgumentValue('-x', 2))
+end
+
 return t
