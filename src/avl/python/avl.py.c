@@ -149,14 +149,14 @@ struct _visit_cb_arg
 	PyObject *func; /* callable object */
 };
 
-void *visitCallback(void *object, void *cmp_objs_arg)
+void *visitCallback(void *object, void *visitArg)
 {
-	struct _visit_cb_arg *info = (struct _visit_cb_arg *) cmp_objs_arg;
+	struct _visit_cb_arg *info = (struct _visit_cb_arg *) visitArg;
 	PyObject *func_arg = PyTuple_Pack(1, object), *result;
 	if (func_arg == NULL) {
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not create internal tuple");
-		return cmp_objs_arg; // Flag for 'internal error'
+		return visitArg; // Flag for 'internal error'
 	}
 	info->ao->lock = 1;
 	result = PyObject_CallObject(info->func, func_arg);
@@ -166,7 +166,7 @@ void *visitCallback(void *object, void *cmp_objs_arg)
 		if (!PyErr_Occurred())
 			PyErr_SetString(PyExc_RuntimeError,
 				"An unspecified error occurred during callback.");
-		return cmp_objs_arg; // Flag for 'internal error'
+		return visitArg; // Flag for 'internal error'
 	}
 	if (!PyObject_IsTrue(result)) {
 		Py_DECREF(result);
@@ -219,7 +219,7 @@ AVL_init(yadsl_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 			return -1;
 		}
 	}
-	if (!(self->ob_tree = yadsl_avltree_tree_create(cmpCallback, self, decRefCallback, NULL))) {
+	if (!(self->ob_tree = yadsl_avltree_tree_create())) {
 		PyErr_SetString(PyExc_MemoryError, "Could not create avl tree");
 		return -1;
 	}
@@ -234,8 +234,10 @@ AVL_init(yadsl_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 static void
 AVL_dealloc(yadsl_AVLTreePythonObject *self)
 {
-	if (self->ob_tree)
-		yadsl_avltree_destroy(self->ob_tree);
+	if (self->ob_tree) {
+		yadsl_AVLTreeCallbacks callbacks = {.free_cb = decRefCallback};
+		yadsl_avltree_destroy(self->ob_tree, &callbacks);
+	}
 #ifdef YADSL_DEBUG
 	yadsl_memdb_status();
 #endif
@@ -258,7 +260,8 @@ AVL_add(yadsl_AVLTreePythonObject *self, PyObject *obj)
 		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (yadsl_avltree_object_insert(self->ob_tree, obj, &exists)) {
+	yadsl_AVLTreeCallbacks callbacks = {.compare_cb = cmpCallback, .compare_arg = self};
+	switch (yadsl_avltree_object_insert(self->ob_tree, obj, &callbacks, &exists)) {
 	case YADSL_AVLTREE_RET_OK:
 #ifdef YADSL_DEBUG
 		yadsl_memdb_status();
@@ -292,7 +295,8 @@ AVL_remove(yadsl_AVLTreePythonObject *self, PyObject *obj)
 		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (yadsl_avltree_object_remove(self->ob_tree, obj, &exists)) {
+	yadsl_AVLTreeCallbacks callbacks = {.compare_cb = cmpCallback, .compare_arg = self, .free_cb = decRefCallback};
+	switch (yadsl_avltree_object_remove(self->ob_tree, obj, &callbacks, &exists)) {
 	case YADSL_AVLTREE_RET_OK:
 #ifdef YADSL_DEBUG
 		yadsl_memdb_status();
@@ -320,7 +324,8 @@ AVL_contains(yadsl_AVLTreePythonObject *self, PyObject *obj)
 		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
 		return NULL;
 	}
-	switch (yadsl_avltree_object_search(self->ob_tree, obj, &exists)) {
+	yadsl_AVLTreeCallbacks callbacks = {.compare_cb = cmpCallback, .compare_arg = self};
+	switch (yadsl_avltree_object_search(self->ob_tree, obj, &callbacks, &exists)) {
 	case YADSL_AVLTREE_RET_OK:
 		if (PyErr_Occurred())
 			return NULL;
@@ -343,7 +348,7 @@ PyDoc_STRVAR(_AVL_iterate__doc__,
 static PyObject *
 AVL_iterate(yadsl_AVLTreePythonObject *self, PyObject *obj)
 {
-	struct _visit_cb_arg cmp_objs_arg;
+	struct _visit_cb_arg visitArg;
 	void *ret = NULL;
 	if (self->lock) {
 		_yadsl_AVLTreePythonObject_throw_error(PyExc_Lock);
@@ -354,9 +359,10 @@ AVL_iterate(yadsl_AVLTreePythonObject *self, PyObject *obj)
 			"argument should be a callable object");
 		return NULL;
 	}
-	cmp_objs_arg.ao = self;
-	cmp_objs_arg.func = obj;
-	switch (yadsl_avltree_tree_traverse(self->ob_tree, YADSL_AVLTREE_VISITING_IN_ORDER, visitCallback, &cmp_objs_arg, &ret)) {
+	visitArg.ao = self;
+	visitArg.func = obj;
+	yadsl_AVLTreeCallbacks callbacks = {.visit_cb = visitCallback, .visit_arg = &visitArg};
+	switch (yadsl_avltree_tree_traverse(self->ob_tree, YADSL_AVLTREE_VISITING_IN_ORDER, &callbacks, &ret)) {
 	case YADSL_AVLTREE_RET_OK:
 #ifdef YADSL_DEBUG
 		yadsl_memdb_status();
@@ -370,7 +376,7 @@ AVL_iterate(yadsl_AVLTreePythonObject *self, PyObject *obj)
 		Py_UNREACHABLE();
 	}
 exit:
-	if (ret != &cmp_objs_arg) // flag for 'internal error'
+	if (ret != &visitArg) // flag for 'internal error'
 		Py_XDECREF(ret);
 	return NULL;
 }
