@@ -81,6 +81,59 @@ function t:testTraverseMany()
 	end
 end
 
+function t:newRandomTable(maxn)
+	-- The probability that this table
+	-- does not have repeated values is
+	-- 1 - 1/n!, which for n = 5 is
+	-- is already very high (99.1%).
+	local t = {}
+	local n = math.random(maxn)
+	for i = 1, n do
+		t[i] = math.random(maxn)
+	end
+	return t
+end
+
+function t:testMetamorphic()
+	local t = self:newRandomTable(100)
+	local added = {}
+	local added_inv = {}
+	local tree = avl.AVLTree()
+	for i, v in ipairs(t) do
+		local exists = tree:insert(v)
+		if exists then
+			lt.assertIsIn(v, added)
+		else
+			lt.assertIsNotIn(v, added)
+			table.insert(added, v)
+			added_inv[v] = true
+		end
+	end
+	local visited = {}
+	tree:traverse(function(o)
+		table.insert(visited, o)
+	end)
+	table.sort(added)
+	lt.assertEqual(#added, #visited)
+	for i = 1, #added do
+		lt.assertEqual(added[i], visited[i], i)
+	end
+	for i = 1, 100 do
+		local remove = math.random() < 0.5
+		if added_inv[i] then
+			lt.assertTrue(tree:search(i))
+			if remove then
+				lt.assertTrue(tree:remove(i))
+			end
+		else
+			lt.assertFalse(tree:search(i))
+			if remove then
+				lt.assertFalse(tree:remove(i))
+			end
+		end
+	end
+end
+
 function t:testTraverseReturnValue()
 	local tree = self:getTreeSequence(10)
 	local visited = {}
@@ -116,6 +169,88 @@ end
 
 function t:testTraversePostOrder()
 	self:_testTraverseOrder("post")
+end
+
+function t:testComparisonError()
+	local tree = self:getTreeSequence(10)
+	local msg = 'uncomparable'
+	local compare_cb = function(o)
+		error(msg)
+	end
+	local ucomp = {}
+	setmetatable(ucomp, {
+		__eq = compare_cb,
+		__le = compare_cb,
+		__lt = compare_cb,
+	})
+	lt.assertRaisesRegex(msg, tree.insert, tree, ucomp)
+	lt.assertRaisesRegex(msg, tree.search, tree, ucomp)
+	lt.assertRaisesRegex(msg, tree.remove, tree, ucomp)
+end
+
+function t:testComparisonErrorNil()
+	local tree = self:getTreeSequence(10)
+	local msg = 'comparison failed'
+	local compare_cb = function(o) error() end
+	local ucomp = {}
+	setmetatable(ucomp, {
+		__eq = compare_cb,
+		__le = compare_cb,
+		__lt = compare_cb,
+	})
+	lt.assertRaisesRegex(msg, tree.insert, tree, ucomp)
+	lt.assertRaisesRegex(msg, tree.search, tree, ucomp)
+	lt.assertRaisesRegex(msg, tree.remove, tree, ucomp)
+end
+
+function t:testTraversalError()
+	local tree = self:getTreeSequence(10)
+	local visited
+	local msg = 'untraversable'
+	local traverse_cb = function(o)
+		table.insert(visited, o)
+		error(msg)
+	end
+	for _, order in ipairs{'pre', 'in', 'post'} do
+		visited = {}
+		lt.assertRaisesRegex(msg, tree.traverse, tree, traverse_cb, order)
+		lt.assertEqual(#visited, 1)
+	end
+end
+
+function t:testTraversalErrorNil()
+	local tree = self:getTreeSequence(10)
+	local visited
+	local msg = 'traversing callback failed'
+	local traverse_cb = function(o)
+		table.insert(visited, o)
+		error()
+	end
+	for _, order in ipairs{'pre', 'in', 'post'} do
+		visited = {}
+		lt.assertRaisesRegex(msg, tree.traverse, tree, traverse_cb, order)
+		lt.assertEqual(#visited, 1)
+	end
+end
+
+
+function t:testLock()
+	local tree = self:getTreeSequence(10)
+	local compare_cb = function(a, b)
+		tree:remove(a)
+		tree:remove(b)
+	end
+	local trigger = {}
+	setmetatable(trigger, {
+		__eq = compare_cb,
+		__le = compare_cb,
+		__lt = compare_cb,
+	})
+	local msg = 'locked'
+	lt.assertRaisesRegex(msg, tree.insert, tree, trigger)
+	lt.assertRaisesRegex(msg, tree.search, tree, trigger)
+	lt.assertRaisesRegex(msg, tree.remove, tree, trigger)
+	lt.assertRaisesRegex(msg, tree.traverse, tree, compare_cb)
 end
 
 return t

@@ -32,7 +32,7 @@ static int cmp_objs_func(void *obj1, void *obj2, void *cmp_objs_arg)
 	return *((int *) obj1) - *((int *) obj2);
 }
 
-static void *visit_cb_range(void *object, void *cmp_objs_arg)
+static void *my_ranged_visit_cb(void *object, void *cmp_objs_arg)
 {
 	int curr;
 	assert(object);
@@ -48,7 +48,7 @@ static void *visit_cb_range(void *object, void *cmp_objs_arg)
 	return 0;
 }
 
-static void *visit_cb(void *object, void *cmp_objs_arg)
+static void *my_visit_cb(void *object, void *cmp_objs_arg)
 {
 	int actual, expected;
 	assert(object);
@@ -184,13 +184,13 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		} while (first != last);
 	} else if (yadsl_testerutils_match(command, "traverse")) {
 		cbReturnValue = YADSL_AVLTREE_RET_OK;
-		yadsl_AVLTreeCallbacks callbacks = {.compare_cb = cmp_objs_func, .compare_arg = &pTree, .visit_cb = visit_cb, .visit_arg = &pTree};
+		yadsl_AVLTreeCallbacks callbacks = {.visit_cb = my_visit_cb, .visit_arg = &pTree};
 		returnId = yadsl_avltree_tree_traverse(pTree, YADSL_AVLTREE_VISITING_IN_ORDER, &callbacks, NULL);
 		if (!returnId)
 			returnId = cbReturnValue;
 	} else if (yadsl_testerutils_match(command, "traverse*")) {
 		cbReturnValue = YADSL_AVLTREE_RET_OK;
-		yadsl_AVLTreeCallbacks callbacks = {.compare_cb = cmp_objs_func, .compare_arg = &pTree, .visit_cb = visit_cb_range, .visit_arg = &pTree};
+		yadsl_AVLTreeCallbacks callbacks = {.visit_cb = my_ranged_visit_cb, .visit_arg = &pTree};
 		if (yadsl_tester_parse_arguments("ii", &first, &last) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
 		returnId = yadsl_avltree_tree_traverse(pTree, YADSL_AVLTREE_VISITING_IN_ORDER, &callbacks, NULL);

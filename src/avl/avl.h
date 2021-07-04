@@ -69,6 +69,7 @@ typedef void yadsl_AVLTreeVisitObjRet; /**< AVL tree visiting function return ty
  * @param obj object
  * @param arg user argument
  * @return a value that, if equal to zero, interrupts visitation
+ * @note you may want to interupt visitation if an error occurred
 */
 typedef yadsl_AVLTreeVisitObjRet*
 (*yadsl_AVLTreeVisitObjFunc)(
@@ -154,7 +155,7 @@ yadsl_avltree_object_remove(
  * @brief Traverses tree in-order calling user function for each object
  * @param tree tree to be traversed
  * @param visit_order visiting order
- * @param callbacks uses 'compare' and 'visit' callbacks only
+ * @param callbacks uses 'visit' callback only
  * @param visit_ret_ptr pointer to last value returned by visit_func
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and *visit_ret_ptr is updated

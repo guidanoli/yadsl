@@ -521,8 +521,7 @@ yadsl_AVLSubtree* yadsl_avltree_subtree_node_remove_internal(
 /**
  * @brief Traverse subtree pre-order
  * @param node subtree root
- * @param visit_func visitation function
- * @param visit_arg argument passed to visit_func
+ * @param callbacks uses 'visit' callback only
  * @return first value returned by visit_func, or 0 if it was never called
 */
 yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_pre_internal(
@@ -545,8 +544,7 @@ yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_pre_internal(
 /**
  * @brief Traverse subtree in-order
  * @param node subtree root
- * @param visit_func visitation function
- * @param visit_arg argument passed to visit_func
+ * @param callbacks uses 'visit' callback only
  * @return first value returned by visit_func, or 0 if it was never called
 */
 yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_in_internal(
@@ -569,8 +567,7 @@ yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_in_internal(
 /**
  * @brief Traverse subtree post-order
  * @param node subtree root
- * @param visit_func visitation function
- * @param visit_arg argument passed to visit_func
+ * @param callbacks uses 'visit' callback only
  * @return first value returned by visit_func, or 0 if it was never called
 */
 yadsl_AVLTreeVisitObjRet* yadsl_avltree_subtree_traverse_post_internal(

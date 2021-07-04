@@ -92,7 +92,7 @@ end
 
 function t:generateArgs(max)
 	local args = {}
-	local n = math.random(1, max)
+	local n = math.random(max)
 	for i = 1, n do
 		args[i] = tostring(math.random())
 	end
@@ -115,7 +115,7 @@ function t:testKwargsMetamorphic()
 	for TEST_INDEX = 1, NUM_TESTS do
 		local posargs = self:generateArgs(50)
 		local kwargs = {}
-		for i = 1, math.random(1, 50) do
+		for i = 1, math.random(50) do
 			kwargs['--kw' .. i] = self:generateArgs(5)
 		end
 		local args = {}

@@ -25,10 +25,10 @@ end
 
 function t:generateString()
 	local MAX_SIZE = 1000
-	local size = math.random(1, MAX_SIZE)
+	local size = math.random(MAX_SIZE)
 	local str = ''
 	for i = 1, size do
-		str = str .. self.charset[math.random(1, #self.charset)]
+		str = str .. self.charset[math.random(#self.charset)]
 	end
 	return str
 end
