@@ -6,7 +6,7 @@ jobs:
   build:
     strategy:
       matrix:
-        debug: [true, false]
+        build_type: ['Release', 'Debug']
         lua_version: ["5.4.3"]
         python_version: ["3.6-dev", "3.7-dev", "3.8-dev", "3.9-dev"]
         cmake_version: ["3.18.5"]
@@ -14,9 +14,8 @@ jobs:
     runs-on: ubuntu-18.04
     
     env:
-      CONFIG: ${{ matrix.debug && 'Debug' || 'Release' }}
-      LIBDIR: ${{ matrix.debug && 'lib64d' || 'lib64' }}
-      PYTHONVER: ${{ format(matrix.debug && '{0}-debug' || '{0}', matrix.python_version) }}
+      LIBDIR: ${{ matrix.build_type == 'Debug' && 'lib64d' || 'lib64' }}
+      PYTHONVER: ${{ format(matrix.build_type == 'Debug' && '{0}-debug' || '{0}', matrix.python_version) }}
 
     steps:
       - name: Checkout
@@ -64,11 +63,11 @@ jobs:
           key: ${{ runner.os }}-python-${{ env.PYTHONVER }}
 
       - name: Compile Python in Release
-        if: steps.cache-python.outputs.cache-hit != 'true' && ! matrix.debug
+        if: steps.cache-python.outputs.cache-hit != 'true' && matrix.build_type != 'Debug'
         run: CONFIGURE_OPTS=--enable-shared pyenv install "${{ matrix.python_version }}"
 
       - name: Compile Python in Debug
-        if: steps.cache-python.outputs.cache-hit != 'true' && matrix.debug
+        if: steps.cache-python.outputs.cache-hit != 'true' && matrix.build_type == 'Debug'
         run: CONFIGURE_OPTS=--enable-shared pyenv install --debug "${{ matrix.python_version }}"
 
       - name: Install Python
@@ -106,13 +105,13 @@ jobs:
         run: cmake --version 2>&1 | grep -F "${{ matrix.cmake_version }}"
 
       - name: Configure build environment
-        run: cmake -B build "-DCMAKE_BUILD_TYPE=$CONFIG" -DYADSL_LUA_SUPPORT=1 -DYADSL_PYTHON_SUPPORT=1 -DYADSL_BUILD_ALL_TESTS=1 "-DPython_EXECUTABLE:FILEPATH=$(pyenv which python)"
+        run: cmake -B build "-DCMAKE_BUILD_TYPE=${{ matrix.build_type }}" -DYADSL_LUA_SUPPORT=1 -DYADSL_PYTHON_SUPPORT=1 -DYADSL_BUILD_ALL_TESTS=1 "-DPython_EXECUTABLE:FILEPATH=$(pyenv which python)"
 
       - name: Build
-        run: cmake --build build --config "$CONFIG" --target all
+        run: cmake --build build --config "${{ matrix.build_type }}" --target all
 
       - name: Test C
-        run: CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config "$CONFIG" --target test
+        run: CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config "${{ matrix.build_type }}" --target test
 
       - name: Test Python
         run: PYTHONPATH="$LIBDIR/python" pyenv exec pytest -s src --ignore=src/yadsl/templates
