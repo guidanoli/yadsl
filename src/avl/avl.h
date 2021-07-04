@@ -104,6 +104,9 @@ yadsl_avltree_tree_create();
  * @param object object to be inserted
  * @param callbacks uses 'compare' callbacks only
  * @param exists_ptr whether object exists or not
+ * @note if returns OK, but object already exists in the tree,
+ * you might want to deallocate any memory that might have been
+ * allocated specially for the object to be inserted
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and object is inserted in tree
  * * ::YADSL_AVLTREE_RET_MEMORY

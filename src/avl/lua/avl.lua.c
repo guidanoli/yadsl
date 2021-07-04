@@ -4,6 +4,12 @@
 
 #include <assert.h>
 
+#ifdef YADSL_DEBUG
+#include <memdb/memdb.h>
+#else
+#include <stdlib.h>
+#endif
+
 #include <avl/avl.h>
 #include <memdb/lua/memdb.h>
 
@@ -69,9 +75,11 @@ static void avl_tree_free_cb(yadsl_AVLTreeObject* obj,
 {
     lua_State* L = (lua_State*)arg;
     assert(L != NULL && "Lua state is valid");
-    int* ref = (int*)obj;
-    assert(ref != NULL && "Reference is valid");
-    luaL_unref(L, LUA_REGISTRYINDEX, *ref);
+    int* ref_ptr = (int*)obj;
+    assert(ref_ptr != NULL && "Reference is valid");
+    int ref = *ref_ptr;
+    free(ref_ptr);
+    luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }
 
 static int avl_tree_constructor(lua_State* L)
@@ -107,7 +115,36 @@ static const struct luaL_Reg avllib[] = {
 
 static int avl_tree_insert(lua_State* L)
 {
-    return 0;
+    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    lua_settop(L, 2);
+    int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    if (ref == LUA_REFNIL)
+        return luaL_argerror(L, 2, "cannot insert nil");
+    int* ref_ptr = (int*) malloc(sizeof(int));
+    if (ref_ptr == NULL)
+        return luaL_error(L, "bad malloc");
+    *ref_ptr = ref;
+    yadsl_AVLTreeRet ret;
+    assert(udata->avl != NULL && "AVL tree is valid");
+    yadsl_AVLTreeCallbacks callbacks = {
+        .compare_cb = avl_tree_compare_cb,
+        .compare_arg = L};
+    bool exists;
+    ret = yadsl_avltree_object_insert(
+        udata->avl, ref_ptr, &callbacks, &exists);
+    switch (ret) {
+        case YADSL_AVLTREE_RET_OK:
+            if (exists)
+                free(ref_ptr);
+            break;
+        case YADSL_AVLTREE_RET_MEMORY:
+            free(ref_ptr);
+            return luaL_error(L, "bad malloc");
+        default:
+            assert(0 && "Unreachable");
+    }
+    lua_pushboolean(L, exists);
+    return 1;
 }
 
 static int avl_tree_search(lua_State* L)
