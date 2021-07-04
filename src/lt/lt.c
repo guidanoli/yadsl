@@ -145,6 +145,7 @@ static int lt_assertRawNotEqual(lua_State* L)
 static int lt_assertIsIn(lua_State* L)
 {
 	lua_settop(L, 3);
+	luaL_argexpected(L, lua_istable(L, 2), 2, "table");
 	lua_pushnil(L);
 	while (lua_next(L, 2) != 0)
 	{
@@ -161,6 +162,7 @@ static int lt_assertIsIn(lua_State* L)
 static int lt_assertIsNotIn(lua_State* L)
 {
 	lua_settop(L, 3);
+	luaL_argexpected(L, lua_istable(L, 2), 2, "table");
 	lua_pushnil(L);
 	while (lua_next(L, 2) != 0)
 	{
@@ -177,6 +179,7 @@ static int lt_assertIsNotIn(lua_State* L)
 static int lt_assertRaises(lua_State* L)
 {
 	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected function");
+	luaL_argexpected(L, lua_isfunction(L, 1), 1, "function");
 	if (lua_pcall(L, lua_gettop(L) - 1, 0, 0))
 	{
 		return 0;
@@ -190,6 +193,8 @@ static int lt_assertRaises(lua_State* L)
 static int lt_assertRaisesRegex(lua_State* L)
 {
 	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected string and function");
+	luaL_argexpected(L, lua_isstring(L, 1), 1, "string");
+	luaL_argexpected(L, lua_isfunction(L, 2), 2, "function");
 	if (lua_pcall(L, lua_gettop(L) - 2, 0, 0))
 	{
 		lua_getfield(L, LUA_REGISTRYINDEX, STRFIND); /* regex error string.find */

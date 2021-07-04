@@ -1,4 +1,4 @@
-local t = { passed = 19 }
+local t = {}
 
 --------------------------
 --  Tests
@@ -176,6 +176,8 @@ function t:testIsIn()
 			tables,
 		},
 	}
+	local ok, err = pcall(lt.assertIsIn, 2, 5)
+	assert(not ok and err:find('table'))
 end
 
 function t:testIsNotIn()
@@ -199,6 +201,8 @@ function t:testIsNotIn()
 			tables,
 		},
 	}
+	local ok, err = pcall(lt.assertIsNotIn, 2, 5)
+	assert(not ok and err:find('table'))
 end
 
 function t:testRaises()
@@ -219,6 +223,8 @@ function t:testRaises()
 		end
 		assert(called)
 	end
+	local ok, err = pcall(lt.assertRaises, 23)
+	assert(not ok and err:find('function'))
 end
 
 function t:testRaisesRegex()
@@ -239,6 +245,10 @@ function t:testRaisesRegex()
 		end
 		assert(called)
 	end
+	local ok, err = pcall(lt.assertRaisesRegex, 'algo', 23)
+	assert(not ok and err:find('function'))
+	local ok, err = pcall(lt.assertRaisesRegex, nil, function() error('algo') end)
+	assert(not ok and err:find('string'))
 end
 
 function t:testUdata()

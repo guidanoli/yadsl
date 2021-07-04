@@ -1,15 +1,16 @@
-local t = { errors = {}, passed = 7, failed = 13 }
+local t = { errors = {} }
 
-for i = 1, t.passed + t.failed do
+for i = 1, 20 do
 	local func
-	if i <= t.passed then
+	local name = 'test' .. i
+	if i <= 10 then
 		func = function() end
 	else
 		local err = tostring(i*i)
 		func = function() error(err) end
-		t.errors['test' .. i] = err
+		t.errors[name] = err
 	end
-	t['test' .. i] = func
+	t[name] = func
 end
 
 return t

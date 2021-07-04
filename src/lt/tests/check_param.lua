@@ -1,4 +1,4 @@
-local t = { passed = 1 }
+local t = {}
 
 function t.test(tparam)
 	if t ~= tparam then
