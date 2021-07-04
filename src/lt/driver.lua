@@ -86,9 +86,10 @@ function driver:_center(title, size, decorator)
 end
 
 function driver:_runscript(script, errhdlr, fp)
-	local module = require(script)
-	assert(type(module) == "table")
 	fp:write(self:center(script, 80, '='), '\n')
+	local ok, module = pcall(require, script)
+	if not ok then return false, module end
+	assert(type(module) == "table")
 	local failed, passed, errors = driver:runmodule(module, errhdlr)
 	for name, err in pairs(errors) do
 		fp:write(self:center('error on ' .. name, 80, '-'), '\n', tostring(err), '\n')

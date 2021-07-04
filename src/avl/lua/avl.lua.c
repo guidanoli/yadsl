@@ -134,8 +134,10 @@ static int avl_tree_insert(lua_State* L)
         udata->avl, ref_ptr, &callbacks, &exists);
     switch (ret) {
         case YADSL_AVLTREE_RET_OK:
-            if (exists)
+            if (exists) {
                 free(ref_ptr);
+                luaL_unref(L, LUA_REGISTRYINDEX, ref);
+            }
             break;
         case YADSL_AVLTREE_RET_MEMORY:
             free(ref_ptr);
@@ -149,12 +151,50 @@ static int avl_tree_insert(lua_State* L)
 
 static int avl_tree_search(lua_State* L)
 {
-    return 0;
+    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    lua_settop(L, 2);
+    bool exists;
+    int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    if (ref == LUA_REFNIL) {
+        exists = false;
+    } else {
+        yadsl_AVLTreeRet ret;
+        assert(udata->avl != NULL && "AVL tree is valid");
+        yadsl_AVLTreeCallbacks callbacks = {
+            .compare_cb = avl_tree_compare_cb,
+            .compare_arg = L};
+        ret = yadsl_avltree_object_search(
+            udata->avl, &ref, &callbacks, &exists);
+        assert(ret == YADSL_AVLTREE_RET_OK && "Cannot fail");
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    }
+    lua_pushboolean(L, exists);
+    return 1;
 }
 
 static int avl_tree_remove(lua_State* L)
 {
-    return 0;
+    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    lua_settop(L, 2);
+    bool exists;
+    int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    if (ref == LUA_REFNIL) {
+        exists = false;
+    } else {
+        yadsl_AVLTreeRet ret;
+        assert(udata->avl != NULL && "AVL tree is valid");
+        yadsl_AVLTreeCallbacks callbacks = {
+            .compare_cb = avl_tree_compare_cb,
+            .compare_arg = L,
+            .free_cb = avl_tree_free_cb,
+            .free_arg = L};
+        ret = yadsl_avltree_object_remove(
+            udata->avl, &ref, &callbacks, &exists);
+        assert(ret == YADSL_AVLTREE_RET_OK && "Cannot fail");
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    }
+    lua_pushboolean(L, exists);
+    return 1;
 }
 
 static int avl_tree_traverse(lua_State* L)
