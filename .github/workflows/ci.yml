@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         debug: [true, false]
-        lua_version: ["5.4.2"]
+        lua_version: ["5.4.3"]
         python_version: ["3.6-dev", "3.7-dev", "3.8-dev", "3.9-dev"]
         cmake_version: ["3.18.5"]
     
