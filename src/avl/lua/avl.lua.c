@@ -42,6 +42,15 @@ static int avl_tree_compare_lua_cfunction(lua_State* L)
     return 1;
 }
 
+static void push_avl_tree_object(lua_State* L, yadsl_AVLTreeObject* obj)
+{
+    int* ref_ptr = (int*)obj;
+    assert(ref_ptr != NULL && "Reference is valid");
+    int ref = *ref_ptr;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+    assert(!lua_isnil(L, -1) && "Reference exists");
+}
+
 static int avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
                                yadsl_AVLTreeObject* obj2,
                                yadsl_AVLTreeCmpObjsArg* arg)
@@ -50,17 +59,13 @@ static int avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
     assert(L != NULL && "Lua state is valid");
     assert(lua_checkstack(L, 3) && "Slots are pre-allocated");
     lua_pushcfunction(L, avl_tree_compare_lua_cfunction);
-    int* ref1 = (int*)obj1;
-    assert(ref1 != NULL && "Reference is valid");
-    lua_rawgeti(L, LUA_REGISTRYINDEX, *ref1);
-    assert(!lua_isnil(L, -1) && "Reference exists");
-    int* ref2 = (int*)obj2;
-    assert(ref2 != NULL && "Reference is valid");
-    lua_rawgeti(L, LUA_REGISTRYINDEX, *ref2);
-    assert(!lua_isnil(L, -1) && "Reference exists");
+    push_avl_tree_object(L, obj1);
+    push_avl_tree_object(L, obj2);
     if (lua_pcall(L, 2, 1, 0)) {
+#ifdef YADSL_DEBUG
         if (lua_isstring(L, -1))
             fprintf(stderr, "avl_tree_compare_cb: %s\n", lua_tostring(L, -1));
+#endif
         lua_pop(L, 1);
         return 0;
     }
@@ -70,16 +75,21 @@ static int avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
     return (int)integer;
 }
 
-static void avl_tree_free_cb(yadsl_AVLTreeObject* obj,
-                             yadsl_AVLTreeFreeObjArg* arg)
+static void free_avl_tree_object(lua_State* L, yadsl_AVLTreeObject* obj)
 {
-    lua_State* L = (lua_State*)arg;
-    assert(L != NULL && "Lua state is valid");
     int* ref_ptr = (int*)obj;
     assert(ref_ptr != NULL && "Reference is valid");
     int ref = *ref_ptr;
     free(ref_ptr);
     luaL_unref(L, LUA_REGISTRYINDEX, ref);
+}
+
+static void avl_tree_free_cb(yadsl_AVLTreeObject* obj,
+                             yadsl_AVLTreeFreeObjArg* arg)
+{
+    lua_State* L = (lua_State*)arg;
+    assert(L != NULL && "Lua state is valid");
+    free_avl_tree_object(L, obj);
 }
 
 static int avl_tree_constructor(lua_State* L)
@@ -197,9 +207,77 @@ static int avl_tree_remove(lua_State* L)
     return 1;
 }
 
+typedef struct
+{
+    lua_State* lua_state;
+    int visit_cb_ref;
+    int visit_ret_ref;
+}
+visit_arg_t;
+
+static const char* visit_orders[] = {
+    "pre", "in", "post"
+};
+
+static yadsl_AVLTreeVisitObjRet* avl_tree_visit_cb(
+	yadsl_AVLTreeObject* obj,
+	yadsl_AVLTreeVisitObjArg* arg)
+{
+    visit_arg_t* visit_arg = (visit_arg_t*) arg;
+    assert(visit_arg != NULL && "Visit argument is valid");
+    lua_State* L = visit_arg->lua_state;
+    assert(lua_checkstack(L, 2) && "Slots are pre-allocated");
+    lua_rawgeti(L, LUA_REGISTRYINDEX, visit_arg->visit_cb_ref);
+    push_avl_tree_object(L, obj);
+    if (lua_pcall(L, 1, 1, 0)) {
+#ifdef YADSL_DEBUG
+        if (lua_isstring(L, -1))
+            fprintf(stderr, "avl_tree_visit_cb: %s\n", lua_tostring(L, -1));
+#endif
+        lua_pop(L, 1);
+        return NULL;
+    }
+    int visit_ret_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    if (visit_ret_ref == LUA_REFNIL)
+        return NULL;
+    visit_arg->visit_ret_ref = visit_ret_ref;
+    return obj; /* stop iteration */
+}
+
 static int avl_tree_traverse(lua_State* L)
 {
-    return 0;
+    
+    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    lua_settop(L, 3); /* udata visit_cb order */
+    int order = luaL_checkoption(L, 3, "in", visit_orders);
+    lua_pop(L, 1); /* udata visit_cb */
+    luaL_argexpected(L, lua_isfunction(L, 2), 2, "function");
+    int visit_cb_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    if (visit_cb_ref == LUA_REFNIL)
+        return luaL_error(L, "missing visit_cb");
+    visit_arg_t visit_arg = {
+        .lua_state = L,
+        .visit_cb_ref = visit_cb_ref,
+        .visit_ret_ref = LUA_NOREF,
+    };
+    yadsl_AVLTreeCallbacks callbacks = {
+        .compare_cb = avl_tree_compare_cb,
+        .compare_arg = L,
+        .visit_cb = avl_tree_visit_cb,
+        .visit_arg = &visit_arg};
+   yadsl_AVLTreeRet ret;
+   ret = yadsl_avltree_tree_traverse(
+            udata->avl, order, &callbacks, NULL);
+   assert(!ret && "Cannot fail");
+   luaL_unref(L, LUA_REGISTRYINDEX, visit_cb_ref);
+   int ret_ref = visit_arg.visit_ret_ref;
+   if (ret_ref == LUA_NOREF)
+       return 0;
+   else {
+       lua_rawgeti(L, LUA_REGISTRYINDEX, ret_ref);
+       luaL_unref(L, LUA_REGISTRYINDEX, ret_ref);
+       return 1;
+   }
 }
 
 static const struct luaL_Reg avltreemethods[] = {
