@@ -334,9 +334,11 @@ static int avl_tree_traverse(lua_State* L)
     yadsl_AVLTreeCallbacks callbacks = {
         .visit_cb = avl_tree_visit_cb,
         .visit_arg = &visit_arg};
+   yadsl_AVLTreeRet ret;
    udata->lock = 1;
-   assert(!yadsl_avltree_tree_traverse(udata->avl, order, &callbacks, NULL));
+   ret = yadsl_avltree_tree_traverse(udata->avl, order, &callbacks, NULL);
    udata->lock = 0;
+   assert(ret == YADSL_AVLTREE_RET_OK && "Cannot fail");
    check_visit_error(L, &visit_arg);
    return push_visited_object(L, &visit_arg);
 }
