@@ -76,23 +76,33 @@ typedef yadsl_AVLTreeVisitObjRet*
 	yadsl_AVLTreeVisitObjArg* arg);
 
 /**
+ * @brief Callbacks for comparing and freeing objects
+ */
+typedef struct
+{
+	yadsl_AVLTreeCmpObjsFunc compare_cb;
+	yadsl_AVLTreeCmpObjsArg* compare_arg;
+	yadsl_AVLTreeFreeObjFunc free_cb;
+    yadsl_AVLTreeFreeObjArg* free_arg;
+	yadsl_AVLTreeVisitObjFunc visit_cb;
+	yadsl_AVLTreeVisitObjArg* visit_arg;
+}
+yadsl_AVLTreeCallbacks;
+
+
+
+/**
  * @brief Create an empty tree
- * @param cmp_objs_func tree object comparison function
- * @param cmp_objs_arg argument passed to cmp_objs_func
- * @param free_obj_func tree object freeing function
  * @return newly created tree or NULL if could not allocate memory
 */
 yadsl_AVLTreeHandle*
-yadsl_avltree_tree_create(
-	yadsl_AVLTreeCmpObjsFunc cmp_objs_func,
-	yadsl_AVLTreeCmpObjsArg* cmp_objs_arg,
-	yadsl_AVLTreeFreeObjFunc free_obj_func,
-    yadsl_AVLTreeFreeObjArg* free_obj_arg);
+yadsl_avltree_tree_create();
 
 /**
  * @brief Insert object in tree
  * @param tree tree where object will be inserted
  * @param object object to be inserted
+ * @param callbacks uses 'compare' callbacks only
  * @param exists_ptr whether object exists or not
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and object is inserted in tree
@@ -102,12 +112,14 @@ yadsl_AVLTreeRet
 yadsl_avltree_object_insert(
 	yadsl_AVLTreeHandle* tree,
 	yadsl_AVLTreeObject* object,
+    yadsl_AVLTreeCallbacks* callbacks,
 	bool* exists_ptr);
 
 /**
  * @brief Search for object in tree
  * @param tree tree where object will be searched
  * @param object object to be searched
+ * @param callbacks uses 'compare' callbacks only
  * @param exists_ptr whether object exists or not
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and *exist_ptr is updated
@@ -116,12 +128,14 @@ yadsl_AVLTreeRet
 yadsl_avltree_object_search(
 	yadsl_AVLTreeHandle* tree,
 	yadsl_AVLTreeObject* object,
+    yadsl_AVLTreeCallbacks* callbacks,
 	bool* exists_ptr);
 
 /**
  * @brief Remove object from tree
  * @param tree tree where object will be removed from
  * @param object object to be removed
+ * @param callbacks uses 'compare' and 'free' callbacks only
  * @param exists_ptr whether object existed or not
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and *exists_ptr is updated
@@ -130,14 +144,14 @@ yadsl_AVLTreeRet
 yadsl_avltree_object_remove(
 	yadsl_AVLTreeHandle* tree,
 	yadsl_AVLTreeObject* object,
+    yadsl_AVLTreeCallbacks* callbacks,
 	bool* exists_ptr);
 
 /**
  * @brief Traverses tree in-order calling user function for each object
  * @param tree tree to be traversed
  * @param visit_order visiting order
- * @param visit_func function called for each object
- * @param visit_arg argument passed to visit_func
+ * @param callbacks uses 'compare' and 'visit' callbacks only
  * @param visit_ret_ptr pointer to last value returned by visit_func
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and *visit_ret_ptr is updated
@@ -147,17 +161,18 @@ yadsl_AVLTreeRet
 yadsl_avltree_tree_traverse(
 	yadsl_AVLTreeHandle* tree,
 	yadsl_AVLTreeVisitingOrder visit_order,
-	yadsl_AVLTreeVisitObjFunc visit_func,
-	yadsl_AVLTreeVisitObjArg* visit_arg,
+    yadsl_AVLTreeCallbacks* callbacks,
 	yadsl_AVLTreeVisitObjRet** visit_ret_ptr);
 
 /**
  * @brief Destroy tree and its objects
  * @param tree tree to be destroyed
+ * @param callbacks uses 'free' callbacks only
 */
 void
 yadsl_avltree_destroy(
-	yadsl_AVLTreeHandle* tree);
+	yadsl_AVLTreeHandle* tree,
+    yadsl_AVLTreeCallbacks* callbacks);
 
 /** @} */
 

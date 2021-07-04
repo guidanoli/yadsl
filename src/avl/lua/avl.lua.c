@@ -78,11 +78,7 @@ static int avl_tree_constructor(lua_State* L)
 {
     avl_tree_udata* udata = lua_newuserdata(L, sizeof(avl_tree_udata));
     udata->avl = NULL;
-    yadsl_AVLTreeHandle* avl = yadsl_avltree_tree_create(
-        (yadsl_AVLTreeCmpObjsFunc)avl_tree_compare_cb,
-        (yadsl_AVLTreeCmpObjsArg*)L,
-        (yadsl_AVLTreeFreeObjFunc)avl_tree_free_cb,
-        (yadsl_AVLTreeFreeObjArg*)L); 
+    yadsl_AVLTreeHandle* avl = yadsl_avltree_tree_create(); 
     if (avl == NULL) return luaL_error(L, "bad malloc");
     udata->avl = avl;
     luaL_setmetatable(L, AVLTREE);
@@ -97,8 +93,9 @@ static int avl_tree_destructor(lua_State* L)
     avl_tree_udata* udata = check_avl_tree_udata(L, 1);
     yadsl_AVLTreeHandle* avl = udata->avl;
     if (avl != NULL) {
+        yadsl_AVLTreeCallbacks callbacks = {.free_cb = avl_tree_free_cb, .free_arg = L};
         udata->avl = NULL;
-        yadsl_avltree_destroy(avl);
+        yadsl_avltree_destroy(avl, &callbacks);
     }
     return 0;
 }
