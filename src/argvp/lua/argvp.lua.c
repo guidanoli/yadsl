@@ -14,7 +14,7 @@
 #include <argvp/argvp.h>
 #include <memdb/lua/memdb.h>
 
-#define ARGVP_PARSER "ArgumentParser"
+#define ARGVP "ArgumentParser"
 
 typedef struct
 {
@@ -86,7 +86,7 @@ static int arg_table_copy(lua_State* L, int t, int* argc_ptr, char*** argv_ptr)
     return 0;
 }
 
-static int argvp_constructor(lua_State* L)
+static int argvp_new(lua_State* L)
 {
     yadsl_ArgvParserHandle* argvp;
     int argc;
@@ -97,7 +97,7 @@ static int argvp_constructor(lua_State* L)
     udata = lua_newuserdata(L, sizeof(argvp_udata));
     udata->argvp = NULL;
     udata->argv = NULL;
-    luaL_setmetatable(L, ARGVP_PARSER);
+    luaL_setmetatable(L, ARGVP);
     if (arg_table_copy(L, 1, &argc, &argv))
         return lua_error(L);
     argvp = yadsl_argvp_create(argc, argv);
@@ -111,9 +111,9 @@ static int argvp_constructor(lua_State* L)
     return 1;
 }
 
-static const struct luaL_Reg argvplib[] =
+static const struct luaL_Reg argvp_lib[] =
 {
-    {"ArgumentParser", argvp_constructor},
+    {ARGVP, argvp_new},
     {NULL, NULL}  /* sentinel */
 };
 
@@ -121,10 +121,10 @@ static const struct luaL_Reg argvplib[] =
 
 static argvp_udata* check_argvp(lua_State* L, int index)
 {
-    return (argvp_udata*)luaL_checkudata(L, index, ARGVP_PARSER);
+    return (argvp_udata*)luaL_checkudata(L, index, ARGVP);
 }
 
-static int argvp_finalizer(lua_State* L)
+static int argvp_gc(lua_State* L)
 {
     argvp_udata* udata = check_argvp(L, 1);
     if (udata->argv != NULL) {
@@ -262,7 +262,7 @@ static int argvp_has_kwarg(lua_State* L)
     return 1;
 }
 
-static const struct luaL_Reg argvpmethods[] =
+static const struct luaL_Reg argvp_methods[] =
 {
     {"addKeywordArguments", argvp_add_kwargs},
     {"addKeywordArgument", argvp_add_kwarg},
@@ -279,13 +279,13 @@ YADSL_EXPORT int luaopen_argvp(lua_State* L)
 {
 
     /* register library */
-    luaL_newlib(L, argvplib);
+    luaL_newlib(L, argvp_lib);
 
     /* register parser metatable */
-    luaL_newmetatable(L, ARGVP_PARSER);
-    luaL_newlib(L, argvpmethods);
+    luaL_newmetatable(L, ARGVP);
+    luaL_newlib(L, argvp_methods);
     lua_setfield(L, -2, "__index");
-    lua_pushcfunction(L, argvp_finalizer);
+    lua_pushcfunction(L, argvp_gc);
     lua_setfield(L, -2, "__gc");
 
     lua_pop(L, 1);

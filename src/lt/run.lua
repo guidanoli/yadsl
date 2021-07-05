@@ -7,6 +7,7 @@ local testscripts = {
 	-- Other modules
 	"argvp.lua.test",
 	"avl.lua.test",
+	"bigint.lua.test",
 	"diff.lua.test",
 	"string.lua.test",
 }

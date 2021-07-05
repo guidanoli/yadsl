@@ -21,9 +21,9 @@ typedef struct
     yadsl_AVLTreeHandle* avl;
     int lock; /* avoids concurrent access */
 }
-avl_tree_udata;
+avltree_udata;
 
-static int avl_tree_compare_lua_cfunction(lua_State* L)
+static int avltree_compare_lua_cfunction(lua_State* L)
 {
     int result;
     assert(lua_gettop(L) >= 2 && "Called with 2 arguments");
@@ -43,7 +43,7 @@ static int avl_tree_compare_lua_cfunction(lua_State* L)
     return 1;
 }
 
-static void push_avl_tree_object(lua_State* L, yadsl_AVLTreeObject* obj)
+static void push_avltree_object(lua_State* L, yadsl_AVLTreeObject* obj)
 {
     int* ref_ptr = (int*)obj;
     assert(ref_ptr != NULL && "Reference is valid");
@@ -60,16 +60,16 @@ typedef struct
 compare_arg_t;
 
 static yadsl_AVLTreeComparison
-avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
+avltree_compare_cb(yadsl_AVLTreeObject* obj1,
                     yadsl_AVLTreeObject* obj2,
                     yadsl_AVLTreeCmpObjsArg* arg)
 {
     compare_arg_t* cmp_arg = (compare_arg_t*)arg;
     lua_State* L = cmp_arg->lua_state;
     assert(L != NULL && "Lua state is valid");
-    lua_pushcfunction(L, avl_tree_compare_lua_cfunction);
-    push_avl_tree_object(L, obj1);
-    push_avl_tree_object(L, obj2);
+    lua_pushcfunction(L, avltree_compare_lua_cfunction);
+    push_avltree_object(L, obj1);
+    push_avltree_object(L, obj2);
     if (lua_pcall(L, 2, 1, 0)) {
         if (lua_isnil(L, -1)) {
             lua_pop(L, 1);
@@ -84,7 +84,7 @@ avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
     return (yadsl_AVLTreeComparison)integer;
 }
 
-static void free_avl_tree_object(lua_State* L, yadsl_AVLTreeObject* obj)
+static void free_avltree_object(lua_State* L, yadsl_AVLTreeObject* obj)
 {
     int* ref_ptr = (int*)obj;
     assert(ref_ptr != NULL && "Reference is valid");
@@ -93,17 +93,17 @@ static void free_avl_tree_object(lua_State* L, yadsl_AVLTreeObject* obj)
     luaL_unref(L, LUA_REGISTRYINDEX, ref);
 }
 
-static void avl_tree_free_cb(yadsl_AVLTreeObject* obj,
+static void avltree_free_cb(yadsl_AVLTreeObject* obj,
                              yadsl_AVLTreeFreeObjArg* arg)
 {
     lua_State* L = (lua_State*)arg;
     assert(L != NULL && "Lua state is valid");
-    free_avl_tree_object(L, obj);
+    free_avltree_object(L, obj);
 }
 
-static int avl_tree_constructor(lua_State* L)
+static int avltree_new(lua_State* L)
 {
-    avl_tree_udata* udata = lua_newuserdata(L, sizeof(avl_tree_udata));
+    avltree_udata* udata = lua_newuserdata(L, sizeof(avltree_udata));
     udata->avl = NULL;
     udata->lock = 0;
     yadsl_AVLTreeHandle* avl = yadsl_avltree_tree_create(); 
@@ -113,10 +113,10 @@ static int avl_tree_constructor(lua_State* L)
     return 1;
 }
 
-static avl_tree_udata* check_avl_tree_udata(lua_State* L, int arg)
+static avltree_udata* check_avltree_udata(lua_State* L, int arg)
 {
-    avl_tree_udata* udata;
-    udata = (avl_tree_udata*)luaL_checkudata(L, arg, AVLTREE);
+    avltree_udata* udata;
+    udata = (avltree_udata*)luaL_checkudata(L, arg, AVLTREE);
     if (udata->lock) {
         luaL_error(L, "%s is locked", luaL_tolstring(L, arg, NULL));
         return NULL; /* rever returns */
@@ -124,20 +124,20 @@ static avl_tree_udata* check_avl_tree_udata(lua_State* L, int arg)
     return udata;
 }
 
-static int avl_tree_destructor(lua_State* L)
+static int avltree_gc(lua_State* L)
 {
-    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    avltree_udata* udata = check_avltree_udata(L, 1);
     yadsl_AVLTreeHandle* avl = udata->avl;
     if (avl != NULL) {
-        yadsl_AVLTreeCallbacks callbacks = {.free_cb = avl_tree_free_cb, .free_arg = L};
+        yadsl_AVLTreeCallbacks callbacks = {.free_cb = avltree_free_cb, .free_arg = L};
         udata->avl = NULL;
         yadsl_avltree_destroy(avl, &callbacks);
     }
     return 0;
 }
 
-static const struct luaL_Reg avllib[] = {
-    {"AVLTree", avl_tree_constructor},
+static const struct luaL_Reg avl_lib[] = {
+    {AVLTREE, avltree_new},
     {NULL, NULL}  /* sentinel */
 };
 
@@ -148,9 +148,9 @@ static void setup_compare_arg(lua_State* L, compare_arg_t* compare_arg)
     compare_arg->error = lua_gettop(L);
 }
 
-static int avl_tree_insert(lua_State* L)
+static int avltree_insert(lua_State* L)
 {
-    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    avltree_udata* udata = check_avltree_udata(L, 1);
     lua_settop(L, 2);
     int ref = luaL_ref(L, LUA_REGISTRYINDEX);
     if (ref == LUA_REFNIL)
@@ -164,7 +164,7 @@ static int avl_tree_insert(lua_State* L)
     compare_arg_t compare_arg;
     setup_compare_arg(L, &compare_arg);
     yadsl_AVLTreeCallbacks callbacks = {
-        .compare_cb = avl_tree_compare_cb,
+        .compare_cb = avltree_compare_cb,
         .compare_arg = &compare_arg};
     bool exists;
     udata->lock = 1;
@@ -190,9 +190,9 @@ static int avl_tree_insert(lua_State* L)
     return 1;
 }
 
-static int avl_tree_search(lua_State* L)
+static int avltree_search(lua_State* L)
 {
-    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    avltree_udata* udata = check_avltree_udata(L, 1);
     lua_settop(L, 2);
     bool exists;
     int ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -204,7 +204,7 @@ static int avl_tree_search(lua_State* L)
         compare_arg_t compare_arg;
         setup_compare_arg(L, &compare_arg);
         yadsl_AVLTreeCallbacks callbacks = {
-            .compare_cb = avl_tree_compare_cb,
+            .compare_cb = avltree_compare_cb,
             .compare_arg = &compare_arg};
         udata->lock = 1;
         ret = yadsl_avltree_object_search(
@@ -225,9 +225,9 @@ static int avl_tree_search(lua_State* L)
     return 1;
 }
 
-static int avl_tree_remove(lua_State* L)
+static int avltree_remove(lua_State* L)
 {
-    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    avltree_udata* udata = check_avltree_udata(L, 1);
     lua_settop(L, 2);
     bool exists;
     int ref = luaL_ref(L, LUA_REGISTRYINDEX);
@@ -239,9 +239,9 @@ static int avl_tree_remove(lua_State* L)
         compare_arg_t compare_arg;
         setup_compare_arg(L, &compare_arg);
         yadsl_AVLTreeCallbacks callbacks = {
-            .compare_cb = avl_tree_compare_cb,
+            .compare_cb = avltree_compare_cb,
             .compare_arg = &compare_arg,
-            .free_cb = avl_tree_free_cb,
+            .free_cb = avltree_free_cb,
             .free_arg = L};
         udata->lock = 1;
         ret = yadsl_avltree_object_remove(
@@ -275,7 +275,7 @@ static const char* visit_orders[] = {
     "pre", "in", "post"
 };
 
-static yadsl_AVLTreeVisitObjRet* avl_tree_visit_cb(
+static yadsl_AVLTreeVisitObjRet* avltree_visit_cb(
 	yadsl_AVLTreeObject* obj,
 	yadsl_AVLTreeVisitObjArg* arg)
 {
@@ -283,7 +283,7 @@ static yadsl_AVLTreeVisitObjRet* avl_tree_visit_cb(
     assert(visit_arg != NULL && "Visit argument is valid");
     lua_State* L = visit_arg->lua_state;
     lua_pushvalue(L, visit_arg->visit_cb);
-    push_avl_tree_object(L, obj);
+    push_avltree_object(L, obj);
     if (lua_pcall(L, 1, 1, 0)) {
         if (lua_isnil(L, -1)) {
             lua_pop(L, 1);
@@ -331,16 +331,16 @@ static int push_visited_object(lua_State* L, visit_arg_t* visit_arg)
    }
 }
 
-static int avl_tree_traverse(lua_State* L)
+static int avltree_traverse(lua_State* L)
 {
-    avl_tree_udata* udata = check_avl_tree_udata(L, 1);
+    avltree_udata* udata = check_avltree_udata(L, 1);
     luaL_argexpected(L, lua_isfunction(L, 2), 2, "function");
     int order = luaL_checkoption(L, 3, "in", visit_orders);
     lua_settop(L, 2); /* udata visit_cb */
     visit_arg_t visit_arg;
     setup_visit_arg(L, &visit_arg, 2);
     yadsl_AVLTreeCallbacks callbacks = {
-        .visit_cb = avl_tree_visit_cb,
+        .visit_cb = avltree_visit_cb,
         .visit_arg = &visit_arg};
    yadsl_AVLTreeRet ret;
    udata->lock = 1;
@@ -351,18 +351,18 @@ static int avl_tree_traverse(lua_State* L)
    return push_visited_object(L, &visit_arg);
 }
 
-static const struct luaL_Reg avltreemethods[] = {
-    {"insert", avl_tree_insert},
-    {"search", avl_tree_search},
-    {"remove", avl_tree_remove},
-    {"traverse", avl_tree_traverse},
+static const struct luaL_Reg avltree_methods[] = {
+    {"insert", avltree_insert},
+    {"search", avltree_search},
+    {"remove", avltree_remove},
+    {"traverse", avltree_traverse},
     {NULL, NULL}  /* sentinel */
 };
 
-YADSL_EXPORT int luaopen_avl(lua_State* L) {
-
+YADSL_EXPORT int luaopen_avl(lua_State* L)
+{
     /* register library */
-    luaL_newlib(L, avllib);
+    luaL_newlib(L, avl_lib);
 
     /* register memdb submodule */
     yadsl_memdb_openlib(L);
@@ -370,9 +370,9 @@ YADSL_EXPORT int luaopen_avl(lua_State* L) {
 
     /* register AVLTree metatable */
     luaL_newmetatable(L, AVLTREE);
-    luaL_newlib(L, avltreemethods);
+    luaL_newlib(L, avltree_methods);
     lua_setfield(L, -2, "__index");
-    lua_pushcfunction(L, avl_tree_destructor);
+    lua_pushcfunction(L, avltree_gc);
     lua_setfield(L, -2, "__gc");
     lua_pop(L, 1);
 
