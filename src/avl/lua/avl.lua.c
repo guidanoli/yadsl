@@ -29,15 +29,15 @@ static int avl_tree_compare_lua_cfunction(lua_State* L)
     assert(lua_gettop(L) >= 2 && "Called with 2 arguments");
     if (lua_compare(L, 1, 2, LUA_OPEQ))
     {
-        result = 0;
+        result = YADSL_AVLTREE_COMP_EQ;
     }
     else if (lua_compare(L, 1, 2, LUA_OPLT))
     {
-        result = -1;
+        result = YADSL_AVLTREE_COMP_LT;
     }
     else
     {
-        result = 1;
+        result = YADSL_AVLTREE_COMP_GT;
     }
     lua_pushinteger(L, result);
     return 1;
@@ -59,9 +59,10 @@ typedef struct
 }
 compare_arg_t;
 
-static int avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
-                               yadsl_AVLTreeObject* obj2,
-                               yadsl_AVLTreeCmpObjsArg* arg)
+static yadsl_AVLTreeComparison
+avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
+                    yadsl_AVLTreeObject* obj2,
+                    yadsl_AVLTreeCmpObjsArg* arg)
 {
     compare_arg_t* cmp_arg = (compare_arg_t*)arg;
     lua_State* L = cmp_arg->lua_state;
@@ -75,12 +76,12 @@ static int avl_tree_compare_cb(yadsl_AVLTreeObject* obj1,
             lua_pushfstring(L, "comparison failed");
         }
         lua_replace(L, cmp_arg->error);
-        return 0;
+        return YADSL_AVLTREE_COMP_ERR;
     }
     lua_Integer integer = lua_tointeger(L, -1);
     assert(integer >= INT_MIN && integer <= INT_MAX && "integer in range");
     lua_pop(L, 1);
-    return (int)integer;
+    return (yadsl_AVLTreeComparison)integer;
 }
 
 static void free_avl_tree_object(lua_State* L, yadsl_AVLTreeObject* obj)
@@ -147,14 +148,6 @@ static void setup_compare_arg(lua_State* L, compare_arg_t* compare_arg)
     compare_arg->error = lua_gettop(L);
 }
 
-static void check_compare_error(lua_State* L, compare_arg_t* compare_arg)
-{
-    if (!lua_isnil(L, compare_arg->error)) {
-        lua_pushvalue(L, compare_arg->error);
-        lua_error(L);
-    }
-}
-
 static int avl_tree_insert(lua_State* L)
 {
     avl_tree_udata* udata = check_avl_tree_udata(L, 1);
@@ -178,20 +171,21 @@ static int avl_tree_insert(lua_State* L)
     ret = yadsl_avltree_object_insert(
         udata->avl, ref_ptr, &callbacks, &exists);
     udata->lock = 0;
+    if (ret || exists) {
+        free(ref_ptr);
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    }
     switch (ret) {
         case YADSL_AVLTREE_RET_OK:
-            if (exists) {
-                free(ref_ptr);
-                luaL_unref(L, LUA_REGISTRYINDEX, ref);
-            }
             break;
         case YADSL_AVLTREE_RET_MEMORY:
-            free(ref_ptr);
             return luaL_error(L, "bad malloc");
+        case YADSL_AVLTREE_RET_ERR:
+            lua_pushvalue(L, compare_arg.error);
+            return lua_error(L);
         default:
             assert(0 && "Unreachable");
     }
-    check_compare_error(L, &compare_arg);
     lua_pushboolean(L, exists);
     return 1;
 }
@@ -216,9 +210,16 @@ static int avl_tree_search(lua_State* L)
         ret = yadsl_avltree_object_search(
             udata->avl, &ref, &callbacks, &exists);
         udata->lock = 0;
-        assert(ret == YADSL_AVLTREE_RET_OK && "Cannot fail");
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
-        check_compare_error(L, &compare_arg);
+        switch (ret) {
+        case YADSL_AVLTREE_RET_OK:
+            break;
+        case YADSL_AVLTREE_RET_ERR:
+            lua_pushvalue(L, compare_arg.error);
+            return lua_error(L);
+        default:
+            assert(0 && "Unreachable");
+        }
     }
     lua_pushboolean(L, exists);
     return 1;
@@ -246,9 +247,16 @@ static int avl_tree_remove(lua_State* L)
         ret = yadsl_avltree_object_remove(
             udata->avl, &ref, &callbacks, &exists);
         udata->lock = 0;
-        assert(ret == YADSL_AVLTREE_RET_OK && "Cannot fail");
         luaL_unref(L, LUA_REGISTRYINDEX, ref);
-        check_compare_error(L, &compare_arg);
+        switch (ret) {
+        case YADSL_AVLTREE_RET_OK:
+            break;
+        case YADSL_AVLTREE_RET_ERR:
+            lua_pushvalue(L, compare_arg.error);
+            return lua_error(L);
+        default:
+            assert(0 && "Unreachable");
+        }
     }
     lua_pushboolean(L, exists);
     return 1;

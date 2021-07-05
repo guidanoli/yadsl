@@ -236,7 +236,9 @@ end
 
 function t:testLock()
 	local tree = self:getTreeSequence(10)
+	local compared = 0
 	local compare_cb = function(a, b)
+		compared = compared + 1
 		tree:remove(a)
 		tree:remove(b)
 	end
@@ -247,10 +249,15 @@ function t:testLock()
 		__lt = compare_cb,
 	})
 	local msg = 'locked'
+	lt.assertEqual(compared, 0)
 	lt.assertRaisesRegex(msg, tree.insert, tree, trigger)
+	lt.assertEqual(compared, 1)
 	lt.assertRaisesRegex(msg, tree.search, tree, trigger)
+	lt.assertEqual(compared, 2)
 	lt.assertRaisesRegex(msg, tree.remove, tree, trigger)
+	lt.assertEqual(compared, 3)
 	lt.assertRaisesRegex(msg, tree.traverse, tree, compare_cb)
+	lt.assertEqual(compared, 4)
 end
 
 return t

@@ -1,6 +1,8 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#include <assert.h>
+
 #include <yadsl/py.h>
 #include <avl/avl.h>
 
@@ -18,7 +20,6 @@ typedef struct
 {
 	PyObject_HEAD
 	yadsl_AVLTreeHandle *ob_tree;
-	PyObject *ob_func;
 	unsigned char lock : 1;
 } yadsl_AVLTreePythonObject;
 
@@ -62,85 +63,35 @@ decRefCallback(void *object, void *arg)
 	Py_XDECREF((PyObject *) object);
 }
 
-static int
+static yadsl_AVLTreeComparison
 cmpCallback(void *obj1, void *obj2, void *cmp_objs_arg)
 {
-	int result = 1;
+	int result;
+	yadsl_AVLTreeComparison cmp;
 	yadsl_AVLTreePythonObject *ho;
-	PyObject *callable;
 	ho = (yadsl_AVLTreePythonObject *) cmp_objs_arg;
-	if (callable = ho->ob_func) {
-		PyObject *args = NULL, *resultObj = NULL, *zero = NULL;
-		if ((args = PyTuple_Pack(2, obj1, obj2)) == NULL)
-			goto exit1;
-		ho->lock = 1;
-		resultObj = PyObject_CallObject(callable, args);
-		Py_DECREF(args);
-		if (resultObj == NULL) {
-			if (!PyErr_Occurred())
-				PyErr_SetString(PyExc_RuntimeError,
-					"An unspecified error occurred during callback.");
-			goto exit1;
-		}
-		if (!PyNumber_Check(resultObj)) {
-			PyErr_Format(PyExc_TypeError,
-				"Return should be a number, not %.200s",
-				Py_TYPE(resultObj)->tp_name);
-			goto exit1;
-		}
-		zero = PyLong_FromLong(0L);
-		if (zero == NULL)
-			goto exit1;
-		result = PyObject_RichCompareBool(resultObj, zero, Py_LT);
-		if (result == -1) {
-			PyErr_SetString(PyExc_RuntimeError,
-				"An unspecified error while comparing objects.");
-			goto exit1;
-		}
-		if (result) {
-			// result = -1	-> resultObj < 0
-			result = -1;
-		} else {
-			result = PyObject_RichCompareBool(resultObj, zero, Py_GT);
-			if (result == -1) {
-				PyErr_SetString(PyExc_RuntimeError,
-					"An unspecified error while comparing objects.");
-				goto exit1;
-			}
-			// result = 0	-> obj1 == obj2
-			// result = 1	-> obj1 >	obj2
-		}
-exit1:
-		ho->lock = 0;
-		Py_XDECREF(zero);
-		Py_XDECREF(resultObj);
+	Py_XINCREF(obj1);
+	Py_XINCREF(obj2);
+	ho->lock = 1;
+	result = PyObject_RichCompareBool(obj1, obj2, Py_EQ);
+	if (result == -1) {
+		cmp = YADSL_AVLTREE_COMP_ERR;
+	} else if (result) {
+		cmp = YADSL_AVLTREE_COMP_EQ;
 	} else {
-		Py_XINCREF(obj1);
-		ho->lock = 1;
 		result = PyObject_RichCompareBool(obj1, obj2, Py_LT);
 		if (result == -1) {
-			PyErr_SetString(PyExc_RuntimeError,
-				"An unspecified error while comparing objects.");
-			goto exit2;
-		}
-		if (result) {
-			// result = -1	-> obj1 <	obj2
-			result = -1;
+			cmp = YADSL_AVLTREE_COMP_ERR;
+		} else if (result) {
+			cmp = YADSL_AVLTREE_COMP_LT;
 		} else {
-			result = PyObject_RichCompareBool(obj1, obj2, Py_GT);
-			if (result == -1) {
-				PyErr_SetString(PyExc_RuntimeError,
-					"An unspecified error while comparing objects.");
-				goto exit2;
-			}
-			// result = 0	-> obj1 == obj2
-			// result = 1	-> obj1 >	obj2
+			cmp = YADSL_AVLTREE_COMP_GT;
 		}
-exit2:
-		ho->lock = 0;
-		Py_XDECREF(obj1);
 	}
-	return result;
+	ho->lock = 0;
+	Py_XDECREF(obj2);
+	Py_XDECREF(obj1);
+	return cmp;
 }
 
 struct _visit_cb_arg
@@ -186,45 +137,24 @@ AVL_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	self = (yadsl_AVLTreePythonObject *) type->tp_alloc(type, 0);
 	if (self != NULL) {
 		self->ob_tree = NULL;
-		self->ob_func = NULL;
 		self->lock = 0;
 	}
 	return (PyObject *) self;
 }
 
 PyDoc_STRVAR(_AVL_init__doc__,
-"AVL(/, f=None)\n"
+"AVL()\n"
 "--\n"
 "\n"
-"Python AVL tree data structure.\n"
-"f is the following comparison function:\n"
-"\tf(o1 : Object, o2: Object) -> int\n"
-"It takes two objects o1 and o2 and returns:\n"
-"\t< 0, if o1 < o2\n"
-"\t= 0, if o1 = o2\n"
-"\t> 0, if o1 > o2\n");
+"Python AVL tree data structure.\n");
 
 static int
 AVL_init(yadsl_AVLTreePythonObject *self, PyObject *args, PyObject *kw)
 {
-	PyObject *callbackObj = NULL;
-	static char *keywords[] = { "f", NULL };
-	if (!PyArg_ParseTupleAndKeywords(args, kw,
-		"|O:pyavl.AVL.__init__", keywords, &callbackObj))
-		return -1;
-	if (callbackObj != NULL) {
-		if (!PyCallable_Check(callbackObj)) {
-			PyErr_SetString(PyExc_TypeError,
-				"f should be a callable object");
-			return -1;
-		}
-	}
 	if (!(self->ob_tree = yadsl_avltree_tree_create())) {
 		PyErr_SetString(PyExc_MemoryError, "Could not create avl tree");
 		return -1;
 	}
-	self->ob_func = callbackObj;
-	Py_XINCREF(callbackObj);
 #ifdef YADSL_DEBUG
 	yadsl_memdb_status();
 #endif
@@ -241,7 +171,6 @@ AVL_dealloc(yadsl_AVLTreePythonObject *self)
 #ifdef YADSL_DEBUG
 	yadsl_memdb_status();
 #endif
-	Py_XDECREF(self->ob_func);
 	Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -268,12 +197,14 @@ AVL_add(yadsl_AVLTreePythonObject *self, PyObject *obj)
 #endif
 		if (!exists)
 			Py_INCREF(obj);
-		if (PyErr_Occurred())
-			return NULL;
+		assert(!PyErr_Occurred());
 		return PyBool_FromLong(!exists);
 	case YADSL_AVLTREE_RET_MEMORY:
 		PyErr_SetString(PyExc_MemoryError,
 			"Could not allocate memory for newly added item in tree");
+		break;
+	case YADSL_AVLTREE_RET_ERR:
+		assert(PyErr_Occurred());
 		break;
 	default:
 		Py_UNREACHABLE();
@@ -301,9 +232,11 @@ AVL_remove(yadsl_AVLTreePythonObject *self, PyObject *obj)
 #ifdef YADSL_DEBUG
 		yadsl_memdb_status();
 #endif
-		if (PyErr_Occurred())
-			return NULL;
+		assert(!PyErr_Occurred());
 		Py_RETURN_NONE;
+	case YADSL_AVLTREE_RET_ERR:
+		assert(PyErr_Occurred());
+		break;
 	default:
 		Py_UNREACHABLE();
 	}
@@ -327,9 +260,11 @@ AVL_contains(yadsl_AVLTreePythonObject *self, PyObject *obj)
 	yadsl_AVLTreeCallbacks callbacks = {.compare_cb = cmpCallback, .compare_arg = self};
 	switch (yadsl_avltree_object_search(self->ob_tree, obj, &callbacks, &exists)) {
 	case YADSL_AVLTREE_RET_OK:
-		if (PyErr_Occurred())
-			return NULL;
+		assert(!PyErr_Occurred());
 		return PyBool_FromLong(exists);
+	case YADSL_AVLTREE_RET_ERR:
+		assert(PyErr_Occurred());
+		break;
 	default:
 		Py_UNREACHABLE();
 	}

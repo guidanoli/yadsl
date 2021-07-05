@@ -62,27 +62,3 @@ def test_iterate_crescent():
 	# should be in crescent order
 	for i in range(len(l)-1):
 		assert l[i] <= l[i+1]
-		
-def test_iterate_decrescent():
-	l = []
-	# custom cmp
-	def cmp(o1, o2):
-		return o2 - o1
-	# AVL with custom cmp function
-	t = AVL(cmp)
-	def add_to_list(o):
-		l.append(o)
-	# create random input
-	x = [random() for i in range(1000)]
-	# remove duplicates
-	x = list(dict.fromkeys(x))
-	# should add all
-	for xi in x:
-		assert t.add(xi)
-	# add to list in decrescent order
-	t.iterate(add_to_list)
-	# should have gone through all numbers
-	assert len(l) == len(x)
-	# should be in decrescent order
-	for i in range(len(l)-1):
-		assert l[i] >= l[i+1]

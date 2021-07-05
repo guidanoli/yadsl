@@ -16,9 +16,20 @@ typedef enum
 {
 	YADSL_AVLTREE_RET_OK = 0, /**< All went well */
 	YADSL_AVLTREE_RET_MEMORY, /**< Could not allocate memory */
-	YADSL_AVLTREE_RET_PARAM   /**< Invalid parameter */
+	YADSL_AVLTREE_RET_PARAM,  /**< Invalid parameter */
+    YADSL_AVLTREE_RET_ERR,    /**< Error raised by callback */
 }
 yadsl_AVLTreeRet;
+
+
+typedef enum
+{
+    YADSL_AVLTREE_COMP_GT, /**< a > b */
+    YADSL_AVLTREE_COMP_EQ, /**< a == b */
+    YADSL_AVLTREE_COMP_LT, /**< a < b */
+    YADSL_AVLTREE_COMP_ERR, /**< An error occurred */
+}
+yadsl_AVLTreeComparison;
 
 /**
  * @brief Order of visiting in AVL trees
@@ -41,12 +52,9 @@ typedef void yadsl_AVLTreeFreeObjArg; /**< AVL tree object freeing function user
  * @param obj1 first object
  * @param obj2 second object
  * @param arg user argument
- * @return an integer *n*, where...
- * * *n* > 0 if obj1 > obj2
- * * *n* = 0 if obj1 = obj2
- * * *n* < 0 if obj1 < obj2
+ * @return comparison between obj1 and obj2 or error (interrupts comparisons)
 */
-typedef int
+typedef yadsl_AVLTreeComparison
 (*yadsl_AVLTreeCmpObjsFunc)(
 	yadsl_AVLTreeObject* obj1,
 	yadsl_AVLTreeObject* obj2,
@@ -90,8 +98,6 @@ typedef struct
 }
 yadsl_AVLTreeCallbacks;
 
-
-
 /**
  * @brief Create an empty tree
  * @return newly created tree or NULL if could not allocate memory
@@ -111,6 +117,7 @@ yadsl_avltree_tree_create();
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and object is inserted in tree
  * * ::YADSL_AVLTREE_RET_MEMORY
+ * * ::YADSL_AVLTREE_RET_ERR
 */
 yadsl_AVLTreeRet
 yadsl_avltree_object_insert(
@@ -127,6 +134,7 @@ yadsl_avltree_object_insert(
  * @param exists_ptr whether object exists or not
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and *exist_ptr is updated
+ * * ::YADSL_AVLTREE_RET_ERR
 */
 yadsl_AVLTreeRet
 yadsl_avltree_object_search(
@@ -143,6 +151,7 @@ yadsl_avltree_object_search(
  * @param exists_ptr whether object existed or not
  * @return
  * * ::YADSL_AVLTREE_RET_OK, and *exists_ptr is updated
+ * * ::YADSL_AVLTREE_RET_ERR
 */
 yadsl_AVLTreeRet
 yadsl_avltree_object_remove(

@@ -26,10 +26,13 @@ yadsl_AVLTreeHandle *pTree;
 yadsl_TesterRet cbReturnValue;
 int first, last;
 
-static int cmp_objs_func(void *obj1, void *obj2, void *cmp_objs_arg)
+static yadsl_AVLTreeComparison cmp_objs_func(void *obj1, void *obj2, void *cmp_objs_arg)
 {
 	assert(cmp_objs_arg == &pTree);
-	return *((int *) obj1) - *((int *) obj2);
+	int diff = *((int *) obj1) - *((int *) obj2);
+	if (diff == 0) return YADSL_AVLTREE_COMP_EQ;
+	else if (diff < 0) return YADSL_AVLTREE_COMP_LT;
+	else return YADSL_AVLTREE_COMP_GT;
 }
 
 static void *my_ranged_visit_cb(void *object, void *cmp_objs_arg)
@@ -83,6 +86,10 @@ yadsl_TesterRet convert(yadsl_AVLTreeRet returnId)
 		return YADSL_TESTER_RET_OK;
 	case YADSL_AVLTREE_RET_MEMORY:
 		return YADSL_TESTER_RET_MALLOC;
+	case YADSL_AVLTREE_RET_PARAM:
+		return yadsl_tester_error("parameter");
+	case YADSL_AVLTREE_RET_ERR:
+		return yadsl_tester_error("callbackerror");
 	default:
 		return yadsl_tester_error("unknown");
 	}
