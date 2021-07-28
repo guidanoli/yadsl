@@ -48,20 +48,8 @@ typedef struct
 }
 BigInt;
 
-static yadsl_BigIntHandle*
-_yadsl_bigint_copy(
-	yadsl_BigIntHandle const* _bigint);
-
-static int getndigits(intmax_t i)
-{
-	uintmax_t u = (uintmax_t)YADSL_ABS(i);
-	int ndigits = 0;
-	while (u != 0) {
-		u >>= SHIFT;
-		++ndigits;
-	}
-	return ndigits;
-}
+/* Static functions prototypes */
+static yadsl_BigIntHandle* _yadsl_bigint_copy(yadsl_BigIntHandle const* _bigint);
 
 /**
  * Gets the signed value of a bigint with at most 1 digit
@@ -91,28 +79,35 @@ static sdigit getdigitvalue(BigInt const* bigint)
 static void
 _check(yadsl_BigIntHandle const* _bigint)
 {
-	assert(_bigint != NULL);
 	switch (yadsl_bigint_check(_bigint))
 	{
 		case YADSL_BIGINT_STATUS_OK:
 			break;
+		case YADSL_BIGINT_STATUS_INVALID_HANDLE:
+			assert(0 && "invalid handle");
 		case YADSL_BIGINT_STATUS_INVALID_SIZE:
-			assert(0 && "Invalid size");
+			assert(0 && "invalid size");
 		case YADSL_BIGINT_STATUS_INVALID_DIGITS:
-			assert(0 && "Invalid digits");
+			assert(0 && "invalid digits");
 		case YADSL_BIGINT_STATUS_LEADING_ZEROS:
-			assert(0 && "Leading zeros");
+			assert(0 && "leading zeros");
 		default:
-			assert(0 && "Unknown error");
+			assert(0 && "unknown error");
 	}
 }
 
 yadsl_BigIntStatus
 yadsl_bigint_check(yadsl_BigIntHandle const* _bigint)
 {
-	BigInt const* bigint = (BigInt const*) _bigint;
-	intptr_t ndigits = YADSL_ABS(bigint->size);
-	digit const* digits = bigint->digits;
+	BigInt const* bigint;
+	intptr_t ndigits;
+	digit const* digits;
+
+	if (_bigint == NULL)
+		return YADSL_BIGINT_STATUS_INVALID_HANDLE;
+	bigint = (BigInt const*) _bigint;
+	ndigits = YADSL_ABS(bigint->size);
+	digits = bigint->digits;
 	if (ndigits < 0)
 		return YADSL_BIGINT_STATUS_INVALID_SIZE;
 	for (intptr_t i = 0; i < ndigits; ++i)
@@ -123,7 +118,7 @@ yadsl_bigint_check(yadsl_BigIntHandle const* _bigint)
 	return YADSL_BIGINT_STATUS_OK;
 }
 
-void
+static void
 _yadsl_bigint_dump(yadsl_BigIntHandle const* _bigint)
 {
 	BigInt const* bigint = (BigInt const*) _bigint;
@@ -153,8 +148,20 @@ bigint_new(intptr_t size)
 	return bigint;
 }
 
-yadsl_BigIntHandle*
-yadsl_bigint_from_int(intmax_t i)
+static int
+getndigits(intmax_t i)
+{
+	uintmax_t u = (uintmax_t)YADSL_ABS(i);
+	int ndigits = 0;
+	while (u != 0) {
+		u >>= SHIFT;
+		++ndigits;
+	}
+	return ndigits;
+}
+
+static yadsl_BigIntHandle*
+_yadsl_bigint_from_int(intmax_t i)
 {
 	int ndigits = getndigits(i);
 	int size = i > 0 ? ndigits : -ndigits;
@@ -172,7 +179,15 @@ yadsl_bigint_from_int(intmax_t i)
 			}
 		}
 	}
-	check(bigint);
+	return bigint;
+}
+
+yadsl_BigIntHandle*
+yadsl_bigint_from_int(intmax_t i)
+{
+	yadsl_BigIntHandle* bigint;
+	bigint = _yadsl_bigint_from_int(i);
+	if (bigint != NULL) check(bigint);
 	return bigint;
 }
 
@@ -225,23 +240,11 @@ yadsl_bigint_to_int(
 	yadsl_BigIntHandle const* _bigint,
 	intmax_t* i_ptr)
 {
-	bool res;
 	check(_bigint);
-	assert(i_ptr != NULL);
-	res = _yadsl_bigint_to_int(_bigint, i_ptr);
-#ifdef YADSL_DEBUG
-	if (res) {
-		yadsl_BigIntHandle* copy = _yadsl_bigint_copy(_bigint);
-		if (copy != NULL) {
-			assert(yadsl_bigint_compare(_bigint, copy) == 0);
-			yadsl_bigint_destroy(copy);
-		}
-	}
-#endif
-	return res;
+	return _yadsl_bigint_to_int(_bigint, i_ptr);
 }
 
-yadsl_BigIntHandle*
+static yadsl_BigIntHandle*
 _yadsl_bigint_copy(
 	yadsl_BigIntHandle const* _bigint)
 {
@@ -266,20 +269,9 @@ yadsl_bigint_copy(
 	check(_bigint);
 	copy = _yadsl_bigint_copy(_bigint);
 #ifdef YADSL_DEBUG
-	if (copy != NULL) {
-		check(copy);
+	if (copy != NULL)
 		assert(yadsl_bigint_compare(_bigint, copy) == 0);
-	}
 #endif
-	return copy;
-}
-
-yadsl_BigIntHandle*
-_yadsl_bigint_opposite(
-	yadsl_BigIntHandle const* _bigint)
-{
-	BigInt* copy = yadsl_bigint_copy(_bigint);
-	if (copy != NULL) copy->size *= -1;
 	return copy;
 }
 
@@ -287,21 +279,9 @@ yadsl_BigIntHandle*
 yadsl_bigint_opposite(
 	yadsl_BigIntHandle const* _bigint)
 {
-	yadsl_BigIntHandle* op;
-	check(_bigint);
-   	op = _yadsl_bigint_opposite(_bigint);
-#ifdef YADSL_DEBUG
-	if (op != NULL) {
-		yadsl_BigIntHandle* bigint2;
-		check(op);
-		bigint2 = _yadsl_bigint_opposite(op);
-		if (bigint2 != NULL) {
-			assert(yadsl_bigint_compare(_bigint, bigint2) == 0);
-			yadsl_bigint_destroy(bigint2);
-		}
-	}
-#endif
-	return op;
+	BigInt* copy = yadsl_bigint_copy(_bigint);
+	if (copy != NULL) copy->size *= -1;
+	return copy;
 }
 
 static BigInt*

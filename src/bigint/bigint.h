@@ -11,6 +11,7 @@
 typedef enum
 {
     YADSL_BIGINT_STATUS_OK, /**< Correct representation */
+    YADSL_BIGINT_STATUS_INVALID_HANDLE, /**< Handle is invalid */
     YADSL_BIGINT_STATUS_INVALID_SIZE, /**< The 'size' field is invalid */
     YADSL_BIGINT_STATUS_INVALID_DIGITS, /**< The 'digits' field is invalid */
     YADSL_BIGINT_STATUS_LEADING_ZEROS, /**< There are excessive leading zeros */
@@ -140,7 +141,7 @@ yadsl_bigint_destroy(
 	yadsl_BigIntHandle* bigint);
 
 /**
- * @brief Dump bigint information
+ * @brief Dump bigint information to stderr
  * @param bigint bigint to be dumped
 */
 void
