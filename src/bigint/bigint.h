@@ -44,7 +44,7 @@ yadsl_bigint_from_int(
 */
 bool
 yadsl_bigint_to_int(
-	yadsl_BigIntHandle* bigint,
+	yadsl_BigIntHandle const* bigint,
 	intmax_t* i_ptr);
 
 /**
@@ -54,7 +54,7 @@ yadsl_bigint_to_int(
 */
 yadsl_BigIntHandle*
 yadsl_bigint_copy(
-	yadsl_BigIntHandle* bigint);
+	yadsl_BigIntHandle const* bigint);
 
 /**
  * @brief Multiplicates a big integer by -1
@@ -63,7 +63,7 @@ yadsl_bigint_copy(
 */
 yadsl_BigIntHandle*
 yadsl_bigint_opposite(
-	yadsl_BigIntHandle* bigint);
+	yadsl_BigIntHandle const* bigint);
 
 /**
  * @brief Add two big integers
@@ -73,8 +73,8 @@ yadsl_bigint_opposite(
 */
 yadsl_BigIntHandle*
 yadsl_bigint_add(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
+	yadsl_BigIntHandle const* bigint1,
+	yadsl_BigIntHandle const* bigint2);
 
 /**
  * @brief Subtract two big integers
@@ -84,8 +84,8 @@ yadsl_bigint_add(
 */
 yadsl_BigIntHandle*
 yadsl_bigint_subtract(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
+	yadsl_BigIntHandle const* bigint1,
+	yadsl_BigIntHandle const* bigint2);
 
 /**
  * @brief Multiply two big integers
@@ -95,8 +95,8 @@ yadsl_bigint_subtract(
 */
 yadsl_BigIntHandle*
 yadsl_bigint_multiply(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
+	yadsl_BigIntHandle const* bigint1,
+	yadsl_BigIntHandle const* bigint2);
 
 /**
  * @brief Divide two big integers
@@ -106,8 +106,8 @@ yadsl_bigint_multiply(
 */
 yadsl_BigIntHandle*
 yadsl_bigint_divide(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
+	yadsl_BigIntHandle const* bigint1,
+	yadsl_BigIntHandle const* bigint2);
 
 /**
  * @brief Compare two big integers
@@ -119,8 +119,8 @@ yadsl_bigint_divide(
 */
 int
 yadsl_bigint_compare(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2);
+	yadsl_BigIntHandle const* bigint1,
+	yadsl_BigIntHandle const* bigint2);
 
 /**
  * @brief Converts big int to string
@@ -129,7 +129,7 @@ yadsl_bigint_compare(
 */
 char*
 yadsl_bigint_to_string(
-	yadsl_BigIntHandle* bigint);
+	yadsl_BigIntHandle const* bigint);
 
 /**
  * @brief Destroy a bigint
@@ -145,7 +145,7 @@ yadsl_bigint_destroy(
 */
 void
 yadsl_bigint_dump(
-    yadsl_BigIntHandle* bigint);
+    yadsl_BigIntHandle const* bigint);
 
 /**
  * @brief Check bigint correctness
@@ -154,7 +154,7 @@ yadsl_bigint_dump(
 */
 yadsl_BigIntStatus
 yadsl_bigint_check(
-        yadsl_BigIntHandle* bigint);
+        yadsl_BigIntHandle const* bigint);
 
 /** @} */
 

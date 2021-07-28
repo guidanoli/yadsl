@@ -23,14 +23,8 @@ typedef uint64_t twodigits;
 #define DECSHIFT 9
 #define DECBASE ((digit)1000000000)
 #define SIGN ((digit)1 << SHIFT)
-#define SIZE(bigint) (bigint->size)
 #define MALLOC_SIZE(ndigits) \
 	(offsetof(BigInt, digits) + sizeof(digit) * (ndigits))
-#define DIGITVALUE(bigint) \
-	(assert(-1 <= SIZE(bigint) && SIZE(bigint) <= 1), \
-		SIZE(bigint) < 0 ? -(sdigit)(bigint)->digits[0] : \
-	 		                (SIZE(bigint) == 0 ? (sdigit)0 : \
-			                                     (sdigit)(bigint)->digits[0]))
 
 /**
  * Big integer representation
@@ -44,8 +38,8 @@ typedef uint64_t twodigits;
  *
  * Invariants:
  *
- * |size| >= 0
- * SIGN & digits[i] == 0, for i in [0, |size|]
+ * |size| >= 0 (that is, size != INTPTR_MIN)
+ * SIGN & digits[i] == 0, for i in [0, |size|-1]
 */
 typedef struct
 {
@@ -53,6 +47,10 @@ typedef struct
 	digit digits[1];
 }
 BigInt;
+
+static yadsl_BigIntHandle*
+_yadsl_bigint_copy(
+	yadsl_BigIntHandle const* _bigint);
 
 static int getndigits(intmax_t i)
 {
@@ -65,12 +63,56 @@ static int getndigits(intmax_t i)
 	return ndigits;
 }
 
-yadsl_BigIntStatus
-yadsl_bigint_check(yadsl_BigIntHandle* _bigint)
+/**
+ * Gets the signed value of a bigint with at most 1 digit
+ * Preconditions:
+ *   bigint points to a valid BigInt
+ *   bigint->size is -1, 0 or 1
+ * Postconditions:
+ *   Returns the signed value of bigint
+*/
+static sdigit getdigitvalue(BigInt const* bigint)
 {
-	BigInt* bigint = (BigInt*) _bigint;
+	intptr_t size = bigint->size;
+	assert(-1 <= size && size <= 1 && "integer has 1 digit");
+	switch (size) {
+		case 1: return (sdigit)bigint->digits[0];
+		case -1: return -(sdigit)bigint->digits[0];
+		default: return 0;
+	}
+}
+
+#ifdef YADSL_DEBUG
+#define check(bigint) _check(bigint)
+#else
+#define check(bigint) ((void) bigint)
+#endif
+
+static void
+_check(yadsl_BigIntHandle const* _bigint)
+{
+	assert(_bigint != NULL);
+	switch (yadsl_bigint_check(_bigint))
+	{
+		case YADSL_BIGINT_STATUS_OK:
+			break;
+		case YADSL_BIGINT_STATUS_INVALID_SIZE:
+			assert(0 && "Invalid size");
+		case YADSL_BIGINT_STATUS_INVALID_DIGITS:
+			assert(0 && "Invalid digits");
+		case YADSL_BIGINT_STATUS_LEADING_ZEROS:
+			assert(0 && "Leading zeros");
+		default:
+			assert(0 && "Unknown error");
+	}
+}
+
+yadsl_BigIntStatus
+yadsl_bigint_check(yadsl_BigIntHandle const* _bigint)
+{
+	BigInt const* bigint = (BigInt const*) _bigint;
 	intptr_t ndigits = YADSL_ABS(bigint->size);
-	digit* digits = bigint->digits;
+	digit const* digits = bigint->digits;
 	if (ndigits < 0)
 		return YADSL_BIGINT_STATUS_INVALID_SIZE;
 	for (intptr_t i = 0; i < ndigits; ++i)
@@ -82,15 +124,22 @@ yadsl_bigint_check(yadsl_BigIntHandle* _bigint)
 }
 
 void
-yadsl_bigint_dump(yadsl_BigIntHandle* _bigint)
+_yadsl_bigint_dump(yadsl_BigIntHandle const* _bigint)
 {
-	BigInt* bigint = (BigInt*) _bigint;
-	intptr_t size = SIZE(bigint);
+	BigInt const* bigint = (BigInt const*) _bigint;
+	intptr_t size = bigint->size;
 	intptr_t ndigits = YADSL_ABS(size);
 	fprintf(stderr, "isnegative = %s\n", size < 0 ? "true" : "false");
 	fprintf(stderr, "ndigits = %zd\n", ndigits);
 	for (intptr_t i = 0; i < ndigits; ++i)
 		fprintf(stderr, "digit #%zd = %" PRIu32 "\n", i, bigint->digits[i]);
+}
+
+void
+yadsl_bigint_dump(yadsl_BigIntHandle const* _bigint)
+{
+	check(_bigint);
+	_yadsl_bigint_dump(_bigint);
 }
 
 static BigInt*
@@ -100,7 +149,7 @@ bigint_new(intptr_t size)
 	intptr_t ndigits = YADSL_ABS(size);
 	if (ndigits < 0) return NULL;
 	bigint = malloc(MALLOC_SIZE(ndigits));
-	if (bigint != NULL) SIZE(bigint) = size;
+	if (bigint != NULL) bigint->size = size;
 	return bigint;
 }
 
@@ -123,12 +172,13 @@ yadsl_bigint_from_int(intmax_t i)
 			}
 		}
 	}
+	check(bigint);
 	return bigint;
 }
 
-bool
-yadsl_bigint_to_int(
-	yadsl_BigIntHandle* _bigint,
+static bool
+_yadsl_bigint_to_int(
+	yadsl_BigIntHandle const* _bigint,
 	intmax_t* i_ptr)
 {
 	intmax_t i;
@@ -136,8 +186,11 @@ yadsl_bigint_to_int(
 	int sign;
 	intptr_t ndigits;
 	intptr_t size;
-	BigInt* bigint = (BigInt *) _bigint;
-	switch (SIZE(bigint)) {
+	BigInt const* bigint;
+	check(_bigint);
+	bigint = (BigInt *) _bigint;
+	size = bigint->size;
+	switch (size) {
 	case 0:
 		i = 0;
 		break;
@@ -148,7 +201,6 @@ yadsl_bigint_to_int(
 		i = -(sdigit)bigint->digits[0];
 		break;
 	default:
-		size = SIZE(bigint);
 		ndigits = YADSL_ABS(size);
 		sign = size < 0 ? -1 : 1;
 		u = 0;
@@ -168,15 +220,37 @@ yadsl_bigint_to_int(
 	return true;
 }
 
-yadsl_BigIntHandle*
-yadsl_bigint_copy(
-	yadsl_BigIntHandle* _bigint)
+bool
+yadsl_bigint_to_int(
+	yadsl_BigIntHandle const* _bigint,
+	intmax_t* i_ptr)
 {
-	BigInt* bigint, * copy;
+	bool res;
+	check(_bigint);
+	assert(i_ptr != NULL);
+	res = _yadsl_bigint_to_int(_bigint, i_ptr);
+#ifdef YADSL_DEBUG
+	if (res) {
+		yadsl_BigIntHandle* copy = _yadsl_bigint_copy(_bigint);
+		if (copy != NULL) {
+			assert(yadsl_bigint_compare(_bigint, copy) == 0);
+			yadsl_bigint_destroy(copy);
+		}
+	}
+#endif
+	return res;
+}
+
+yadsl_BigIntHandle*
+_yadsl_bigint_copy(
+	yadsl_BigIntHandle const* _bigint)
+{
+	BigInt const* bigint;
+	BigInt* copy;
 	size_t size;
 	intptr_t ndigits;
-	bigint = (BigInt*) _bigint;
-	ndigits = YADSL_ABS(SIZE(bigint));
+	bigint = (BigInt const*) _bigint;
+	ndigits = YADSL_ABS(bigint->size);
 	assert(ndigits >= 0);
 	size = MALLOC_SIZE(ndigits);
 	copy = malloc(size);
@@ -185,16 +259,53 @@ yadsl_bigint_copy(
 }
 
 yadsl_BigIntHandle*
-yadsl_bigint_opposite(
-	yadsl_BigIntHandle* _bigint)
+yadsl_bigint_copy(
+	yadsl_BigIntHandle const* _bigint)
 {
-	BigInt* copy = yadsl_bigint_copy(_bigint);
-	if (copy != NULL) SIZE(copy) *= -1;
+	yadsl_BigIntHandle* copy;
+	check(_bigint);
+	copy = _yadsl_bigint_copy(_bigint);
+#ifdef YADSL_DEBUG
+	if (copy != NULL) {
+		check(copy);
+		assert(yadsl_bigint_compare(_bigint, copy) == 0);
+	}
+#endif
 	return copy;
 }
 
+yadsl_BigIntHandle*
+_yadsl_bigint_opposite(
+	yadsl_BigIntHandle const* _bigint)
+{
+	BigInt* copy = yadsl_bigint_copy(_bigint);
+	if (copy != NULL) copy->size *= -1;
+	return copy;
+}
+
+yadsl_BigIntHandle*
+yadsl_bigint_opposite(
+	yadsl_BigIntHandle const* _bigint)
+{
+	yadsl_BigIntHandle* op;
+	check(_bigint);
+   	op = _yadsl_bigint_opposite(_bigint);
+#ifdef YADSL_DEBUG
+	if (op != NULL) {
+		yadsl_BigIntHandle* bigint2;
+		check(op);
+		bigint2 = _yadsl_bigint_opposite(op);
+		if (bigint2 != NULL) {
+			assert(yadsl_bigint_compare(_bigint, bigint2) == 0);
+			yadsl_bigint_destroy(bigint2);
+		}
+	}
+#endif
+	return op;
+}
+
 static BigInt*
-digitadd(digit* a, intptr_t na, digit* b, intptr_t nb)
+digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
 	digit* c, da, db, dc, carry = 0;
@@ -223,15 +334,15 @@ digitadd(digit* a, intptr_t na, digit* b, intptr_t nb)
 }
 
 static BigInt*
-digitaddneg(digit* a, intptr_t na, digit* b, intptr_t nb)
+digitaddneg(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint = digitadd(a, na, b, nb);
-	if (bigint != NULL) SIZE(bigint) *= -1;
+	if (bigint != NULL) bigint->size *= -1;
 	return bigint;
 }
 
 static int
-digitcmp(digit* a, intptr_t na, digit* b, intptr_t nb)
+digitcmp(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	if (na > nb)
 		return 1;
@@ -252,7 +363,7 @@ digitcmp(digit* a, intptr_t na, digit* b, intptr_t nb)
 
 /* digitcmp(a, na, b, nb) >= 0 */
 static BigInt*
-digitstrictsub(digit* a, intptr_t na, digit* b, intptr_t nb)
+digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
 	digit* c, da, db, dc, borrow = 0;
@@ -280,30 +391,30 @@ digitstrictsub(digit* a, intptr_t na, digit* b, intptr_t nb)
 }
 
 static BigInt*
-digitsub(digit* a, intptr_t na, digit* b, intptr_t nb)
+digitsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	if (digitcmp(a, na, b, nb) >= 0)
 		return digitstrictsub(a, na, b, nb);
 	else {
 		BigInt* bigint = digitstrictsub(b, nb, a, na);
-		if (bigint != NULL) SIZE(bigint) *= -1;
+		if (bigint != NULL) bigint->size *= -1;
 		return bigint;
 	}
 }
 
 yadsl_BigIntHandle*
 yadsl_bigint_add(
-	yadsl_BigIntHandle* _a,
-	yadsl_BigIntHandle* _b)
+	yadsl_BigIntHandle const* _a,
+	yadsl_BigIntHandle const* _b)
 {
-	BigInt* a = (BigInt*) _a, * b = (BigInt*) _b;
-	intptr_t na = SIZE(a), nb = SIZE(b);
+	BigInt const* a = (BigInt const*) _a, * b = (BigInt const*) _b;
+	intptr_t na = a->size, nb = b->size;
 	if (na == 0) {
 		return yadsl_bigint_copy(b);
 	} else if (nb == 0) {
 		return yadsl_bigint_copy(a);
 	} else if (YADSL_ABS(na) <= 1 && YADSL_ABS(nb) <= 1) {
-		return yadsl_bigint_from_int((intmax_t)DIGITVALUE(a) + (intmax_t)DIGITVALUE(b));
+		return yadsl_bigint_from_int((intmax_t)getdigitvalue(a) + (intmax_t)getdigitvalue(b));
 	} else if (na > 0 && nb > 0) {
 		return digitadd(a->digits, na, b->digits, nb);
 	} else if (na < 0 && nb < 0) {
@@ -317,17 +428,17 @@ yadsl_bigint_add(
 
 yadsl_BigIntHandle*
 yadsl_bigint_subtract(
-	yadsl_BigIntHandle* _a,
-	yadsl_BigIntHandle* _b)
+	yadsl_BigIntHandle const* _a,
+	yadsl_BigIntHandle const* _b)
 {
-	BigInt* a = (BigInt*) _a, * b = (BigInt*) _b;
-	intptr_t na = SIZE(a), nb = SIZE(b);
+	BigInt const* a = (BigInt const*) _a, * b = (BigInt const*) _b;
+	intptr_t na = a->size, nb = b->size;
 	if (na == 0) {
 		return yadsl_bigint_opposite(b);
 	} else if (nb == 0) {
 		return yadsl_bigint_copy(a);
 	} else if (YADSL_ABS(na) <= 1 && YADSL_ABS(nb) <= 1) {
-		return yadsl_bigint_from_int((intmax_t)DIGITVALUE(a) - (intmax_t)DIGITVALUE(b));
+		return yadsl_bigint_from_int((intmax_t)getdigitvalue(a) - (intmax_t)getdigitvalue(b));
 	} else if (na > 0 && nb > 0) {
 		return digitsub(a->digits, na, b->digits, nb);
 	} else if (na < 0 && nb < 0) {
@@ -341,42 +452,44 @@ yadsl_bigint_subtract(
 
 yadsl_BigIntHandle*
 yadsl_bigint_multiply(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2)
+	yadsl_BigIntHandle const* bigint1,
+	yadsl_BigIntHandle const* bigint2)
 {
 	return NULL;
 }
 
 yadsl_BigIntHandle*
 yadsl_bigint_divide(
-	yadsl_BigIntHandle* bigint1,
-	yadsl_BigIntHandle* bigint2)
+	yadsl_BigIntHandle const* bigint1,
+	yadsl_BigIntHandle const* bigint2)
 {
 	return NULL;
 }
 
 int
 yadsl_bigint_compare(
-	yadsl_BigIntHandle* _a,
-	yadsl_BigIntHandle* _b)
+	yadsl_BigIntHandle const* _a,
+	yadsl_BigIntHandle const* _b)
 {
-	BigInt* a = (BigInt*) _a, * b = (BigInt*) _b;
-	intptr_t na = SIZE(a), nb = SIZE(b);
+	BigInt const* a = (BigInt const*) _a, * b = (BigInt const*) _b;
+	intptr_t na = a->size, nb = b->size;
 	return digitcmp(a->digits, na, b->digits, nb);
 }
 
 char*
 yadsl_bigint_to_string(
-	yadsl_BigIntHandle* _bigint)
+	yadsl_BigIntHandle const* _bigint)
 {
-	BigInt* bigint = (BigInt*) _bigint;
-	digit* pin, * pout, rem, tenpow;
+	BigInt const* bigint = (BigInt const*) _bigint;
+	digit const* pin;
+	digit* pout;
+	digit rem, tenpow;
 	size_t ndigits, strsize, size, i, j;
 	int negative, d;
 	char* str = NULL, *p;
 
-	ndigits = (size_t) YADSL_ABS(SIZE(bigint));
-	negative = SIZE(bigint) < 0;
+	ndigits = (size_t) YADSL_ABS(bigint->size);
+	negative = bigint->size < 0;
 
 	d = (33 * DECSHIFT) /
 		(10 * SHIFT - 33 * DECSHIFT);
