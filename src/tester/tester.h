@@ -267,6 +267,8 @@ yadsl_tester_parse_arguments(
 
 /**
  * @brief Throws an error number.
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param errnum error number
 */
 void
@@ -280,8 +282,9 @@ yadsl_tester_throw_func(
 
 /**
  * @brief Throws an error message.
- * Note: va_end(va) is called before doing
- * the long jump to avoid memory leakage
+ * @note va_end(va) is called before doing the long jump to avoid memory leakage
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param fmt error message format string
  * @param va format arguments
 */
@@ -297,6 +300,8 @@ yadsl_tester_vthrowf_func(
 
 /**
  * @brief Throws an error message.
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param fmt error message format string
  * @param ... format arguments
 */
@@ -324,6 +329,8 @@ yadsl_tester_throwf_func(
 /**
  * @brief Asserts that condition is true.
  * If not, performs a long jump and the error is raised.
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param condition condition to be tested
  * @param errnum error number
 */
@@ -341,6 +348,8 @@ yadsl_tester_assert_func(
  * @brief Assert that condition is true.
  * If not, calls va_end(va), performs a long jump
  * and the error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param condition condition to be tester
  * @param fmt error message format string
  * @param va format arguments
@@ -359,6 +368,8 @@ yadsl_tester_vassertf_func(
 /**
  * @brief Assert that condition is true.
  * If not, performs a long jump and the error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param condition condition to be tester
  * @param fmt error message format string
  * @param ... format arguments
@@ -378,6 +389,8 @@ yadsl_tester_assertf_func(
  * @brief Assert that condition is true.
  * If not, calls callback, va_end(va), performs a long jump
  * and the error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param condition condition to be tester
  * @param fmt error message format string
  * @param falsecb callback called when condition is false
@@ -399,6 +412,8 @@ yadsl_tester_vxassertf_func(
  * @brief Assert that condition is true.
  * If not, calls callback, performs a long jump
  * and the error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param condition condition to be tester
  * @param fmt error message format string
  * @param falsecb callback called when condition is false
@@ -418,6 +433,12 @@ yadsl_tester_xassertf_func(
 
 /**
  * @brief Asserts floats are equal
+ * If not, performs a long jump and an error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
+ * @param a first float
+ * @param b second float
+ * @param errmsg additional error message
 */
 void
 yadsl_tester_asserteqf_func(
@@ -432,6 +453,12 @@ yadsl_tester_asserteqf_func(
 
 /**
  * @brief Asserts integers are equal
+ * If not, performs a long jump and an error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
+ * @param a first integer
+ * @param b second integer
+ * @param errmsg additional error message
 */
 void
 yadsl_tester_asserteqi_func(
@@ -446,7 +473,12 @@ yadsl_tester_asserteqi_func(
 
 /**
  * @brief Asserts longs are equal
-*/
+ * If not, performs a long jump and an error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
+ * @param a first long
+ * @param b second long
+ * @param errmsg additional error message*/
 void
 yadsl_tester_asserteql_func(
 	const char* errfile,
@@ -460,6 +492,12 @@ yadsl_tester_asserteql_func(
 
 /**
  * @brief Asserts characters are equal
+ * If not, performs a long jump and an error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
+ * @param a first character
+ * @param b second character
+ * @param errmsg additional error message
 */
 void
 yadsl_tester_asserteqc_func(
@@ -474,6 +512,12 @@ yadsl_tester_asserteqc_func(
 
 /**
  * @brief Asserts strings are equal
+ * If not, performs a long jump and an error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
+ * @param a first string
+ * @param b second string
+ * @param errmsg additional error message
 */
 void
 yadsl_tester_asserteqs_func(
@@ -488,6 +532,12 @@ yadsl_tester_asserteqs_func(
 
 /**
  * @brief Asserts size types are equal
+ * If not, performs a long jump and an error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
+ * @param a first size variable
+ * @param b second size variable
+ * @param errmsg additional error message
 */
 void
 yadsl_tester_asserteqz_func(
@@ -502,6 +552,12 @@ yadsl_tester_asserteqz_func(
 
 /**
  * @brief Asserts max. integers are equal
+ * If not, performs a long jump and an error is raised
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
+ * @param a first integer
+ * @param b second integer
+ * @param errmsg additional error message
 */
 void
 yadsl_tester_asserteqI_func(
@@ -635,12 +691,10 @@ yadsl_tester_copy_argument(
 
 /**
  * @brief Create a custom error message.
- *
- * Hint
- * ----
- * The error can be caught by '/catch' too,
+ * @note The error can be caught by '/catch' too,
  * by providing the same error message.
- *
+ * @param errfile file in which error occurred (filled by macro)
+ * @param errline line in which error occurred (filled by macro)
  * @param errmsg error message
  * @return ::YADSL_TESTER_RET_CUSTOM
 */

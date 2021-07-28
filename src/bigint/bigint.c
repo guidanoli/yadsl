@@ -48,9 +48,6 @@ typedef struct
 }
 BigInt;
 
-/* Static functions prototypes */
-static yadsl_BigIntHandle* _yadsl_bigint_copy(yadsl_BigIntHandle const* _bigint);
-
 /**
  * Gets the signed value of a bigint with at most 1 digit
  * Preconditions:
@@ -86,7 +83,7 @@ _check(yadsl_BigIntHandle const* _bigint)
 		case YADSL_BIGINT_STATUS_INVALID_HANDLE:
 			assert(0 && "invalid handle");
 		case YADSL_BIGINT_STATUS_INVALID_SIZE:
-			assert(0 && "invalid size");
+			assert(0 && "invalid size (maybe double free?)");
 		case YADSL_BIGINT_STATUS_INVALID_DIGITS:
 			assert(0 && "invalid digits");
 		case YADSL_BIGINT_STATUS_LEADING_ZEROS:
@@ -118,23 +115,61 @@ yadsl_bigint_check(yadsl_BigIntHandle const* _bigint)
 	return YADSL_BIGINT_STATUS_OK;
 }
 
-static void
-_yadsl_bigint_dump(yadsl_BigIntHandle const* _bigint)
+static int
+_yadsl_bigint_dump(yadsl_BigIntHandle const* _bigint, FILE* fp)
 {
+	fpos_t pos;
+	int nchars;
 	BigInt const* bigint = (BigInt const*) _bigint;
 	intptr_t size = bigint->size;
 	intptr_t ndigits = YADSL_ABS(size);
-	fprintf(stderr, "isnegative = %s\n", size < 0 ? "true" : "false");
-	fprintf(stderr, "ndigits = %zd\n", ndigits);
+	fgetpos(fp, &pos);
+
+	/* Auxiliar macro for testing fprintf return value and taking action */
+#define TRY_WRITE(n) do { \
+	int temp = n; \
+	if (temp < 0) \
+		goto fail; \
+	else \
+		nchars += temp; \
+	if (nchars < 0) \
+		goto fail; \
+} while(0)
+
+	TRY_WRITE(fprintf(fp, "isnegative = %s\n", size < 0 ? "true" : "false"));
+	TRY_WRITE(fprintf(fp, "ndigits = %zd\n", ndigits));
 	for (intptr_t i = 0; i < ndigits; ++i)
-		fprintf(stderr, "digit #%zd = %" PRIu32 "\n", i, bigint->digits[i]);
+		TRY_WRITE(fprintf(fp, "digit #%zd = %" PRIu32 "\n", i, bigint->digits[i]));
+
+#undef TRY_WRITE
+
+	return nchars;
+fail:
+	fsetpos(fp, &pos);
+	return 0;
 }
 
-void
-yadsl_bigint_dump(yadsl_BigIntHandle const* _bigint)
+int
+yadsl_bigint_dump(yadsl_BigIntHandle const* _bigint, FILE* fp)
 {
+	int nchars;
+#ifdef YADSL_DEBUG
+	long int pos;
+#endif
 	check(_bigint);
-	_yadsl_bigint_dump(_bigint);
+	assert(fp != NULL);
+#ifdef YADSL_DEBUG
+	pos = ftell(fp);
+#endif
+	nchars = _yadsl_bigint_dump(_bigint, fp);
+#ifdef YADSL_DEBUG
+	if (nchars == 0) {
+		assert(pos == ftell(fp) && "nothing written");
+	} else {
+		assert(pos != ftell(fp) && "something written");
+	}
+#endif
+	return nchars;
 }
 
 static BigInt*
@@ -202,7 +237,6 @@ _yadsl_bigint_to_int(
 	intptr_t ndigits;
 	intptr_t size;
 	BigInt const* bigint;
-	check(_bigint);
 	bigint = (BigInt *) _bigint;
 	size = bigint->size;
 	switch (size) {
@@ -382,8 +416,8 @@ digitsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 	}
 }
 
-yadsl_BigIntHandle*
-yadsl_bigint_add(
+static yadsl_BigIntHandle*
+_yadsl_bigint_add(
 	yadsl_BigIntHandle const* _a,
 	yadsl_BigIntHandle const* _b)
 {
@@ -407,7 +441,21 @@ yadsl_bigint_add(
 }
 
 yadsl_BigIntHandle*
-yadsl_bigint_subtract(
+yadsl_bigint_add(
+	yadsl_BigIntHandle const* _a,
+	yadsl_BigIntHandle const* _b)
+{
+	yadsl_BigIntHandle* c;
+	check(_a);
+	check(_b);
+	c = _yadsl_bigint_add(_a, _b);
+	if (c != NULL) check(c);
+	return c;
+}
+
+
+static yadsl_BigIntHandle*
+_yadsl_bigint_subtract(
 	yadsl_BigIntHandle const* _a,
 	yadsl_BigIntHandle const* _b)
 {
@@ -431,6 +479,19 @@ yadsl_bigint_subtract(
 }
 
 yadsl_BigIntHandle*
+yadsl_bigint_subtract(
+	yadsl_BigIntHandle const* _a,
+	yadsl_BigIntHandle const* _b)
+{
+	yadsl_BigIntHandle* c;
+	check(_a);
+	check(_b);
+	c = _yadsl_bigint_subtract(_a, _b);
+	if (c != NULL) check(c);
+	return c;
+}
+
+yadsl_BigIntHandle*
 yadsl_bigint_multiply(
 	yadsl_BigIntHandle const* bigint1,
 	yadsl_BigIntHandle const* bigint2)
@@ -446,8 +507,8 @@ yadsl_bigint_divide(
 	return NULL;
 }
 
-int
-yadsl_bigint_compare(
+static int
+_yadsl_bigint_compare(
 	yadsl_BigIntHandle const* _a,
 	yadsl_BigIntHandle const* _b)
 {
@@ -456,8 +517,21 @@ yadsl_bigint_compare(
 	return digitcmp(a->digits, na, b->digits, nb);
 }
 
-char*
-yadsl_bigint_to_string(
+int
+yadsl_bigint_compare(
+	yadsl_BigIntHandle const* _a,
+	yadsl_BigIntHandle const* _b)
+{
+	int res;
+	check(_a);
+	check(_b);
+	res = _yadsl_bigint_compare(_a, _b);
+	assert(res == 0 || res == 1 || res == -1);
+	return res;
+}
+
+static char*
+_yadsl_bigint_to_string(
 	yadsl_BigIntHandle const* _bigint)
 {
 	BigInt const* bigint = (BigInt const*) _bigint;
@@ -535,9 +609,51 @@ end:
 	return str;
 }
 
+char*
+yadsl_bigint_to_string(
+	yadsl_BigIntHandle const* _bigint)
+{
+	char* str;
+	check(_bigint);
+	str = _yadsl_bigint_to_string(_bigint);
+#ifdef YADSL_DEBUG
+	if (str != NULL) {
+		char* p;
+		BigInt* bigint = (BigInt*)_bigint;
+		if (bigint->size < 0) {
+			assert(str[0] == '-' && "negative numbers start with '-'");
+			p = &str[1];
+		} else {
+			p = str;
+		}
+		if (*p == '0')
+			assert(*(p+1) == '\0' && "leading zero");
+		for (char c = *p; c != '\0'; c = *++p) {
+			assert(c >= '0' && c <= '9' && "only numbers");
+		}
+	}
+#endif
+	return str;
+}
+
+static void
+_yadsl_bigint_destroy(
+	yadsl_BigIntHandle* _bigint)
+{
+	BigInt* bigint = (BigInt*)_bigint;
+
+#ifdef YADSL_DEBUG
+	/* Invalidate size field to catch double free */
+	bigint->size = INTPTR_MIN;
+#endif
+
+	free(bigint);
+}
+
 void
 yadsl_bigint_destroy(
 	yadsl_BigIntHandle* bigint)
 {
-	free(bigint);
+	check(bigint);
+	_yadsl_bigint_destroy(bigint);
 }

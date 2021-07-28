@@ -10,7 +10,7 @@
  * @brief Initialize command handler
  * @note Before using the command handler, you must initialize it
  * @return operation status
- * @seealso yatester_terminatecmdhdl
+ * @see yatester_terminatecmdhdl
  */
 yatester_status yatester_initializecmdhdl();
 
@@ -30,7 +30,7 @@ const yatester_command* yatester_getcommand(const char* commandname);
 /**
  * @brief Terminate command handler
  * @note After using the command handler, you must terminate it
- * @seealso yatester_initializecmdhdl
+ * @see yatester_initializecmdhdl
  */
 void yatester_terminatecmdhdl();
 

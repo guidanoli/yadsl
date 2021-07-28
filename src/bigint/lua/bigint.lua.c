@@ -18,10 +18,11 @@ bigint_udata;
 static int bigint_new(lua_State* L)
 {
     lua_Integer integer = luaL_checkinteger(L, 1);
+    if (integer < INTMAX_MIN || integer > INTMAX_MAX)
+        return luaL_error(L, "integer overflow");
     lua_settop(L, 1);
     bigint_udata* udata = lua_newuserdata(L, sizeof(bigint_udata));
     udata->bigint = NULL;
-    assert(sizeof(lua_Integer) <= sizeof(intmax_t) && "Can convert lua_Integer to intmax_t");
     yadsl_BigIntHandle* bigint = yadsl_bigint_from_int((intmax_t)integer);
     if (bigint == NULL) return luaL_error(L, "bad malloc");
     udata->bigint = bigint;
@@ -58,7 +59,7 @@ static yadsl_BigIntHandle* check_bigint(lua_State* L, int arg)
     yadsl_BigIntHandle* bigint;
     udata = check_bigint_udata(L, arg);
     bigint = udata->bigint;
-    assert(bigint != NULL && "BigInt is valid");
+    assert(yadsl_bigint_check(bigint) == YADSL_BIGINT_STATUS_OK && "BigInt is valid");
     return bigint;
 }
 

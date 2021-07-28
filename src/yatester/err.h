@@ -22,8 +22,8 @@ void yatester_raise(yatester_status status);
  * @param status error status code
  * @note status != YATESTER_OK
  * @param condition condition being tested
- * @seealso yatester_assert
- * @seealso yatester_raise
+ * @see yatester_assert
+ * @see yatester_raise
  */
 void yatester_assert_function(const char* code, yatester_status status, int condition);
 

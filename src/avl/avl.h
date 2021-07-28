@@ -63,6 +63,7 @@ typedef yadsl_AVLTreeComparison
 /**
  * @brief AVL tree object freeing function
  * @param obj object
+ * @param arg user argument
 */
 typedef void
 (*yadsl_AVLTreeFreeObjFunc)(

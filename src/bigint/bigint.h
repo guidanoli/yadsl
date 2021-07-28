@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 /**
  * @brief Status code for Big Integer representation
@@ -21,27 +22,49 @@ yadsl_BigIntStatus;
 /**
  * \defgroup bigint Big Integer
  * @brief Integer of arbitrary precision
- * If any of the functions that returns a pointer end up
- * returning NULL, it means that it could not allocate.
- * Every big integer is immutable to the user.
+ *
+ * BigInts can be first created from fixed-size integers via the ::yadsl_bigint_from_int
+ * function. Just like every other function in this module that returns a BigInt handle,
+ * it returns NULL on memory allocation failure.
+ *
+ * Mathematical operations can be performed over pre-existing BigInts via functions
+ * in this module like ::yadsl_bigint_add. All functions that take BigInt handles
+ * expect valid BigInt handles (not NULL).
+ *
+ * BigInts can be converted back to fixed-size integers via the ::yadsl_bigint_to_int
+ * function. If the integer is too large to fit in a fixed-size integer of type intmax_t,
+ * then the function returns false.
+ *
+ * BigInts can also be converted to strings via the ::yadsl_bigint_to_string function.
+ * If memory allocation occurrs, the function returns NULL.
+ *
+ * If compiled in Debug mode (with the macro YADSL_DEBUG defined), the module performs
+ * internal checks to guarantee pre and postconditions established in this documentation.
  * @{
 */
 
 typedef void yadsl_BigIntHandle; /**< Big Integer handle */
 
 /**
- * @brief Creates a big int
- * @return newly created bigint
+ * @brief BigInt constructor from fixed-size integer
+ * @param i fixed-size integer
+ * @return new BigInt representation of i
 */
 yadsl_BigIntHandle*
 yadsl_bigint_from_int(
 	intmax_t i);
 
 /**
- * @brief Converts big int to C int
- * @param bigint bigint to be converted
- * @param i_ptr converted big int, if the function returns 0
- * @return whether the big integer couldn't fit into a C int
+ * @brief Converts BigInt to a fixed-size integer
+ * @param bigint BigInt to be converted
+ * @param i_ptr fixed-size integer representation of bigint
+ * @pre i_ptr points to a valid intmax_t variable
+ * @return whether conversion was successful
+ * @post If the function returns:
+ * <ul>
+ * <li>true, *i_ptr is updated</li>
+ * <li>false, nothing is done</li>
+ * </ul>
 */
 bool
 yadsl_bigint_to_int(
@@ -49,83 +72,94 @@ yadsl_bigint_to_int(
 	intmax_t* i_ptr);
 
 /**
- * @brief Copy bigint
- * @param bigint
- * @return bigint
+ * @brief BigInt identity
+ * @note Returns a new BigInt with the same value
+ * @param a
+ * @return a
 */
 yadsl_BigIntHandle*
 yadsl_bigint_copy(
-	yadsl_BigIntHandle const* bigint);
+	yadsl_BigIntHandle const* a);
 
 /**
- * @brief Multiplicates a big integer by -1
- * @param bigint
- * @return -bigint
+ * @brief BigInt additive inverse
+ * @param a
+ * @return -a
 */
 yadsl_BigIntHandle*
 yadsl_bigint_opposite(
-	yadsl_BigIntHandle const* bigint);
+	yadsl_BigIntHandle const* a);
 
 /**
- * @brief Add two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 + bigint2
+ * @brief BigInt addition
+ * @param a
+ * @param b
+ * @return a + b
 */
 yadsl_BigIntHandle*
 yadsl_bigint_add(
-	yadsl_BigIntHandle const* bigint1,
-	yadsl_BigIntHandle const* bigint2);
+	yadsl_BigIntHandle const* a,
+	yadsl_BigIntHandle const* b);
 
 /**
- * @brief Subtract two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 - bigint2
+ * @brief BigInt subtraction
+ * @param a
+ * @param b
+ * @return a - b
 */
 yadsl_BigIntHandle*
 yadsl_bigint_subtract(
-	yadsl_BigIntHandle const* bigint1,
-	yadsl_BigIntHandle const* bigint2);
+	yadsl_BigIntHandle const* a,
+	yadsl_BigIntHandle const* b);
 
 /**
- * @brief Multiply two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 * bigint2
+ * @brief BigInt multiplication
+ * @param a
+ * @param b
+ * @return a * b
 */
 yadsl_BigIntHandle*
 yadsl_bigint_multiply(
-	yadsl_BigIntHandle const* bigint1,
-	yadsl_BigIntHandle const* bigint2);
+	yadsl_BigIntHandle const* a,
+	yadsl_BigIntHandle const* b);
 
 /**
- * @brief Divide two big integers
- * @param bigint1
- * @param bigint2
- * @return bigint1 / bigint2
+ * @brief BigInt division
+ * @param a
+ * @param b
+ * @return a / b
 */
 yadsl_BigIntHandle*
 yadsl_bigint_divide(
-	yadsl_BigIntHandle const* bigint1,
-	yadsl_BigIntHandle const* bigint2);
+	yadsl_BigIntHandle const* a,
+	yadsl_BigIntHandle const* b);
 
 /**
- * @brief Compare two big integers
- * @param bigint1
- * @param bigint2
- * @return -1 if bigint1 < bigint2
- *          1 if bigint1 > bigint2
- *          0 else
+ * @brief BigInt comparison
+ * @param a
+ * @param b
+ * @return
+ * <ul>
+ * <li>
+ * -1, if a < b;
+ * </li>
+ * <li>
+ * 1, if a > b;
+ * </li>
+ * <li>
+ * 0, if a = b;
+ * </li>
+ * </ul>
 */
 int
 yadsl_bigint_compare(
-	yadsl_BigIntHandle const* bigint1,
-	yadsl_BigIntHandle const* bigint2);
+	yadsl_BigIntHandle const* a,
+	yadsl_BigIntHandle const* b);
 
 /**
- * @brief Converts big int to string
- * @param bigint
+ * @brief Converts BigInt to a null-terminated
+ *        ASCII string with characters 0-9
+ * @param bigint BigInt to be converted
  * @return newly allocated string
 */
 char*
@@ -133,24 +167,37 @@ yadsl_bigint_to_string(
 	yadsl_BigIntHandle const* bigint);
 
 /**
- * @brief Destroy a bigint
- * @param bigint bigint to be destroyed
+ * @brief BigInt destructor
+ * @param bigint BigInt to be destroyed
 */
 void
 yadsl_bigint_destroy(
 	yadsl_BigIntHandle* bigint);
 
 /**
- * @brief Dump bigint information to stderr
- * @param bigint bigint to be dumped
+ * @brief BigInt debug information dump
+ * @param bigint BigInt to be dumped
+ * @param fp file pointer for dumping
+ * @return number of written characters
+ * @pre fp is a valid file pointer
+ * @post if returns:
+ * <ul>
+ * <li>
+ * zero, does nothing
+ * </li>
+ * <li>
+ * non-zero value, writes debug information to file
+ * </li>
+ * </ul>
 */
-void
+int
 yadsl_bigint_dump(
-    yadsl_BigIntHandle const* bigint);
+    yadsl_BigIntHandle const* bigint,
+    FILE* fp);
 
 /**
- * @brief Check bigint correctness
- * @param bigint bigint to be checked
+ * @brief BigInt correctness check
+ * @param bigint BigInt to be checked (can be NULL)
  * @return status code
 */
 yadsl_BigIntStatus

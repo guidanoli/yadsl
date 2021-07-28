@@ -57,7 +57,7 @@ typedef int
 (*yadsl_HeapObjCmpFunc)(
 	yadsl_HeapObj* obj1,
 	yadsl_HeapObj* obj2,
-	yadsl_HeapObjCmpArg* cmp_objs_arg);
+	yadsl_HeapObjCmpArg* arg);
 
 /**
  * @brief Function responsible for freeing objects
@@ -72,7 +72,7 @@ typedef void
  * @param initial_size heap initial size
  * @param cmp_objs_func object comparison function
  * @param free_obj_func object freeing function
- * @param cmp_objs_arg object comparison function argument
+ * @param arg object comparison function user argument
  * @return newly created heap or NULL if could not allocate memory
 */
 yadsl_HeapHandle*
@@ -80,7 +80,7 @@ yadsl_heap_create(
 	size_t initial_size,
 	yadsl_HeapObjCmpFunc cmp_objs_func,
 	yadsl_HeapObjFreeFunc free_obj_func,
-	yadsl_HeapObjCmpArg* cmp_objs_arg);
+	yadsl_HeapObjCmpArg* arg);
 
 /**
  * @brief Insert object in heap

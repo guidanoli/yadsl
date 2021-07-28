@@ -47,7 +47,7 @@ typedef void yadsl_MapEntryFreeArg; /**< Argument passed to yadsl_MapEntryFreeFu
  * @brief Function responsible for comparing keys
  * @param key1 first object
  * @param key2 second object
- * @param cmp_keys_func_arg user argument
+ * @param arg user argument
  * @return an integer *n*, where...
  * * *n* > 0 if key1 > key2
  * * *n* = 0 if key1 = key2
@@ -57,12 +57,12 @@ typedef int
 (*yadsl_MapEntryKeyCmpFunc)(
 	yadsl_MapEntryKey* key1,
 	yadsl_MapEntryKey* key2,
-	yadsl_MapEntryKeyCmpArg* cmp_objs_arg);
+	yadsl_MapEntryKeyCmpArg* arg);
 
 /**
  * @brief Function responsible for freeing entries
  * @param key entry key (to be freed)
- * @param key entry value (to be freed)
+ * @param value entry value (to be freed)
  * @param free_entry_arg user argument
 */
 typedef void
