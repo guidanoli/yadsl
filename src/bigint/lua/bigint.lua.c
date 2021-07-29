@@ -67,8 +67,8 @@ static int bigint_tointeger(lua_State* L)
 {
     yadsl_BigIntHandle* bigint = check_bigint(L, 1);
     intmax_t integer;
-    bool ok = yadsl_bigint_to_int(bigint, &integer);
-    if (!ok || integer < LUA_MININTEGER || integer > LUA_MAXINTEGER)
+    yadsl_BigIntStatus status = yadsl_bigint_to_int(bigint, &integer);
+    if (status != YADSL_BIGINT_STATUS_OK || integer < LUA_MININTEGER || integer > LUA_MAXINTEGER)
         return luaL_error(L, "integer overflow");
     lua_pushinteger(L, (lua_Integer)integer);
     return 1;

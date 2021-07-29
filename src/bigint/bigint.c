@@ -226,7 +226,7 @@ yadsl_bigint_from_int(intmax_t i)
 	return bigint;
 }
 
-static bool
+static yadsl_BigIntStatus
 _yadsl_bigint_to_int(
 	yadsl_BigIntHandle const* _bigint,
 	intmax_t* i_ptr)
@@ -263,19 +263,33 @@ _yadsl_bigint_to_int(
 		else if (sign < 0 && u == (0-(uintmax_t)INTMAX_MIN))
 			i = INTMAX_MIN;
 		else
-			return false;
+			return YADSL_BIGINT_STATUS_INTEGER_OVERFLOW;
 	}
 	*i_ptr = i;
-	return true;
+	return YADSL_BIGINT_STATUS_OK;
 }
 
-bool
+yadsl_BigIntStatus
 yadsl_bigint_to_int(
 	yadsl_BigIntHandle const* _bigint,
 	intmax_t* i_ptr)
 {
+#ifdef YADSL_DEBUG
+	yadsl_BigIntStatus status;
+	const intmax_t randval = (intmax_t)(void*)&status;
+	intmax_t i = randval;
 	check(_bigint);
+	status = _yadsl_bigint_to_int(_bigint, &i);
+	if (status == YADSL_BIGINT_STATUS_OK) {
+		assert(i != randval && "integer is stored");
+		*i_ptr = i;
+	} else {
+		assert(i == randval && "integer is not modified");
+	}
+	return status;
+#else
 	return _yadsl_bigint_to_int(_bigint, i_ptr);
+#endif
 }
 
 static yadsl_BigIntHandle*
@@ -618,7 +632,7 @@ yadsl_bigint_to_string(
 	str = _yadsl_bigint_to_string(_bigint);
 #ifdef YADSL_DEBUG
 	if (str != NULL) {
-		char* p;
+		char* p, c;
 		BigInt* bigint = (BigInt*)_bigint;
 		if (bigint->size < 0) {
 			assert(str[0] == '-' && "negative numbers start with '-'");
@@ -626,14 +640,104 @@ yadsl_bigint_to_string(
 		} else {
 			p = str;
 		}
-		if (*p == '0')
-			assert(*(p+1) == '\0' && "leading zero");
-		for (char c = *p; c != '\0'; c = *++p) {
-			assert(c >= '0' && c <= '9' && "only numbers");
+		c = *p++;
+		if (c == '0')
+			assert(*p == '\0' && "leading zero");
+		else {
+			assert(c >= '1' && c <= '9' && "only numbers");
+			for (c = *p; c != '\0'; c = *++p)
+				assert(c >= '0' && c <= '9' && "only numbers");
 		}
 	}
 #endif
 	return str;
+}
+
+static yadsl_BigIntStatus
+_yadsl_bigint_from_string(
+    const char* str,
+    yadsl_BigIntHandle** bigint_ptr)
+{
+	const char* p;
+	char c;
+	size_t strsize = 0;
+	bool isnegative;
+
+	/* detect signal and make str point to
+	 * the first decimal digit */
+	c = *str;
+	if (c == '-') {
+		c = *++str;
+		isnegative = true;
+	} else if (c == '+') {
+		c = *++str;
+		isnegative = false;
+	} else {
+		isnegative = false;
+	}
+
+	/* check if string is "", "+" or "-" */
+	if (c == '\0')
+		return YADSL_BIGINT_STATUS_STRING_FORMAT;
+
+	/* check if string contains only numbers */
+	p = str;
+	do {
+		++strsize;
+		if (c < '0' || c > '9')
+			return YADSL_BIGINT_STATUS_STRING_FORMAT;
+	} while ((c = *++p) != '\0');
+
+	/* TODO */
+	return YADSL_BIGINT_STATUS_STRING_FORMAT;
+}
+
+/**
+ * @brief djb2 hash function
+ * @author Daniel J. Bernstein
+ */
+static size_t
+djb2_hash(const char* str)
+{
+	size_t hash = 5381;
+	char c;
+
+	while (c = *str++)
+	{
+		hash = ((hash << 5) + hash) + c; /* hash = 33 * hash + c */
+	}
+
+	return hash;
+}
+
+yadsl_BigIntStatus
+yadsl_bigint_from_string(
+    const char* str,
+    yadsl_BigIntHandle** bigint_ptr)
+{
+#ifdef YADSL_DEBUG
+	size_t hash;
+	yadsl_BigIntStatus status;
+	const yadsl_BigIntHandle* randval = (yadsl_BigIntHandle*)&status;
+	yadsl_BigIntHandle* bigint = randval;
+#endif
+	assert(str != NULL);
+	assert(bigint_ptr != NULL);
+#ifdef YADSL_DEBUG
+	hash = djb2_hash(str);
+	status = _yadsl_bigint_from_string(str, &bigint);
+	assert(hash == djb2_hash(str) && "string is not modified");
+	if (status == YADSL_BIGINT_STATUS_OK) {
+		assert(bigint != randval && "bigint is stored");
+		check(bigint);
+		*bigint_ptr = bigint;
+	} else {
+		assert(bigint == randval && "bigint pointer is not modified");
+	}
+	return status;
+#else
+	return _yadsl_bigint_from_string(str, bigint_ptr);
+#endif
 }
 
 static void

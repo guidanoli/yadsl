@@ -108,7 +108,7 @@ static yadsl_BigIntHandle* at(int index)
 static intmax_t get(int index)
 {
 	intmax_t i;
-	yadsl_tester_assert(yadsl_bigint_to_int(at(index), &i), YADSL_TESTER_RET_OVERFLOW);
+	yadsl_tester_assert(yadsl_bigint_to_int(at(index), &i) == YADSL_BIGINT_STATUS_OK, YADSL_TESTER_RET_OVERFLOW);
 	return i;
 }
 
