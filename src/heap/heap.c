@@ -2,11 +2,7 @@
 
 #include <stdint.h>
 
-#ifdef YADSL_DEBUG
-#include <memdb/memdb.h>
-#else
-#include <stdlib.h>
-#endif
+#include <yadsl/stdlib.h>
 
 typedef struct
 {

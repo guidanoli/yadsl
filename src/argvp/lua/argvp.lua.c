@@ -5,12 +5,7 @@
 #include <assert.h>
 #include <string.h>
 
-#ifdef YADSL_DEBUG
-#include <memdb/memdb.h>
-#else
-#include <stdlib.h>
-#endif
-
+#include <yadsl/stdlib.h>
 #include <argvp/argvp.h>
 #include <memdb/lua/memdb.h>
 

@@ -3,11 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef YADSL_DEBUG
-#include <memdb/memdb.h>
-#else
-#include <stdlib.h>
-#endif
+#include <yadsl/stdlib.h>
 
 #include <string/string.h>
 

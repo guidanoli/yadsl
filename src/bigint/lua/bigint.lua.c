@@ -7,6 +7,8 @@
 #include <bigint/bigint.h>
 #include <memdb/lua/memdb.h>
 
+#include <yadsl/stdlib.h>
+
 #define BIGINT "BigInt"
 
 typedef struct
@@ -17,14 +19,39 @@ bigint_udata;
 
 static int bigint_new(lua_State* L)
 {
-    lua_Integer integer = luaL_checkinteger(L, 1);
-    if (integer < INTMAX_MIN || integer > INTMAX_MAX)
-        return luaL_error(L, "integer overflow");
-    lua_settop(L, 1);
+    yadsl_BigIntHandle* bigint = NULL;
+    int type = lua_type(L, 1);
     bigint_udata* udata = lua_newuserdata(L, sizeof(bigint_udata));
     udata->bigint = NULL;
-    yadsl_BigIntHandle* bigint = yadsl_bigint_from_int((intmax_t)integer);
-    if (bigint == NULL) return luaL_error(L, "bad malloc");
+    if (type == LUA_TNUMBER) {
+        lua_Integer integer = luaL_checkinteger(L, 1);
+        if (integer < INTMAX_MIN || integer > INTMAX_MAX)
+            return luaL_error(L, "integer overflow");
+        bigint = yadsl_bigint_from_int((intmax_t)integer);
+        if (bigint == NULL)
+            return luaL_error(L, "bad malloc");
+    } else if (type == LUA_TSTRING) {
+        size_t size;
+        const char* str = lua_tolstring(L, 1, &size);
+        yadsl_BigIntStatus status;
+        for (size_t i = 0; i < size; ++i)
+            if (str[i] == '\0')
+                return luaL_argerror(L, 1, "string contains embedded zeros");
+        status = yadsl_bigint_from_string(str, &bigint);
+        switch (status) {
+            case YADSL_BIGINT_STATUS_OK:
+                break;
+            case YADSL_BIGINT_STATUS_STRING_FORMAT:
+                return luaL_argerror(L, 1, "string is ill-formatted");
+            case YADSL_BIGINT_STATUS_MEMORY:
+                return luaL_error(L, "bad malloc");
+            default:
+                assert(0 && "Unknown return value");
+                return luaL_error(L, "unknown error");
+        }
+    } else {
+        return luaL_argerror(L, 1, "expected string or number");
+    }
     udata->bigint = bigint;
     luaL_setmetatable(L, BIGINT);
     return 1;
@@ -74,8 +101,20 @@ static int bigint_tointeger(lua_State* L)
     return 1;
 }
 
+static int bigint_tostring(lua_State* L)
+{
+    yadsl_BigIntHandle* bigint = check_bigint(L, 1);
+    char* str = yadsl_bigint_to_string(bigint);
+    if (str == NULL)
+        return luaL_error(L, "bad malloc");
+    lua_pushstring(L, str);
+    free(str);
+    return 1;
+}
+
 static const struct luaL_Reg bigint_methods[] = {
     {"to_integer", bigint_tointeger},
+    {"to_string", bigint_tostring},
     {NULL, NULL}  /* sentinel */
 };
 

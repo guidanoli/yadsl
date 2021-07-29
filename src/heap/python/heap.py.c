@@ -4,11 +4,7 @@
 #include <yadsl/py.h>
 #include <heap/heap.h>
 
-#ifdef YADSL_DEBUG
-#include <memdb/memdb.h>
-#else
-#include <stdlib.h>
-#endif
+#include <yadsl/stdlib.h>
 
 //
 // Objects

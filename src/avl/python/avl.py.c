@@ -3,14 +3,9 @@
 
 #include <assert.h>
 
+#include <yadsl/stdlib.h>
 #include <yadsl/py.h>
 #include <avl/avl.h>
-
-#ifdef YADSL_DEBUG
-#include <memdb/memdb.h>
-#else
-#include <stdlib.h>
-#endif
 
 //
 // Objects

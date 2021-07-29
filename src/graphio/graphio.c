@@ -3,11 +3,7 @@
 #include <string.h>
 #include <assert.h>
 
-#ifdef YADSL_DEBUG
-#include <memdb/memdb.h>
-#else
-#include <stdlib.h>
-#endif
+#include <yadsl/stdlib.h>
 
 #include <map/map.h>
 

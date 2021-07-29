@@ -7,12 +7,7 @@
 #include <inttypes.h>
 #include <limits.h>
 
-#ifdef YADSL_DEBUG
-#include <memdb/memdb.h>
-#else
-#include <stdlib.h>
-#endif
-
+#include <yadsl/stdlib.h>
 #include <yadsl/utl.h>
 
 typedef uint32_t digit;
@@ -660,8 +655,9 @@ _yadsl_bigint_from_string(
 {
 	const char* p;
 	char c;
-	size_t strsize = 0;
+	size_t strsize, size, i, j, k;
 	bool isnegative;
+	digit* pin, dig;
 
 	/* detect signal and make str point to
 	 * the first decimal digit */
@@ -673,6 +669,7 @@ _yadsl_bigint_from_string(
 		c = *++str;
 		isnegative = false;
 	} else {
+		/* positive by default */
 		isnegative = false;
 	}
 
@@ -680,13 +677,39 @@ _yadsl_bigint_from_string(
 	if (c == '\0')
 		return YADSL_BIGINT_STATUS_STRING_FORMAT;
 
-	/* check if string contains only numbers */
+	/* make str point to first non-zero digit
+	 * (in the case of zero, points to null char) */
+	while (c == '0')
+		c = *++str;
+
+	/* check if string only contains numeric chars
+	 * and make p point to null char */
 	p = str;
-	do {
+	strsize = 0;
+	while (c != '\0') {
 		++strsize;
 		if (c < '0' || c > '9')
 			return YADSL_BIGINT_STATUS_STRING_FORMAT;
-	} while ((c = *++p) != '\0');
+		c = *++p;
+	}
+
+	/* size of digit array in base 10^DECSHIFT
+	 * is ceil(strsize / DECSHIFT) */
+	size = (strsize + DECSHIFT - 1) / DECSHIFT;
+	pin = malloc(size * sizeof(digit));
+	
+	if (size > 0 && pin == NULL)
+		return YADSL_BIGINT_STATUS_MEMORY;
+
+	for (i = 0, j = 0; i < size; ++i) {
+		dig = 0;
+		for (k = 0; k < DECSHIFT && j < strsize; ++k, ++j) {
+			dig = dig * 10 + (digit)(*--p - '0');
+		}
+		pin[i] = dig;
+	}
+
+	free(pin);
 
 	/* TODO */
 	return YADSL_BIGINT_STATUS_STRING_FORMAT;
@@ -718,7 +741,7 @@ yadsl_bigint_from_string(
 #ifdef YADSL_DEBUG
 	size_t hash;
 	yadsl_BigIntStatus status;
-	const yadsl_BigIntHandle* randval = (yadsl_BigIntHandle*)&status;
+	yadsl_BigIntHandle* randval = (yadsl_BigIntHandle*)&status;
 	yadsl_BigIntHandle* bigint = randval;
 #endif
 	assert(str != NULL);

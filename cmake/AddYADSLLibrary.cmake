@@ -71,9 +71,8 @@ function(add_yadsl_library target)
 
     safe_target_link_libraries(${target} yadsl)
     safe_target_link_debug_libraries(${target} memdb)
-    target_include_directories(${target} PUBLIC ${YADSL_SOURCE_DIR})
     
-    invert_boolean("OPTS_FPIC" OPTS_STATIC)
+    invert_boolean(OPTS_FPIC OPTS_STATIC)
         
     set_target_properties(${target} PROPERTIES
         FOLDER libraries
