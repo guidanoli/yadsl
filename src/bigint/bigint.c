@@ -18,6 +18,8 @@ typedef uint64_t twodigits;
 #define DECSHIFT 9
 #define DECBASE ((digit)1000000000)
 #define SIGN ((digit)1 << SHIFT)
+#define BASE SIGN
+#define MASK ((digit)(BASE - 1))
 #define MALLOC_SIZE(ndigits) \
 	(offsetof(BigInt, digits) + sizeof(digit) * (ndigits))
 
@@ -81,8 +83,6 @@ _check(yadsl_BigIntHandle const* _bigint)
 			assert(0 && "invalid size (maybe double free?)");
 		case YADSL_BIGINT_STATUS_INVALID_DIGITS:
 			assert(0 && "invalid digits");
-		case YADSL_BIGINT_STATUS_LEADING_ZEROS:
-			assert(0 && "leading zeros");
 		default:
 			assert(0 && "unknown error");
 	}
@@ -105,8 +105,6 @@ yadsl_bigint_check(yadsl_BigIntHandle const* _bigint)
 	for (intptr_t i = 0; i < ndigits; ++i)
 		if (digits[i] & SIGN)
 			return YADSL_BIGINT_STATUS_INVALID_DIGITS;
-	if (ndigits > 0 && digits[ndigits-1] == 0)
-		return YADSL_BIGINT_STATUS_LEADING_ZEROS;
 	return YADSL_BIGINT_STATUS_OK;
 }
 
@@ -204,7 +202,7 @@ _yadsl_bigint_from_int(intmax_t i)
 		} else {
 			uintmax_t u = i > 0 ? (uintmax_t)i : (uintmax_t)-i;
 			for (int ndigit = 0; ndigit < ndigits; ++ndigit) {
-				bigint->digits[ndigit] = (digit)u & ~(1 << SHIFT);
+				bigint->digits[ndigit] = (digit)u & MASK;
 				u >>= SHIFT;
 			}
 		}
@@ -251,7 +249,8 @@ _yadsl_bigint_to_int(
 		while (ndigits > 0) {
 			v = u;
 			u = (u << SHIFT) | bigint->digits[--ndigits];
-			if ((u >> SHIFT) != v) return false;
+			if ((u >> SHIFT) != v)
+				return YADSL_BIGINT_STATUS_INTEGER_OVERFLOW;
 		}
 		if (u <= (uintmax_t)INTMAX_MAX)
 			i = (intmax_t)u * sign;
@@ -351,7 +350,7 @@ digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 		db = i < nb ? b[i] : 0;
 		dc = da + db + carry;
 		carry = (dc & SIGN) >> SHIFT;
-		c[i] = dc & ~SIGN;
+		c[i] = dc & MASK;
 	}
 	return bigint;
 }
@@ -396,7 +395,7 @@ digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 		db = i < nb ? b[i] : 0;
 		dc = (da | SIGN) - db - borrow;
 		borrow = ~(dc & SIGN) >> SHIFT;
-		if (dc & ~SIGN != 0) m = i+1;
+		if (dc & MASK != 0) m = i+1;
 	}
 	assert(borrow == 0);
 	bigint = bigint_new(m);
@@ -408,7 +407,7 @@ digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 		db = i < nb ? b[i] : 0;
 		dc = (da | SIGN) - db - borrow;
 		borrow = ~(dc & SIGN) >> SHIFT;
-		c[i] = dc & ~SIGN;
+		c[i] = dc & MASK;
 	}
 	return bigint;
 }
@@ -653,24 +652,26 @@ _yadsl_bigint_from_string(
     const char* str,
     yadsl_BigIntHandle** bigint_ptr)
 {
-	const char* p;
+	const char* p, *strend;
 	char c;
-	size_t strsize, size, i, j, k;
-	bool isnegative;
-	digit* pin, dig;
+	intptr_t ndigits, nonzerodigits;
+	digit* digits, *digitsend, *d;
+	twodigits a, tenpow;
+	size_t strlen, i;
+	int sign;
 
 	/* detect signal and make str point to
 	 * the first decimal digit */
 	c = *str;
 	if (c == '-') {
 		c = *++str;
-		isnegative = true;
+		sign = -1;
 	} else if (c == '+') {
 		c = *++str;
-		isnegative = false;
+		sign = 1;
 	} else {
 		/* positive by default */
-		isnegative = false;
+		sign = 1;
 	}
 
 	/* check if string is "", "+" or "-" */
@@ -683,36 +684,116 @@ _yadsl_bigint_from_string(
 		c = *++str;
 
 	/* check if string only contains numeric chars
-	 * and make p point to null char */
-	p = str;
-	strsize = 0;
-	while (c != '\0') {
-		++strsize;
+	 * and make 'strend' point to null char */
+	for (p = str; c != '\0'; c = *++p) {
 		if (c < '0' || c > '9')
 			return YADSL_BIGINT_STATUS_STRING_FORMAT;
-		c = *++p;
 	}
+	strend = p;
+	assert(strend >= str && "no loopback");
+	strlen = strend - str;
 
-	/* size of digit array in base 10^DECSHIFT
-	 * is ceil(strsize / DECSHIFT) */
-	size = (strsize + DECSHIFT - 1) / DECSHIFT;
-	pin = malloc(size * sizeof(digit));
-	
-	if (size > 0 && pin == NULL)
+	/* #digits = ceil(log(<number>)/log(<base>))
+	 *        <= ceil(log(<maximum value for given length>)/log(<base>))
+	 *         = ceil(log(10^strlen - 1)/log(2^SHIFT))
+	 *        <= ceil(log(10^strlen)/log(2^SHIFT))
+	 *         = ceil((log(10)*strlen)/(log(2)*SHIFT))
+	 * 
+	 * Here we choose to approximate log(10)/log(2) by a fraction that
+	 * is slightly larger, p/q = 3322/1000 (Only 0.0022% of discrepancy)
+	 *
+	 *        <= ceil((p*strlen)/(q*SHIFT))
+	 *
+	 * We can simulate ceil for integers by adding the denominator - 1
+	 * to the numerator.
+	 *
+	 *        = floor((p*strlen + q*SHIFT - 1)/(q*SHIFT))
+	 *
+	 * We must ensure that strlen is not too large so that this calculation
+	 * doesn't overflow a intptr_t (whose maximum value is INTPTR_MAX)
+	 *
+	 *          p*strlen + q*SHIFT - 1 <= INTPTR_MAX
+	 *          p*strlen <= INTPTR_MAX - q*SHIFT - 1
+	 *          strlen <= (INTPTR_MAX - q*SHIFT - 1) / p
+	 *                 <= ceil((INTPTR_MAX - q*SHIFT - 1) / p)
+	 *                  = floor(INTPTR_MAX - q*SHIFT - 1 + p - 1) / p)
+	 */
+
+	if (strlen > (INTPTR_MAX - 1000*SHIFT - 1 + 3322 - 1) / 3322)
 		return YADSL_BIGINT_STATUS_MEMORY;
 
-	for (i = 0, j = 0; i < size; ++i) {
-		dig = 0;
-		for (k = 0; k < DECSHIFT && j < strsize; ++k, ++j) {
-			dig = dig * 10 + (digit)(*--p - '0');
+	ndigits = (3322*strlen + 1000*SHIFT - 1) / (1000*SHIFT);
+	assert(ndigits >= 0 && "number of digits is not negative");
+
+	/* allocate BigInt with n digits */
+	BigInt* bigint = bigint_new(ndigits * sign);
+	if (bigint == NULL)
+		return YADSL_BIGINT_STATUS_MEMORY;
+
+	/* Convert numbers that don't fit in a intmax_t in groups
+	 * of DECSHIFT digits so that 10^DECSHIFT (DECBASE) < 2^SHIFT (BASE)
+	 * and perform multiple precision techniques to combine
+	 * these numbers toghether (inspired by Knuth and Python long) */
+
+	digits = bigint->digits;
+	nonzerodigits = 0;
+
+	for (p = str; p < strend; ) {
+		/* Parse as many digits from the string as can fit in a digit */
+		c = *p++;
+		assert(c >= '0' && c <= '9' && "character is numeric");
+		a = (digit)(c - '0');
+		for (i = 1; i < DECSHIFT && p < strend; ++i) {
+			c = *p++;
+			assert(c >= '0' && c <= '9' && "character is numeric");
+			a = (twodigits)(a * 10 + (digit)(c - '0'));
+			assert(a < DECBASE);
 		}
-		pin[i] = dig;
+		/* Calculate the multiplier */
+		if (i == DECSHIFT) {
+			tenpow = DECBASE;
+		} else {
+			tenpow = 10;
+			for (; i > 1; --i)
+				tenpow *= 10;
+		}
+		/* Multiply number by a power of 10 and add current digit
+		 *
+		 * a + d[i] * tenpow is guaranteed to fit in two digits:
+		 * -> a <= DECBASE-1 (10^9 - 1)
+		 * -> d[i] <= BASE-1 (2^31 - 1)
+		 * -> tenpow <= DECBASE (10^9)
+		 * => a + d[i] * tenpow < 10^9 - 1 + (2^31 - 1) * 10^9
+		 * =>                   = 2^31 * 10^9 - 1 (but 10^9 fits in a digit)
+		 * =>                   < 2^31 * 2^31 - 1
+		 * =>                   < 2^62 - 1
+		 * =>                   < 2^63 - 1 (maximum value for two digits) */
+		digitsend = digits + nonzerodigits;
+		for (d = digits; d < digitsend; ++d) {
+			assert((digit)*d < BASE);
+			a += (twodigits)*d * tenpow;
+			*d = (digit)(a & MASK);
+			a >>= SHIFT;
+		}
+		/* Carry digit? */
+		if (a != 0) {
+			assert(a < BASE && "carry fits in a digit");
+			assert(nonzerodigits < ndigits && "did not surpass estimated number of digits");
+			assert(d >= digits && d < digits + ndigits && "d points to a valid digit");
+
+			*d = (digit)a;
+			nonzerodigits++;
+		}
 	}
+	assert(nonzerodigits <= ndigits);
 
-	free(pin);
+	/* Our estimate is always greater or equal to the actual needed
+	 * For some strings, we might have allocated too many digits */
+	if (nonzerodigits < ndigits)
+		bigint->size = nonzerodigits * sign;
 
-	/* TODO */
-	return YADSL_BIGINT_STATUS_STRING_FORMAT;
+	*bigint_ptr = (yadsl_BigIntHandle*)bigint;
+	return YADSL_BIGINT_STATUS_OK;
 }
 
 /**

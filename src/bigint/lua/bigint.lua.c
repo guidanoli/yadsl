@@ -17,6 +17,8 @@ typedef struct
 }
 bigint_udata;
 
+/* Module functions */
+
 static int bigint_new(lua_State* L)
 {
     yadsl_BigIntHandle* bigint = NULL;
@@ -62,22 +64,14 @@ static const struct luaL_Reg bigint_lib[] = {
     {NULL, NULL}  /* sentinel */
 };
 
+/* Auxiliary functions for working with BigInt */
+
 static bigint_udata* check_bigint_udata(lua_State* L, int arg)
 {
     bigint_udata* udata;
     udata = (bigint_udata*)luaL_checkudata(L, arg, BIGINT);
     assert(udata != NULL && "Userdata is valid");
     return udata;
-}
-
-static int bigint_gc(lua_State* L)
-{
-    bigint_udata* udata = check_bigint_udata(L, 1);
-    yadsl_BigIntHandle* bigint = udata->bigint;
-    if (bigint != NULL) {
-        udata->bigint = NULL;
-        yadsl_bigint_destroy(bigint);
-    }
 }
 
 static yadsl_BigIntHandle* check_bigint(lua_State* L, int arg)
@@ -90,16 +84,7 @@ static yadsl_BigIntHandle* check_bigint(lua_State* L, int arg)
     return bigint;
 }
 
-static int bigint_tointeger(lua_State* L)
-{
-    yadsl_BigIntHandle* bigint = check_bigint(L, 1);
-    intmax_t integer;
-    yadsl_BigIntStatus status = yadsl_bigint_to_int(bigint, &integer);
-    if (status != YADSL_BIGINT_STATUS_OK || integer < LUA_MININTEGER || integer > LUA_MAXINTEGER)
-        return luaL_error(L, "integer overflow");
-    lua_pushinteger(L, (lua_Integer)integer);
-    return 1;
-}
+/* BigInt metamethods */
 
 static int bigint_tostring(lua_State* L)
 {
@@ -112,11 +97,41 @@ static int bigint_tostring(lua_State* L)
     return 1;
 }
 
-static const struct luaL_Reg bigint_methods[] = {
-    {"to_integer", bigint_tointeger},
-    {"to_string", bigint_tostring},
+static int bigint_gc(lua_State* L)
+{
+    bigint_udata* udata = check_bigint_udata(L, 1);
+    yadsl_BigIntHandle* bigint = udata->bigint;
+    if (bigint != NULL) {
+        udata->bigint = NULL;
+        yadsl_bigint_destroy(bigint);
+    }
+}
+
+static const struct luaL_Reg bigint_metamethods[] = {
+    {"__tostring", bigint_tostring},
+    {"__gc", bigint_gc},
     {NULL, NULL}  /* sentinel */
 };
+
+/* BigInt methods */
+
+static int bigint_tointeger(lua_State* L)
+{
+    yadsl_BigIntHandle* bigint = check_bigint(L, 1);
+    intmax_t integer;
+    yadsl_BigIntStatus status = yadsl_bigint_to_int(bigint, &integer);
+    if (status != YADSL_BIGINT_STATUS_OK || integer < LUA_MININTEGER || integer > LUA_MAXINTEGER)
+        return luaL_error(L, "integer overflow");
+    lua_pushinteger(L, (lua_Integer)integer);
+    return 1;
+}
+
+static const struct luaL_Reg bigint_methods[] = {
+    {"to_integer", bigint_tointeger},
+    {NULL, NULL}  /* sentinel */
+};
+
+/* Entry point */
 
 YADSL_EXPORT int luaopen_bigint(lua_State* L)
 {
@@ -128,12 +143,10 @@ YADSL_EXPORT int luaopen_bigint(lua_State* L)
     lua_setfield(L, -2, "memdb");
 
     /* register BigInt metatable */
-    luaL_newmetatable(L, BIGINT);
-    lua_pushcfunction(L, bigint_gc);
-    lua_setfield(L, -2, "__gc");
+    luaL_newlib(L, bigint_metamethods);
     luaL_newlib(L, bigint_methods);
     lua_setfield(L, -2, "__index");
-    lua_pop(L, 1);
+    lua_setfield(L, LUA_REGISTRYINDEX, BIGINT);
 
     return 1;
 }

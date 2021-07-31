@@ -15,7 +15,6 @@ typedef enum
     YADSL_BIGINT_STATUS_INVALID_HANDLE, /**< Handle is invalid */
     YADSL_BIGINT_STATUS_INVALID_SIZE, /**< The 'size' field is invalid */
     YADSL_BIGINT_STATUS_INVALID_DIGITS, /**< The 'digits' field is invalid */
-    YADSL_BIGINT_STATUS_LEADING_ZEROS, /**< There are excessive leading zeros */
     YADSL_BIGINT_STATUS_INTEGER_OVERFLOW, /**< BigInt doesn't fit in fixed-size integer */
     YADSL_BIGINT_STATUS_STRING_FORMAT, /**< String does not follow format */
     YADSL_BIGINT_STATUS_MEMORY, /**< Could not allocate enough memory space */

@@ -49,9 +49,6 @@ static void bigintcheck()
 	case YADSL_BIGINT_STATUS_INVALID_DIGITS:
 		yadsl_tester_throwf("CHECK: Invalid digits");
 		break;
-	case YADSL_BIGINT_STATUS_LEADING_ZEROS:
-		yadsl_tester_throwf("CHECK: Leading zeros");
-		break;
 	default:
 		yadsl_tester_throwf("CHECK: Unknown status code '%d'", status);
 	}
