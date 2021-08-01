@@ -49,7 +49,7 @@ static void lt_pushErrorString(lua_State* L, int op1, int op2, const char* opstr
 	luaL_addstring(&b, opstr);
 	luaL_addchar(&b, ' ');
 	lt_addvalue(L, &b, op2);
-	luaL_addstring(&b, "' failed");
+	luaL_addstring(&b, "` failed");
 	if (lua_isstring(L, errmsg)) {
 		luaL_addstring(&b, ": ");
 		lua_pushvalue(L, errmsg);
@@ -227,7 +227,7 @@ static int lt_assertSubstring(lua_State* L)
 		lua_pushinteger(L, ptr - haystack + 1);
 		return 1;
 	}
-	lt_pushErrorString(L, 1, 2, "is not a substring of", 3);
+	lt_pushErrorString(L, 1, 2, "is a substring of", 3);
 	return lua_error(L);
 }
 
@@ -242,7 +242,7 @@ static int lt_assertNotSubstring(lua_State* L)
 	{
 		return 0;
 	}
-	lt_pushErrorString(L, 1, 2, "is a substring of", 3);
+	lt_pushErrorString(L, 1, 2, "is not a substring of", 3);
 	return lua_error(L);
 }
 
@@ -286,7 +286,7 @@ static luaL_Reg ltlib[] = {
 	{ "assertValue", lt_assertValue },
 	{ "assertNotValue", lt_assertNotValue },
 	{ "assertSubstring", lt_assertSubstring },
-	{ "assertNotSubstring", lt_assertSubstring },
+	{ "assertNotSubstring", lt_assertNotSubstring },
 	{ "assertRaises", lt_assertRaises },
 	{ "udata", lt_udata },
 	{ NULL, NULL },

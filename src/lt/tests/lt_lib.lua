@@ -217,7 +217,8 @@ function t:testRaises()
 	for i = 1, 10 do
 		called = false
 		if i % 2 ~= 1 then
-			lt.assertRaises(assertIsOdd, i)
+			local errobj = lt.assertRaises(assertIsOdd, i)
+			assert(errobj:find("not odd"))
 		else
 			assert(not pcall(lt.assertRaises, assertIsOdd, i))
 		end
@@ -225,6 +226,47 @@ function t:testRaises()
 	end
 	local ok, err = pcall(lt.assertRaises, 23)
 	assert(not ok and err:find('function'))
+end
+
+function t:testSubstringOrNot()
+	local needles = {"a", "b", "c", "x", "wxyz", "ab", "abc", "bc", "bcx", "xbc"}
+	local haystacks = {"", "b", "abc"}
+	-- assertSubstring
+	self:compareBinOp{
+		assertion = lt.assertSubstring,
+		predicate = function(needle, haystack)
+			return string.find(haystack, needle) ~= nil
+		end,
+		arguments = {
+			needles,
+			haystacks,
+		},
+	}
+	local testargerror = function(...)
+		local ok, err = pcall(lt.assertSubstring, ...)
+		assert(not ok and err:find('string expected'))
+	end
+	testargerror(nil, nil)
+	testargerror('x', nil)
+	testargerror(nil, 'x')
+	-- assertNotSubstring
+	self:compareBinOp{
+		assertion = lt.assertNotSubstring,
+		predicate = function(needle, haystack)
+			return string.find(haystack, needle) == nil
+		end,
+		arguments = {
+			needles,
+			haystacks,
+		},
+	}
+	testargerror = function(...)
+		local ok, err = pcall(lt.assertNotSubstring, ...)
+		assert(not ok and err:find('string expected'))
+	end
+	testargerror(nil, nil)
+	testargerror('x', nil)
+	testargerror(nil, 'x')
 end
 
 function t:testUdata()
@@ -255,7 +297,9 @@ function t:compareBinOp(t)
 			if pred(v1, v2) then
 				func(v1, v2)
 			else
-				assert(not pcall(func, v1, v2), "expected error")
+				assert(not pcall(func, v1, v2),
+					"expected error when calling function with " ..
+					tostring(v1) .. " and " .. tostring(v2))
 			end
 		end
 	end
