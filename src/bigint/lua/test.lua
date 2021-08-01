@@ -26,11 +26,11 @@ end
 
 function t:testString()
 	function teststr(str, estr)
-		lt.assertIsOfType(str, 'string')
+		lt.assertType(str, 'string')
 		if estr == nil then
 			estr = str
 		else
-			lt.assertIsOfType(estr, 'string')
+			lt.assertType(estr, 'string')
 		end
 		local big = bigint.BigInt(str)
 		lt.assertEqual(tostring(big), estr)
@@ -60,7 +60,25 @@ end
 function t:testIntegerOverflow()
 	local str = limits.INTMAX_MAX .. "0"
 	local big = bigint.BigInt(str)
-	lt.assertRaisesRegex("integer overflow", big.to_integer, big)
+	lt.assertEqual("integer overflow", lt.assertRaises(big.to_integer, big))
+end
+
+function t:testInvalidString()
+	local teststr = function(str)
+		lt.assertSubstring("string is ill-formatted",
+			lt.assertRaises(bigint.BigInt, str))
+	end
+	teststr("")
+	teststr("+")
+	teststr("-")
+	teststr("/")
+	teststr(":")
+	teststr("0:")
+	teststr("0/")
+	teststr("1:")
+	teststr("1/")
+	teststr("01:")
+	teststr("01/")
 end
 
 function t:testStringMetamorphic()

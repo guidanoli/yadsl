@@ -6,9 +6,9 @@ local t = { size = 1, afterAll = memdb.afterAll }
 function t:testLogChannels()
 	local channels = memdb.get_log_channel_list()
 	for _, channel in ipairs(channels) do
-		lt.assertIsOfType(channel, "string");
+		lt.assertType(channel, "string");
 		local val = memdb.get_log_channel(channel)
-		lt.assertIsOfType(val, "boolean");
+		lt.assertType(val, "boolean");
 		memdb.set_log_channel(channel, not val)
 		lt.assertEqual(memdb.get_log_channel(channel), not val)
 		memdb.set_log_channel(channel, val)

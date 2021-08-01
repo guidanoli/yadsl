@@ -102,9 +102,9 @@ function t:testMetamorphic()
 	for i, v in ipairs(t) do
 		local exists = tree:insert(v)
 		if exists then
-			lt.assertIsIn(v, added)
+			lt.assertValue(v, added)
 		else
-			lt.assertIsNotIn(v, added)
+			lt.assertNotValue(v, added)
 			table.insert(added, v)
 			added_inv[v] = true
 		end
@@ -183,9 +183,9 @@ function t:testComparisonError()
 		__le = compare_cb,
 		__lt = compare_cb,
 	})
-	lt.assertRaisesRegex(msg, tree.insert, tree, ucomp)
-	lt.assertRaisesRegex(msg, tree.search, tree, ucomp)
-	lt.assertRaisesRegex(msg, tree.remove, tree, ucomp)
+	lt.assertSubstring(msg, lt.assertRaises(tree.insert, tree, ucomp))
+	lt.assertSubstring(msg, lt.assertRaises(tree.search, tree, ucomp))
+	lt.assertSubstring(msg, lt.assertRaises(tree.remove, tree, ucomp))
 end
 
 function t:testComparisonErrorNil()
@@ -198,9 +198,9 @@ function t:testComparisonErrorNil()
 		__le = compare_cb,
 		__lt = compare_cb,
 	})
-	lt.assertRaisesRegex(msg, tree.insert, tree, ucomp)
-	lt.assertRaisesRegex(msg, tree.search, tree, ucomp)
-	lt.assertRaisesRegex(msg, tree.remove, tree, ucomp)
+	lt.assertSubstring(msg, lt.assertRaises(tree.insert, tree, ucomp))
+	lt.assertSubstring(msg, lt.assertRaises(tree.search, tree, ucomp))
+	lt.assertSubstring(msg, lt.assertRaises(tree.remove, tree, ucomp))
 end
 
 function t:testTraversalError()
@@ -213,7 +213,7 @@ function t:testTraversalError()
 	end
 	for _, order in ipairs{'pre', 'in', 'post'} do
 		visited = {}
-		lt.assertRaisesRegex(msg, tree.traverse, tree, traverse_cb, order)
+		lt.assertSubstring(msg, lt.assertRaises(tree.traverse, tree, traverse_cb, order))
 		lt.assertEqual(#visited, 1)
 	end
 end
@@ -228,7 +228,7 @@ function t:testTraversalErrorNil()
 	end
 	for _, order in ipairs{'pre', 'in', 'post'} do
 		visited = {}
-		lt.assertRaisesRegex(msg, tree.traverse, tree, traverse_cb, order)
+		lt.assertSubstring(msg, lt.assertRaises(tree.traverse, tree, traverse_cb, order))
 		lt.assertEqual(#visited, 1)
 	end
 end
@@ -250,13 +250,13 @@ function t:testLock()
 	})
 	local msg = 'locked'
 	lt.assertEqual(compared, 0)
-	lt.assertRaisesRegex(msg, tree.insert, tree, trigger)
+	lt.assertSubstring(msg, lt.assertRaises(tree.insert, tree, trigger))
 	lt.assertEqual(compared, 1)
-	lt.assertRaisesRegex(msg, tree.search, tree, trigger)
+	lt.assertSubstring(msg, lt.assertRaises(tree.search, tree, trigger))
 	lt.assertEqual(compared, 2)
-	lt.assertRaisesRegex(msg, tree.remove, tree, trigger)
+	lt.assertSubstring(msg, lt.assertRaises(tree.remove, tree, trigger))
 	lt.assertEqual(compared, 3)
-	lt.assertRaisesRegex(msg, tree.traverse, tree, compare_cb)
+	lt.assertSubstring(msg, lt.assertRaises(tree.traverse, tree, compare_cb))
 	lt.assertEqual(compared, 4)
 end
 

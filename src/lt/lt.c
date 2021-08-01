@@ -4,24 +4,58 @@
 
 #include "lauxlib.h"
 
-#define STRFIND "LT_STRING_FIND"
-
-static void lt_pushErrorString(lua_State* L, int op1, int op2, const char* opstr)
+/* Add value at index val to the buffer B */
+static void lt_addvalue(lua_State* L, luaL_Buffer* B, int val)
 {
-	int n = 0;
-	lua_pushstring(L, "assertion `"); n++;
-	luaL_tolstring(L, op1, NULL); n++;
-	lua_pushstring(L, " "); n++;
-	lua_pushstring(L, opstr); n++;
-	lua_pushstring(L, " "); n++;
-	luaL_tolstring(L, op2, NULL); n++;
-	lua_pushstring(L, "` failed"); n++;
-	if (lua_isstring(L, 3))
+	switch (lua_type(L, val))
 	{
-		lua_pushstring(L, ": "); n++;
-		lua_pushvalue(L, 3); n++;
+		case LUA_TNIL:
+		case LUA_TNUMBER:
+		case LUA_TBOOLEAN:
+			luaL_tolstring(L, val, NULL);
+			luaL_addvalue(B);
+			break;
+		case LUA_TSTRING:
+			luaL_addchar(B, '"');
+			lua_pushvalue(L, val);
+			luaL_addvalue(B);
+			luaL_addchar(B, '"');
+			break;
+		case LUA_TTABLE:
+		case LUA_TFUNCTION:
+		case LUA_TUSERDATA:
+		case LUA_TTHREAD:
+		case LUA_TLIGHTUSERDATA:
+			luaL_addchar(B, '<');
+			luaL_tolstring(L, val, NULL);
+			luaL_addvalue(B);
+			luaL_addchar(B, '>');
+			break;
+		default:
+			assert(0 && "Unknown Lua type");
+			luaL_addchar(B, '?');
 	}
-	lua_concat(L, n);
+}
+
+/* Push error message containing values at indices op1 and op2 with the string opstr in
+ * between + an optional error message at index errmsg */
+static void lt_pushErrorString(lua_State* L, int op1, int op2, const char* opstr, int errmsg)
+{
+	luaL_Buffer b;
+	luaL_buffinit(L, &b);
+	luaL_addstring(&b, "assertion `");
+	lt_addvalue(L, &b, op1);
+	luaL_addchar(&b, ' ');
+	luaL_addstring(&b, opstr);
+	luaL_addchar(&b, ' ');
+	lt_addvalue(L, &b, op2);
+	luaL_addstring(&b, "' failed");
+	if (lua_isstring(L, errmsg)) {
+		luaL_addstring(&b, ": ");
+		lua_pushvalue(L, errmsg);
+		luaL_addvalue(&b);
+	}
+	luaL_pushresult(&b);
 }
 
 static int lt_assertBinop(lua_State* L, int op, bool invert, const char* opstr)
@@ -29,7 +63,7 @@ static int lt_assertBinop(lua_State* L, int op, bool invert, const char* opstr)
 	lua_settop(L, 3);
 	if (lua_compare(L, 1, 2, op) == invert)
 	{
-		lt_pushErrorString(L, 1, 2, opstr);
+		lt_pushErrorString(L, 1, 2, opstr, 3);
 		return lua_error(L);
 	}
 	else
@@ -43,7 +77,7 @@ static int lt_assertRawOp(lua_State* L, bool equal, const char* opstr)
 	lua_settop(L, 3);
 	if (lua_rawequal(L, 1, 2) != equal)
 	{
-		lt_pushErrorString(L, 1, 2, opstr);
+		lt_pushErrorString(L, 1, 2, opstr, 3);
 		return lua_error(L);
 	}
 	else
@@ -116,7 +150,7 @@ static int lt_assertFalse(lua_State* L)
 	return lt_assertEqual(L);
 }
 
-static int lt_assertIsOfType(lua_State* L)
+static int lt_assertType(lua_State* L)
 {
 	lua_settop(L, 3);                        /* obj etype msg */
 	lua_pushstring(L, luaL_typename(L, 1));  /* obj etype msg otype */
@@ -124,7 +158,7 @@ static int lt_assertIsOfType(lua_State* L)
 	return lt_assertEqual(L);
 }
 
-static int lt_assertIsNotOfType(lua_State* L)
+static int lt_assertNotType(lua_State* L)
 {
 	lua_settop(L, 3);                        /* obj etype msg */
 	lua_pushstring(L, luaL_typename(L, 1));  /* obj etype msg otype */
@@ -142,76 +176,85 @@ static int lt_assertRawNotEqual(lua_State* L)
 	return lt_assertRawOp(L, false, "~= (raw)");
 }
 
-static int lt_assertIsIn(lua_State* L)
+/* Asserts element is in table and returns key
+ * Usage: lt.assertValue(obj, tbl : table [, msg : string])
+ * Returns: key, such that tbl[key] = obj */
+static int lt_assertValue(lua_State* L)
 {
-	lua_settop(L, 3);
-	luaL_argexpected(L, lua_istable(L, 2), 2, "table");
-	lua_pushnil(L);
-	while (lua_next(L, 2) != 0)
+	luaL_checktype(L, 2, LUA_TTABLE);  /* obj tbl [...] */
+	lua_settop(L, 3);                  /* obj tbl msg */
+	lua_pushnil(L);                    /* obj tbl msg nil */
+	while (lua_next(L, 2) != 0)        /* obj tbl msg key value */
 	{
 		if (lua_compare(L, 1, -1, LUA_OPEQ))
 		{
-			return 0;
+			lua_pop(L, 1);             /* obj tbl msg key */
+			return 1;
 		}
-		lua_pop(L, 1);
+		lua_pop(L, 1);                 /* obj tbl msg key */
 	}
-	lt_pushErrorString(L, 1, 2, "is in");
+	lt_pushErrorString(L, 1, 2, "is in", 3);
 	return lua_error(L);
 }
 
-static int lt_assertIsNotIn(lua_State* L)
+static int lt_assertNotValue(lua_State* L)
 {
-	lua_settop(L, 3);
-	luaL_argexpected(L, lua_istable(L, 2), 2, "table");
-	lua_pushnil(L);
-	while (lua_next(L, 2) != 0)
+	luaL_checktype(L, 2, LUA_TTABLE);  /* obj tbl [...] */
+	lua_settop(L, 3);                  /* obj tbl msg */
+	lua_pushnil(L);                    /* obj tbl msg nil */
+	while (lua_next(L, 2) != 0)        /* obj tbl msg key value */
 	{
 		if (lua_compare(L, 1, -1, LUA_OPEQ))
 		{
-			lt_pushErrorString(L, 1, 2, "is not in");
+			lt_pushErrorString(L, 1, 2, "is not in", 3);
 			return lua_error(L);
 		}
-		lua_pop(L, 1);
+		lua_pop(L, 1);                 /* obj tbl msg key */
 	}
 	return 0;
 }
 
-static int lt_assertRaises(lua_State* L)
+/* Asserts string (haystack) has substring (needle)
+ * Usage: lt.assertSubstring(needle : string, haystack : string [, msg : string])
+ * Returns index where substring was found */
+static int lt_assertSubstring(lua_State* L)
 {
-	luaL_argcheck(L, lua_gettop(L) >= 1, 1, "expected function");
-	luaL_argexpected(L, lua_isfunction(L, 1), 1, "function");
-	if (lua_pcall(L, lua_gettop(L) - 1, 0, 0))
+	const char* needle, * haystack, * ptr;
+	needle = luaL_checkstring(L, 1);
+	haystack = luaL_checkstring(L, 2);
+	if ((ptr = strstr(haystack, needle)) != NULL)
 	{
-		return 0;
+		lua_pushinteger(L, ptr - haystack + 1);
+		return 1;
 	}
-	else
-	{
-		return luaL_error(L, "expected error");
-	}
+	lt_pushErrorString(L, 1, 2, "is not a substring of", 3);
+	return lua_error(L);
 }
 
-static int lt_assertRaisesRegex(lua_State* L)
+/* Asserts string (haystack) does not have substring (needle)
+ * Usage: lt.assertNotSubstring(needle : string, haystack : string [, msg : string]) */
+static int lt_assertNotSubstring(lua_State* L)
 {
-	luaL_argcheck(L, lua_gettop(L) >= 2, 2, "expected string and function");
-	luaL_argexpected(L, lua_isstring(L, 1), 1, "string");
-	luaL_argexpected(L, lua_isfunction(L, 2), 2, "function");
-	if (lua_pcall(L, lua_gettop(L) - 2, 0, 0))
+	const char* needle, * haystack, * ptr;
+	needle = luaL_checkstring(L, 1);
+	haystack = luaL_checkstring(L, 2);
+	if ((ptr = strstr(haystack, needle)) == NULL)
 	{
-		lua_getfield(L, LUA_REGISTRYINDEX, STRFIND); /* regex error string.find */
-		lua_insert(L, 1);                            /* string.find regex error */
-		lua_insert(L, 2);                            /* string.find error regex */
-
-		if (lua_pcall(L, 2, 1, 0))
-		{
-			return lua_error(L);
-		}
-
-		if (lua_isnil(L, -1))
-		{
-			return luaL_error(L, "regex doesn't match");
-		}
-
 		return 0;
+	}
+	lt_pushErrorString(L, 1, 2, "is a substring of", 3);
+	return lua_error(L);
+}
+
+/* Asserts function call raises an error
+ * Usage: lt.assertRaises(f : function, ...)
+ * Returns: error object */
+static int lt_assertRaises(lua_State* L)
+{
+	luaL_checktype(L, 1, LUA_TFUNCTION);
+	if (lua_pcall(L, lua_gettop(L) - 1, 0, 0))
+	{
+		return 1;
 	}
 	else
 	{
@@ -238,25 +281,19 @@ static luaL_Reg ltlib[] = {
 	{ "assertRawNotEqual", lt_assertRawNotEqual },
 	{ "assertTrue", lt_assertTrue },
 	{ "assertFalse", lt_assertFalse },
-	{ "assertIsOfType", lt_assertIsOfType },
-	{ "assertIsNotOfType", lt_assertIsNotOfType },
-	{ "assertIsIn", lt_assertIsIn },
-	{ "assertIsNotIn", lt_assertIsNotIn },
+	{ "assertType", lt_assertType },
+	{ "assertNotType", lt_assertNotType },
+	{ "assertValue", lt_assertValue },
+	{ "assertNotValue", lt_assertNotValue },
+	{ "assertSubstring", lt_assertSubstring },
+	{ "assertNotSubstring", lt_assertSubstring },
 	{ "assertRaises", lt_assertRaises },
-	{ "assertRaisesRegex", lt_assertRaisesRegex },
 	{ "udata", lt_udata },
 	{ NULL, NULL },
 };
 
 int luaopen_lt(lua_State* L)
 {
-	lua_getglobal(L, "string");
-	lua_getfield(L, -1, "find");
-	if (!lua_isfunction(L, -1))
-		return luaL_error(L, "string.find is missing");
-	lua_setfield(L, LUA_REGISTRYINDEX, STRFIND);
-	lua_pop(L, 1);
-
 	luaL_newlib(L, ltlib);
 	return 1;
 }

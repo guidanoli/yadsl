@@ -131,7 +131,7 @@ end
 
 function t:testIsOfType()
 	self:compareBinOp{
-		assertion = lt.assertIsOfType,
+		assertion = lt.assertType,
 		predicate = function(a, b)
 			return type(a) == b
 		end,
@@ -144,7 +144,7 @@ end
 
 function t:testIsNotOfType()
 	self:compareBinOp{
-		assertion = lt.assertIsNotOfType,
+		assertion = lt.assertNotType,
 		predicate = function(a, b)
 			return type(a) ~= b
 		end,
@@ -162,7 +162,7 @@ function t:testIsIn()
 		tables[i] = self:getSequence(i-1)
 	end
 	self:compareBinOp{
-		assertion = lt.assertIsIn,
+		assertion = lt.assertValue,
 		predicate = function(a, b)
 			for k, v in pairs(b) do
 				if v == a then
@@ -176,7 +176,7 @@ function t:testIsIn()
 			tables,
 		},
 	}
-	local ok, err = pcall(lt.assertIsIn, 2, 5)
+	local ok, err = pcall(lt.assertValue, 2, 5)
 	assert(not ok and err:find('table'))
 end
 
@@ -187,7 +187,7 @@ function t:testIsNotIn()
 		tables[i] = self:getSequence(i-1)
 	end
 	self:compareBinOp{
-		assertion = lt.assertIsNotIn,
+		assertion = lt.assertNotValue,
 		predicate = function(a, b)
 			for k, v in pairs(b) do
 				if v == a then
@@ -201,7 +201,7 @@ function t:testIsNotIn()
 			tables,
 		},
 	}
-	local ok, err = pcall(lt.assertIsNotIn, 2, 5)
+	local ok, err = pcall(lt.assertNotValue, 2, 5)
 	assert(not ok and err:find('table'))
 end
 
@@ -225,30 +225,6 @@ function t:testRaises()
 	end
 	local ok, err = pcall(lt.assertRaises, 23)
 	assert(not ok and err:find('function'))
-end
-
-function t:testRaisesRegex()
-	local called
-	local assertIsOdd = function(number)
-		called = true
-		if number % 2 ~= 1 then
-			error(number .. " is not odd")
-		end
-	end
-
-	for i = 1, 10 do
-		called = false
-		if i % 2 ~= 1 then
-			lt.assertRaisesRegex("is not odd", assertIsOdd, i)
-		else
-			assert(not pcall(lt.assertRaisesRegex, "", assertIsOdd, i))
-		end
-		assert(called)
-	end
-	local ok, err = pcall(lt.assertRaisesRegex, 'algo', 23)
-	assert(not ok and err:find('function'))
-	local ok, err = pcall(lt.assertRaisesRegex, nil, function() error('algo') end)
-	assert(not ok and err:find('string'))
 end
 
 function t:testUdata()
