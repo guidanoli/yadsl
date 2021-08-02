@@ -102,4 +102,57 @@ function t:testStringMetamorphic()
 	end
 end
 
+-- Make BigInt from a repeated n times
+-- 'sign' can be either '' (positive by default), '+' (positive) or '-' (negative)
+function t:makeBig(n, a, sign)
+	sign = sign or '+'
+	return bigint.BigInt(sign .. string.rep(a, n))
+end
+
+function t:testAdd()
+	-- Tests a + b = c
+	-- a, b, and c are strings repeated n times
+	-- asign, bsign and csign indicate the sign of these numbers
+	local testadd = function(n, a, b, c, asign, bsign, csign)
+		lt.assertEqual(self:makeBig(n, a, asign) +
+		               self:makeBig(n, b, bsign),
+					   self:makeBig(n, c, csign))
+	end
+
+	-- na = 0 && nb = 0
+	testadd(1, 0, 0, 0)
+
+	-- na /= 0 && nb = 0
+	testadd(5, 1, 0, 1) -- one digit
+	testadd(20, 1, 0, 1)
+
+	-- na = 0 && nb /= 0
+	testadd(5, 0, 1, 1) -- one digit
+	testadd(20, 0, 1, 1)
+
+	-- na > 0 && nb > 0
+	testadd(5, 2, 1, 3) -- |a| > |b|, one digit
+	testadd(5, 1, 2, 3) -- |a| < |b|, one digit
+	testadd(20, 2, 1, 3) -- |a| > |b|
+	testadd(20, 1, 2, 3) -- |a| < |b|
+
+	-- na < 0 && nb < 0
+	testadd(5, 2, 1, 3, '-', '-', '-') -- |a| > |b|, one digit
+	testadd(5, 1, 2, 3, '-', '-', '-') -- |a| < |b|, one digit
+	testadd(20, 2, 1, 3, '-', '-', '-') -- |a| > |b|
+	testadd(20, 1, 2, 3, '-', '-', '-') -- |a| < |b|
+
+	-- na > 0 && nb < 0
+	testadd(5, 2, 1, 1, '+', '-', '+') -- |a| > |b|, one digit
+	testadd(5, 1, 2, 1, '+', '-', '-') -- |a| < |b|, one digit
+	testadd(20, 2, 1, 1, '+', '-', '+') -- |a| > |b|
+	testadd(20, 1, 2, 1, '+', '-', '-') -- |a| < |b|
+
+	-- na < 0 && nb > 0
+	testadd(5, 2, 1, 1, '-', '+', '-') -- |a| > |b|, one digit
+	testadd(5, 1, 2, 1, '-', '+', '+') -- |a| < |b|, one digit
+	testadd(20, 2, 1, 1, '-', '+', '-') -- |a| > |b|
+	testadd(20, 1, 2, 1, '-', '+', '+') -- |a| < |b|
+end
+
 return t

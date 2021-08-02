@@ -55,12 +55,13 @@ BigInt;
 */
 static sdigit getdigitvalue(BigInt const* bigint)
 {
-	intptr_t size = bigint->size;
-	assert(-1 <= size && size <= 1 && "integer has 1 digit");
-	switch (size) {
+	switch (bigint->size) {
+		case 0: return 0;
 		case 1: return (sdigit)bigint->digits[0];
 		case -1: return -(sdigit)bigint->digits[0];
-		default: return 0;
+		default:
+			assert(0 && "integer has at most 1 digit");
+			return -1;
 	}
 }
 
@@ -175,6 +176,8 @@ bigint_new(intptr_t size)
 	if (bigint != NULL) bigint->size = size;
 	return bigint;
 }
+
+#define bigint_zero() (bigint_new(0))
 
 static int
 getndigits(intmax_t i)
@@ -327,7 +330,7 @@ yadsl_bigint_opposite(
 }
 
 static BigInt*
-digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
+_digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
 	digit* c, da, db, dc, carry = 0;
@@ -355,6 +358,16 @@ digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 	return bigint;
 }
 
+/* add two strictly positive numbers */
+static BigInt*
+digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
+{
+	assert(na > 0 && "a is positive");
+	assert(nb > 0 && "b is positive");
+	return _digitadd(a, nb, b, nb);
+}
+
+/* add two strictly positive numbers and return the opposite of the result */
 static BigInt*
 digitaddneg(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
@@ -383,40 +396,56 @@ digitcmp(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 	}
 }
 
-/* digitcmp(a, na, b, nb) >= 0 */
 static BigInt*
-digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
+_digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
-	digit* c, da, db, dc, borrow = 0;
+	digit da, db, dc, *tmp, res, borrow = 0;
 	intptr_t n = na > nb ? na : nb, m = 0;
+	tmp = (digit*)calloc(n, sizeof(digit));
+	if (tmp == NULL) return NULL;
 	for (intptr_t i = 0; i < n; ++i) {
 		da = i < na ? a[i] : 0;
 		db = i < nb ? b[i] : 0;
 		dc = (da | SIGN) - db - borrow;
 		borrow = ~(dc & SIGN) >> SHIFT;
-		if (dc & MASK != 0) m = i+1;
+		res = dc & MASK;
+		if (res != 0) {
+			m = i + 1;
+			tmp[i] = res;
+		}
 	}
 	assert(borrow == 0);
 	bigint = bigint_new(m);
-	if (bigint == NULL) return NULL;
-	c = bigint->digits;
-	borrow = 0;
-	for (intptr_t i = 0; i < m; ++i) {
-		da = i < na ? a[i] : 0;
-		db = i < nb ? b[i] : 0;
-		dc = (da | SIGN) - db - borrow;
-		borrow = ~(dc & SIGN) >> SHIFT;
-		c[i] = dc & MASK;
+	if (bigint == NULL) {
+		free(tmp);
+		return NULL;
 	}
+	memcpy(bigint->digits, tmp, m*sizeof(digit));
+	free(tmp);
 	return bigint;
 }
 
+/* subtract two strictly positive numbers,
+ * where a is strictly larger than b */
+static BigInt*
+digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
+{
+	assert(na >	0 && "a is positive");
+	assert(nb > 0 && "b is positive");
+	assert(digitcmp(a, na, b, nb) > 0);
+	return _digitstrictsub(a, na, b, nb);
+}
+
+/* subtract two strictly positive numbers */
 static BigInt*
 digitsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
-	if (digitcmp(a, na, b, nb) >= 0)
+	int cmp = digitcmp(a, na, b, nb);
+	if (cmp > 0)
 		return digitstrictsub(a, na, b, nb);
+	else if (cmp == 0)
+		return bigint_zero();
 	else {
 		BigInt* bigint = digitstrictsub(b, nb, a, na);
 		if (bigint != NULL) bigint->size *= -1;
