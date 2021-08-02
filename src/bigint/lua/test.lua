@@ -155,4 +155,71 @@ function t:testAdd()
 	testadd(20, 1, 2, 1, '-', '+', '+') -- |a| < |b|
 end
 
+function t:testSubtract()
+	-- Tests a - b = c
+	-- a, b, and c are strings repeated n times
+	-- asign, bsign and csign indicate the sign of these numbers
+	local testsubtract = function(n, a, b, c, asign, bsign, csign)
+		lt.assertEqual(self:makeBig(n, a, asign) -
+		               self:makeBig(n, b, bsign),
+					   self:makeBig(n, c, csign))
+	end
+
+	-- na = 0 && nb = 0
+	testsubtract(1, 0, 0, 0)
+
+	-- na /= 0 && nb = 0
+	testsubtract(5, 1, 0, 1) -- one digit
+	testsubtract(20, 1, 0, 1)
+
+	-- na = 0 && nb /= 0
+	testsubtract(5, 0, 1, 1, '+', '+', '-') -- one digit
+	testsubtract(20, 0, 1, 1, '+', '+', '-')
+
+	-- na > 0 && nb > 0
+	testsubtract(5, 3, 1, 2) -- |a| > |b|, one digit
+	testsubtract(5, 1, 3, 2, '+', '+', '-') -- |a| < |b|, one digit
+	testsubtract(20, 3, 1, 2) -- |a| > |b|
+	testsubtract(20, 1, 3, 2, '+', '+', '-') -- |a| < |b|
+
+	-- na < 0 && nb < 0
+	testsubtract(5, 3, 1, 2, '-', '-', '-') -- |a| > |b|, one digit
+	testsubtract(5, 1, 3, 2, '-', '-', '+') -- |a| < |b|, one digit
+	testsubtract(20, 3, 1, 2, '-', '-', '-') -- |a| > |b|
+	testsubtract(20, 1, 3, 2, '-', '-', '+') -- |a| < |b|
+
+	-- na > 0 && nb < 0
+	testsubtract(5, 2, 1, 3, '+', '-', '+') -- |a| > |b|, one digit
+	testsubtract(5, 1, 2, 3, '+', '-', '+') -- |a| < |b|, one digit
+	testsubtract(20, 2, 1, 3, '+', '-', '+') -- |a| > |b|
+	testsubtract(20, 1, 2, 3, '+', '-', '+') -- |a| < |b|
+
+	-- na < 0 && nb > 0
+	testsubtract(5, 2, 1, 3, '-', '+', '-') -- |a| > |b|, one digit
+	testsubtract(5, 1, 2, 3, '-', '+', '-') -- |a| < |b|, one digit
+	testsubtract(20, 2, 1, 3, '-', '+', '-') -- |a| > |b|
+	testsubtract(20, 1, 2, 3, '-', '+', '-') -- |a| < |b|
+end
+
+function t:testOpposite()
+	-- Test -a = a
+	local testopposite = function(n, a, positive)
+		local asign = positive and '+' or '-'
+		local bsign = positive and '-' or '+'
+		lt.assertEqual(-self:makeBig(n, a, asign),
+		               self:makeBig(n, a, bsign))
+	end
+	
+	-- n = 0
+	testopposite(1, 0, true)
+
+	-- n = 1
+	testopposite(1, 1, true)
+	testopposite(1, 1, false)
+
+	-- n > 1
+	testopposite(20, 1, true)
+	testopposite(20, 1, false)
+end
+
 return t

@@ -177,7 +177,40 @@ bigint_new(intptr_t size)
 	return bigint;
 }
 
-#define bigint_zero() (bigint_new(0))
+static BigInt*
+_bigint_shrink(BigInt* bigint, intptr_t size)
+{
+	BigInt* newbigint;
+	intptr_t ndigits = YADSL_ABS(size);
+	newbigint = realloc(bigint, MALLOC_SIZE(ndigits));
+	if (newbigint != NULL)
+		bigint = newbigint;
+	bigint->size = size;
+	return bigint;
+}
+
+/* try to shrink BigInt to new size
+ * returns new BigInt or old BigInt
+ * either case, updates the 'size' field */
+static BigInt*
+bigint_shrink(BigInt* bigint, intptr_t size)
+{
+	BigInt* newbigint;
+#ifdef YADSL_DEBUG
+	intptr_t ndigits = YADSL_ABS(size);
+	assert(bigint != NULL);
+	assert(ndigits >= 0 && "new size is valid");
+	assert(ndigits <= YADSL_ABS(bigint->size) && "new size is not larger");
+#endif
+	newbigint = _bigint_shrink(bigint, size);
+#ifdef YADSL_DEBUG
+	assert(newbigint != NULL);
+	assert(newbigint->size == size);
+#endif
+	return newbigint;
+}
+
+#define bigint_zero() bigint_new(0)
 
 static int
 getndigits(intmax_t i)
@@ -400,29 +433,23 @@ static BigInt*
 _digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
-	digit da, db, dc, *tmp, res, borrow = 0;
-	intptr_t n = na > nb ? na : nb, m = 0;
-	tmp = (digit*)calloc(n, sizeof(digit));
-	if (tmp == NULL) return NULL;
+	digit* d, da, db, dc, borrow = 0;
+	intptr_t n = na > nb ? na : nb, j = 0, m;
+	bigint = bigint_new(n);
+	if (bigint == NULL) return NULL;
+	d = bigint->digits;
 	for (intptr_t i = 0; i < n; ++i) {
 		da = i < na ? a[i] : 0;
 		db = i < nb ? b[i] : 0;
 		dc = (da | SIGN) - db - borrow;
 		borrow = ~(dc & SIGN) >> SHIFT;
-		res = dc & MASK;
-		if (res != 0) {
-			m = i + 1;
-			tmp[i] = res;
-		}
+		if ((d[i] = dc & MASK) != 0)
+			j = i;
 	}
 	assert(borrow == 0);
-	bigint = bigint_new(m);
-	if (bigint == NULL) {
-		free(tmp);
-		return NULL;
-	}
-	memcpy(bigint->digits, tmp, m*sizeof(digit));
-	free(tmp);
+	m = j + 1; /* necessary number of digits */
+	if (m < n) /* shrink if possible */
+		bigint = bigint_shrink(bigint, m);
 	return bigint;
 }
 
@@ -445,7 +472,7 @@ digitsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 	if (cmp > 0)
 		return digitstrictsub(a, na, b, nb);
 	else if (cmp == 0)
-		return bigint_zero();
+		return bigint_zero(); /* a = b => a - b = 0 */
 	else {
 		BigInt* bigint = digitstrictsub(b, nb, a, na);
 		if (bigint != NULL) bigint->size *= -1;
@@ -762,7 +789,8 @@ _yadsl_bigint_from_string(
 	/* Convert numbers that don't fit in a intmax_t in groups
 	 * of DECSHIFT digits so that 10^DECSHIFT (DECBASE) < 2^SHIFT (BASE)
 	 * and perform multiple precision techniques to combine
-	 * these numbers toghether (inspired by Knuth and Python long) */
+	 * these numbers toghether
+	 * (KNUTH, Donald E. "The Art of Programming", 3rd Edition, section 4.3) */
 
 	digits = bigint->digits;
 	nonzerodigits = 0;
@@ -787,8 +815,7 @@ _yadsl_bigint_from_string(
 				tenpow *= 10;
 		}
 		/* Multiply number by a power of 10 and add current digit
-		 *
-		 * a + d[i] * tenpow is guaranteed to fit in two digits:
+		 * Proof that `a + d[i] * tenpow` is guaranteed to fit in two digits:
 		 * -> a <= DECBASE-1 (10^9 - 1)
 		 * -> d[i] <= BASE-1 (2^31 - 1)
 		 * -> tenpow <= DECBASE (10^9)
@@ -817,9 +844,10 @@ _yadsl_bigint_from_string(
 	assert(nonzerodigits <= ndigits);
 
 	/* Our estimate is always greater or equal to the actual needed
-	 * For some strings, we might have allocated too many digits */
+	 * For some strings, we might have allocated too many digits
+	 * To save up space, we try to shrink the digit array */
 	if (nonzerodigits < ndigits)
-		bigint->size = nonzerodigits * sign;
+		bigint = bigint_shrink(bigint, nonzerodigits * sign);
 
 	*bigint_ptr = (yadsl_BigIntHandle*)bigint;
 	return YADSL_BIGINT_STATUS_OK;
