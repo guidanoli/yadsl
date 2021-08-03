@@ -12,6 +12,24 @@ function t:testFree()
 	for i = 1, 10 do tree:insert(i) end
 end
 
+function t:testInsertNil()
+	local tree = avl.AVLTree()
+	lt.assertSubstring('cannot insert nil', lt.assertRaises(tree.insert, tree))
+	lt.assertSubstring('cannot insert nil', lt.assertRaises(tree.insert, tree, nil))
+end
+
+function t:testRemoveNil()
+	local tree = avl.AVLTree()
+	lt.assertFalse(tree:remove())
+	lt.assertFalse(tree:remove(nil))
+end
+
+function t:testSearchNil()
+	local tree = avl.AVLTree()
+	lt.assertFalse(tree:search())
+	lt.assertFalse(tree:search(nil))
+end
+
 function t:testInsertSearchAndRemove()
 	local tree = avl.AVLTree()
 	lt.assertFalse(tree:remove(123)) --

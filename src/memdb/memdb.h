@@ -14,13 +14,25 @@
  * memory blocks should be empty. Otherwise, this indicates that some memory
  * block was not properly deallocated from the heap.
  *
+ * You can also provoke memory allocation functions to fail via two
+ * differerent methods: random chance and countdowns.
+ *
+ * With random chance, you set a probability of failure beforehand and
+ * everytime a malloc routine is called, a random trial is played with
+ * that probability.
+ * Setting the probability to 0.0 will disable this method (default).
+ *
+ * With countdowns, you set a number i beforehand (for i > 0) so that
+ * the following i - 1 mallocs are allowed. The i-th malloc and all that
+ * follow will fail.
+ * Setting the countdown to 0 disables this method (default).
+ *
  * @{
 */
 
 #include <stddef.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h>
 
 /**
  * @brief Log channels
@@ -56,6 +68,22 @@ yadsl_MemDebugAMB*
 yadsl_memdb_get_amb_list();
 
 /**
+ * @brief Get size of list of allocated memory blocks
+ * @return size of list
+*/
+size_t
+yadsl_memdb_amb_list_size();
+
+/**
+ * @brief Check if data is contained in list
+ * @param mem data pointer
+ * @return whether data is in the list or not
+*/
+bool
+yadsl_memdb_contains_amb(
+		void* mem);
+
+/**
  * @brief Check if log channels is enabled
  * @param log_channel log channel
  * @return whether log channel is enabled or not
@@ -76,7 +104,7 @@ yadsl_memdb_log_channel_set(
 
 /**
  * @brief Get (re)allocation fail rate
- * @return percentage (0.0 - 1.0)
+ * @return percentage from 0.0 to 1.0
 */
 float
 yadsl_memdb_get_fail_rate();
@@ -88,21 +116,6 @@ yadsl_memdb_get_fail_rate();
 void
 yadsl_memdb_set_fail_rate(
 		float fail_rate);
-
-/**
- * @brief Get whether fial by countdown is enabled or not
- * @return enabled (true) or disabled (false)
-*/
-bool
-yadsl_memdb_get_fail_by_countdown();
-
-/**
- * @brief Fail by (re)allocation countdown
- * @param fail_by_countdown enable (true) or disable (false)
-*/
-void
-yadsl_memdb_set_fail_by_countdown(
-		bool fail_by_countdown);
 
 /**
  * @brief Get (re)allocation fail countdown
@@ -118,22 +131,6 @@ yadsl_memdb_get_fail_countdown();
 void
 yadsl_memdb_set_fail_countdown(
 		size_t fail_countdown);
-
-/**
- * @brief Get size of list of allocated memory blocks
- * @return size of list
-*/
-size_t
-yadsl_memdb_amb_list_size();
-
-/**
- * @brief Check if data is contained in list
- * @param mem data pointer
- * @return whether data is in the list or not
-*/
-bool
-yadsl_memdb_contains_amb(
-		void* mem);
 
 /**
  * @brief Set PRNG seed
@@ -191,7 +188,9 @@ yadsl_memdb_dump(
 		FILE* fp,
 		void* mem);
 
-/* stdlib.h wrapped functions */
+/******************************
+ * stdlib.h wrapped functions *
+ ******************************/
 
 /**
  * @brief Wrapper around free
@@ -228,14 +227,6 @@ yadsl_memdb_calloc(
 		size_t size,
 		const char* file,
 		const int line);
-
-#if !defined(YADSL_MEMDB_DONT_DEFINE_MACROS) && (defined(YADSL_RELEASE) || defined(YADSL_DEBUG))
-#  define yadsl_memdb_status() printf("MEMDB: %zu items in list\n", yadsl_memdb_amb_list_size())
-#  define free yadsl_memdb_free
-#  define malloc(size) yadsl_memdb_malloc(size, __FILE__, __LINE__)
-#  define realloc(mem, size) yadsl_memdb_realloc(mem, size, __FILE__, __LINE__)
-#  define calloc(cnt, size) yadsl_memdb_calloc(cnt, size, __FILE__, __LINE__)
-#endif /* YADSL_MEMDB_DONT_DEFINE_MACROS */
 
 /** @} */
 

@@ -1,6 +1,6 @@
-#define YADSL_MEMDB_DONT_DEFINE_MACROS
 #include <memdb/memdb.h>
 
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
@@ -30,7 +30,6 @@ static size_t amb_list_size; /**< AMB list size */
 static uint8_t log_channels; /**< Log channels bitmap */
 static FILE* log_fp; /**< Log file pointer (nullable) */
 
-static bool fail_by_countdown; /**< Fail by countdown flag */
 static bool error_occurred; /**< Error occurred flag */
 static bool fail_occurred; /**< Fail occurred flag */
 
@@ -164,7 +163,7 @@ yadsl_memdb_fail_by_prng_internal()
 static bool
 yadsl_memdb_fail_by_countdown_internal()
 {
-	return fail_by_countdown && (fail_countdown == 1);
+	return fail_countdown == 1;
 }
 
 /**
@@ -172,11 +171,22 @@ yadsl_memdb_fail_by_countdown_internal()
  * @return whether allocation should fail (true) or not (false)
 */
 static bool
-yadsl_memdb_fail_internal()
+yadsl_memdb_fail_internal(
+		const char* func,
+		size_t size,
+		const char* file,
+		const int line)
 {
 	bool fail = yadsl_memdb_fail_by_prng_internal() ||
 	            yadsl_memdb_fail_by_countdown_internal();
+	/* Register that failure occurred */
 	fail_occurred = fail_occurred || fail;
+	if (fail) {
+		/* Log failure */
+		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
+			"%s(%zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
+			func, size, file, line, NULL);
+	}
 	return fail;
 }
 
@@ -254,7 +264,7 @@ yadsl_memdb_add_amb_internal(
 
 		/* Decrement countdown */
 		if (fail_countdown > 0)
-		 --fail_countdown;
+			--fail_countdown;
 
 		/* Log allocation */
 		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
@@ -403,19 +413,6 @@ yadsl_memdb_set_fail_rate(
 		fail_rate = rate;
 }
 
-bool
-yadsl_memdb_get_fail_by_countdown()
-{
-	return fail_by_countdown;
-}
-
-void
-yadsl_memdb_set_fail_by_countdown(
-		bool enable)
-{
-	fail_by_countdown = enable;
-}
-
 size_t
 yadsl_memdb_get_fail_countdown()
 {
@@ -476,12 +473,7 @@ yadsl_memdb_malloc(
 {
 	void* amb = NULL; /* Allocated memory block */
 
-	if (yadsl_memdb_fail_internal()) {
-		/* Log allocation error */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-			"malloc(%zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
-			size, file, line, NULL);
-	} else {
+	if (!yadsl_memdb_fail_internal("malloc", size, file, line)) {
 		amb = malloc(size);
 		if (amb) {
 			/* If allocation succeeded, add AMB node */
@@ -505,12 +497,7 @@ yadsl_memdb_realloc(
 {
 	void* ramb = NULL; /* Reallocated memory block */
 
-	if (yadsl_memdb_fail_internal()) {
-		/* Log reallocation error */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-			"realloc(%p, %zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
-			amb, size, file, line, NULL);
-	} else {
+	if (!yadsl_memdb_fail_internal("realloc", size, file, line)) {
 		yadsl_MemDebugAMB* node;
 
 		/* Try finding AMB node in list */
@@ -551,16 +538,11 @@ yadsl_memdb_calloc(
 {
 	void* camb = NULL; /* Cleanly allocated memory block */
 
-	if (yadsl_memdb_fail_internal()) {
-		/* Log allocation error */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-			"calloc(%zu, %zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
-			cnt, size, file, line, NULL);
-	} else {
+	if (!yadsl_memdb_fail_internal("calloc", size*cnt, file, line)) {
 		camb = calloc(cnt, size);
 		if (camb) {
 			/* If cleanly allocation succeeded, add AMB node */
-			if (yadsl_memdb_add_amb_internal("calloc", camb, size, file, line)) {
+			if (yadsl_memdb_add_amb_internal("calloc", camb, size*cnt, file, line)) {
 				/* If node could not be added, deallocate AMB */
 				free(camb);
 				camb = NULL;

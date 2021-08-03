@@ -200,7 +200,7 @@ bigint_shrink(BigInt* bigint, intptr_t size)
 	intptr_t ndigits = YADSL_ABS(size);
 	assert(bigint != NULL);
 	assert(ndigits >= 0 && "new size is valid");
-	assert(ndigits <= YADSL_ABS(bigint->size) && "new size is not larger");
+	assert(ndigits <= YADSL_ABS(bigint->size) && "new size is smaller");
 #endif
 	newbigint = _bigint_shrink(bigint, size);
 #ifdef YADSL_DEBUG
@@ -236,7 +236,7 @@ _yadsl_bigint_from_int(intmax_t i)
 				bigint->digits[ndigit] = 0;
 			bigint->digits[ndigits-1] = 2;
 		} else {
-			uintmax_t u = i > 0 ? (uintmax_t)i : (uintmax_t)-i;
+			uintmax_t u = i < 0 ? (uintmax_t)-i : (uintmax_t)i;
 			for (int ndigit = 0; ndigit < ndigits; ++ndigit) {
 				bigint->digits[ndigit] = (digit)u & MASK;
 				u >>= SHIFT;
@@ -282,12 +282,12 @@ _yadsl_bigint_to_int(
 		ndigits = YADSL_ABS(size);
 		sign = size < 0 ? -1 : 1;
 		u = 0;
-		while (ndigits > 0) {
+		do {
 			v = u;
 			u = (u << SHIFT) | bigint->digits[--ndigits];
 			if ((u >> SHIFT) != v)
 				return YADSL_BIGINT_STATUS_INTEGER_OVERFLOW;
-		}
+		} while (ndigits > 0);
 		if (u <= (uintmax_t)INTMAX_MAX)
 			i = (intmax_t)u * sign;
 		else if (sign < 0 && u == (0-(uintmax_t)INTMAX_MIN))
@@ -366,28 +366,35 @@ static BigInt*
 _digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
-	digit* c, da, db, dc, carry = 0;
-	intptr_t n = na > nb ? na : nb;
-	intptr_t m = 0;
-	for (intptr_t i = 0; i < n; ++i) {
-		da = i < na ? a[i] : 0;
-		db = i < nb ? b[i] : 0;
-		dc = da + db + carry;
-		carry = (dc & SIGN) >> SHIFT;
-		if (dc != 0) m = i+1;
+	digit const* x;
+	digit* c, dc, carry = 0;
+	intptr_t nmin, nmax, i;
+	if (na < nb) {
+		nmin = na;
+		nmax = nb;
+		x = b;
+	} else {
+		nmin = nb;
+		nmax = na;
+		x = a;
 	}
-	if (carry) ++m;
-	bigint = bigint_new(m);
+	bigint = bigint_new(nmax+1);
 	if (bigint == NULL) return NULL;
 	c = bigint->digits;
-	carry = 0;
-	for (intptr_t i = 0; i < m; ++i) {
-		da = i < na ? a[i] : 0;
-		db = i < nb ? b[i] : 0;
-		dc = da + db + carry;
+	for (i = 0; i < nmin; ++i) {
+		dc = a[i] + b[i] + carry;
 		carry = (dc & SIGN) >> SHIFT;
 		c[i] = dc & MASK;
 	}
+	for (; i < nmax; ++i) {
+		dc = x[i] + carry;
+		carry = (dc & SIGN) >> SHIFT;
+		c[i] = dc & MASK;
+	}
+	if (carry == 0) /* if extra digit wasn't necessary... */
+		bigint = bigint_shrink(bigint, nmax);
+	else
+		c[nmax] = carry;
 	return bigint;
 }
 
@@ -397,7 +404,7 @@ digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	assert(na > 0 && "a is positive");
 	assert(nb > 0 && "b is positive");
-	return _digitadd(a, nb, b, nb);
+	return _digitadd(a, na, b, nb);
 }
 
 /* add two strictly positive numbers and return the opposite of the result */
@@ -416,16 +423,12 @@ digitcmp(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 		return 1;
 	else if (na < nb)
 		return -1;
-	else if (na == 0)
-		return 0;
-	else {
-		int cmp;
-		int sign = na < 0 ? -1 : 1;
-		for (intptr_t i = YADSL_ABS(na)-1; i >= 0; --i) {
-			cmp = (a[i] > b[i]) - (b[i] > a[i]);
-			if (cmp != 0) break;
+	else { /* na == nb */
+		for (intptr_t i = YADSL_ABS(na) - 1; i >= 0; --i) {
+			if (a[i] > b[i]) return na > 0 ? 1 : -1;
+			else if (a[i] < b[i]) return na > 0 ? -1 : 1;
 		}
-		return cmp * sign;
+		return 0;
 	}
 }
 
@@ -433,22 +436,30 @@ static BigInt*
 _digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
-	digit* d, da, db, dc, borrow = 0;
-	intptr_t n = na > nb ? na : nb, j = 0, m;
-	bigint = bigint_new(n);
+	digit* c, dc, borrow = 0;
+	intptr_t i, j, m;
+	bigint = bigint_new(na);
 	if (bigint == NULL) return NULL;
-	d = bigint->digits;
-	for (intptr_t i = 0; i < n; ++i) {
-		da = i < na ? a[i] : 0;
-		db = i < nb ? b[i] : 0;
-		dc = (da | SIGN) - db - borrow;
+	c = bigint->digits;
+	for (i = 0; i < nb; ++i) {
+		dc = (a[i] | SIGN) - b[i] - borrow;
 		borrow = ~(dc & SIGN) >> SHIFT;
-		if ((d[i] = dc & MASK) != 0)
+		if ((c[i] = dc & MASK) != 0)
+			j = i;
+	}
+	for (; i < na && borrow; ++i) {
+		dc = (a[i] | SIGN) - borrow;
+		borrow = ~(dc & SIGN) >> SHIFT;
+		if ((c[i] = dc & MASK) != 0)
 			j = i;
 	}
 	assert(borrow == 0);
+	for (; i < na; ++i) {
+		if ((c[i] = a[i]) != 0)
+			j = i;
+	}
 	m = j + 1; /* necessary number of digits */
-	if (m < n) /* shrink if possible */
+	if (m < na) /* shrink if possible */
 		bigint = bigint_shrink(bigint, m);
 	return bigint;
 }
@@ -458,7 +469,7 @@ _digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 static BigInt*
 digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
-	assert(na >	0 && "a is positive");
+	assert(na > 0 && "a is positive");
 	assert(nb > 0 && "b is positive");
 	assert(digitcmp(a, na, b, nb) > 0);
 	return _digitstrictsub(a, na, b, nb);

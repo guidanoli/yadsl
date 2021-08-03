@@ -1,5 +1,6 @@
 #include <diff/diff.h>
 
+#include <assert.h>
 #include <string.h>
 #include <stddef.h>
 #include <math.h>
@@ -65,8 +66,8 @@ double yadsl_utils_diff(const char* s1, const char* s2)
 {
 	size_t l1, l2, i, j, k;
 	double v[3], lv, cost = -1.0, * M, * N;
-	if (!s1 || !s2)
-		goto fail0;
+	assert(s1 != NULL);
+	assert(s2 != NULL);
 	l1 = strlen(s1) + (size_t) 1;
 	l2 = strlen(s2) + (size_t) 1;
 	if (l1 == 1 && l2 == 1)

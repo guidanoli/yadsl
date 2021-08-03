@@ -11,8 +11,8 @@
  * @brief Scores the difference between two strings
  * taking into account the proximity of the
  * characters on the keyboard that were mistaken
- * @param s1 first string
- * @param s2 second string
+ * @param s1 first string (not NULL)
+ * @param s2 second string (not NULL)
  * @return the difference between the strings or
  * -1.0 in case it could not allocate enough memory
 */

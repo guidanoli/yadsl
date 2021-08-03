@@ -24,6 +24,7 @@
  * Returns the number of tests that have failed.
 */
 
+static const char* programname; /**< Program name */
 static volatile bool interrupted; /**< Interrupt flag */
 static char* tmpfilename; /**< Temporary file name */
 static char* command; /**< Command */
@@ -61,7 +62,7 @@ static char* strcatdyn(char* a, bool is_a_dyn, char* b, bool is_b_dyn)
 {
 	char* s = malloc(strlen(a) + strlen(b) + 1);
 	if (s == NULL) {
-		fprintf(stderr, "Bad malloc in strcatdyn\n");
+		fprintf(stderr, "%s: bad malloc in strcatdyn\n", programname);
 		release_resources();
 		exit(EXIT_FAILURE);
 	}
@@ -84,7 +85,7 @@ static size_t count_lines(const char* filename)
 	FILE* f = fopen(filename, "r");
 	size_t linecnt = 0;
 	if (f == NULL) {
-		fprintf(stderr, "Could not open %s\n", filename);
+		fprintf(stderr, "%s: could not open %s\n", programname, filename);
 		release_resources();
 		exit(EXIT_FAILURE);
 	} else {
@@ -176,7 +177,7 @@ static void run_tester(tester_arguments* args)
 
 	// Run command
 	if ((ret = system(command)) != 0) {
-		fprintf(stderr, "Command \"%s\" exited with value %d\n", command, ret);
+		fprintf(stderr, "%s: command \"%s\" exited with value %d\n", programname, command, ret);
 		release_resources();
 		exit(ret);
 	}
@@ -189,9 +190,16 @@ int main(int argc, char** argv)
 	size_t malloc_count;
 	tester_arguments args;
 
+	// Get program name
+	if (argc > 0 && argv[0][0] != '\0') {
+		programname = argv[0];
+	} else {
+		programname = "memfail";
+	}
+
 	// Check argument count
 	if (argc < 3) {
-		fprintf(stderr, "Usage: %s <tester> <script>\n", argv[0]);
+		fprintf(stderr, "Usage: %s <tester> <script>\n", programname);
 		release_resources();
 		exit(EXIT_FAILURE);
 	}

@@ -73,4 +73,38 @@ function t:testSafePointer()
 	lt.assertNil(self:getAMBbySize(size))
 end
 
+function t:testSetGetFailCountdown()
+	for i, value in ipairs{0, 1, 2, 3, 0} do
+		memdb.set_fail_countdown(value)
+		lt.assertEqual(memdb.get_fail_countdown(), value, i)
+	end
+end
+
+function t:testFailMalloc()
+	memdb.set_fail_countdown(2)
+	lt.assertEqual(memdb.get_fail_countdown(), 2)
+	self:testSafePointer()
+	lt.assertEqual(memdb.get_fail_countdown(), 1)
+	lt.assertSubstring('bad malloc', lt.assertRaises(self.testSafePointer, self))
+	lt.assertEqual(memdb.get_fail_countdown(), 1)
+	lt.assertSubstring('bad malloc', lt.assertRaises(self.testSafePointer, self))
+	memdb.set_fail_countdown(0)
+	lt.assertEqual(memdb.get_fail_countdown(), 0)
+	self:testSafePointer()
+	lt.assertEqual(memdb.get_fail_countdown(), 0)
+end
+
+function t:testCountMallocs()
+	lt.assertSubstring('function', lt.assertRaises(memdb.count_mallocs, 123))
+	lt.assertEqual(0, memdb.count_mallocs(function() end))
+	lt.assertEqual(1, memdb.count_mallocs(function() memdb.safe_malloc(1) end))
+	lt.assertEqual(1000, memdb.count_mallocs(function()
+		for i = 1, 1000 do memdb.safe_malloc(1) end
+	end))
+	lt.assertSubstring('integer overflow',
+		lt.assertRaises(memdb.count_mallocs, function()
+			memdb.set_fail_countdown(0)
+		end))
+end
+
 return t

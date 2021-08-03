@@ -12,8 +12,6 @@ const char* yadsl_tester_help_strings[] = {
 	"/neq B      asserts last value computed is different from B",
 	"/gtr B      asserts last value computed is greater than B",
 	"/lwr B      asserts last value computed is lower than B",
-	"/geq B      asserts last value computed is greater or equal to B",
-	"/leq B      asserts last value computed is lower or equal to B",
 	NULL,
 };
 
@@ -53,16 +51,6 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		if (!(eax < val))
-			return YADSL_TESTER_RET_RETURN;
-	} else if (yadsl_testerutils_match(command, "geq")) {
-		if (yadsl_tester_parse_arguments("f", &val) != 1)
-			return YADSL_TESTER_RET_ARGUMENT;
-		if (!(eax >= val))
-			return YADSL_TESTER_RET_RETURN;
-	} else if (yadsl_testerutils_match(command, "leq")) {
-		if (yadsl_tester_parse_arguments("f", &val) != 1)
-			return YADSL_TESTER_RET_ARGUMENT;
-		if (!(eax <= val))
 			return YADSL_TESTER_RET_RETURN;
 	} else {
 		return YADSL_TESTER_RET_COMMAND;

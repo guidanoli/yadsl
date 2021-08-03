@@ -773,10 +773,7 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 	size_t malloc_failing_countdown;
 	if (yadsl_argvp_parse_keyword_argument_value(argvp,
 		"--malloc-failing-countdown", 0, "%zu", &malloc_failing_countdown) == 1) {
-		yadsl_memdb_set_fail_by_countdown(true);
 		yadsl_memdb_set_fail_countdown(malloc_failing_countdown);
-	} else {
-		yadsl_memdb_set_fail_by_countdown(false);
 	}
 #endif
 

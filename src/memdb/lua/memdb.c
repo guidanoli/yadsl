@@ -1,7 +1,7 @@
 #include <limits.h>
 #include <assert.h>
 
-#include <memdb/memdb.h>
+#include <yadsl/stdlib.h>
 
 #include "lauxlib.h"
 
@@ -44,10 +44,9 @@ static int error_occurred(lua_State* L) {
 }
 
 static int set_fail_countdown(lua_State* L) {
-	luaL_argexpected(L, lua_isinteger(L, 1), 1, "expected integer");
-	lua_Integer cd = lua_tointeger(L, 1);
+	lua_Integer cd = luaL_checkinteger(L, 1);
 	luaL_argcheck(L, cd >= 0, 1, "expected positive integer");
-	yadsl_memdb_set_fail_countdown((size_t) cd);
+	yadsl_memdb_set_fail_countdown((size_t)cd);
 	return 0;
 }
 
@@ -57,6 +56,26 @@ static int get_fail_countdown(lua_State* L) {
 		return luaL_error(L, "integer overflow");
 	lua_pushinteger(L, (lua_Integer)cd);
 	return 1;
+}
+
+/* count_mallocs(f : function, ...) -> nmalloc : number, ok : boolean, ... */
+static int count_mallocs(lua_State* L) {
+	int status;
+	luaL_checktype(L, 1, LUA_TFUNCTION);
+	size_t cd_before = yadsl_memdb_get_fail_countdown();
+	yadsl_memdb_set_fail_countdown(SIZE_MAX);
+	status = lua_pcall(L, lua_gettop(L) - 1, LUA_MULTRET, 0);
+	size_t cd_after = yadsl_memdb_get_fail_countdown();
+	yadsl_memdb_set_fail_countdown(cd_before);
+	luaL_checkstack(L, 2, NULL);
+	lua_pushboolean(L, status == 0);
+	lua_insert(L, 1);
+	size_t nmallocs = SIZE_MAX - cd_after;
+	if (nmallocs > (size_t)LUA_MAXINTEGER)
+		return luaL_error(L, "integer overflow");
+	lua_pushinteger(L, (lua_Integer)nmallocs);
+	lua_insert(L, 1);
+	return lua_gettop(L);
 }
 
 static const char * const log_channels[] = {
@@ -172,6 +191,7 @@ static int after_all(lua_State* L) {
 }
 
 static const struct luaL_Reg memdblib[] = {
+		{"count_mallocs", count_mallocs},
         {"get_amb_list_size", get_amb_list_size},
 		{"get_amb_list", get_amb_list},
         {"error_occurred", error_occurred},

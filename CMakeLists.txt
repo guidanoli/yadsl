@@ -12,6 +12,7 @@ option(YADSL_BUILD_SELF_TESTS "Build self tests" OFF)
 option(YADSL_PYTHON_SUPPORT "Build Python C extension modules" OFF)
 option(YADSL_LUA_SUPPORT "Build Lua C bindings" OFF)
 option(YADSL_GENERATE_DOCS "Generate documentation" OFF)
+option(YADSL_CODE_COVERAGE "Instrument code for coverage test" OFF)
 
 if(YADSL_BUILD_TESTS AND YADSL_BUILD_ALL_TESTS)
 	set(YADSL_BUILD_LONG_TESTS ON)

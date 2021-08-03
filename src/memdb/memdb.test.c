@@ -5,7 +5,8 @@
 #ifndef YADSL_DEBUG
 #define YADSL_DEBUG
 #endif
-#include <memdb/memdb.h>
+
+#include <yadsl/stdlib.h>
 
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>

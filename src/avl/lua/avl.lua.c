@@ -112,10 +112,8 @@ static avltree_udata* check_avltree_udata(lua_State* L, int arg)
 {
     avltree_udata* udata;
     udata = (avltree_udata*)luaL_checkudata(L, arg, AVLTREE);
-    if (udata->lock) {
+    if (udata->lock != 0)
         luaL_error(L, "%s is locked", luaL_tolstring(L, arg, NULL));
-        return NULL; /* rever returns */
-    }
     return udata;
 }
 
@@ -161,7 +159,7 @@ static int avltree_insert(lua_State* L)
     yadsl_AVLTreeCallbacks callbacks = {
         .compare_cb = avltree_compare_cb,
         .compare_arg = &compare_arg};
-    bool exists;
+    bool exists = false;
     udata->lock = 1;
     ret = yadsl_avltree_object_insert(
         udata->avl, ref_ptr, &callbacks, &exists);
@@ -178,8 +176,6 @@ static int avltree_insert(lua_State* L)
         case YADSL_AVLTREE_RET_ERR:
             lua_pushvalue(L, compare_arg.error);
             return lua_error(L);
-        default:
-            assert(0 && "Unreachable");
     }
     lua_pushboolean(L, exists);
     return 1;
@@ -189,11 +185,9 @@ static int avltree_search(lua_State* L)
 {
     avltree_udata* udata = check_avltree_udata(L, 1);
     lua_settop(L, 2);
-    bool exists;
+    bool exists = false;
     int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-    if (ref == LUA_REFNIL) {
-        exists = false;
-    } else {
+    if (ref != LUA_REFNIL) {
         yadsl_AVLTreeRet ret;
         assert(udata->avl != NULL && "AVL tree is valid");
         compare_arg_t compare_arg;
@@ -212,8 +206,6 @@ static int avltree_search(lua_State* L)
         case YADSL_AVLTREE_RET_ERR:
             lua_pushvalue(L, compare_arg.error);
             return lua_error(L);
-        default:
-            assert(0 && "Unreachable");
         }
     }
     lua_pushboolean(L, exists);
@@ -224,11 +216,9 @@ static int avltree_remove(lua_State* L)
 {
     avltree_udata* udata = check_avltree_udata(L, 1);
     lua_settop(L, 2);
-    bool exists;
+    bool exists = false;
     int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-    if (ref == LUA_REFNIL) {
-        exists = false;
-    } else {
+    if (ref != LUA_REFNIL) {
         yadsl_AVLTreeRet ret;
         assert(udata->avl != NULL && "AVL tree is valid");
         compare_arg_t compare_arg;
@@ -249,8 +239,6 @@ static int avltree_remove(lua_State* L)
         case YADSL_AVLTREE_RET_ERR:
             lua_pushvalue(L, compare_arg.error);
             return lua_error(L);
-        default:
-            assert(0 && "Unreachable");
         }
     }
     lua_pushboolean(L, exists);

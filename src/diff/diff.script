@@ -1,23 +1,73 @@
+# Bad commands
+
+/xyz
+/catch command
+
+# Bad arguments
+
+/diff
+/catch argument
+
+/equ
+/catch argument
+
+/neq
+/catch argument
+
+/gtr
+/catch argument
+
+/lwr
+/catch argument
+
+# Real testing
+
 /diff A B
+/neq 0
 /gtr 0
+
+/diff B A
+/neq 0
+/gtr 0
+
+/lwr 0
+/catch return
 
 /diff A A
 /equ 0
 
+/neq 0
+/catch return
+
+/gtr 0
+/catch return
+
 /diff A AA
+/neq 0
+/gtr 0
+
+/equ 0
+/catch return
+
+/diff AA A
+/neq 0
 /gtr 0
 
 /diff TYPO TPO
+/neq 0
 /gtr 0
 
 /diff caps CAPS
+/neq 0
 /gtr 0
 
 /diff "" ""
 /equ 0
 
 /diff "" A
+/neq 0
 /gtr 0
 
 /diff " " ""
+/neq 0
 /gtr 0

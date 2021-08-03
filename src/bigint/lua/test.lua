@@ -119,40 +119,45 @@ function t:testAdd()
 					   self:makeBig(n, c, csign))
 	end
 
-	-- na = 0 && nb = 0
-	testadd(1, 0, 0, 0)
+	local testaddx = function(...)
+		for _, i in ipairs{1, 20, 200} do
+			testadd(i, ...)
+		end
+	end
 
-	-- na /= 0 && nb = 0
-	testadd(5, 1, 0, 1) -- one digit
-	testadd(20, 1, 0, 1)
+	-- a = 0 && b = 0
+	testaddx(0, 0, 0)
 
-	-- na = 0 && nb /= 0
-	testadd(5, 0, 1, 1) -- one digit
-	testadd(20, 0, 1, 1)
+	-- a /= 0 && b = 0
+	testaddx(1, 0, 1)
 
-	-- na > 0 && nb > 0
-	testadd(5, 2, 1, 3) -- |a| > |b|, one digit
-	testadd(5, 1, 2, 3) -- |a| < |b|, one digit
-	testadd(20, 2, 1, 3) -- |a| > |b|
-	testadd(20, 1, 2, 3) -- |a| < |b|
+	-- a = 0 && b /= 0
+	testaddx(0, 1, 1)
 
-	-- na < 0 && nb < 0
-	testadd(5, 2, 1, 3, '-', '-', '-') -- |a| > |b|, one digit
-	testadd(5, 1, 2, 3, '-', '-', '-') -- |a| < |b|, one digit
-	testadd(20, 2, 1, 3, '-', '-', '-') -- |a| > |b|
-	testadd(20, 1, 2, 3, '-', '-', '-') -- |a| < |b|
+	-- a > 0 && b > 0
+	testaddx(2, 1, 3) -- |a| > |b|
+	testaddx(1, 2, 3) -- |a| < |b|
 
-	-- na > 0 && nb < 0
-	testadd(5, 2, 1, 1, '+', '-', '+') -- |a| > |b|, one digit
-	testadd(5, 1, 2, 1, '+', '-', '-') -- |a| < |b|, one digit
-	testadd(20, 2, 1, 1, '+', '-', '+') -- |a| > |b|
-	testadd(20, 1, 2, 1, '+', '-', '-') -- |a| < |b|
+	-- a < 0 && b < 0
+	testaddx(2, 1, 3, '-', '-', '-') -- |a| > |b|
+	testaddx(1, 2, 3, '-', '-', '-') -- |a| < |b|
 
-	-- na < 0 && nb > 0
-	testadd(5, 2, 1, 1, '-', '+', '-') -- |a| > |b|, one digit
-	testadd(5, 1, 2, 1, '-', '+', '+') -- |a| < |b|, one digit
-	testadd(20, 2, 1, 1, '-', '+', '-') -- |a| > |b|
-	testadd(20, 1, 2, 1, '-', '+', '+') -- |a| < |b|
+	-- a > 0 && b < 0
+	testaddx(2, 1, 1, '+', '-', '+') -- |a| > |b|
+	testaddx(1, 2, 1, '+', '-', '-') -- |a| < |b|
+
+	-- a < 0 && b > 0
+	testaddx(2, 1, 1, '-', '+', '-') -- |a| > |b|
+	testaddx(1, 2, 1, '-', '+', '+') -- |a| < |b|
+
+	do
+		-- a >> b and a << b
+		local a = self:makeBig(2000, 1)
+		local b = bigint.BigInt(1)
+		local c = bigint.BigInt(string.rep(1, 1999) .. 2)
+		lt.assertEqual(a + b, c)
+		lt.assertEqual(b + a, c)
+	end
 end
 
 function t:testSubtract()
@@ -165,40 +170,57 @@ function t:testSubtract()
 					   self:makeBig(n, c, csign))
 	end
 
-	-- na = 0 && nb = 0
-	testsubtract(1, 0, 0, 0)
+	local testsubtractx = function(...)
+		for _, i in ipairs{1, 20, 200} do
+			testsubtract(i, ...)
+		end
+	end
 
-	-- na /= 0 && nb = 0
-	testsubtract(5, 1, 0, 1) -- one digit
-	testsubtract(20, 1, 0, 1)
+	-- a = 0 && b = 0
+	testsubtractx(0, 0, 0)
 
-	-- na = 0 && nb /= 0
-	testsubtract(5, 0, 1, 1, '+', '+', '-') -- one digit
-	testsubtract(20, 0, 1, 1, '+', '+', '-')
+	-- a /= 0 && b = 0
+	testsubtractx(1, 0, 1)
 
-	-- na > 0 && nb > 0
-	testsubtract(5, 3, 1, 2) -- |a| > |b|, one digit
-	testsubtract(5, 1, 3, 2, '+', '+', '-') -- |a| < |b|, one digit
-	testsubtract(20, 3, 1, 2) -- |a| > |b|
-	testsubtract(20, 1, 3, 2, '+', '+', '-') -- |a| < |b|
+	-- a = 0 && b /= 0
+	testsubtractx(0, 1, 1, '+', '+', '-')
 
-	-- na < 0 && nb < 0
-	testsubtract(5, 3, 1, 2, '-', '-', '-') -- |a| > |b|, one digit
-	testsubtract(5, 1, 3, 2, '-', '-', '+') -- |a| < |b|, one digit
-	testsubtract(20, 3, 1, 2, '-', '-', '-') -- |a| > |b|
-	testsubtract(20, 1, 3, 2, '-', '-', '+') -- |a| < |b|
+	-- a > 0 && b > 0
+	testsubtractx(3, 1, 2) -- |a| > |b|
+	testsubtractx(1, 3, 2, '+', '+', '-') -- |a| < |b|
 
-	-- na > 0 && nb < 0
-	testsubtract(5, 2, 1, 3, '+', '-', '+') -- |a| > |b|, one digit
-	testsubtract(5, 1, 2, 3, '+', '-', '+') -- |a| < |b|, one digit
-	testsubtract(20, 2, 1, 3, '+', '-', '+') -- |a| > |b|
-	testsubtract(20, 1, 2, 3, '+', '-', '+') -- |a| < |b|
+	-- a < 0 && b < 0
+	testsubtractx(3, 1, 2, '-', '-', '-') -- |a| > |b|
+	testsubtractx(1, 3, 2, '-', '-', '+') -- |a| < |b|
 
-	-- na < 0 && nb > 0
-	testsubtract(5, 2, 1, 3, '-', '+', '-') -- |a| > |b|, one digit
-	testsubtract(5, 1, 2, 3, '-', '+', '-') -- |a| < |b|, one digit
-	testsubtract(20, 2, 1, 3, '-', '+', '-') -- |a| > |b|
-	testsubtract(20, 1, 2, 3, '-', '+', '-') -- |a| < |b|
+	-- a > 0 && b < 0
+	testsubtractx(2, 1, 3, '+', '-', '+') -- |a| > |b|
+	testsubtractx(1, 2, 3, '+', '-', '+') -- |a| < |b|
+
+	-- a < 0 && b > 0
+	testsubtractx(2, 1, 3, '-', '+', '-') -- |a| > |b|
+	testsubtractx(1, 2, 3, '-', '+', '-') -- |a| < |b|
+
+	-- a = b
+	testsubtractx(7, 7, 0)
+
+	do
+		-- a >> b and a << b
+		local a = self:makeBig(2000, 1) -- 1...111
+		local b = bigint.BigInt(-1) -- -1
+		local c = bigint.BigInt(string.rep(1, 1999) .. 2) -- 1...112
+		lt.assertEqual(a - b, c) -- 1...111 - (-1) = 1...112
+		lt.assertEqual(b - a, -c) -- -1 - 1...111 = -1...112
+	end
+	
+	do
+		-- a ~ b
+		local a = self:makeBig(2000, 1) -- 1...111
+		local b = bigint.BigInt(string.rep(1, 1999) .. 2) -- 1...112
+		local c = bigint.BigInt(1) -- 1
+		lt.assertEqual(a - b, -c) -- 1...111 - 1...112 = -1
+		lt.assertEqual(b - a, c) -- 1...112 - 1...111 = 1
+	end
 end
 
 function t:testOpposite()
@@ -220,6 +242,10 @@ function t:testOpposite()
 	-- n > 1
 	testopposite(20, 1, true)
 	testopposite(20, 1, false)
+
+	-- n >> 1
+	testopposite(200, 1, true)
+	testopposite(200, 1, false)
 end
 
 return t
