@@ -100,11 +100,8 @@
  * --log-file <file-path>         Logs debug information to file.
  *                                (Default: standard error)
  * 
- * --malloc-failing-rate <rate>   Changes memory allocation failing rate.
- *                                (Default: 0)
- * 
- * --malloc-failing-countdown     Sets memory allocation failing countdown
- *                                (Default: never fails by countdown)
+ * --malloc-failing-countdown <#> Sets memory allocation failing countdown
+ *                                (Default: 0, i.e. never fails by countdown)
  * 
  * --prng-seed <seed>             Changes pseudorandom number generator seed.
  *                                (Default: 0)

@@ -705,7 +705,6 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 	static yadsl_ArgvKeywordArgumentDef kwargdefs[] = {
 		{ "--input-file", 1 },
 		{ "--log-file", 1 },
-		{ "--malloc-failing-rate", 1 },
 		{ "--malloc-failing-countdown", 1 },
 		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
@@ -750,22 +749,6 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		yadsl_memdb_set_logger(log_fp);
 	} else {
 		yadsl_memdb_set_logger(NULL);
-	}
-#endif
-
-#ifdef YADSL_DEBUG
-	float malloc_failing_rate;
-	if (yadsl_argvp_parse_keyword_argument_value(argvp,
-		"--malloc-failing-rate", 0, "%f", &malloc_failing_rate) == 1) {
-		float effective_malloc_failing_rate;
-		yadsl_memdb_set_fail_rate(malloc_failing_rate);
-		effective_malloc_failing_rate = yadsl_memdb_get_fail_rate();
-		if (effective_malloc_failing_rate != malloc_failing_rate) {
-			fprintf(stderr, "WARNING: Failing rate clamped to %f.\n",
-				effective_malloc_failing_rate);
-		}
-	} else {
-		yadsl_memdb_set_fail_rate(0.f);
 	}
 #endif
 

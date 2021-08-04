@@ -30,7 +30,6 @@ static yatester_status initialize_internal(int argc, char** argv)
 {
 	int nmatches;
 #ifdef YADSL_DEBUG
-	float malloc_failing_rate;
 	size_t malloc_failing_countdown;
 	unsigned int prng_seed;
 	const char *log_channel_name;
@@ -44,7 +43,6 @@ static yatester_status initialize_internal(int argc, char** argv)
 		{ "--expect", 1 },
 #ifdef YADSL_DEBUG
 		{ "--log-file", 1 },
-		{ "--malloc-failing-rate", 1 },
 		{ "--malloc-failing-countdown", 1 },
 		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
@@ -104,21 +102,6 @@ static yatester_status initialize_internal(int argc, char** argv)
 	}
 
 	yadsl_memdb_set_logger(log_fp);
-
-	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp, "--malloc-failing-rate", 0, "%f", &malloc_failing_rate);
-
-	if (nmatches == 1)
-	{
-		yadsl_memdb_set_fail_rate(malloc_failing_rate);
-	}
-	else if (nmatches == 0)
-	{
-		return yatester_report(YATESTER_ERROR, "invalid number \"%s\" for --malloc-failing-rate option", yadsl_argvp_get_keyword_argument_value(argvp, "--malloc-failing-rate", 0));
-	}
-	else
-	{
-		yadsl_memdb_set_fail_rate(0.f);
-	}
 
 	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp, "--malloc-failing-countdown", 0, "%zu", &malloc_failing_countdown);
 
@@ -289,7 +272,6 @@ static yatester_status run_internal(int argc, char** argv)
 		fprintf(stderr, "--expect <status>               Expect the tester to return a status code\n");
 #ifdef YADSL_DEBUG
 		fprintf(stderr, "--log-file <filepath>           Write log to file instead of stderr\n");
-		fprintf(stderr, "--malloc-failing-rate <rate>    Set memory allocation failing rate\n");
 		fprintf(stderr, "--malloc-failing-countdown <c>  Set memory allocation failing countdown\n");
 		fprintf(stderr, "--prng-seed <seed>              Set pseudorandom number generator seed\n");
 		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");

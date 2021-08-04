@@ -33,7 +33,6 @@ static FILE* log_fp; /**< Log file pointer (nullable) */
 static bool error_occurred; /**< Error occurred flag */
 static bool fail_occurred; /**< Fail occurred flag */
 
-static float fail_rate; /**< Allocation fail rate */
 static size_t fail_countdown; /**< Allocation fail countdown */
 static unsigned int prng_state; /**< PRNG seed */
 
@@ -146,16 +145,6 @@ yadsl_memdb_fail_occurred()
 }
 
 /**
- * @brief Bernoulli trial with probability of fail_rate
- * @return whether allocation should fail (true) or not (false)
-*/
-static bool
-yadsl_memdb_fail_by_prng_internal()
-{
-	return yadsl_memdb_prng_internal() < (int) (fail_rate * (float) RAND_MAX);
-}
-
-/**
  * @brief Checks if AMB total count coincides with failing countdown and
  *        whether failing by countdown is enabled
  * @return whether allocation should fail (true) or not (false)
@@ -177,8 +166,7 @@ yadsl_memdb_fail_internal(
 		const char* file,
 		const int line)
 {
-	bool fail = yadsl_memdb_fail_by_prng_internal() ||
-	            yadsl_memdb_fail_by_countdown_internal();
+	bool fail = yadsl_memdb_fail_by_countdown_internal();
 	/* Register that failure occurred */
 	fail_occurred = fail_occurred || fail;
 	if (fail) {
@@ -393,24 +381,6 @@ yadsl_memdb_clear_amb_list_from_file(const char* file)
 	}
 
 	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, temp);
-}
-
-float
-yadsl_memdb_get_fail_rate()
-{
-	return fail_rate;
-}
-
-void
-yadsl_memdb_set_fail_rate(
-		float rate)
-{
-	if (rate < 0.0f)
-		fail_rate = 0.0f;
-	else if (rate > 1.0f)
-		fail_rate = 1.0f;
-	else
-		fail_rate = rate;
 }
 
 size_t

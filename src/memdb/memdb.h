@@ -6,7 +6,7 @@
  * @brief A handy tool for spotting memory leaks with little to no effort.
  *
  * The Memory Debuger allows further investigation in cases of memory
- * leakage due to unresponsible housekeeping. It overwrites the main
+ * leakage due to unresponsible housekeeping. It provides wrappers for
  * dynamic allocation routines in order to keep track of the blocks
  * that are allocated and dealocatted in and from the heap.
  *
@@ -14,18 +14,10 @@
  * memory blocks should be empty. Otherwise, this indicates that some memory
  * block was not properly deallocated from the heap.
  *
- * You can also provoke memory allocation functions to fail via two
- * differerent methods: random chance and countdowns.
- *
- * With random chance, you set a probability of failure beforehand and
- * everytime a malloc routine is called, a random trial is played with
- * that probability.
- * Setting the probability to 0.0 will disable this method (default).
- *
- * With countdowns, you set a number i beforehand (for i > 0) so that
+ * You can also provoke memory allocation functions to fail.
+ * To do so, you set a number i beforehand (for i > 0) so that
  * the following i - 1 mallocs are allowed. The i-th malloc and all that
- * follow will fail.
- * Setting the countdown to 0 disables this method (default).
+ * follow will fail. Setting the countdown to 0 disables this mechanism.
  *
  * @{
 */
@@ -101,21 +93,6 @@ void
 yadsl_memdb_log_channel_set(
 		yadsl_MemDebugLogChannel log_channel,
 		bool enable);
-
-/**
- * @brief Get (re)allocation fail rate
- * @return percentage from 0.0 to 1.0
-*/
-float
-yadsl_memdb_get_fail_rate();
-
-/**
- * @brief Set (re)allocation fail rate
- * @param fail_rate percentage
-*/
-void
-yadsl_memdb_set_fail_rate(
-		float fail_rate);
 
 /**
  * @brief Get (re)allocation fail countdown
