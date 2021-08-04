@@ -1,12 +1,7 @@
 #include <string.h>
 #include <stdio.h>
 
-/* Force debug being set on */
-#ifndef YADSL_DEBUG
-#define YADSL_DEBUG
-#endif
-
-#include <yadsl/stdlib.h>
+#include <memdb/stdlib.h>
 
 #include <tester/tester.h>
 #include <testerutils/testerutils.h>

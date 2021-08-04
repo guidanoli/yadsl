@@ -1,7 +1,7 @@
 #include <limits.h>
 #include <assert.h>
 
-#include <yadsl/stdlib.h>
+#include <memdb/stdlib.h>
 
 #include "lauxlib.h"
 
@@ -82,6 +82,7 @@ static const char * const log_channels[] = {
 	"allocation",
 	"deallocation",
 	"leakage",
+	NULL,
 };
 
 #define sizeofv(x) (sizeof(x)/sizeof(*x))

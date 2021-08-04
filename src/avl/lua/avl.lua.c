@@ -255,7 +255,7 @@ typedef struct
 visit_arg_t;
 
 static const char* visit_orders[] = {
-    "pre", "in", "post"
+    "pre", "in", "post", NULL
 };
 
 static yadsl_AVLTreeVisitObjRet* avltree_visit_cb(
