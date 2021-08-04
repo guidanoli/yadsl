@@ -34,7 +34,6 @@ static bool error_occurred; /**< Error occurred flag */
 static bool fail_occurred; /**< Fail occurred flag */
 
 static size_t fail_countdown; /**< Allocation fail countdown */
-static unsigned int prng_state; /**< PRNG seed */
 
 /* Functions */
 
@@ -42,13 +41,6 @@ yadsl_MemDebugAMB*
 yadsl_memdb_get_amb_list()
 {
 	return amb_list_head;
-}
-
-static int
-yadsl_memdb_prng_internal()
-{
-	prng_state = ((prng_state * 1103515245) + 12345) & 0x7fffffff;
-	return prng_state;
 }
 
 bool
@@ -315,13 +307,6 @@ yadsl_memdb_contains_amb(
 		void* amb)
 {
 	return yadsl_memdb_find_amb_internal(amb, NULL) != NULL;
-}
-
-void
-yadsl_memdb_set_prng_seed(
-		unsigned int seed)
-{
-	prng_state = seed;
 }
 
 void

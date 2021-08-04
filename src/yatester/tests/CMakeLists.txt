@@ -63,7 +63,6 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
 	add_test(NAME empty.4.fail COMMAND emptytest --log-file / --expect 5)
 	add_test(NAME empty.5.fail COMMAND emptytest --enable-log-channel x --expect 1)
 	add_test(NAME empty.6.fail COMMAND emptytest --malloc-failing-countdown x --expect 1)
-	add_test(NAME empty.7.fail COMMAND emptytest --prng-seed x --expect 1)
 endif()
 
 add_yatester_module(self.test.c)

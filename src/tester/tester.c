@@ -706,7 +706,6 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		{ "--input-file", 1 },
 		{ "--log-file", 1 },
 		{ "--malloc-failing-countdown", 1 },
-		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
 		{ NULL, 0 }, /* End of definitions array */
 	};
@@ -757,14 +756,6 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 	if (yadsl_argvp_parse_keyword_argument_value(argvp,
 		"--malloc-failing-countdown", 0, "%zu", &malloc_failing_countdown) == 1) {
 		yadsl_memdb_set_fail_countdown(malloc_failing_countdown);
-	}
-#endif
-
-#ifdef YADSL_DEBUG
-	unsigned int prng_seed;
-	if (yadsl_argvp_parse_keyword_argument_value(argvp,
-		"--prng-seed", 0, "%u", &prng_seed) == 1) {
-		yadsl_memdb_set_prng_seed(prng_seed);
 	}
 #endif
 

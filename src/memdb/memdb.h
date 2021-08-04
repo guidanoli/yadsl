@@ -110,14 +110,6 @@ yadsl_memdb_set_fail_countdown(
 		size_t fail_countdown);
 
 /**
- * @brief Set PRNG seed
- * @param seed PRNG seed
-*/
-void
-yadsl_memdb_set_prng_seed(
-		unsigned int seed);
-
-/**
  * @brief Check if an error has occurred
  * @return whether error occurred (true) or not (false)
 */

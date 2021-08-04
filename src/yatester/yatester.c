@@ -31,7 +31,6 @@ static yatester_status initialize_internal(int argc, char** argv)
 	int nmatches;
 #ifdef YADSL_DEBUG
 	size_t malloc_failing_countdown;
-	unsigned int prng_seed;
 	const char *log_channel_name;
 #endif
 
@@ -44,7 +43,6 @@ static yatester_status initialize_internal(int argc, char** argv)
 #ifdef YADSL_DEBUG
 		{ "--log-file", 1 },
 		{ "--malloc-failing-countdown", 1 },
-		{ "--prng-seed", 1 },
 		{ "--enable-log-channel", 1 },
 #endif
 		{ NULL, 0 },
@@ -112,17 +110,6 @@ static yatester_status initialize_internal(int argc, char** argv)
 	else if (nmatches == 0)
 	{
 		return yatester_report(YATESTER_ERROR, "invalid number \"%s\" for --malloc-failing-countdown option", yadsl_argvp_get_keyword_argument_value(argvp, "--malloc-failing-countdown", 0));
-	}
-
-	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp, "--prng-seed", 0, "%u", &prng_seed);
-
-	if (nmatches == 1)
-	{
-		yadsl_memdb_set_prng_seed(prng_seed);
-	}
-	else if (nmatches == 0)
-	{
-		return yatester_report(YATESTER_ERROR, "invalid number \"%s\" for --prng-seed option", yadsl_argvp_get_keyword_argument_value(argvp, "--prng-seed", 0));
 	}
 
 	log_channel_name = yadsl_argvp_get_keyword_argument_value(argvp, "--enable-log-channel", 0);
@@ -273,7 +260,6 @@ static yatester_status run_internal(int argc, char** argv)
 #ifdef YADSL_DEBUG
 		fprintf(stderr, "--log-file <filepath>           Write log to file instead of stderr\n");
 		fprintf(stderr, "--malloc-failing-countdown <c>  Set memory allocation failing countdown\n");
-		fprintf(stderr, "--prng-seed <seed>              Set pseudorandom number generator seed\n");
 		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");
 		fprintf(stderr, "                                ALLOCATION, DEALLOCATION, LEAKAGE\n");
 #endif

@@ -103,9 +103,6 @@
  * --malloc-failing-countdown <#> Sets memory allocation failing countdown
  *                                (Default: 0, i.e. never fails by countdown)
  * 
- * --prng-seed <seed>             Changes pseudorandom number generator seed.
- *                                (Default: 0)
- * 
  * --enable-log-channel <channel> Enable log channel
  *                                (Default: all log channels are disabled)
  * ```
