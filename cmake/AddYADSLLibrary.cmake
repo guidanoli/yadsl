@@ -91,7 +91,7 @@ function(add_yadsl_library target)
         add_subdirectory(python)
     endif()
     
-    if (${OPTS_LUA} AND ${YADSL_LUA_SUPPORT})
+    if(${OPTS_LUA} AND ${YADSL_LUA_SUPPORT})
         add_subdirectory(lua)
     endif()
 endfunction()

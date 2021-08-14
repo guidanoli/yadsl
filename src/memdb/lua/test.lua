@@ -150,12 +150,13 @@ function t:testNotNull()
 end
 
 function t:testBadMalloc()
-	self:assertNull(memdb.malloc(math.maxinteger, 'abc', 234)) -- To test: 'bad malloc'
-	self:assertNull(memdb.rawmalloc(math.maxinteger))
-	self:assertNull(memdb.calloc(math.maxinteger, math.maxinteger, 'abc', 234))
-	self:assertNull(memdb.rawcalloc(math.maxinteger, math.maxinteger))
-	lt.assertFalse(memdb.nullptr():realloc(math.maxinteger, 'abc', 234))
-	lt.assertFalse(memdb.nullptr():rawrealloc(math.maxinteger))
+	lt.assertSubstring('bad malloc', lt.assertRaises(memdb.malloc, math.maxinteger, 'abc', 234))
+	lt.assertSubstring('bad malloc', lt.assertRaises(memdb.rawmalloc, math.maxinteger))
+	lt.assertSubstring('bad malloc', lt.assertRaises(memdb.calloc, math.maxinteger, math.maxinteger, 'abc', 234))
+	lt.assertSubstring('bad malloc', lt.assertRaises(memdb.rawcalloc, math.maxinteger, math.maxinteger))
+	local nullptr = memdb.nullptr()
+	lt.assertFalse(nullptr:realloc(math.maxinteger, 'abc', 234))
+	lt.assertFalse(nullptr:rawrealloc(math.maxinteger))
 end
 
 return t

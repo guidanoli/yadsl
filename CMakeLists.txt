@@ -53,10 +53,11 @@ if(YADSL_PYTHON_SUPPORT)
 	include(AddPythonModule)
 endif()
 
-find_package(Lua 5.4 MODULE)
+if(YADSL_LUA_SUPPORT)
+	# Find Lua library
+	find_package(Lua 5.4 REQUIRED MODULE)
 
-if (YADSL_LUA_SUPPORT)
-	if (NOT LUA_FOUND)
+	if(NOT LUA_FOUND)
 		message(FATAL_ERROR "Lua supported but not found")
 	endif()
 
@@ -64,7 +65,7 @@ if (YADSL_LUA_SUPPORT)
 	include(AddLuaModule)
 endif()
 
-if (YADSL_GENERATE_DOCS)
+if(YADSL_GENERATE_DOCS)
     add_subdirectory(docs)
 endif()
 

@@ -7,7 +7,7 @@ target_sources(yadsl INTERFACE
 	${CMAKE_CURRENT_SOURCE_DIR}/stdlib.h
 	${CMAKE_CURRENT_SOURCE_DIR}/utl.h)
 if(YADSL_CODE_COVERAGE)
-	if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+	if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
 		# Add required flags (GCC & LLVM/Clang)
 		target_compile_options(yadsl INTERFACE
 			-O0        # no optimization

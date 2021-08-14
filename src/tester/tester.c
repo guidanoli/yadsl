@@ -8,7 +8,9 @@
 #include <inttypes.h>
 #include <setjmp.h>
 
+#ifdef YADSL_DEBUG
 #include <memdb/stdlistener.h>
+#endif
 
 #include <yadsl/utl.h>
 #include <argvp/argvp.h>
@@ -731,10 +733,12 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		{ NULL, 0 }, /* End of definitions array */
 	};
 
+#ifdef YADSL_DEBUG
 	if (!yadsl_memdb_stdlistener_init()) {
 		fprintf(stderr, "ERROR: Could not initialize memdb stdlistener.\n");
 		return YADSL_TESTER_RET_MALLOC;
 	}
+#endif
 
 	argvp = yadsl_argvp_create(argc, argv);
 
@@ -815,8 +819,10 @@ yadsl_TesterRet yadsl_tester_argvp_release_internal()
 	}
 #endif
 
+#ifdef YADSL_DEBUG
 	if (!yadsl_memdb_stdlistener_finalize())
 		fprintf(stderr, "WARNING: Could not finalize standard listener\n");
+#endif
 
 	if (input_fp != stdin) {
 		fclose(input_fp);
