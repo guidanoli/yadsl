@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef YADSL_DEBUG
 #include <memdb/stdlistener.h>
+#endif
 
 #include <argvp/argvp.h>
 
@@ -50,10 +52,12 @@ static yatester_status initialize_internal(int argc, char** argv)
 		{ NULL, 0 },
 	};
 
+#ifdef YADSL_DEBUG
 	if (!yadsl_memdb_stdlistener_init())
 	{
 		return yatester_report(YATESTER_NOMEM, "could not add memory debugger standard listener");
 	}
+#endif
 
 	argvp = yadsl_argvp_create(argc, argv);
 
@@ -167,6 +171,7 @@ static yatester_status terminate_internal(yatester_status status)
 		argvp = NULL;
 	}
 
+#ifdef YADSL_DEBUG
 	if (!yadsl_memdb_stdlistener_finalize())
 	{
 		if (status != YATESTER_OK)
@@ -175,7 +180,6 @@ static yatester_status terminate_internal(yatester_status status)
 		}
 	}
 
-#ifdef YADSL_DEBUG
 	if (status == YATESTER_NOMEM && yadsl_memdb_stdlistener_fail_occurred())
 	{
 		status = YATESTER_OK;
