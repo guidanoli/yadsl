@@ -6,10 +6,9 @@
 #include <testerutils/testerutils.h>
 
 const char *yadsl_tester_help_strings[] = {
-    "This is the heap test module",
-    "This implements a min heap, meaning that the first item extracted",
+    "This is the heap test module\n"
+    "This implements a min heap, meaning that the first item extracted\n"
     "is the smallest of all in the heap",
-    "",
     "/create <size>               create a heap with size <size>",
     "/insert <number>             insert <number> in the heap",
     "/extract <expected number>   extract number from heap",

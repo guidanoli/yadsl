@@ -1,0 +1,34 @@
+Memory Debugger
+==============
+
+The memory debugger is a common interface for memory allocation, reallocation
+and deallocation. It allows multiple independent listeners to be registered.
+
+Every time malloc, realloc or calloc are called, the memory debugger will ask
+each of its listeners whether they agree with the memory being allocated. If
+one of them disagrees, then the memory is not allocated and every listener
+will be triggered with a 'fail' message. Otherwise, if everyone agrees with
+the memory being allocated, then every listener will be triggered with an
+'ok' message. This means that even if one listener agrees with the memory
+being allocated, it can be triggered a second time saying that the memory was
+not allocated because another listener disagreed.
+
+Every time free is called, the memory debugger will trigger every listener
+with an 'ok' message. As with regular free, this event never fails. All
+these messages are acompanied with extra information such as where the
+allocation/deallocation took place (file and line).
+
+If a listener is triggered and sends a memory request to the memory debugger,
+the memory debugger will not trigger the listeners, because that would
+potentially cause infinite recursions, which is not interesting for us :-)
+Additionally, doing so helps isolate the listeners so that they can allocate
+their own memory without external interference.
+
+Listeners can then maintain their own version of a list of allocated memory
+blocks, or log these events to some I/O stream, or inject some memory
+allocation failure programmatically.
+
+The memory debugger is not aimed to help identifying memory leaks, because we
+cannot ensure that every memory allocation and deallocation is done via the
+memory debugger interface (that is, some code might call malloc, realloc, calloc
+or free directly). For this purpose, other tools like Valgrind are more appropriate.

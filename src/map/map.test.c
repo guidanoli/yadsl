@@ -8,10 +8,9 @@
 #include <testerutils/testerutils.h>
 
 const char *yadsl_tester_help_strings[] = {
-	"This is an interactive module of the map library",
-	"You interact with a single map object at all times",
-	"",
-	"The available commands are:",
+	"This is an interactive module of the map library\n"
+	"You interact with a single map object at all times\n"
+	"The available commands are...",
 	"/put <key> <value> [YES/NO]   assign to the key K, the value V",
 	"                              test if an entry is overwritten or not",
 	"/get <key> <expected value>   obtain the value assigned to key K",

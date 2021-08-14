@@ -17,11 +17,10 @@
 } while(0)
 
 const char *yadsl_tester_help_strings[] = {
-	"This is the module for testing the argvp library",
-	"There is one available slot for storing a argv parser",
-	"Any remaining argvp parser is deallocated at the end",
-	"The available commands are:",
-	"",
+	"This is the module for testing the argvp library\n"
+	"There is one available slot for storing a argv parser\n"
+	"Any remaining argvp parser is deallocated at the end\n"
+	"The available commands are...",
 	"/create <args>",
 	"/argc <expected-argc>",
 	"/argv <idx-arg> <expected-argv>",

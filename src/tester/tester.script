@@ -21,24 +21,21 @@
 /catch malloc
 
 /throw 3
-/catch memleak
-
-/throw 4
 /catch overflow
 
-/throw 5
+/throw 4
 /catch command
 
-/throw 6
+/throw 5
 /catch argument
 
-/throw 7
+/throw 6
 /catch token
 
-/throw 8
+/throw 7
 /catch return
 
-/throw 9
+/throw 8
 /catch catch
 
 /throwf custom

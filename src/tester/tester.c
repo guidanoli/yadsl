@@ -8,6 +8,8 @@
 #include <inttypes.h>
 #include <setjmp.h>
 
+#include <memdb/stdlistener.h>
+
 #include <yadsl/utl.h>
 #include <argvp/argvp.h>
 
@@ -44,7 +46,6 @@ static const char* errnames[YADSL_TESTER_RET_COUNT] =
 	[YADSL_TESTER_RET_OK] = "ok",
 	[YADSL_TESTER_RET_FILE] = "file",
 	[YADSL_TESTER_RET_MALLOC] = "malloc",
-	[YADSL_TESTER_RET_MEMLEAK] = "memleak",
 	[YADSL_TESTER_RET_OVERFLOW] = "overflow",
 	[YADSL_TESTER_RET_COMMAND] = "command",
 	[YADSL_TESTER_RET_ARGUMENT] = "argument",
@@ -60,6 +61,32 @@ tmpbuf[BUFSIZ], /* multi-purpose */
 errbuf[BUFSIZ], /* error message */
 fullerrmsg[BUFSIZ]; /* full error message */
 
+static const char* const usage =
+"Usage\n"
+"-----\n"
+"\n"
+"%s [options...]\n"
+"\n"
+"Options\n"
+"-------\n"
+"\n"
+"--help                          Print this help message and quit\n"
+"\n"
+"--input-file <file-path>        Reads script from file.\n"
+"                                (Default: standard input)\n"
+#ifdef YADSL_DEBUG
+"\n" 
+"--log-file <file-path>          Logs debug information to file.\n"
+"                                (Default: standard error)\n"
+"\n"
+"--malloc-failing-countdown <#>  Sets memory allocation failing countdown\n"
+"                                (Default: 0, i.e. never fails by countdown)\n"
+"\n"
+"--enable-log-channel <channel>  Enable log channel (ALLOCATION or DEALLOCATION)\n"
+"                                (Default: all log channels are disabled)\n"
+#endif
+;
+
 static char* cursor = buffer; /* buffer cursor */
 
 static yadsl_ArgvParserHandle* argvp; /* argument vector parser */
@@ -67,7 +94,7 @@ static yadsl_ArgvParserHandle* argvp; /* argument vector parser */
 static int help; /* Print help message */
 static FILE* input_fp; /* Input file pointer */
 const char* input_file; /* Input file name */
-static FILE* log_fp; /* Logger file pointer */
+static FILE* log_fp; /* Log file pointer */
 
 static int argc; /* Argument count */
 static char** argv; /* Argument vector */
@@ -84,7 +111,6 @@ static char** argv; /* Argument vector */
 
 static yadsl_TesterRet yadsl_tester_argvp_init_internal();
 static yadsl_TesterRet yadsl_tester_argvp_release_internal();
-static yadsl_TesterRet yadsl_tester_check_memleak_internal();
 static yadsl_TesterRet yadsl_tester_parse_file_internal();
 static void yadsl_tester_print_cursor_position_internal(FILE* fp);
 static yadsl_TesterRet yadsl_tester_parse_catch_command_internal(yadsl_TesterRet ret);
@@ -114,6 +140,7 @@ int main(int argc_, char** argv_)
 
 	/* Print help strings */
 	if (help) {
+		printf(usage, (argc > 0 && argv[0][0] != '\0') ? argv[0] : "tester");
 		yadsl_tester_print_help_strings_internal();
 		return YADSL_TESTER_RET_OK;
 	}
@@ -147,15 +174,9 @@ int main(int argc_, char** argv_)
 	/* Release argument vector parser */
 	UPDATE_STATUS(status, yadsl_tester_argvp_release_internal());
 
-	/* Check for memory leak (may fail) */
-	UPDATE_STATUS(status, yadsl_tester_check_memleak_internal());
-
 #ifdef YADSL_DEBUG
-	/* Clear allocated memory block list */
-	yadsl_memdb_clear_amb_list();
-
 	/* Ignore MALLOC error if a fail has occurred */
-	if (status == YADSL_TESTER_RET_MALLOC && yadsl_memdb_fail_occurred())
+	if (status == YADSL_TESTER_RET_MALLOC && yadsl_memdb_stdlistener_fail_occurred())
 		status = YADSL_TESTER_RET_OK;
 #endif
 
@@ -710,6 +731,11 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		{ NULL, 0 }, /* End of definitions array */
 	};
 
+	if (!yadsl_memdb_stdlistener_init()) {
+		fprintf(stderr, "ERROR: Could not initialize memdb stdlistener.\n");
+		return YADSL_TESTER_RET_MALLOC;
+	}
+
 	argvp = yadsl_argvp_create(argc, argv);
 
 	/* If could not allocate argvp, exit */
@@ -745,9 +771,9 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 		log_fp = fopen(log_file, "w");
 		if (log_fp == NULL)
 			return YADSL_TESTER_RET_FILE;
-		yadsl_memdb_set_logger(log_fp);
+		yadsl_memdb_stdlistener_set_logger(log_fp);
 	} else {
-		yadsl_memdb_set_logger(NULL);
+		yadsl_memdb_stdlistener_set_logger(NULL);
 	}
 #endif
 
@@ -755,28 +781,18 @@ yadsl_TesterRet yadsl_tester_argvp_init_internal()
 	size_t malloc_failing_countdown;
 	if (yadsl_argvp_parse_keyword_argument_value(argvp,
 		"--malloc-failing-countdown", 0, "%zu", &malloc_failing_countdown) == 1) {
-		yadsl_memdb_set_fail_countdown(malloc_failing_countdown);
+		yadsl_memdb_stdlistener_set_fail_countdown(malloc_failing_countdown);
 	}
 #endif
 
 #ifdef YADSL_DEBUG
-	const char* log_channel_name, *kw = "--enable-log-channel";
+	const char* channel, *kw = "--enable-log-channel";
 	while (1) {
-		log_channel_name = yadsl_argvp_get_keyword_argument_value(argvp, kw, 0);
+		channel = yadsl_argvp_get_keyword_argument_value(argvp, kw, 0);
 		kw = NULL; /* Iterate over keyword argument values */
-		if (log_channel_name) {
-			yadsl_MemDebugLogChannel log_channel_value;
-			if (strcmp(log_channel_name, "ALLOCATION") == 0) {
-				log_channel_value = YADSL_MEMDB_LOG_CHANNEL_ALLOCATION;
-			} else if (strcmp(log_channel_name, "DEALLOCATION") == 0) {
-				log_channel_value = YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION;
-			} else if (strcmp(log_channel_name, "LEAKAGE") == 0) {
-				log_channel_value = YADSL_MEMDB_LOG_CHANNEL_LEAKAGE;
-			} else {
-				fprintf(stderr, "WARNING: Invalid log channel name.\n");
-				continue;
-			}
-			yadsl_memdb_log_channel_set(log_channel_value, true);
+		if (channel != NULL) {
+			if (!yadsl_memdb_stdlistener_log_channel_set(channel, true))
+				fprintf(stderr, "WARNING: Invalid log channel name \"%s\".\n", channel);
 		} else {
 			break;
 		}
@@ -793,26 +809,20 @@ yadsl_TesterRet yadsl_tester_argvp_release_internal()
 
 #ifdef YADSL_DEBUG
 	if (log_fp != NULL) {
+		yadsl_memdb_stdlistener_set_logger(NULL);
 		fclose(log_fp);
-		yadsl_memdb_set_logger(NULL);
 		log_fp = NULL;
 	}
 #endif
+
+	if (!yadsl_memdb_stdlistener_finalize())
+		fprintf(stderr, "WARNING: Could not finalize standard listener\n");
 
 	if (input_fp != stdin) {
 		fclose(input_fp);
 		input_fp = NULL;
 	}
 
-	return YADSL_TESTER_RET_OK;
-}
-
-yadsl_TesterRet yadsl_tester_check_memleak_internal()
-{
-#ifdef YADSL_DEBUG
-	if (yadsl_memdb_amb_list_size() > 0 || yadsl_memdb_error_occurred())
-		return YADSL_TESTER_RET_MEMLEAK;	
-#endif
 	return YADSL_TESTER_RET_OK;
 }
 
@@ -830,7 +840,13 @@ const char* yadsl_tester_errinfo_internal(yadsl_TesterRet ret)
 void yadsl_tester_print_help_strings_internal()
 {
 	const char** str = yadsl_tester_help_strings;
-	for (; str && *str; ++str) puts(*str);
+	if (str != NULL) {
+		printf("\n"
+		       "Script commands\n"
+	           "---------------\n"
+			   "\n");
+	}
+	for (; str && *str; ++str) { puts(*str); putc('\n', stdout); };
 }
 
 void yadsl_tester_seterr_internal(const char* _errfile, int _errline)
@@ -838,4 +854,3 @@ void yadsl_tester_seterr_internal(const char* _errfile, int _errline)
 	errfile = _errfile;
 	errline = _errline;
 }
-

@@ -25,14 +25,13 @@ do { \
 } while(0)
 
 const char *yadsl_tester_help_strings[] = {
-	"This is the interactive module of the list library",
-	"You can interact with many lists at the same time",
-	"Lists are identified with #, which range from 0 to 9",
-	"Objects can be of any type accepted by Tester",
-	"<obj> is actually <obj-type> <obj-data>",
-	"All remaining lists are destroyed in the end",
-	"The registered actions are the following:",
-	"",
+	"This is the interactive module of the list library\n"
+	"You can interact with many lists at the same time\n"
+	"Lists are identified with #, which range from 0 to 9\n"
+	"Objects can be of any type accepted by Tester\n"
+	"<obj> is actually <obj-type> <obj-data>\n"
+	"All remaining lists are destroyed in the end\n"
+	"The registered actions are the following...",
 	"/create <#>",
 	"/append <#> <obj>",
 	"/insert <#> <idx> <obj>",

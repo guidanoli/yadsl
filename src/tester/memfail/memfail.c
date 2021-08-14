@@ -1,3 +1,4 @@
+#include <time.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -134,7 +135,6 @@ typedef struct
 	size_t malloc_countdown;
 	bool log_allocation;
 	bool log_deallocation;
-	bool log_leakage;
 }
 tester_arguments;
 
@@ -143,7 +143,6 @@ tester_arguments;
  * @param fail_by_countdown fail by countdown
  * @param malloc_countdown memory allocation failing countdown
  * @param log_allocation log allocation to log file
- * @param log_leakage log leakage to log file
  * @return log file line count
 */
 static void run_tester(tester_arguments* args)
@@ -172,14 +171,11 @@ static void run_tester(tester_arguments* args)
 	if (args->log_deallocation)
 		command = strcatdyn(command, true, " --enable-log-channel DEALLOCATION", false);
 	
-	if (args->log_leakage)
-		command = strcatdyn(command, true, " --enable-log-channel LEAKAGE", false);
-
 	// Run command
 	if ((ret = system(command)) != 0) {
 		fprintf(stderr, "%s: command \"%s\" exited with value %d\n", programname, command, ret);
 		release_resources();
-		exit(ret);
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -189,6 +185,7 @@ int main(int argc, char** argv)
 	int fail_count = 0;
 	size_t malloc_count;
 	tester_arguments args;
+	time_t now;
 
 	// Get program name
 	if (argc > 0 && argv[0][0] != '\0') {
@@ -215,23 +212,26 @@ int main(int argc, char** argv)
 	for (int i = 0; i < argc; ++i)
 		hash ^= get_string_digest(argv[i]);
 
+	// Hash current time
+	// (source of randomness)
+	now = time(NULL);
+	hash ^= get_string_digest(ctime(&now));
+	
 	// Get filename
 	tmpfilename = get_filename(hash);
-
-	// Check for memory leaks without memory failing
-	args = (tester_arguments) { .log_leakage = true };
-	run_tester(&args);
 
 	// Get number of memory allocations
 	args = (tester_arguments) { .log_allocation = true };
 	run_tester(&args);
 	malloc_count = count_lines(tmpfilename);
+
+	fprintf(stderr, "%s: %zu memory allocations identified\n", programname, malloc_count);
 	
-	// Check for memory leaks with memory failing
+	// Run program and failing each memory allocation
 	for (size_t malloc_countdown = 1; malloc_countdown <= malloc_count && !interrupted; ++malloc_countdown) {
+		fprintf(stderr, "%s: Testing failing memory allocation %zu/%zu\n", programname, malloc_countdown, malloc_count);
 		args = (tester_arguments) { .fail_by_countdown = true,
-		                            .malloc_countdown = malloc_countdown,
-		                            .log_leakage = true };
+		                            .malloc_countdown = malloc_countdown };
 		run_tester(&args);
 	}
 
@@ -241,6 +241,7 @@ int main(int argc, char** argv)
 	if (interrupted)
 	{
 		// Exit with failure
+		fprintf(stderr, "%s: Interrupted\n", programname);
 		return EXIT_FAILURE;
 	}
 	else

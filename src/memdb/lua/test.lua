@@ -1,110 +1,161 @@
 local lt = require "lt"
 local memdb = require "memdb"
 
-local t = { size = 1, afterAll = memdb.afterAll }
+local t = {}
 
-function t:testLogChannels()
-	local channels = memdb.get_log_channel_list()
-	for _, channel in ipairs(channels) do
-		lt.assertType(channel, "string");
-		local val = memdb.get_log_channel(channel)
-		lt.assertType(val, "boolean");
-		memdb.set_log_channel(channel, not val)
-		lt.assertEqual(memdb.get_log_channel(channel), not val)
-		memdb.set_log_channel(channel, val)
-		lt.assertEqual(memdb.get_log_channel(channel), val)
-	end
+function t:assertNotNull(p, ...)
+	lt.assertNotEqual(p, memdb.nullptr(), ...)
 end
 
-function t:testAllLogChannels()
-	local channels = memdb.get_log_channel_list()
-	memdb.set_all_log_channels(true)
-	for _, channel in ipairs(channels) do
-		lt.assertTrue(memdb.get_log_channel(channel))
-	end
-	memdb.set_all_log_channels(false)
-	for _, channel in ipairs(channels) do
-		lt.assertFalse(memdb.get_log_channel(channel))
-	end
+function t:assertNull(p, ...)
+	lt.assertEqual(p, memdb.nullptr(), ...)
 end
 
-function t:nextSize()
-	local size = t.size
-	if t.size < 8 then
-		t.size = t.size * 2
-	else
-		t.size = t.size + 8
-	end
-	return size
+function t:testRawMallocGC()
+	memdb.rawmalloc(1)
 end
 
-function t:getAMBbySize(size)
-	for _, amb in ipairs(memdb.get_amb_list()) do
-		if amb.size == size then
-			return amb
+function t:testMallocGC()
+	memdb.malloc(1, 'abc', 123)
+end
+
+function t:testNullPtrGC()
+	memdb.nullptr()
+end
+
+function t:testRawMallocRawFree()
+	memdb.rawmalloc(1):rawfree()
+end
+
+function t:testRawMallocFree()
+	memdb.rawmalloc(1):free('abc', 345)
+end
+
+function t:testMallocRawFree()
+	memdb.malloc(1, 'abc', 345):rawfree()
+end
+
+function t:testMallocFree()
+	memdb.malloc(1, 'abc', 345):free('cde', 678)
+end
+
+function t:testNullPtrRawFree()
+	memdb.nullptr():rawfree()
+end
+
+function t:testNullPtrFree()
+	memdb.nullptr():free('abc', 234)
+end
+
+function t:testNullPtrReallocGC()
+	memdb.nullptr():realloc(1, 'abc', 123)
+end
+
+function t:testNullPtrRawReallocGC()
+	memdb.nullptr():rawrealloc(1)
+end
+
+function t:testNullPtrReallocFree()
+	local p = memdb.nullptr()
+	lt.assertTrue(p:realloc(1, 'abc', 123))
+	p:free('cde', 456)
+end
+
+function t:testNullPtrRawReallocFree()
+	local p = memdb.nullptr()
+	lt.assertTrue(p:rawrealloc(1))
+	p:free('cde', 456)
+end
+
+function t:testNullPtrReallocRawFree()
+	local p = memdb.nullptr()
+	lt.assertTrue(p:realloc(1, 'abc', 123))
+	p:rawfree()
+end
+
+function t:testNullPtrRawReallocRawFree()
+	local p = memdb.nullptr()
+	lt.assertTrue(p:rawrealloc(1))
+	p:rawfree()
+end
+
+function t:testMallocReallocGrow()
+	local p = memdb.malloc(2, 'abc', 123)
+	lt.assertTrue(p:realloc(4, 'cde', 456))
+end
+
+function t:testMallocReallocShrink()
+	local p = memdb.malloc(2, 'abc', 123)
+	lt.assertTrue(p:realloc(1, 'cde', 456))
+end
+
+function t:testMallocRawReallocGrow()
+	local p = memdb.malloc(2, 'abc', 123)
+	lt.assertTrue(p:rawrealloc(4))
+end
+
+function t:testMallocRawReallocShrink()
+	local p = memdb.malloc(2, 'abc', 123)
+	lt.assertTrue(p:rawrealloc(1))
+end
+
+function t:testRawMallocReallocGrow()
+	local p = memdb.rawmalloc(2)
+	lt.assertTrue(p:realloc(4, 'cde', 456))
+end
+
+function t:testRawMallocReallocShrink()
+	local p = memdb.rawmalloc(2)
+	lt.assertTrue(p:realloc(1, 'cde', 456))
+end
+
+function t:testRawMallocRawReallocGrow()
+	local p = memdb.rawmalloc(2)
+	lt.assertTrue(p:rawrealloc(4))
+end
+
+function t:testRawMallocRawReallocShrink()
+	local p = memdb.rawmalloc(2)
+	lt.assertTrue(p:rawrealloc(1))
+end
+
+function t:testEqualNullPtr()
+	local p1 = memdb.nullptr()
+	local p2 = memdb.nullptr()
+	lt.assertRawNotEqual(p1, p2)
+	lt.assertEqual(p1, p2)
+end
+
+function t:testNotNull()
+	local t = {
+		memdb.malloc(1, 'abc', 345),
+		memdb.rawmalloc(1),
+		memdb.calloc(1, 1, 'abc', 345),
+		memdb.rawcalloc(1, 1),
+	}
+
+	for pointer in ipairs(t) do
+		local found_itself = false
+		self:assertNotNull(pointer)
+		for other_pointer in ipairs(t) do
+			if not rawequal(pointer, other_pointer) then
+				lt.assertNotEqual(pointer, other_pointer)
+			else
+				lt.assertFalse(found_itself)
+				found_itself = true;
+			end
 		end
-	end
-	return nil
-end
-
-function t:testUnsafePointer()
-	local size = self:nextSize()
-	lt.assertNil(self:getAMBbySize(size))
-	local p = memdb.malloc(size)
-	local lst = memdb.get_amb_list()
-	local amb = self:getAMBbySize(size)
-	lt.assertNotNil(amb)
-	lt.assertEqual(amb.funcname, 'malloc')
-	lt.assertTrue(memdb.free(p))
-	lt.assertFalse(memdb.free(p))
-	lt.assertNil(self:getAMBbySize(size))
-end
-
-function t:testSafePointer()
-	local size = self:nextSize()
-	lt.assertNil(self:getAMBbySize(size))
-	local p = memdb.safe_malloc(size)
-	local amb = self:getAMBbySize(size)
-	lt.assertNotNil(amb)
-	lt.assertEqual(amb.funcname, 'malloc')
-	lt.assertFalse(pcall(memdb.free, p))
-	p = nil
-	collectgarbage()
-	lt.assertNil(self:getAMBbySize(size))
-end
-
-function t:testSetGetFailCountdown()
-	for i, value in ipairs{0, 1, 2, 3, 0} do
-		memdb.set_fail_countdown(value)
-		lt.assertEqual(memdb.get_fail_countdown(), value, i)
+		lt.assertTrue(found_itself)
 	end
 end
 
-function t:testFailMalloc()
-	memdb.set_fail_countdown(2)
-	lt.assertEqual(memdb.get_fail_countdown(), 2)
-	self:testSafePointer()
-	lt.assertEqual(memdb.get_fail_countdown(), 1)
-	lt.assertSubstring('bad malloc', lt.assertRaises(self.testSafePointer, self))
-	lt.assertEqual(memdb.get_fail_countdown(), 1)
-	lt.assertSubstring('bad malloc', lt.assertRaises(self.testSafePointer, self))
-	memdb.set_fail_countdown(0)
-	lt.assertEqual(memdb.get_fail_countdown(), 0)
-	self:testSafePointer()
-	lt.assertEqual(memdb.get_fail_countdown(), 0)
-end
-
-function t:testCountMallocs()
-	lt.assertSubstring('function', lt.assertRaises(memdb.count_mallocs, 123))
-	lt.assertEqual(0, memdb.count_mallocs(function() end))
-	lt.assertEqual(1, memdb.count_mallocs(function() memdb.safe_malloc(1) end))
-	lt.assertEqual(1000, memdb.count_mallocs(function()
-		for i = 1, 1000 do memdb.safe_malloc(1) end
-	end))
-	lt.assertSubstring('integer overflow',
-		lt.assertRaises(memdb.count_mallocs, function()
-			memdb.set_fail_countdown(0)
-		end))
+function t:testBadMalloc()
+	self:assertNull(memdb.malloc(math.maxinteger, 'abc', 234)) -- To test: 'bad malloc'
+	self:assertNull(memdb.rawmalloc(math.maxinteger))
+	self:assertNull(memdb.calloc(math.maxinteger, math.maxinteger, 'abc', 234))
+	self:assertNull(memdb.rawcalloc(math.maxinteger, math.maxinteger))
+	lt.assertFalse(memdb.nullptr():realloc(math.maxinteger, 'abc', 234))
+	lt.assertFalse(memdb.nullptr():rawrealloc(math.maxinteger))
 end
 
 return t

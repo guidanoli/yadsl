@@ -10,10 +10,9 @@
 /* Help */
 
 const char *yadsl_tester_help_strings[] = {
-	"This is an interactive module of the set library",
-	"You interact with a single set object at all times",
-	"",
-	"The registered actions are the following:",
+	"This is an interactive module of the set library\n"
+	"You interact with a single set object at all times\n"
+	"The registered actions are the following...",
 	"/save <string>             save string",
 	"/contains [YES/NO]         check if set contains saved string",
 	"/filter <string> [YES/NO]  check if filter matches one string",

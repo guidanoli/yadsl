@@ -1,509 +1,369 @@
 #include <memdb/memdb.h>
 
 #include <stdlib.h>
+#include <assert.h>
 #include <string.h>
 #include <assert.h>
-#include <stdarg.h>
-#include <stdint.h>
 
-#if defined(_MSC_VER)
-# pragma warning(disable : 4996)
+#include <memdb/list.h>
+
+/**
+ * Listener list node
+ * ==================
+ *
+ * Each node contains an accept callback (accept_cb) and an
+ * acknowledge callback (ack_cb) that are called with the
+ * auxiliar argument (arg). These nodes are linked through
+ * the next field in a single-linked list fashion.
+ *
+ * Invariants
+ * ----------
+ * LLN1. The 'next' field points to valid node or to NULL
+ * LLN2. accept_cb and ack_cb point to valid functions or to NULL *
+*/
+struct yadsl_MemDebugListener
+{
+	struct yadsl_MemDebugListener* next; /* nullable */
+	yadsl_MemDebugAcceptCallback accept_cb; /* nullable */
+	yadsl_MemDebugAcknowledgeCallback ack_cb; /* nullable */
+	yadsl_MemDebugListenerArgument* arg; /* nullable */
+};
+
+typedef struct yadsl_MemDebugListener Listener;
+
+/**
+ * Listener list
+ * =============
+ *
+ * A single-linked list with nodes containing information about the
+ * registered listeners. The first node in the list is pointed by
+ * g_listener_head and is here referred to as the 'head'. For iterating
+ * through listeners in a safe way, we also maintain a pointer to the
+ * current listener, g_current_listener, that we here refer to as 'cursor'.
+ * 
+ * Invariants
+ * ----------
+ *  LL0. The list does not have cycles
+ *  LL1. If the head is NULL, then the cursor is NULL
+ *  LL2. If the head is not NULL, then the cursor is either NULL or a valid node
+ *       that is accessible via the head and the 'next' field of its nodes
+ *
+ *  Rules
+ *  -----
+ *  LL3. If the cursor is NULL, then no iteration is taking place
+ *  LL4. If the cursor is not NULL, then iteration is taking place and cannot
+ *       be overriden except for the function responsible for the iteration
+*/
+static Listener* g_listener_head; /* First listener */
+static Listener* g_current_listener; /* Current listener */
+
+/* Helper macro for checking if iteration is taking place */
+#define IS_LISTENING (g_current_listener != NULL)
+
+#ifdef YADSL_DEBUG
+/* Helper function for checking invariants (for debugging) */
+static void check_invariants()
+{
+	bool found_current = false;
+	for (Listener* p = g_listener_head; p != NULL; p = p->next) {
+		for (Listener* q = p->next; q != NULL; q = q->next) {
+			assert(p != q && "LL0");
+		}
+	}
+	for (Listener* p = g_listener_head; p != NULL; p = p->next) {
+		if (p == g_current_listener) {
+			found_current = true;
+		}
+	}
+	if (g_listener_head == NULL) {
+		assert(g_current_listener == NULL && "LL1");
+	} else {
+		assert((g_current_listener == NULL || found_current) && "LL2");
+	}
+}
 #endif
 
-/**
- * @brief Return code used internally
-*/
-typedef enum
+yadsl_MemDebugListenerHandle*
+_yadsl_memdb_add_listener(
+	yadsl_MemDebugAcceptCallback accept_cb,
+	yadsl_MemDebugAcknowledgeCallback ack_cb,
+	yadsl_MemDebugListenerArgument* arg)
 {
-	YADSL_MEMDB_RET_OK = 0, /**< All went ok */
-	YADSL_MEMDB_RET_COPY, /**< Found duplicate node */
-	YADSL_MEMDB_RET_NOT_FOUND, /**< Node not found */
-	YADSL_MEMDB_RET_MEMORY, /**< Could not allocate memory */
+	Listener* listener;
+	listener = malloc(sizeof(*listener));
+	if (listener != NULL) {
+		listener->accept_cb = accept_cb;
+		listener->ack_cb = ack_cb;
+		listener->arg = arg;
+		list_append((ListNode**)&g_listener_head, (ListNode*)listener);
+	}
+	return listener;
 }
-yadsl_MemDebugRet;
 
-/* Globals */
-
-static yadsl_MemDebugAMB* amb_list_head; /**< AMB list head (nullable) */
-static size_t amb_list_size; /**< AMB list size */
-
-static uint8_t log_channels; /**< Log channels bitmap */
-static FILE* log_fp; /**< Log file pointer (nullable) */
-
-static bool error_occurred; /**< Error occurred flag */
-static bool fail_occurred; /**< Fail occurred flag */
-
-static size_t fail_countdown; /**< Allocation fail countdown */
-
-/* Functions */
-
-yadsl_MemDebugAMB*
-yadsl_memdb_get_amb_list()
+yadsl_MemDebugListenerHandle*
+yadsl_memdb_add_listener(
+	yadsl_MemDebugAcceptCallback accept_cb,
+	yadsl_MemDebugAcknowledgeCallback ack_cb,
+	yadsl_MemDebugListenerArgument* arg)
 {
-	return amb_list_head;
+	yadsl_MemDebugListenerHandle* handle;
+#ifdef YADSL_DEBUG
+	check_invariants();
+#endif
+	handle = _yadsl_memdb_add_listener(accept_cb, ack_cb, arg);
+#ifdef YADSL_DEBUG
+	check_invariants();
+	if (handle != NULL) {
+		assert(g_listener_head == (Listener*)handle && "listener was added first");
+	}
+#endif
+	return handle;
 }
 
 bool
-yadsl_memdb_log_channel_get(
-	yadsl_MemDebugLogChannel log_channel)
+_yadsl_memdb_remove_listener(
+	yadsl_MemDebugListenerHandle* handle)
 {
-	return log_channels & (1 << log_channel);
-}
-
-void
-yadsl_memdb_log_channel_set(
-	yadsl_MemDebugLogChannel log_channel,
-	bool enable)
-{
-	if (enable)
-		log_channels |= (1 << log_channel);
-	else
-		log_channels &= ~(1 << log_channel);
-}
-
-/**
- * @brief Get label for log channel
- * @param log_channel log channel
- * @return label or NULL if nonexistent
-*/
-static const char*
-yadsl_memdb_log_channel_label_get_internal(
-		yadsl_MemDebugLogChannel log_channel)
-{
-	switch (log_channel) {
-	case YADSL_MEMDB_LOG_CHANNEL_ALLOCATION:
-		return "ALLOC";
-	case YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION:
-		return "DEALLOC";
-	case YADSL_MEMDB_LOG_CHANNEL_LEAKAGE:
-		return "LEAK";
-	default:
-		return NULL;
+	Listener** listener_ptr;
+	listener_ptr = (Listener**)list_find((ListNode**)&g_listener_head, (ListNode*)handle);
+	if (listener_ptr == NULL) {
+		return false;
 	}
+	free(list_remove((ListNode**)listener_ptr));
+	return true;
 }
 
-/**
- * @brief Log message to a specific channel
- * @param log_channel log channel
- * @param format see fprintf function family
- * @param ... see fprintf function family
-*/
+bool
+yadsl_memdb_remove_listener(
+	yadsl_MemDebugListenerHandle* handle)
+{
+	bool ok;
+#ifdef YADSL_DEBUG
+	check_invariants();
+#endif
+	ok = _yadsl_memdb_remove_listener(handle);
+#ifdef YADSL_DEBUG
+	check_invariants();
+	for (Listener* p = g_listener_head; p != NULL; p = p->next) {
+		assert(p != (Listener*)handle && "listener was removed");
+	}
+#endif
+	return ok;
+}
+
 static void
-yadsl_memdb_log_internal(
-		yadsl_MemDebugLogChannel log_channel,
-		const char* format,
-		...)
+_acknowledge_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 {
-	va_list va;
-	const char* label;
-	FILE* fp;
-
-	/* Check if log channel is temp */
-	if (!yadsl_memdb_log_channel_get(log_channel))
-		return;
-
-	/* Use stderr by default if no file pointer is given */
-	fp = log_fp ? log_fp : stderr;
-
-	/* Start varadic arguments */
-	va_start(va, format);
-
-	/* Get log channel label */
-	label = yadsl_memdb_log_channel_label_get_internal(log_channel);
-
-	if (label)
-		fprintf(fp, "[MEMDB<<%s] ", label);
-	else
-		fprintf(fp, "[MEMDB] ");
+#ifdef YADSL_DEBUG
+	yadsl_MemDebugEvent eventcopy;
+	memcpy(&eventcopy, event, sizeof(eventcopy));
+#endif
 	
-	vfprintf(fp, format, va);
-
-	/* End varadic arguments */
-	va_end(va);
-
-	fprintf(fp, "\n");
-}
-
-bool
-yadsl_memdb_error_occurred()
-{
-	return error_occurred;
-}
-
-bool
-yadsl_memdb_fail_occurred()
-{
-	return fail_occurred;
-}
-
-/**
- * @brief Checks if AMB total count coincides with failing countdown and
- *        whether failing by countdown is enabled
- * @return whether allocation should fail (true) or not (false)
-*/
-static bool
-yadsl_memdb_fail_by_countdown_internal()
-{
-	return fail_countdown == 1;
-}
-
-/**
- * @brief Checks if memory allocation should fail
- * @return whether allocation should fail (true) or not (false)
-*/
-static bool
-yadsl_memdb_fail_internal(
-		const char* func,
-		size_t size,
-		const char* file,
-		const int line)
-{
-	bool fail = yadsl_memdb_fail_by_countdown_internal();
-	/* Register that failure occurred */
-	fail_occurred = fail_occurred || fail;
-	if (fail) {
-		/* Log failure */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-			"%s(%zu) @ %s:%d -> %p (FAILED ARTIFICIALLY)",
-			func, size, file, line, NULL);
-	}
-	return fail;
-}
-
-/**
- * @brief Find node holding AMB
- * @param camb pointer to an AMB
- * @param prev_ptr previous node (NULL = first node)
- * @return
- * * node, and *prev_ptr is updated if not NULL
- * * NULL if node was not found
-*/
-static yadsl_MemDebugAMB*
-yadsl_memdb_find_amb_internal(
-		void* amb,
-		yadsl_MemDebugAMB** prev_ptr)
-{
-	yadsl_MemDebugAMB* node = amb_list_head, *prev = NULL;
-	for (; node; node = node->next) {
-		if (node->amb == amb) {
-			if (prev_ptr)
-				*prev_ptr = prev;
-			return node;
-		}
-		prev = node;
-	}
-	return NULL;
-}
-
-/**
- * @brief Add node to AMB list
- * @params see yadsl_MemDebugAMB
- * @return
- * * ::YADSL_MEMDB_RET_OK
- * * ::YADSL_MEMDB_RET_COPY
- * * ::YADSL_MEMDB_RET_MEMORY
-*/
-static yadsl_MemDebugRet
-yadsl_memdb_add_amb_internal(
-		const char* funcname,
-		void* amb,
-		size_t size,
-		const char* file,
-		const int line)
-{
-	yadsl_MemDebugAMB* node;
-
-	/* Try to find node holding AMB */
-	if (node = yadsl_memdb_find_amb_internal(amb, NULL)) {
-
-		/* Log copy error */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-			"Tried to add %p (%zuB @ %s:%d by %s) to the list but found copy "
-			" (%zuB @ %s:%d by %s)",
-			amb, size, file, line, funcname,
-			node->size, node->file, node->line, node->funcname);
-
-		error_occurred = true;
-
-		return YADSL_MEMDB_RET_COPY;
-	}
-
-	/* Allocate node */
-	node = malloc(sizeof(yadsl_MemDebugAMB));
-	if (node) {
-		node->amb = amb;
-		node->size = size;
-		node->file = file;
-		node->line = line;
-		node->next = amb_list_head;
-		node->funcname = funcname;
-		
-		/* Append node to AMB list */
-		amb_list_head = node;
-		++amb_list_size;
-
-		/* Decrement countdown */
-		if (fail_countdown > 0)
-			--fail_countdown;
-
-		/* Log allocation */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-			"%s(%zu) @ %s:%d -> %p",
-			funcname, size, file, line, amb);
-
-		return YADSL_MEMDB_RET_OK;
-	} else {
-		return YADSL_MEMDB_RET_MEMORY;
-	}
-}
-
-/**
- * @brief Remove node from AMB list
- * @param camb pointer to AMB
- * @return
- * * ::YADSL_MEMDB_RET_OK
- * * ::YADSL_MEMDB_RET_NOT_FOUND
-*/
-static yadsl_MemDebugRet
-yadsl_memdb_remove_amb_internal(
-		void* amb)
-{
-	yadsl_MemDebugAMB* node, *prev;
-
-	/* Try to find node holding AMB */
-	node = yadsl_memdb_find_amb_internal(amb, &prev);
-
-	if (node) {
-		/* Remove node */
-		if (prev == NULL)
-			amb_list_head = node->next;
-		else
-			prev->next = node->next;
-
-		--amb_list_size;
-
-		/* Log deallocation */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION,
-			"free(%p) <- %s(%zu) @ %s:%d",
-			node->amb, node->funcname, node->size, node->file, node->line);
-
-		/* Deallocate node */
-		free(node);
-
-		return YADSL_MEMDB_RET_OK;
-	} else {
-		/* Log failed deallocation */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION,
-			"free(%p) <- ?(?) @ ?:?", amb);
-
-		error_occurred = true;
-
-		return YADSL_MEMDB_RET_NOT_FOUND;
-	}
-}
-
-bool
-yadsl_memdb_contains_amb(
-		void* amb)
-{
-	return yadsl_memdb_find_amb_internal(amb, NULL) != NULL;
-}
-
-void
-yadsl_memdb_clear_amb_list()
-{
-	bool temp;
-
-	/* Check if list is not empty */
-	if (amb_list_size) {
-
-		/* Log leakage */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_LEAKAGE,
-			"%zu leak(s) detected:", amb_list_size);
-	}
-
-	/* Temporarily turn on the deallocation log channel */
-	temp = yadsl_memdb_log_channel_get(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION);
-	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, true);
-
-	while (amb_list_size) {
-		void* amb = amb_list_head->amb;
-		yadsl_memdb_remove_amb_internal(amb);
-		free(amb);
-	}
-
-	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, temp);
-}
-
-void
-yadsl_memdb_clear_amb_list_from_file(const char* file)
-{
-	bool temp;
-	yadsl_MemDebugAMB* node, *next;
-	size_t mem_leaks = 0;
-
-	temp = yadsl_memdb_log_channel_get(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION);
-	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, true);
-
-	for (node = amb_list_head; node; node = node->next)
-		if (strcmp(node->file, file) == 0)
-			++mem_leaks;
-
-	if (mem_leaks) {
-
-		/* Log leakage */
-		yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_LEAKAGE,
-			"%zu leak(s) detected:", mem_leaks);
-	}
-
-	for (node = amb_list_head; node; node = next) {
-		next = node->next;
-		if (strcmp(node->file, file) == 0) {
-			void* amb = node->amb;
-			yadsl_memdb_remove_amb_internal(amb);
-			free(amb);
+	for (g_current_listener = g_listener_head;
+			g_current_listener != NULL;
+			g_current_listener = g_current_listener->next)
+	{
+		if (g_current_listener->ack_cb != NULL)
+		{
+			g_current_listener->ack_cb(event, ptr, g_current_listener->arg);
+#ifdef YADSL_DEBUG
+			assert(memcmp(&eventcopy, event, sizeof(eventcopy)) == 0 && "event was not modified");
+#endif
 		}
 	}
-
-	yadsl_memdb_log_channel_set(YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION, temp);
 }
 
-size_t
-yadsl_memdb_get_fail_countdown()
+static void
+acknowledge_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 {
-	return fail_countdown;
-}
-
-void
-yadsl_memdb_set_fail_countdown(
-		size_t countdown)
-{
-	fail_countdown = countdown;
-}
-
-size_t
-yadsl_memdb_amb_list_size()
-{
-	return amb_list_size;
-}
-
-void
-yadsl_memdb_set_logger(
-		FILE* fp)
-{
-	log_fp = fp;
-}
-
-void
-yadsl_memdb_dump(
-		FILE* fp,
-		void* mem)
-{
-	yadsl_MemDebugAMB* amb = yadsl_memdb_find_amb_internal(mem, NULL);
-	if (amb == NULL) {
-		fputc('?', fp);
-	} else {
-		unsigned char* c = mem;
-		size_t size = amb->size;
-		while (size--) fprintf(fp, "%02X", (unsigned int) *(c++));
-	}
+#ifdef YADSL_DEBUG
+	assert(!IS_LISTENING && "not listening to any events");
+	assert(event != NULL);
+	assert(event->function >= 0 && event->function < YADSL_MEMDB_FUNCTION_MAX);
+	assert(event->file != NULL);
+	check_invariants();
+#endif
+	_acknowledge_listeners(event, ptr);
+#ifdef YADSL_DEBUG
+	assert(!IS_LISTENING && "not listening to any events");
+	check_invariants();
+#endif
 }
 
 void
 yadsl_memdb_free(
-	void* amb)
+	void* ptr,
+	const char* file,
+	int line)
 {
-	/* Remove AMB node from list */
-	yadsl_memdb_remove_amb_internal(amb);
+	yadsl_MemDebugEvent event;
+#ifdef YADSL_DEBUG
+	/* For later memcpy and memcmp */
+	memset(&event, 0, sizeof(event));
+#endif
+	event = (yadsl_MemDebugEvent){
+		.function = YADSL_MEMDB_FREE,
+		.file = file,
+		.line = line,
+		.free = {
+			.ptr = ptr,
+		},
+	};
 
-	/* Deallocate AMB */
-	free(amb);
+	free(ptr);
+
+	if (!IS_LISTENING) {
+		acknowledge_listeners(&event, NULL);
+	}
+}
+
+static bool
+_ask_listeners(yadsl_MemDebugEvent const* event)
+{
+#ifdef YADSL_DEBUG
+	yadsl_MemDebugEvent eventcopy;
+	memcpy(&eventcopy, event, sizeof(eventcopy));
+#endif
+	g_current_listener = g_listener_head;
+	while (g_current_listener != NULL) {
+		if (g_current_listener->accept_cb != NULL) {
+			if (!g_current_listener->accept_cb(event, g_current_listener->arg)) {
+				g_current_listener = NULL;
+				return false;
+			}
+#ifdef YADSL_DEBUG
+			assert(memcmp(&eventcopy, event, sizeof(eventcopy)) == 0 && "event was not modified");
+#endif
+		}
+		g_current_listener = g_current_listener->next;
+	}
+	return true;
+}
+
+static bool
+ask_listeners(yadsl_MemDebugEvent const* event)
+{
+	bool ok;
+#ifdef YADSL_DEBUG
+	assert(!IS_LISTENING && "not listening to any events");
+	assert(event != NULL);
+	assert(event->function >= 0 && event->function < YADSL_MEMDB_FUNCTION_MAX);
+	assert(event->file != NULL);
+	check_invariants();
+#endif
+	ok = _ask_listeners(event);
+#ifdef YADSL_DEBUG
+	assert(!IS_LISTENING && "not listening to any events");
+	check_invariants();
+#endif
+	return ok;
 }
 
 void*
 yadsl_memdb_malloc(
-		size_t size,
-		const char* file,
-		const int line)
+	size_t size,
+	const char* file,
+	int line)
 {
-	void* amb = NULL; /* Allocated memory block */
+	void* ptr;
 
-	if (!yadsl_memdb_fail_internal("malloc", size, file, line)) {
-		amb = malloc(size);
-		if (amb) {
-			/* If allocation succeeded, add AMB node */
-			if (yadsl_memdb_add_amb_internal("malloc", amb, size, file, line)) {
-				/* If node could not be added, deallocate AMB */
-				free(amb);
-				amb = NULL;
-			}
-		}
+	yadsl_MemDebugEvent event;
+#ifdef YADSL_DEBUG
+	/* For later memcpy and memcmp */
+	memset(&event, 0, sizeof(event));
+#endif
+	event = (yadsl_MemDebugEvent){
+		.function = YADSL_MEMDB_MALLOC,
+		.file = file,
+		.line = line,
+		.malloc = {
+			.size = size,
+		},
+	};
+
+	if (!IS_LISTENING && ask_listeners(&event)) {
+		ptr = malloc(size);
+	} else {
+		ptr = NULL;
 	}
 
-	return amb;
+	if (!IS_LISTENING) {
+		acknowledge_listeners(&event, ptr);
+	}
+
+	return ptr;
 }
 
 void*
 yadsl_memdb_realloc(
-		void* amb,
-		size_t size,
-		const char* file,
-		const int line)
+	void* ptr,
+	size_t size,
+	const char* file,
+	int line)
 {
-	void* ramb = NULL; /* Reallocated memory block */
+	void* newptr;
 
-	if (!yadsl_memdb_fail_internal("realloc", size, file, line)) {
-		yadsl_MemDebugAMB* node;
+	yadsl_MemDebugEvent event;
+#ifdef YADSL_DEBUG
+	/* For later memcpy and memcmp */
+	memset(&event, 0, sizeof(event));
+#endif
+	event = (yadsl_MemDebugEvent){
+		.function = YADSL_MEMDB_REALLOC,
+		.file = file,
+		.line = line,
+		.realloc = {
+			.ptr = ptr,
+			.size = size,
+		},
+	};
+	
+	if (!IS_LISTENING && ask_listeners(&event)) {
+		newptr = realloc(ptr, size);
+	} else {
+		newptr = NULL;
+	}
 
-		/* Try finding AMB node in list */
-		node = yadsl_memdb_find_amb_internal(amb, NULL);
-		if (node) {
-			/* If found, reallocate memory block */
-			ramb = realloc(amb, size);
-			if (ramb) {
-				/* If reallocation succedded, update AMB node */
-				node->file = file;
-				node->funcname = "realloc";
-				node->line = line;
-				node->amb = ramb;
-				node->size = size;
-			}
-			yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-				"realloc(%p, %zu) @ %s:%d -> %p",
-				amb, size, file, line, ramb);
-		} else {
-			/* Log reallocation error */
-			yadsl_memdb_log_internal(YADSL_MEMDB_LOG_CHANNEL_ALLOCATION,
-				"realloc(%p, %zu) @ %s:%d -> %p (NODE NOT FOUND)",
-				amb, size, file, line, NULL);
-
-			error_occurred = true;
-		}
+	if (!IS_LISTENING) {
+		acknowledge_listeners(&event, newptr);
 	}
 	
-	return ramb;
+	return newptr;
 }
 
 void*
 yadsl_memdb_calloc(
-		size_t cnt,
-		size_t size,
-		const char* file,
-		const int line)
+	size_t nmemb,
+	size_t size,
+	const char* file,
+	int line)
 {
-	void* camb = NULL; /* Cleanly allocated memory block */
+	void* ptr;
 
-	if (!yadsl_memdb_fail_internal("calloc", size*cnt, file, line)) {
-		camb = calloc(cnt, size);
-		if (camb) {
-			/* If cleanly allocation succeeded, add AMB node */
-			if (yadsl_memdb_add_amb_internal("calloc", camb, size*cnt, file, line)) {
-				/* If node could not be added, deallocate AMB */
-				free(camb);
-				camb = NULL;
-			}
-		}
+	yadsl_MemDebugEvent event;
+#ifdef YADSL_DEBUG
+	/* For later memcpy and memcmp */
+	memset(&event, 0, sizeof(event));
+#endif
+	event = (yadsl_MemDebugEvent){
+		.function = YADSL_MEMDB_CALLOC,
+		.file = file,
+		.line = line,
+		.calloc = {
+			.nmemb = nmemb,
+			.size = size,
+		},
+	};
+
+	if (!IS_LISTENING && ask_listeners(&event)) {
+		ptr = calloc(nmemb, size);
+	} else {
+		ptr = NULL;
 	}
 
-	return camb;
+	if (!IS_LISTENING) {
+		acknowledge_listeners(&event, ptr);
+	}
+
+	return ptr;
 }

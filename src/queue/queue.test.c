@@ -12,10 +12,9 @@
 #endif
 
 const char *yadsl_tester_help_strings[] = {
-	"This is the queue test module",
-	"You will be interacting with the same queue at all times",
-	"The available actions are the following:",
-	"",
+	"This is the queue test module\n"
+	"You will be interacting with the same queue at all times\n"
+	"The available actions are the following...",
 	"/queue X     queue variable X",
 	"/dequeue X   dequeue and compare top with X",
 	"/empty <isempty> check whether queue is empty (<isempty> = true)",

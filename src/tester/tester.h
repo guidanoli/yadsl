@@ -112,7 +112,6 @@
  * 
  * * ALLOCATION, for memory allocation events
  * * DEALLOCATION, for memory deallocation events
- * * LEAKAGE, for memory leak events
  * 
  * Script grammar
  * --------------
@@ -156,7 +155,6 @@ typedef enum
 	YADSL_TESTER_RET_OK = 0, /**< No errors occurred */
 	YADSL_TESTER_RET_FILE, /**< Failed file operation */
 	YADSL_TESTER_RET_MALLOC, /**< Failed memory allocation */
-	YADSL_TESTER_RET_MEMLEAK, /**< Memory leak detected */
 	YADSL_TESTER_RET_OVERFLOW, /**< Buffer overflow */
 	YADSL_TESTER_RET_COMMAND, /**< Failed command parsing */
 	YADSL_TESTER_RET_ARGUMENT, /**< Failed argument parsing */

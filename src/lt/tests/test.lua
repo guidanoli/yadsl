@@ -1,5 +1,4 @@
 local driver = require "lt.tests.driver"
-lt = require "lt" -- All tests use lt
 
 local t = {}
 

@@ -46,8 +46,8 @@ expect 1 assert 0 1
 assert 1 2
 
 expect 2 assert 0 2
-expect 9 assert abc 1
-expect 9 assert 1 abc
+expect 8 assert abc 1
+expect 8 assert 1 abc
 
 # Equal
 
@@ -73,7 +73,7 @@ strlen 3 ABC
 strlen 3 "ABC"
 strlen 3 " 	 "
 
-expect 9 strlen abc abc
+expect 8 strlen abc abc
 
 # Long commands
 
@@ -95,7 +95,7 @@ sum 63 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 
 # Command names
 
-expect 7 RAISE 7
+expect 1 RAISE 1
 expect -3 r4153 -3
 
 # At least x arguments

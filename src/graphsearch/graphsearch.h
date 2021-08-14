@@ -76,18 +76,6 @@ yadsl_graphsearch_bfs(
 	yadsl_GraphSearchVertexVisitFunc visit_vertex_func,
 	yadsl_GraphSearchEdgeVisitFunc visit_edge_func);
 
-#ifdef YADSL_DEBUG
-
-/**
- * @brief Get graph search node reference count
- * Used for memory leak detection.
- * @return graph search node reference count
-*/
-int
-yadsl_graphsearch_get_node_ref_count();
-
-#endif
-
 /** @} */
 
 #endif

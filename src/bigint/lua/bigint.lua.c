@@ -132,6 +132,7 @@ static int bigint_gc(lua_State* L)
 		udata->bigint = NULL;
 		yadsl_bigint_destroy(bigint);
 	}
+	return 0;
 }
 
 static int bigint_add(lua_State* L)

@@ -12,8 +12,7 @@ function(add_tester_scripts target)
 		get_filename_component(SCRIPT_PATH ${SCRIPT} ABSOLUTE)
 		add_test(NAME ${SCRIPT}
 			COMMAND ${target}
-			"--input-file" ${SCRIPT_PATH}
-			"--enable-log-channel" "LEAKAGE")
+			"--input-file" ${SCRIPT_PATH})
 		if(CMAKE_BUILD_TYPE MATCHES Debug)
 			if(YADSL_BUILD_LONG_TESTS)
 				add_test(NAME "${SCRIPT}_memfail"

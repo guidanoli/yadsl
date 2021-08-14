@@ -1,3 +1,4 @@
+local lt = require "lt"
 local t = { n = 0, m = 0, numbers = {}, min = 1, max = 10 }
 
 function t:beforeAll()

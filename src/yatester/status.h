@@ -14,7 +14,6 @@ typedef enum
 	YATESTER_ERROR, /**< Error */
 	YATESTER_NOMEM, /**< No memory */
 	YATESTER_FTLERR, /**< Fatal error */
-	YATESTER_MEMLK, /**< Memory leak */
 	YATESTER_IOERR, /**< I/O error */
 	YATESTER_STXERR, /**< Syntax error */
 	YATESTER_BADCMD, /**< Bad command */

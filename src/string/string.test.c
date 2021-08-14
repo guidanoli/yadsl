@@ -21,11 +21,10 @@ do { \
 } while(0)
 
 const char* yadsl_tester_help_strings[] = {
-	"This is the interactive module of the string library",
-	"You can interact with many string at the same time",
-	"Strings are identified with #, which range from 0 to 9",
-	"The registered actions are the following:",
-	"",
+	"This is the interactive module of the string library\n"
+	"You can interact with many string at the same time\n"
+	"Strings are identified with #, which range from 0 to 9\n"
+	"The registered actions are the following...",
 	"/save <#> <string>",
 	"/compare <#-first> <#-second> <eq?>",
 	"/duplicate <#-src> <#-dest>",

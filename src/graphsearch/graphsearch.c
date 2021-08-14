@@ -7,10 +7,6 @@
 
 #include <queue/queue.h>
 
-#ifdef YADSL_DEBUG
-int nodeRefCount = 0;
-#endif
-
 typedef struct
 {
 	yadsl_GraphVertexObject* parent;
@@ -234,31 +230,11 @@ yadsl_GraphSearchBFSTreeNode* yadsl_graphsearch_allocate_node_internal(
 		node->parent = parent;
 		node->edge = edge;
 		node->child = child;
-
-#ifdef YADSL_DEBUG
-		++nodeRefCount;
-		printf("Allocating node %p\n", node);
-#endif
-
 	}
 	return node;
 }
 
 void yadsl_graphsearch_free_node_internal(yadsl_QueueItemObj* item)
 {
-	yadsl_GraphSearchBFSTreeNode* node = (yadsl_GraphSearchBFSTreeNode*) item;
-
-#ifdef YADSL_DEBUG
-	--nodeRefCount;
-	printf("Deallocating node %p\n", node);
-#endif
-
-	free(node);
+	free((yadsl_GraphSearchBFSTreeNode*)item);
 }
-
-#ifdef YADSL_DEBUG
-int yadsl_graphsearch_get_node_ref_count()
-{
-	return nodeRefCount;
-}
-#endif

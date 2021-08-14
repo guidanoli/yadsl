@@ -1,241 +1,264 @@
 #include <limits.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include <memdb/stdlib.h>
+#include <memdb/memdb.h>
 
 #include "lauxlib.h"
 
-#define PTR "MEMDB_POINTER"
-#define UNSAFE_PTR "MEMDB_UNSAFE_POINTER"
+#define PTR "Pointer"
 
-static int get_amb_list_size(lua_State* L) {
-	lua_pushinteger(L, (lua_Integer)yadsl_memdb_amb_list_size());
-	return 1;
+typedef struct
+{
+	void* ptr; /* nullable -- null when deleted */
+	char* filename; /* nullable -- null when deleted */
+}
+ptr_t;
+
+typedef struct
+{
+	const void* ptr; /* nullable -- null when deleted */
+}
+constptr_t;
+
+typedef struct
+{
+	yadsl_MemDebugListenerHandle* handle; /* null when deleted */
+	lua_State* L; /* pointer to exclusive thread used for
+	                 callback handling -- null when deleted */
+	int accept_cb; /* can be LUA_NOREF -- LUA_NOREF when deleted */
+	int ack_cb; /* can be LUA_NOREF -- LUA_NOREF when deleted */
+}
+listener_t;
+
+static size_t validate_size(lua_State* L, int arg)
+{
+	size_t size;
+	size = luaL_checkinteger(L, arg);
+	if (size < 0) return luaL_argerror(L, arg, "negative size");
+	return size;
 }
 
-static int get_amb_list(lua_State* L) {
-	size_t size = yadsl_memdb_amb_list_size();
-	yadsl_MemDebugAMB* list = yadsl_memdb_get_amb_list();
-	lua_createtable(L, size, 0);
-	while (list != NULL)
-	{
-		lua_createtable(L, 0, 5);
-		lua_pushstring(L, list->funcname);
-		lua_setfield(L, -2, "funcname");
-		lua_pushstring(L, list->file);
-		lua_setfield(L, -2, "filename");
-		lua_pushinteger(L, (lua_Integer)list->line);
-		lua_setfield(L, -2, "line");
-		lua_pushinteger(L, (lua_Integer)list->size);
-		lua_setfield(L, -2, "size");
-		lua_pushlightuserdata(L, list->amb);
-		lua_setfield(L, -2, "address");
-		lua_rawseti(L, -2, (lua_Integer)size);
-		list = list->next;
-		size--;
-	}
-	assert(size == 0);
-	return 1;
+static int validate_line(lua_State* L, int arg)
+{
+	lua_Integer line;
+	line = luaL_checkinteger(L, arg);
+	if (line > INT_MAX) return luaL_argerror(L, 3, "integer overflow");
+	return (int)line;
 }
 
-static int error_occurred(lua_State* L) {
-	lua_pushboolean(L, (int)yadsl_memdb_error_occurred());
-	return 1;
+static char* copy_string_at(lua_State* L, int arg)
+{
+	size_t len;
+	char* strcopy;
+	const char* str = luaL_checklstring(L, arg, &len);
+	strcopy = malloc(len + 1);
+	if (strcopy != NULL)
+		memcpy(strcopy, str, len + 1);
+	return strcopy;
 }
 
-static int set_fail_countdown(lua_State* L) {
-	lua_Integer cd = luaL_checkinteger(L, 1);
-	luaL_argcheck(L, cd >= 0, 1, "expected positive integer");
-	yadsl_memdb_set_fail_countdown((size_t)cd);
-	return 0;
-}
-
-static int get_fail_countdown(lua_State* L) {
-	size_t cd = yadsl_memdb_get_fail_countdown();
-	if (cd > (size_t)LUA_MAXINTEGER)
-		return luaL_error(L, "integer overflow");
-	lua_pushinteger(L, (lua_Integer)cd);
-	return 1;
-}
-
-/* count_mallocs(f : function, ...) -> nmalloc : number, ok : boolean, ... */
-static int count_mallocs(lua_State* L) {
-	int status;
-	luaL_checktype(L, 1, LUA_TFUNCTION);
-	size_t cd_before = yadsl_memdb_get_fail_countdown();
-	yadsl_memdb_set_fail_countdown(SIZE_MAX);
-	status = lua_pcall(L, lua_gettop(L) - 1, LUA_MULTRET, 0);
-	size_t cd_after = yadsl_memdb_get_fail_countdown();
-	yadsl_memdb_set_fail_countdown(cd_before);
-	luaL_checkstack(L, 2, NULL);
-	lua_pushboolean(L, status == 0);
-	lua_insert(L, 1);
-	size_t nmallocs = SIZE_MAX - cd_after;
-	if (nmallocs > (size_t)LUA_MAXINTEGER)
-		return luaL_error(L, "integer overflow");
-	lua_pushinteger(L, (lua_Integer)nmallocs);
-	lua_insert(L, 1);
-	return lua_gettop(L);
-}
-
-static const char * const log_channels[] = {
-	"allocation",
-	"deallocation",
-	"leakage",
-	NULL,
-};
-
-#define sizeofv(x) (sizeof(x)/sizeof(*x))
-
-static int get_log_channel(lua_State* L) {
-	yadsl_MemDebugLogChannel log_channel;
-	bool enabled;
-	log_channel = luaL_checkoption(L, 1, NULL, log_channels);
-	assert(log_channel >= 0 && log_channel < sizeofv(log_channels));
-	enabled = yadsl_memdb_log_channel_get(log_channel);
-	lua_pushboolean(L, enabled);
-	return 1;
-}
-
-static int get_log_channel_list(lua_State* L) {
-	lua_createtable(L, sizeofv(log_channels), 0);
-	assert(sizeofv(log_channels) < INT_MAX);
-	for (int i = 0; i < sizeofv(log_channels); ++i) {
-		lua_pushstring(L, log_channels[i]);
-		lua_rawseti(L, -2, i + 1);
-	}
-	return 1;
-}
-
-static int set_log_channel(lua_State* L) {
-	yadsl_MemDebugLogChannel log_channel;
-	bool enabled;
-	log_channel = luaL_checkoption(L, 1, NULL, log_channels);
-	assert(log_channel >= 0 && log_channel < sizeofv(log_channels));
-	luaL_argexpected(L, lua_isboolean(L, 2), 2, "boolean");
-	enabled = lua_toboolean(L, 2);
-	yadsl_memdb_log_channel_set(log_channel, enabled);
-	return 0;
-}
-
-static int set_all_log_channels(lua_State* L) {
-	luaL_argexpected(L, lua_isboolean(L, 1), 1, "boolean");
-	bool enable = lua_toboolean(L, 1);
-	for (size_t i = 0; i < sizeofv(log_channels); ++i)
-		yadsl_memdb_log_channel_set((yadsl_MemDebugLogChannel)i, enable);
-	return 0;
-}
-
-static int safe_malloc(lua_State* L) {
-	lua_Integer size = luaL_checkinteger(L, 1);
-	if (size < 0) return luaL_error(L, "negative size");
-	void** uv = (void**) lua_newuserdata(L, sizeof(void*));
-	*uv = NULL;
+static ptr_t* new_ptr(lua_State* L)
+{
+	ptr_t* ptr = (ptr_t*)lua_newuserdata(L, sizeof(ptr_t));
+	ptr->ptr = NULL;
+	ptr->filename = NULL;
 	luaL_setmetatable(L, PTR);
-	void* p = malloc((size_t) size);
-	if (p == NULL) return luaL_error(L, "bad malloc");
-	*uv = p;
+	return ptr;
+}
+
+static int lmemdb_malloc(lua_State* L)
+{
+	void* p;
+	size_t size = validate_size(L, 1);
+	char* filename;
+	int line = validate_line(L, 3);
+	ptr_t* ptr = new_ptr(L);
+	filename = copy_string_at(L, 2);
+	if (filename == NULL) return luaL_error(L, "bad malloc");
+	ptr->filename = filename;
+	p = yadsl_memdb_malloc(size, filename, line);
+	if (size != 0 && p == NULL) return luaL_error(L, "bad malloc");
+	ptr->ptr = p;
 	return 1;
 }
 
-static int unsafe_malloc(lua_State* L) {
-	lua_Integer size = luaL_checkinteger(L, 1);
-	if (size < 0) return luaL_error(L, "negative size");
-	void** uv = (void**) lua_newuserdata(L, sizeof(void*));
-	*uv = NULL;
-	luaL_setmetatable(L, UNSAFE_PTR);
-	void* p = malloc((size_t) size);
-	if (p == NULL) return luaL_error(L, "bad malloc");
-	*uv = p;
+static int lmemdb_rawmalloc(lua_State* L)
+{
+	void* p;
+	size_t size = validate_size(L, 1);
+	ptr_t* ptr = new_ptr(L);
+	p = malloc(size);
+	if (size != 0 && p == NULL) return luaL_error(L, "bad malloc");
+	ptr->ptr = p;
 	return 1;
 }
 
-static int unsafe_free(lua_State* L) {
-	void** uv = (void**) luaL_checkudata(L, 1, UNSAFE_PTR);
-	bool isvalid = *uv != NULL;
-	lua_pushboolean(L, isvalid);
-	if (isvalid) {
-		free(*uv);
-		*uv = NULL;
-	}
+static int lmemdb_calloc(lua_State* L)
+{
+	void* p;
+	size_t nmemb = validate_size(L, 1);
+	size_t size = validate_size(L, 2);
+	char* filename;
+	int line = validate_line(L, 4);
+	ptr_t* ptr = new_ptr(L);
+	filename = copy_string_at(L, 3);
+	if (filename == NULL) return luaL_error(L, "bad malloc");
+	ptr->filename = filename;
+	p = yadsl_memdb_calloc(nmemb, size, filename, line);
+	if (nmemb != 0 && size != 0 && p == NULL) return luaL_error(L, "bad malloc");
+	ptr->ptr = p;
 	return 1;
 }
 
-static int pointer_finalizer(lua_State* L) {
-	void** uv = (void**) lua_touserdata(L, 1);
-	if (*uv != NULL) free(*uv);
-	return 0;
+static int lmemdb_rawcalloc(lua_State* L)
+{
+	void* p;
+	size_t nmemb = validate_size(L, 1);
+	size_t size = validate_size(L, 2);
+	ptr_t* ptr = new_ptr(L);
+	p = calloc(nmemb, size);
+	if (nmemb != 0 && size != 0 && p == NULL) return luaL_error(L, "bad malloc");
+	ptr->ptr = p;
+	return 1;
 }
 
-static int after_all(lua_State* L) {
-	size_t size = yadsl_memdb_amb_list_size();
-	if (size != 0)
-	{
-		if (size >= INT_MAX)
-			return luaL_error(L, "integer overflow");
-		int n = (int)size;
-		luaL_checkstack(L, n+1, NULL);
-		yadsl_MemDebugAMB* list = yadsl_memdb_get_amb_list();
-		while (list != NULL)
-		{
-			assert(list->size <= LUA_MAXINTEGER);
-			lua_pushfstring(L, "\n%s(%I) @ %s:%d (%p)",
-					list->funcname, (lua_Integer)list->size,
-					list->file, list->line, list->amb);
-			list = list->next;
-		}
-		lua_pushfstring(L, "%d memory leak%s:", n, n == 1? "" : "s");
-		lua_insert(L, -n-1);
-		lua_concat(L, n+1);
-		return lua_error(L);
-	}
+static int lmemdb_nullptr(lua_State* L)
+{
+	ptr_t* ptr = new_ptr(L);
+	return 1;
 }
 
 static const struct luaL_Reg memdblib[] = {
-		{"count_mallocs", count_mallocs},
-        {"get_amb_list_size", get_amb_list_size},
-		{"get_amb_list", get_amb_list},
-        {"error_occurred", error_occurred},
-		{"set_fail_countdown", set_fail_countdown},
-		{"get_fail_countdown", get_fail_countdown},
-		{"get_log_channel", get_log_channel},
-		{"get_log_channel_list", get_log_channel_list},
-		{"set_log_channel", set_log_channel},
-		{"set_all_log_channels", set_all_log_channels},
-		{"safe_malloc", safe_malloc},
-		{"malloc", unsafe_malloc},
-		{"free", unsafe_free},
-		{"afterAll", after_all},
+		{"malloc", lmemdb_malloc},
+		{"rawmalloc", lmemdb_rawmalloc},
+		{"calloc", lmemdb_calloc},
+		{"rawcalloc", lmemdb_rawcalloc},
+		{"nullptr", lmemdb_nullptr},
         {NULL, NULL}  /* sentinel */
 };
 
+static int lmemdb_free(lua_State* L)
+{
+	ptr_t* ptr = (ptr_t*)luaL_checkudata(L, 1, PTR);
+	const char* filename = luaL_checkstring(L, 2);
+	int line = validate_line(L, 3);
+	yadsl_memdb_free(ptr->ptr, filename, line);
+	ptr->ptr = NULL;
+	free(ptr->filename);
+	ptr->filename = NULL;
+	return 0;
+}
+
+static int lmemdb_rawfree(lua_State* L)
+{
+	ptr_t* ptr = (ptr_t*)luaL_checkudata(L, 1, PTR);
+	free(ptr->ptr);
+	ptr->ptr = NULL;
+	free(ptr->filename);
+	ptr->filename = NULL;
+	return 0;
+}
+
+static int lmemdb_realloc(lua_State* L)
+{
+	ptr_t* ptr = (ptr_t*)luaL_checkudata(L, 1, PTR);
+	size_t size = validate_size(L, 2);
+	char* filename;
+	int line = validate_line(L, 4);
+	void* prevp, *p;
+	filename = copy_string_at(L, 3);
+	if (filename == NULL) return luaL_error(L, "bad malloc");
+	prevp = ptr->ptr;
+	p = yadsl_memdb_realloc(prevp, size, filename, line);
+	if (size != 0 && p == NULL) {
+		free(filename);
+		lua_pushboolean(L, 0);
+	} else {
+		ptr->ptr = p;
+		free(ptr->filename);
+		ptr->filename = filename;
+		lua_pushboolean(L, 1);
+	}
+	return 1;
+}
+
+static int lmemdb_rawrealloc(lua_State* L)
+{
+	ptr_t* ptr = (ptr_t*)luaL_checkudata(L, 1, PTR);
+	size_t size = validate_size(L, 2);
+	void* prevp = ptr->ptr;
+	void* p = realloc(prevp, size);
+	if (size != 0 && p == NULL) {
+		lua_pushboolean(L, 0);
+	} else {
+		ptr->ptr = p;
+		lua_pushboolean(L, 1);
+	}
+	return 1;
+}
+
+static const struct luaL_Reg ptrlib[] = {
+        {"free", lmemdb_free},
+        {"rawfree", lmemdb_rawfree},
+        {"realloc", lmemdb_realloc},
+        {"rawrealloc", lmemdb_rawrealloc},
+        {NULL, NULL}  /* sentinel */
+};
+
+static int lmemdb_ptr_gc(lua_State* L)
+{
+	ptr_t* ptr = (ptr_t*)luaL_checkudata(L, 1, PTR);
+	yadsl_memdb_free(ptr->ptr, __FILE__, __LINE__);
+	ptr->ptr = NULL;
+	free(ptr->filename);
+	ptr->filename = NULL;
+	return 0;
+}
+
+static int lmemdb_ptr_eq(lua_State* L)
+{
+	ptr_t* ptr1 = (ptr_t*)luaL_checkudata(L, 1, PTR);
+	ptr_t* ptr2 = (ptr_t*)luaL_checkudata(L, 2, PTR);
+	lua_pushboolean(L, ptr1->ptr == ptr2->ptr);
+	return 1;
+}
+
+static int lmemdb_ptr_tostring(lua_State* L)
+{
+	ptr_t* ptr = (ptr_t*)luaL_checkudata(L, 1, PTR);
+	lua_pushfstring(L, "Pointer to %p", ptr->ptr);
+	return 1;
+}
+
+static const struct luaL_Reg ptrmetalib[] = {
+		{"__gc", lmemdb_ptr_gc},
+		{"__eq", lmemdb_ptr_eq},
+		{"__tostring", lmemdb_ptr_tostring},
+        {NULL, NULL}  /* sentinel */
+};
+
+#ifdef YADSL_DEBUG
+#define DEBUG_VAL 1
+#else
+#define DEBUG_VAL 0
+#endif
 
 int yadsl_memdb_openlib(lua_State* L)
 {
+	/* register the PTR metatable */
+	luaL_newlib(L, ptrmetalib);
+    luaL_newlib(L, ptrlib);
+	lua_setfield(L, -2, "__index");
+	lua_setfield(L, LUA_REGISTRYINDEX, PTR);
+
 	/* create library */
     luaL_newlib(L, memdblib);
 
 	/* register the 'debug' field */
-#ifdef YADSL_DEBUG
-	lua_pushboolean(L, 1);
-#else
-	lua_pushboolean(L, 0);
-#endif
+	lua_pushboolean(L, DEBUG_VAL);
 	lua_setfield(L, -2, "debug");
-
-	/* register the PTR metatable */
-	lua_createtable(L, 0, 3);
-	lua_pushboolean(L, 0);
-	lua_setfield(L, -2, "__metatable");
-	lua_pushcfunction(L, pointer_finalizer);
-	lua_setfield(L, -2, "__gc");
-	lua_pushstring(L, PTR);
-	lua_setfield(L, -2, "__name");
-	lua_setfield(L, LUA_REGISTRYINDEX, PTR);
-
-	/* register the UNSAFE_PTR metatable */
-	luaL_newmetatable(L, UNSAFE_PTR);
-	lua_pop(L, 1);
 
     return 1;
 }

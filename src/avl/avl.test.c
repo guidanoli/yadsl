@@ -6,9 +6,8 @@
 #include <testerutils/testerutils.h>
 
 const char *yadsl_tester_help_strings[] = {
-	"This is the avl test module",
+	"This is the avl test module\n"
 	"A new pTree is already created in the beggining",
-	"",
 	"/new                                 create a new tree",
 	"/insert <number> [YES/NO]            insert number in tree",
 	"/insert* <first> <last> [YES/NO]     insert from first to last in tree",

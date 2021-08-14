@@ -62,32 +62,29 @@ static double alpha(char a, char b)
 
 /**** External functions definitions ****/
 
-double yadsl_utils_diff(const char* s1, const char* s2)
+double yadsl_utils_diff(const char* a, size_t alen, const char* b, size_t blen)
 {
-	size_t l1, l2, i, j, k;
+	size_t i, j, k;
 	double v[3], lv, cost = -1.0, * M, * N;
-	assert(s1 != NULL);
-	assert(s2 != NULL);
-	l1 = strlen(s1) + (size_t) 1;
-	l2 = strlen(s2) + (size_t) 1;
-	if (l1 == 1 && l2 == 1)
-		return 0.0;
-	M = malloc(l1 * sizeof(double));
-	if (!M)
-		goto fail0;
-	N = malloc(l1 * sizeof(double));
-	if (!N)
-		goto fail1;
-	for (i = 0; i < l1; i++)
+	assert(a != NULL);
+	assert(b != NULL);
+	M = calloc(alen + 1, sizeof(double));
+	N = calloc(alen + 1, sizeof(double));
+	if (M == NULL || N == NULL) goto fail;
+	for (i = 0; i <= alen; i++)
 		M[i] = i * DELTA;
-	for (j = 1; j < l2; j++) {
-		for (i = 0; i < l1; i++)
+	for (j = 1; j <= blen; j++) {
+		for (i = 0; i <= alen; i++)
 			N[i] = M[i];
 		M[0] = j * DELTA;
-		for (i = 1; i < l1; i++) {
-			v[0] = alpha(s1[j - 1], s2[i - 1]) + N[i - 1];
-			v[1] = DELTA + M[i - 1];
-			v[2] = DELTA + N[i];
+		for (i = 1; i <= alen; i++) {
+			double ai = a[i-1];
+			double bj = b[j-1];
+			double Ni = N[i-1];
+			double Mi = M[i-1];
+			v[0] = alpha(ai, bj) + Ni;
+			v[1] = DELTA + Mi;
+			v[2] = DELTA + Ni;
 			lv = v[0];
 			for (k = 1; k < 3; k++)
 				if (v[k] < lv)
@@ -95,10 +92,9 @@ double yadsl_utils_diff(const char* s1, const char* s2)
 			M[i] = lv;
 		}
 	}
-	cost = M[l1 - 1];
+	cost = M[alen];
+fail:
 	free(M);
-fail1:
 	free(N);
-fail0:
 	return cost;
 }

@@ -4,12 +4,10 @@
 #include <testerutils/testerutils.h>
 
 const char* yadsl_tester_help_strings[] = {
-	"This is the vector test module",
-	"",
-	"Note: <format> is a format characters used by tester",
-	"Check tester documentation for a list of all available formats",
+	"This is the vector test module\n"
+	"Note: <format> is a format characters used by tester\n"
+	"Check tester documentation for a list of all available formats\n"
 	"Don't use strings as formats since it is not a primitive type",
-	"",
 	"/new <format> <size>                 create a new vector",
 	"/size <expected>                     get vector size",
 	"/get <index> <expected>              get element at index",

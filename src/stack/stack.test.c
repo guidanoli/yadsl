@@ -39,6 +39,11 @@ yadsl_TesterRet convert(yadsl_StackRet ret)
 	}
 }
 
+void myfree(void* ptr)
+{
+	free(ptr);
+}
+
 yadsl_TesterRet yadsl_tester_parse(const char *command)
 {
 	yadsl_StackRet ret = YADSL_STACK_RET_OK;
@@ -47,7 +52,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 		if (!st)
 			return YADSL_TESTER_RET_MALLOC;
 	} else if (yadsl_testerutils_match(command, "destroy")) {
-		yadsl_stack_destroy(st, free);
+		yadsl_stack_destroy(st, myfree);
 		st = NULL;
 	} else if (yadsl_testerutils_match(command, "add")) {
 		int num, *num_ptr;
@@ -88,7 +93,7 @@ yadsl_TesterRet yadsl_tester_parse(const char *command)
 
 yadsl_TesterRet yadsl_tester_release()
 {
-	if (st) yadsl_stack_destroy(st, free);
+	if (st) yadsl_stack_destroy(st, myfree);
 	return YADSL_TESTER_RET_OK;
 }
 

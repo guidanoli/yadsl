@@ -92,7 +92,6 @@ yatester_status yatester_vreport(yatester_status status, const char* fmt, va_lis
 		[YATESTER_ERROR] = "error",
 		[YATESTER_NOMEM] = "no memory",
 		[YATESTER_FTLERR] = "fatal error",
-		[YATESTER_MEMLK] = "memory leak",
 		[YATESTER_IOERR] = "i/o error",
 		[YATESTER_STXERR] = "syntax error",
 		[YATESTER_BADCMD] = "bad command",

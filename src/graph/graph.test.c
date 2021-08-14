@@ -13,12 +13,12 @@
 #endif
 
 const char* yadsl_tester_help_strings[] = {
-	"This is an interactive module of the graph library",
-	"You will interact with the same graph object at all times",
-	"A directed graph is already created from the start",
-	"The registered actions are the following:",
-	"",
-	"Graph commands:",
+	"This is an interactive module of the graph library\n"
+	"You will interact with the same graph object at all times\n"
+	"A directed graph is already created from the start\n"
+	"The registered actions are the following...",
+	"Graph commands\n"
+	"--------------",
 	"/create [DIRECTED/UNDIRECTED]                           create new graph",
 	"/isdirected [YES/NO]                                    check if graph is directed",
 	"/vertexcount <expected>                                 get graph vertex count",
@@ -35,12 +35,12 @@ const char* yadsl_tester_help_strings[] = {
 	"/setvertexflag <u> <flag>                               set vertex flag",
 	"/setallflags <flag>                                     set flag of all vertices",
 	"/getvertexflag <u> <expected>                           get vertex flag",
-	"",
-	"Graph IO commands:",
+	"Graph IO commands\n"
+	"-----------------",
 	"/write <filename>                      write graph to file",
 	"/read <filename>                       read from file to graph",
-	"",
-	"Graph Search commands:",
+	"Graph Search commands\n"
+	"---------------------",
 	"/dfs <v> <flag>                        run dfs on graph starting from v"
 	"                                       v and marking visited with flag",
 	"/bfs <v> <flag>                        run bfs on graph starting from v"
@@ -63,9 +63,14 @@ static yadsl_TesterRet convert_graph_ret(yadsl_GraphRet graphId);
 static yadsl_TesterRet convert_graph_io_ret(yadsl_GraphIoRet graphIoId);
 static yadsl_TesterRet convert_graph_search_ret(yadsl_GraphSearchRet graphSearchId);
 
+void myfree(void* ptr)
+{
+	free(ptr);
+}
+
 yadsl_TesterRet yadsl_tester_init()
 {
-	graph = yadsl_graph_create(1, compare_strings_func, free, compare_strings_func, free);
+	graph = yadsl_graph_create(1, compare_strings_func, myfree, compare_strings_func, myfree);
 	return graph ? YADSL_TESTER_RET_OK : YADSL_TESTER_RET_MALLOC;
 }
 
@@ -77,7 +82,7 @@ static yadsl_TesterRet parse_graph_command(const char* command)
 		if (yadsl_tester_parse_arguments("s", buffer) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
 		is_directed = yadsl_testerutils_match(buffer, "DIRECTED");
-		yadsl_GraphHandle* temp = yadsl_graph_create(is_directed, compare_strings_func, free, compare_strings_func, free);
+		yadsl_GraphHandle* temp = yadsl_graph_create(is_directed, compare_strings_func, myfree, compare_strings_func, myfree);
 		if (temp) {
 			yadsl_graph_destroy(graph);
 			graph = temp;
@@ -227,7 +232,7 @@ static yadsl_TesterRet parse_graph_io_command(const char* command)
 		file_ptr = fopen(buffer, "r");
 		if (file_ptr == NULL)
 			return YADSL_TESTER_RET_FILE;
-		graph_io_ret = yadsl_graphio_read(file_ptr, read_string_func, read_string_func, compare_strings_func, free, compare_strings_func, free, &temp);
+		graph_io_ret = yadsl_graphio_read(file_ptr, read_string_func, read_string_func, compare_strings_func, myfree, compare_strings_func, myfree, &temp);
 		if (graph_io_ret == YADSL_GRAPHIO_RET_OK) {
 			yadsl_graph_destroy(graph);
 			graph = temp;
@@ -292,11 +297,6 @@ yadsl_TesterRet yadsl_tester_release()
 
 	if (graph)
 		yadsl_graph_destroy(graph);
-
-#ifdef YADSL_DEBUG
-	if (yadsl_graphsearch_get_node_ref_count())
-		return YADSL_TESTER_RET_MEMLEAK;
-#endif
 
 	return YADSL_TESTER_RET_OK;
 }

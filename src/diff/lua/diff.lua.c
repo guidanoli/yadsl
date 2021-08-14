@@ -6,13 +6,11 @@
 #include <memdb/lua/memdb.h>
 
 static int l_diff(lua_State* L) {
-    const char* s1 = luaL_checkstring(L, 1);
-    const char* s2 = luaL_checkstring(L, 2);
-    if (!s1 || !s2)
-        return 0;
-    double result = yadsl_utils_diff(s1, s2);
-    if (result == -1.0)
-        return 0;
+    size_t alen, blen;
+    const char* a = luaL_checklstring(L, 1, &alen);
+    const char* b = luaL_checklstring(L, 2, &blen);
+    double result = yadsl_utils_diff(a, alen, b, blen);
+    if (result < 0.0) return luaL_error(L, "bad malloc");
     lua_pushnumber(L, result);
     return 1;
 }

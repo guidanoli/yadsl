@@ -1,8 +1,5 @@
 local driver = require "lt.tests.driver"
 
--- All tests use lt
-lt = require "lt"
-
 local testscripts = {
 	"before_and_after",
 	"check_param",

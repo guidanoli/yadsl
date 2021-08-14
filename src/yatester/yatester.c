@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <memdb/stdlistener.h>
+
 #include <argvp/argvp.h>
 
 static yadsl_ArgvParserHandle *argvp;
@@ -47,6 +49,11 @@ static yatester_status initialize_internal(int argc, char** argv)
 #endif
 		{ NULL, 0 },
 	};
+
+	if (!yadsl_memdb_stdlistener_init())
+	{
+		return yatester_report(YATESTER_NOMEM, "could not add memory debugger standard listener");
+	}
 
 	argvp = yadsl_argvp_create(argc, argv);
 
@@ -99,13 +106,13 @@ static yatester_status initialize_internal(int argc, char** argv)
 		}
 	}
 
-	yadsl_memdb_set_logger(log_fp);
+	yadsl_memdb_stdlistener_set_logger(log_fp);
 
 	nmatches = yadsl_argvp_parse_keyword_argument_value(argvp, "--malloc-failing-countdown", 0, "%zu", &malloc_failing_countdown);
 
 	if (nmatches == 1)
 	{
-		yadsl_memdb_set_fail_countdown(malloc_failing_countdown);
+		yadsl_memdb_stdlistener_set_fail_countdown(malloc_failing_countdown);
 	}
 	else if (nmatches == 0)
 	{
@@ -116,26 +123,10 @@ static yatester_status initialize_internal(int argc, char** argv)
 
 	while (log_channel_name != NULL)
 	{
-		yadsl_MemDebugLogChannel log_channel_value;
-
-		if (strcmp(log_channel_name, "ALLOCATION") == 0)
-		{
-			log_channel_value = YADSL_MEMDB_LOG_CHANNEL_ALLOCATION;
-		}
-		else if (strcmp(log_channel_name, "DEALLOCATION") == 0)
-		{
-			log_channel_value = YADSL_MEMDB_LOG_CHANNEL_DEALLOCATION;
-		}
-		else if (strcmp(log_channel_name, "LEAKAGE") == 0)
-		{
-			log_channel_value = YADSL_MEMDB_LOG_CHANNEL_LEAKAGE;
-		}
-		else
+		if (!yadsl_memdb_stdlistener_log_channel_set(log_channel_name, true))
 		{
 			return yatester_report(YATESTER_ERROR, "invalid value \"%s\" passed to --enable-log-channel option", log_channel_name);
 		}
-
-		yadsl_memdb_log_channel_set(log_channel_value, true);
 
 		log_channel_name = yadsl_argvp_get_keyword_argument_value(argvp, NULL, 0);
 	}
@@ -157,7 +148,7 @@ static yatester_status terminate_internal(yatester_status status)
 #ifdef YADSL_DEBUG
 	if (log_fp != NULL)
 	{
-		yadsl_memdb_set_logger(NULL);
+		yadsl_memdb_stdlistener_set_logger(NULL);
 		fclose(log_fp);
 		log_fp = NULL;
 	}
@@ -176,22 +167,16 @@ static yatester_status terminate_internal(yatester_status status)
 		argvp = NULL;
 	}
 
-#ifdef YADSL_DEBUG
-	if (status == YATESTER_OK)
+	if (!yadsl_memdb_stdlistener_finalize())
 	{
-		if (yadsl_memdb_amb_list_size() > 0)
+		if (status != YATESTER_OK)
 		{
-			status = yatester_report(YATESTER_MEMLK, "the memory debugger has detected a leakage");
-		}
-		else if (yadsl_memdb_error_occurred())
-		{
-			status = yatester_report(YATESTER_FTLERR, "the memory debugger has detected an error");
+			status = yatester_report(YATESTER_ERROR, "could not finalize memory debugger standard listener");
 		}
 	}
 
-	yadsl_memdb_clear_amb_list();
-
-	if (status == YATESTER_NOMEM && yadsl_memdb_fail_occurred())
+#ifdef YADSL_DEBUG
+	if (status == YATESTER_NOMEM && yadsl_memdb_stdlistener_fail_occurred())
 	{
 		status = YATESTER_OK;
 	}
@@ -261,7 +246,7 @@ static yatester_status run_internal(int argc, char** argv)
 		fprintf(stderr, "--log-file <filepath>           Write log to file instead of stderr\n");
 		fprintf(stderr, "--malloc-failing-countdown <c>  Set memory allocation failing countdown\n");
 		fprintf(stderr, "--enable-log-channel <channel>  Enable one of the following log channels:\n");
-		fprintf(stderr, "                                ALLOCATION, DEALLOCATION, LEAKAGE\n");
+		fprintf(stderr, "                                ALLOCATION, DEALLOCATION\n");
 #endif
 		return YATESTER_OK;
 	}

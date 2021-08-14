@@ -28,10 +28,9 @@ yadsl_TesterRet yadsl_tester_parse(const char* command)
 	if (yadsl_testerutils_match(command, "diff")) {
 		if (yadsl_tester_parse_arguments("ss", X, Y) != 2)
 			return YADSL_TESTER_RET_ARGUMENT;
-		eax = yadsl_utils_diff(X, Y);
-		if (eax == -1.0)
+		eax = yadsl_utils_diff(X, strlen(X), Y, strlen(Y));
+		if (eax < 0)
 			return YADSL_TESTER_RET_MALLOC;
-		yadsl_tester_log("diff = %lf", eax);
 	} else if (yadsl_testerutils_match(command, "equ")) {
 		if (yadsl_tester_parse_arguments("f", &val) != 1)
 			return YADSL_TESTER_RET_ARGUMENT;
