@@ -11,21 +11,21 @@
  * Listener list node
  * ==================
  *
- * Each node contains an accept callback (accept_cb) and an
- * acknowledge callback (ack_cb) that are called with the
+ * Each node contains an asking callback (ask_cb) and a
+ * listening callback (listen_cb) that are called with the
  * auxiliar argument (arg). These nodes are linked through
  * the next field in a single-linked list fashion.
  *
  * Invariants
  * ----------
  * LLN1. The 'next' field points to valid node or to NULL
- * LLN2. accept_cb and ack_cb point to valid functions or to NULL *
+ * LLN2. ask_cb and listen_cb point to valid functions or to NULL *
 */
 struct yadsl_MemDebugListener
 {
 	struct yadsl_MemDebugListener* next; /* nullable */
-	yadsl_MemDebugAcceptCallback accept_cb; /* nullable */
-	yadsl_MemDebugAcknowledgeCallback ack_cb; /* nullable */
+	yadsl_MemDebugAskCallback ask_cb; /* nullable */
+	yadsl_MemDebugListenCallback listen_cb; /* nullable */
 	yadsl_MemDebugListenerArgument* arg; /* nullable */
 };
 
@@ -85,15 +85,15 @@ static void check_invariants()
 
 yadsl_MemDebugListenerHandle*
 _yadsl_memdb_add_listener(
-	yadsl_MemDebugAcceptCallback accept_cb,
-	yadsl_MemDebugAcknowledgeCallback ack_cb,
+	yadsl_MemDebugAskCallback ask_cb,
+	yadsl_MemDebugListenCallback listen_cb,
 	yadsl_MemDebugListenerArgument* arg)
 {
 	Listener* listener;
 	listener = malloc(sizeof(*listener));
 	if (listener != NULL) {
-		listener->accept_cb = accept_cb;
-		listener->ack_cb = ack_cb;
+		listener->ask_cb = ask_cb;
+		listener->listen_cb = listen_cb;
 		listener->arg = arg;
 		list_append((ListNode**)&g_listener_head, (ListNode*)listener);
 	}
@@ -102,15 +102,15 @@ _yadsl_memdb_add_listener(
 
 yadsl_MemDebugListenerHandle*
 yadsl_memdb_add_listener(
-	yadsl_MemDebugAcceptCallback accept_cb,
-	yadsl_MemDebugAcknowledgeCallback ack_cb,
+	yadsl_MemDebugAskCallback ask_cb,
+	yadsl_MemDebugListenCallback listen_cb,
 	yadsl_MemDebugListenerArgument* arg)
 {
 	yadsl_MemDebugListenerHandle* handle;
 #ifdef YADSL_DEBUG
 	check_invariants();
 #endif
-	handle = _yadsl_memdb_add_listener(accept_cb, ack_cb, arg);
+	handle = _yadsl_memdb_add_listener(ask_cb, listen_cb, arg);
 #ifdef YADSL_DEBUG
 	check_invariants();
 	if (handle != NULL) {
@@ -152,7 +152,7 @@ yadsl_memdb_remove_listener(
 }
 
 static void
-_acknowledge_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
+_notify_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 {
 #ifdef YADSL_DEBUG
 	yadsl_MemDebugEvent eventcopy;
@@ -163,9 +163,9 @@ _acknowledge_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 			g_current_listener != NULL;
 			g_current_listener = g_current_listener->next)
 	{
-		if (g_current_listener->ack_cb != NULL)
+		if (g_current_listener->listen_cb != NULL)
 		{
-			g_current_listener->ack_cb(event, ptr, g_current_listener->arg);
+			g_current_listener->listen_cb(event, ptr, g_current_listener->arg);
 #ifdef YADSL_DEBUG
 			assert(memcmp(&eventcopy, event, sizeof(eventcopy)) == 0 && "event was not modified");
 #endif
@@ -174,7 +174,7 @@ _acknowledge_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 }
 
 static void
-acknowledge_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
+notify_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 {
 #ifdef YADSL_DEBUG
 	assert(!IS_LISTENING && "not listening to any events");
@@ -183,7 +183,7 @@ acknowledge_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 	assert(event->file != NULL);
 	check_invariants();
 #endif
-	_acknowledge_listeners(event, ptr);
+	_notify_listeners(event, ptr);
 #ifdef YADSL_DEBUG
 	assert(!IS_LISTENING && "not listening to any events");
 	check_invariants();
@@ -213,7 +213,7 @@ yadsl_memdb_free(
 	free(ptr);
 
 	if (!IS_LISTENING) {
-		acknowledge_listeners(&event, NULL);
+		notify_listeners(&event, NULL);
 	}
 }
 
@@ -226,8 +226,8 @@ _ask_listeners(yadsl_MemDebugEvent const* event)
 #endif
 	g_current_listener = g_listener_head;
 	while (g_current_listener != NULL) {
-		if (g_current_listener->accept_cb != NULL) {
-			if (!g_current_listener->accept_cb(event, g_current_listener->arg)) {
+		if (g_current_listener->ask_cb != NULL) {
+			if (!g_current_listener->ask_cb(event, g_current_listener->arg)) {
 				g_current_listener = NULL;
 				return false;
 			}
@@ -288,7 +288,7 @@ yadsl_memdb_malloc(
 	}
 
 	if (!IS_LISTENING) {
-		acknowledge_listeners(&event, ptr);
+		notify_listeners(&event, ptr);
 	}
 
 	return ptr;
@@ -325,7 +325,7 @@ yadsl_memdb_realloc(
 	}
 
 	if (!IS_LISTENING) {
-		acknowledge_listeners(&event, newptr);
+		notify_listeners(&event, newptr);
 	}
 	
 	return newptr;
@@ -362,7 +362,7 @@ yadsl_memdb_calloc(
 	}
 
 	if (!IS_LISTENING) {
-		acknowledge_listeners(&event, ptr);
+		notify_listeners(&event, ptr);
 	}
 
 	return ptr;

@@ -12,6 +12,7 @@
 static yadsl_BigIntHandle* stack[MAXSTACKSIZE+1];
 static char* s;
 static int top;
+static bool optimize;
 
 /* Static functions */
 static yadsl_BigIntHandle* pop();
@@ -49,6 +50,9 @@ static void bigintcheck()
 	case YADSL_BIGINT_STATUS_INVALID_DIGITS:
 		yadsl_tester_throwf("CHECK: Invalid digits");
 		break;
+	case YADSL_BIGINT_STATUS_DIGIT_OVERFLOW:
+		yadsl_tester_throwf("CHECK: Digit overflow");
+		break;
 	default:
 		yadsl_tester_throwf("CHECK: Unknown status code '%d'", status);
 	}
@@ -72,6 +76,9 @@ static void checknull(void *p)
 static void push(yadsl_BigIntHandle* bigint)
 {
 	checknull(bigint);
+	if (optimize) {
+		bigint = yadsl_bigint_optimize(bigint);
+	}
 	stack[top++] = bigint;
 	checkstack();
 	bigintcheck();
@@ -285,6 +292,13 @@ static void bigint_cmp()
 	}
 }
 
+static void bigint_optimize()
+{
+	int enable;
+	yadsl_tester_parse_n_arguments("i", &enable);
+	optimize = (enable != 0);
+}
+
 #define CMD(name) { #name, bigint_ ## name }
 
 static yadsl_TesterUtilsCommand commands[] = {
@@ -301,6 +315,7 @@ static yadsl_TesterUtilsCommand commands[] = {
 	CMD(gettop),
 	CMD(settop),
 	CMD(opposite),
+	CMD(optimize),
 	{ NULL, NULL },
 };
 

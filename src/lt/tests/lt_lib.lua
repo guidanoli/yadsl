@@ -85,9 +85,9 @@ function t:testRawEqual()
 	}
 end
 
-function t:testRawNotEqual()
+function t:testNotRawEqual()
 	self:compareBinOp{
-		assertion = lt.assertRawNotEqual,
+		assertion = lt.assertNotRawEqual,
 		predicate = function(a, b)
 			return not rawequal(a, b)
 		end,
@@ -268,6 +268,68 @@ function t:testSubstringOrNot()
 	testargerror(nil, nil)
 	testargerror('x', nil)
 	testargerror(nil, 'x')
+end
+
+function t:testDeepEqual()
+	local tables = {
+		{},
+		{},
+		{a = 123},
+		{b = 123},
+		{a = 123, b = 345},
+		{a = 456, b = 546},
+		{a = 123, b = 777},
+		{a = 123, b = 345},
+		{a = 123, b = 345, c = 678},
+	}
+	-- assertDeepEqual
+	local predicate = function(t1, t2)
+		for k, v1 in pairs(t1) do
+			if v1 ~= t2[k] then
+				return false
+			end
+		end
+		for k, v2 in pairs(t2) do
+			if v2 ~= t1[k] then
+				return false
+			end
+		end
+		return true
+	end
+	self:compareBinOp{
+		assertion = lt.assertDeepEqual,
+		predicate = predicate,
+		arguments = {
+			tables,
+			tables,
+		},
+	}
+	local testargerror = function(...)
+		local ok, err = pcall(lt.assertDeepEqual, ...)
+		assert(not ok and err:find('table expected'))
+	end
+	testargerror(nil, nil)
+	testargerror({}, nil)
+	testargerror(nil, {})
+	-- assertNotDeepEqual
+	local reverse_predicate = function(t1, t2)
+		return not predicate(t1, t2)
+	end
+	self:compareBinOp{
+		assertion = lt.assertNotDeepEqual,
+		predicate = reverse_predicate,
+		arguments = {
+			tables,
+			tables,
+		},
+	}
+	testargerror = function(...)
+		local ok, err = pcall(lt.assertNotDeepEqual, ...)
+		assert(not ok and err:find('table expected'))
+	end
+	testargerror(nil, nil)
+	testargerror({}, nil)
+	testargerror(nil, {})
 end
 
 function t:testUdata()

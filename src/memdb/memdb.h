@@ -18,7 +18,7 @@ typedef enum
 	YADSL_MEMDB_MALLOC,
 	YADSL_MEMDB_REALLOC,
 	YADSL_MEMDB_CALLOC,
-	YADSL_MEMDB_FUNCTION_MAX, /* For debugging */
+	YADSL_MEMDB_FUNCTION_MAX, /* for debugging */
 }
 yadsl_MemDebugFunction;
 
@@ -65,21 +65,21 @@ yadsl_MemDebugEvent;
 
 typedef void yadsl_MemDebugListenerHandle;
 typedef void yadsl_MemDebugListenerArgument;
-typedef bool (*yadsl_MemDebugAcceptCallback)(yadsl_MemDebugEvent const* event, yadsl_MemDebugListenerArgument* arg);
-typedef void (*yadsl_MemDebugAcknowledgeCallback)(yadsl_MemDebugEvent const* event, const void* ptr, yadsl_MemDebugListenerArgument* arg);
+typedef bool (*yadsl_MemDebugAskCallback)(yadsl_MemDebugEvent const* event, yadsl_MemDebugListenerArgument* arg);
+typedef void (*yadsl_MemDebugListenCallback)(yadsl_MemDebugEvent const* event, const void* ptr, yadsl_MemDebugListenerArgument* arg);
 
 /**
  * @brief Add a listener to the memory debugger
- * @param accept_cb an acceptance callback
- * @param ack_cb an acknowledge callback
+ * @param ask_cb callback for asking whether event should occur or not
+ * @param listen_cb callback for listening to all events
  * @param arg an auxiliary argument
  * @return a listener handle or NULL if could not
  * allocate enough memory for a listener
 */
 yadsl_MemDebugListenerHandle*
 yadsl_memdb_add_listener(
-	yadsl_MemDebugAcceptCallback accept_cb,
-	yadsl_MemDebugAcknowledgeCallback ack_cb,
+	yadsl_MemDebugAskCallback ask_cb,
+	yadsl_MemDebugListenCallback listen_cb,
 	yadsl_MemDebugListenerArgument* arg);
 
 /**

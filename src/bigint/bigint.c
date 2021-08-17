@@ -28,19 +28,26 @@ typedef uint64_t twodigits;
  * 
  * Each digit contains at least 31 bits.
  * The most significant digit is zeroed.
- * The size field sign bit represents the
- * sign of the big integer itself.
+ * The size field represents the number
+ * of non-zero digits, while the ndigits
+ * field represents the total number of
+ * digits allocated (which might be greater
+ * than the number of non-zero digits).
+ * The sign bit of the size field represents
+ * the sign of the big integer itself.
  *
  * 0XXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
  *
  * Invariants:
  *
  * |size| >= 0 (that is, size != INTPTR_MIN)
+ * |size| <= ndigits
  * SIGN & digits[i] == 0, for i in [0, |size|-1]
 */
 typedef struct
 {
 	intptr_t size;
+	size_t ndigits;
 	digit digits[1];
 }
 BigInt;
@@ -84,6 +91,8 @@ _check(yadsl_BigIntHandle const* _bigint)
 			assert(0 && "invalid size (maybe double free?)");
 		case YADSL_BIGINT_STATUS_INVALID_DIGITS:
 			assert(0 && "invalid digits");
+		case YADSL_BIGINT_STATUS_DIGIT_OVERFLOW:
+			assert(0 && "digit overflow");
 		default:
 			assert(0 && "unknown error");
 	}
@@ -103,6 +112,8 @@ yadsl_bigint_check(yadsl_BigIntHandle const* _bigint)
 	digits = bigint->digits;
 	if (ndigits < 0)
 		return YADSL_BIGINT_STATUS_INVALID_SIZE;
+	if (ndigits > bigint->ndigits)
+		return YADSL_BIGINT_STATUS_DIGIT_OVERFLOW;
 	for (intptr_t i = 0; i < ndigits; ++i)
 		if (digits[i] & SIGN)
 			return YADSL_BIGINT_STATUS_INVALID_DIGITS;
@@ -173,41 +184,11 @@ bigint_new(intptr_t size)
 	intptr_t ndigits = YADSL_ABS(size);
 	if (ndigits < 0) return NULL;
 	bigint = malloc(MALLOC_SIZE(ndigits));
-	if (bigint != NULL) bigint->size = size;
+	if (bigint != NULL) {
+		bigint->size = size;
+		bigint->ndigits = ndigits;
+	}
 	return bigint;
-}
-
-static BigInt*
-_bigint_shrink(BigInt* bigint, intptr_t size)
-{
-	BigInt* newbigint;
-	intptr_t ndigits = YADSL_ABS(size);
-	newbigint = realloc(bigint, MALLOC_SIZE(ndigits));
-	if (newbigint != NULL)
-		bigint = newbigint;
-	bigint->size = size;
-	return bigint;
-}
-
-/* try to shrink BigInt to new size
- * returns new BigInt or old BigInt
- * either case, updates the 'size' field */
-static BigInt*
-bigint_shrink(BigInt* bigint, intptr_t size)
-{
-	BigInt* newbigint;
-#ifdef YADSL_DEBUG
-	intptr_t ndigits = YADSL_ABS(size);
-	assert(bigint != NULL);
-	assert(ndigits >= 0 && "new size is valid");
-	assert(ndigits <= YADSL_ABS(bigint->size) && "new size is smaller");
-#endif
-	newbigint = _bigint_shrink(bigint, size);
-#ifdef YADSL_DEBUG
-	assert(newbigint != NULL);
-	assert(newbigint->size == size);
-#endif
-	return newbigint;
 }
 
 #define bigint_zero() bigint_new(0)
@@ -335,7 +316,10 @@ _yadsl_bigint_copy(
 	assert(ndigits >= 0);
 	size = MALLOC_SIZE(ndigits);
 	copy = malloc(size);
-	if (copy != NULL) memcpy(copy, bigint, size);
+	if (copy != NULL) {
+		memcpy(copy, bigint, size);
+		copy->ndigits = ndigits;
+	}
 	return copy;
 }
 
@@ -358,7 +342,7 @@ yadsl_bigint_opposite(
 	yadsl_BigIntHandle const* _bigint)
 {
 	BigInt* copy = yadsl_bigint_copy(_bigint);
-	if (copy != NULL) copy->size *= -1;
+	if (copy != NULL) copy->size = -copy->size;
 	return copy;
 }
 
@@ -392,9 +376,11 @@ _digitadd(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 		c[i] = dc & MASK;
 	}
 	if (carry == 0) /* if extra digit wasn't necessary... */
-		bigint = bigint_shrink(bigint, nmax);
-	else
+		bigint->size = nmax;
+	else {
+		assert(carry == 1);
 		c[nmax] = carry;
+	}
 	return bigint;
 }
 
@@ -412,7 +398,7 @@ static BigInt*
 digitaddneg(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint = digitadd(a, na, b, nb);
-	if (bigint != NULL) bigint->size *= -1;
+	if (bigint != NULL) bigint->size = -bigint->size;
 	return bigint;
 }
 
@@ -437,7 +423,7 @@ _digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 {
 	BigInt* bigint;
 	digit* c, dc, borrow = 0;
-	intptr_t i, j, m;
+	intptr_t i, j;
 	bigint = bigint_new(na);
 	if (bigint == NULL) return NULL;
 	c = bigint->digits;
@@ -458,9 +444,7 @@ _digitstrictsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 		if ((c[i] = a[i]) != 0)
 			j = i;
 	}
-	m = j + 1; /* necessary number of digits */
-	if (m < na) /* shrink if possible */
-		bigint = bigint_shrink(bigint, m);
+	bigint->size = j + 1; /* necessary number of digits */
 	return bigint;
 }
 
@@ -486,7 +470,7 @@ digitsub(digit const* a, intptr_t na, digit const* b, intptr_t nb)
 		return bigint_zero(); /* a = b => a - b = 0 */
 	else {
 		BigInt* bigint = digitstrictsub(b, nb, a, na);
-		if (bigint != NULL) bigint->size *= -1;
+		if (bigint != NULL) bigint->size = -bigint->size;
 		return bigint;
 	}
 }
@@ -714,6 +698,38 @@ yadsl_bigint_to_string(
 	return str;
 }
 
+yadsl_BigIntHandle*
+_yadsl_bigint_optimize(
+    yadsl_BigIntHandle* _bigint)
+{
+	BigInt* bigint = (BigInt*)_bigint;
+	intptr_t ndigits = YADSL_ABS(bigint->size);
+	assert(ndigits >= 0 && "size is not INTPTR_MIN");
+	assert(ndigits <= bigint->ndigits && "|size| is limited by ndigits");
+	if (ndigits < bigint->ndigits) {
+		BigInt* newbigint = realloc(bigint, MALLOC_SIZE(ndigits));
+		if (newbigint == NULL) {
+			return bigint;
+		} else {
+			newbigint->ndigits = ndigits;
+			return newbigint;
+		}
+	} else {
+		return bigint;
+	}
+}
+
+yadsl_BigIntHandle*
+yadsl_bigint_optimize(
+    yadsl_BigIntHandle* _bigint)
+{
+	yadsl_BigIntHandle* newbigint;
+	check(_bigint);
+	newbigint = _yadsl_bigint_optimize(_bigint);
+	check(newbigint);
+	return newbigint;
+}
+
 static yadsl_BigIntStatus
 _yadsl_bigint_from_string(
     const char* str,
@@ -853,13 +869,7 @@ _yadsl_bigint_from_string(
 		}
 	}
 	assert(nonzerodigits <= ndigits);
-
-	/* Our estimate is always greater or equal to the actual needed
-	 * For some strings, we might have allocated too many digits
-	 * To save up space, we try to shrink the digit array */
-	if (nonzerodigits < ndigits)
-		bigint = bigint_shrink(bigint, nonzerodigits * sign);
-
+	bigint->size = nonzerodigits * sign;
 	*bigint_ptr = (yadsl_BigIntHandle*)bigint;
 	return YADSL_BIGINT_STATUS_OK;
 }

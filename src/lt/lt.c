@@ -50,10 +50,9 @@ static void lt_pushErrorString(lua_State* L, int op1, int op2, const char* opstr
 	luaL_addchar(&b, ' ');
 	lt_addvalue(L, &b, op2);
 	luaL_addstring(&b, "` failed");
-	if (lua_isstring(L, errmsg)) {
+	if (!lua_isnil(L, errmsg)) {
 		luaL_addstring(&b, ": ");
-		lua_pushvalue(L, errmsg);
-		luaL_addvalue(&b);
+		lt_addvalue(L, &b, errmsg);
 	}
 	luaL_pushresult(&b);
 }
@@ -171,7 +170,7 @@ static int lt_assertRawEqual(lua_State* L)
 	return lt_assertRawOp(L, true, "== (raw)");
 }
 
-static int lt_assertRawNotEqual(lua_State* L)
+static int lt_assertNotRawEqual(lua_State* L)
 {
 	return lt_assertRawOp(L, false, "~= (raw)");
 }
@@ -222,6 +221,7 @@ static int lt_assertSubstring(lua_State* L)
 	const char* needle, * haystack, * ptr;
 	needle = luaL_checkstring(L, 1);
 	haystack = luaL_checkstring(L, 2);
+	lua_settop(L, 3); /* needle haystack msg */
 	if ((ptr = strstr(haystack, needle)) != NULL)
 	{
 		lua_pushinteger(L, ptr - haystack + 1);
@@ -238,6 +238,7 @@ static int lt_assertNotSubstring(lua_State* L)
 	const char* needle, * haystack, * ptr;
 	needle = luaL_checkstring(L, 1);
 	haystack = luaL_checkstring(L, 2);
+	lua_settop(L, 3); /* needle haystack msg */
 	if ((ptr = strstr(haystack, needle)) == NULL)
 	{
 		return 0;
@@ -262,6 +263,102 @@ static int lt_assertRaises(lua_State* L)
 	}
 }
 
+/* Deeply compare tables at indices t1 and t2
+ * such that every key in t1 maps equal values in t1 and t2
+ * If one value differs, returns 0 and pushes the key, the value
+ * in t1 and the value in t2 to the stack
+ * If t1 and t2 are equal, returns 1 otherwise. */
+static int lt_eqtables(lua_State* L, int t1, int t2)
+{
+	lua_State* L1;                  // main thread  | aux. thread
+	                                // -------------|---------------
+	L1 = lua_newthread(L);          // L1           |
+	lua_pushvalue(L, t1);           // L1 t1        |
+	lua_xmove(L, L1, 1);            // L1           | t1
+	lua_pushnil(L1);                // L1           | t1 nil
+	while (lua_next(L1, 1) != 0) {  // L1           | t1 k v1
+		lua_pushvalue(L1, -2);      // L1           | t1 k v1 k
+		lua_xmove(L1, L, 1);        // L1 k         | t1 k v1
+		lua_rawget(L, t2);          // L1 v2        | t1 k v1
+		lua_xmove(L, L1, 1);        // L1           | t1 k v1 v2
+		if (lua_compare(L1, -1, -2, LUA_OPEQ)) {
+			                        // if v1 == v2:
+			lua_pop(L1, 2);         // L1           | t1 k
+		} else {
+			                        // if v1 ~= v2:
+			lua_xmove(L1, L, 3);    // L1 k v1 v2   | t1
+			lua_remove(L, -4);      // k v1 v2      | (dead)
+			return 0;
+		}
+	}
+	lua_pop(L, 1);                  //              | (dead)
+	return 1;
+}
+
+/* Deeply compare tables at indices t1 and t2
+ * such that every key in t1 maps equal values in t1 and t2
+ * and vice-versa (in other words, the key-value pairs are identical)
+ * If one value differs, returns 0 and pushes the key, the value
+ * in t1 and the value in t2 to the stack
+ * If t1 and t2 are equal, returns 1 otherwise. */
+static int lt_deepeqtables(lua_State* L, int t1, int t2)
+{
+	if (!lt_eqtables(L, t1, t2)) {
+		return 0;
+	} else if (!lt_eqtables(L, t2, t1)) {
+		lua_insert(L, -2);  // invert v1 and v2
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
+/* Asserts two tables are deeply equal
+ * Usage: lt.assertDeepEqual(t1 : table, t2 : table, ...) */
+static int lt_assertDeepEqual(lua_State* L)
+{
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	lua_settop(L, 3);  // t1 t2 errmsg
+	if (!lt_deepeqtables(L, 1, 2)) {
+		luaL_Buffer b;
+		luaL_buffinit(L, &b);
+		luaL_addstring(&b, "tables ");
+		lt_addvalue(L, &b, 1);
+		luaL_addstring(&b, " and ");
+		lt_addvalue(L, &b, 2);
+		luaL_addstring(&b, " differ in key ");
+		lt_addvalue(L, &b, -3);
+		luaL_addstring(&b, " (");
+		lt_addvalue(L, &b, -2);
+		luaL_addstring(&b, " ~= ");
+		lt_addvalue(L, &b, -1);
+		luaL_addchar(&b, ')');
+		if (!lua_isnil(L, 3)) {
+			luaL_addstring(&b, ": ");
+			lt_addvalue(L, &b, 3);
+		}
+		luaL_pushresult(&b);
+		return lua_error(L);
+	}
+	return 0;
+}
+
+/* Asserts two tables are not deeply equal
+ * Usage: lt.assertNotDeepEqual(t1 : table, t2 : table, ...)
+ * Returns: key, value on t1, value on t2 that differ */
+static int lt_assertNotDeepEqual(lua_State* L)
+{
+	luaL_checktype(L, 1, LUA_TTABLE);
+	luaL_checktype(L, 2, LUA_TTABLE);
+	lua_settop(L, 3);  // t1 t2 errmsg
+	if (lt_deepeqtables(L, 1, 2)) {
+		lt_pushErrorString(L, 1, 2, " is not deeply equal to ", 3);
+		return lua_error(L);
+	}
+	return 3;
+}
+
 static int lt_udata(lua_State* L)
 {
 	lua_newuserdata(L, 0);
@@ -278,7 +375,7 @@ static luaL_Reg ltlib[] = {
 	{ "assertNil", lt_assertNil },
 	{ "assertNotNil", lt_assertNotNil },
 	{ "assertRawEqual", lt_assertRawEqual },
-	{ "assertRawNotEqual", lt_assertRawNotEqual },
+	{ "assertNotRawEqual", lt_assertNotRawEqual },
 	{ "assertTrue", lt_assertTrue },
 	{ "assertFalse", lt_assertFalse },
 	{ "assertType", lt_assertType },
@@ -288,6 +385,8 @@ static luaL_Reg ltlib[] = {
 	{ "assertSubstring", lt_assertSubstring },
 	{ "assertNotSubstring", lt_assertNotSubstring },
 	{ "assertRaises", lt_assertRaises },
+	{ "assertDeepEqual", lt_assertDeepEqual },
+	{ "assertNotDeepEqual", lt_assertNotDeepEqual },
 	{ "udata", lt_udata },
 	{ NULL, NULL },
 };

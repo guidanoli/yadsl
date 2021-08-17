@@ -211,8 +211,18 @@ static int bigint_tointeger(lua_State* L)
 	return 1;
 }
 
+static int bigint_optimize(lua_State* L)
+{
+	bigint_udata* udata;
+	yadsl_BigIntHandle *newbigint;
+	udata = check_bigint_udata(L, 1);
+	udata->bigint = yadsl_bigint_optimize(udata->bigint);
+	return 0;
+}
+
 static const struct luaL_Reg bigint_methods[] = {
 	{"to_integer", bigint_tointeger},
+	{"optimize", bigint_optimize},
 	{NULL, NULL}  /* sentinel */
 };
 

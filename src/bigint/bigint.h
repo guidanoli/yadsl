@@ -16,6 +16,7 @@ typedef enum
     YADSL_BIGINT_STATUS_INVALID_SIZE, /**< The 'size' field is invalid */
     YADSL_BIGINT_STATUS_INVALID_DIGITS, /**< The 'digits' field is invalid */
     YADSL_BIGINT_STATUS_INTEGER_OVERFLOW, /**< BigInt doesn't fit in fixed-size integer */
+    YADSL_BIGINT_STATUS_DIGIT_OVERFLOW, /**< The 'size' field is larger than the 'ndigits' field */
     YADSL_BIGINT_STATUS_STRING_FORMAT, /**< String does not follow format */
     YADSL_BIGINT_STATUS_MEMORY, /**< Could not allocate enough memory space */
 }
@@ -106,6 +107,16 @@ yadsl_bigint_from_string(
 char*
 yadsl_bigint_to_string(
 	yadsl_BigIntHandle const* bigint);
+
+/**
+ * @brief Optimize space usage of BigInt
+ * @param bigint BigInt to be optimized
+ * @return new handle for optimized BigInt
+ * or given handle if could not optimize BigInt
+*/
+yadsl_BigIntHandle*
+yadsl_bigint_optimize(
+    yadsl_BigIntHandle* bigint);
 
 /**
  * @brief BigInt identity
