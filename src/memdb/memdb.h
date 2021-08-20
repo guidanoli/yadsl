@@ -3,9 +3,7 @@
 
 /**
  * \defgroup memdb Memory Debugger
- * @brief The memory debugger provides a common interface for
- * all the allocation, reallocation and deallocation of dynamic
- * memory space and registration of listeners.
+ * @brief Interface for allocation and deallocation of memory and registration of listeners
  * @{
 */
 

@@ -7,11 +7,11 @@
 -- Usage as a Lua script
 -- =====================
 --
--- > lua lt/run.lua
+-- > lua luatester/run.lua
 --
 -------------------------------------------------
 
-local Driver = require "yadsl.driver"
+local Driver = require "luatester.driver"
 
 local Run = {}
 
@@ -57,7 +57,7 @@ end
 ---------------------------
 
 if type(arg) == "table" and arg[0]:find("run%.lua$") then
-	local testScripts = require "yadsl.tests"
+	local testScripts = require "luatester.tests"
 	local failed = Run:runTestScripts(testScripts)
 	os.exit(failed == 0)
 end

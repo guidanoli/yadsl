@@ -41,7 +41,7 @@ if(YADSL_PYTHON_SUPPORT)
 
 	# Get Python extension module suffix
 	execute_process(
-		COMMAND "${Python_EXECUTABLE}" "${YADSL_SOURCE_DIR}/yadsl/ext.py"
+		COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/config/ext.py"
 		OUTPUT_VARIABLE PYTHON_EXT_SUFFIX
 		RESULT_VARIABLE PYTHON_EXT_SUFFIX_NOT_FOUND) 
 

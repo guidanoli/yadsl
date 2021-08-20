@@ -79,7 +79,7 @@ jobs:
       - name: Install Python packages
         run: |
           pyenv exec pip install --upgrade pip
-          pyenv exec pip install -r src/yadsl/dev-requirements.txt
+          pyenv exec pip install -r config/dev-requirements.txt
 
       - name: Cache CMake
         id: cache-cmake
@@ -114,9 +114,7 @@ jobs:
         run: CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config "${{ matrix.build_type }}" --target test
 
       - name: Test Python
-        run: PYTHONPATH="$LIBDIR/python" pyenv exec pytest -s src --ignore=src/yadsl/templates
+        run: PYTHONPATH="$LIBDIR/python" pyenv exec pytest -s src
 
       - name: Test Lua
-        run: |
-          cd src
-          LUA_CPATH="../$LIBDIR/lua/?.so" lua yadsl/run.lua
+        run: LUA_CPATH="$LIBDIR/lua/?.so" LUA_PATH="src/?.lua" lua src/luatester/run.lua

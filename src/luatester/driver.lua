@@ -7,7 +7,7 @@
 -- Usage as a Lua script
 -- =====================
 --
--- > lua lt/driver.lua <script>
+-- > lua luatester/driver.lua <script>
 --
 -------------------------------------------------
 

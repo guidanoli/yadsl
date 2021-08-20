@@ -35,6 +35,19 @@ cmake .. -G <your-generator-name> <more-options>
 
 You can customize your build environment even more by adding optional ``-D<key>=<value>`` arguments.
 
+Here are the supported options for YADSL.
+
+| Option                     | Description                                                          | Default value |
+| :------------------------- | :------------------------------------------------------------------- | :------------ |
+| ``YADSL_BUILD_TESTS``      | Build basic unit tests                                               | ON            |
+| ``YADSL_BUILD_LONG_TESTS`` | Build unit tests that might take extra time to run                   | OFF           |
+| ``YADSL_BUILD_SELF_TESTS`` | Build unit tests that test the testing framework                     | OFF           |
+| ``YADSL_BUILD_ALL_TESTS``  | Build all unit tests                                                 | OFF           |
+| ``YADSL_LUA_SUPPORT``      | Build Lua libraries (requires Lua)                                   | OFF           |
+| ``YADSL_PYTHON_SUPPORT``   | Build Python libraries (requires Python)                             | OFF           |
+| ``YADSL_GENERATE_DOCS``    | Build documentation (requires Doxygen)                               | OFF           |
+| ``YADSL_CODE_COVERAGE``    | Build binaries ready for coverage tests (requires GCC or Clang/LLVM) | OFF           |
+
 ## Step 3: Compile the source code
 
 Having configured your build system, simply run:
