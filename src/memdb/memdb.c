@@ -57,9 +57,6 @@ typedef struct yadsl_MemDebugListener Listener;
 static Listener* g_listener_head; /* First listener */
 static Listener* g_current_listener; /* Current listener */
 
-/* Helper macro for checking if iteration is taking place */
-#define IS_LISTENING (g_current_listener != NULL)
-
 #ifdef YADSL_DEBUG
 /* Helper function for checking invariants (for debugging) */
 static void check_invariants()
@@ -152,13 +149,18 @@ yadsl_memdb_remove_listener(
 }
 
 static void
-_notify_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
+_log_event(yadsl_MemDebugEvent const* event, const void* ptr)
 {
 #ifdef YADSL_DEBUG
 	yadsl_MemDebugEvent eventcopy;
 	memcpy(&eventcopy, event, sizeof(eventcopy));
 #endif
-	
+	if (g_current_listener != NULL) {
+		/* If is iterating through listeners, it means that
+		 * event was triggered by a listener so we don't
+		 * notify listeners, as not to create infinite loops. */
+		return;
+	}
 	for (g_current_listener = g_listener_head;
 			g_current_listener != NULL;
 			g_current_listener = g_current_listener->next)
@@ -174,18 +176,16 @@ _notify_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
 }
 
 static void
-notify_listeners(yadsl_MemDebugEvent const* event, const void* ptr)
+log_event(yadsl_MemDebugEvent const* event, const void* ptr)
 {
 #ifdef YADSL_DEBUG
-	assert(!IS_LISTENING && "not listening to any events");
 	assert(event != NULL);
 	assert(event->function >= 0 && event->function < YADSL_MEMDB_FUNCTION_MAX);
 	assert(event->file != NULL);
 	check_invariants();
 #endif
-	_notify_listeners(event, ptr);
+	_log_event(event, ptr);
 #ifdef YADSL_DEBUG
-	assert(!IS_LISTENING && "not listening to any events");
 	check_invariants();
 #endif
 }
@@ -212,18 +212,22 @@ yadsl_memdb_free(
 
 	free(ptr);
 
-	if (!IS_LISTENING) {
-		notify_listeners(&event, NULL);
-	}
+	log_event(&event, NULL);
 }
 
 static bool
-_ask_listeners(yadsl_MemDebugEvent const* event)
+_can_event_occur(yadsl_MemDebugEvent const* event)
 {
 #ifdef YADSL_DEBUG
 	yadsl_MemDebugEvent eventcopy;
 	memcpy(&eventcopy, event, sizeof(eventcopy));
 #endif
+	if (g_current_listener != NULL) {
+		/* If is already iterating through listeners, it
+		 * means that event was triggered by one of the
+		 * listeners, so we don't interfere with it. */
+		return true;
+	}
 	g_current_listener = g_listener_head;
 	while (g_current_listener != NULL) {
 		if (g_current_listener->ask_cb != NULL) {
@@ -241,19 +245,17 @@ _ask_listeners(yadsl_MemDebugEvent const* event)
 }
 
 static bool
-ask_listeners(yadsl_MemDebugEvent const* event)
+can_event_occur(yadsl_MemDebugEvent const* event)
 {
 	bool ok;
 #ifdef YADSL_DEBUG
-	assert(!IS_LISTENING && "not listening to any events");
 	assert(event != NULL);
 	assert(event->function >= 0 && event->function < YADSL_MEMDB_FUNCTION_MAX);
 	assert(event->file != NULL);
 	check_invariants();
 #endif
-	ok = _ask_listeners(event);
+	ok = _can_event_occur(event);
 #ifdef YADSL_DEBUG
-	assert(!IS_LISTENING && "not listening to any events");
 	check_invariants();
 #endif
 	return ok;
@@ -281,15 +283,13 @@ yadsl_memdb_malloc(
 		},
 	};
 
-	if (!IS_LISTENING && ask_listeners(&event)) {
+	if (can_event_occur(&event)) {
 		ptr = malloc(size);
 	} else {
 		ptr = NULL;
 	}
 
-	if (!IS_LISTENING) {
-		notify_listeners(&event, ptr);
-	}
+	log_event(&event, ptr);
 
 	return ptr;
 }
@@ -318,15 +318,13 @@ yadsl_memdb_realloc(
 		},
 	};
 	
-	if (!IS_LISTENING && ask_listeners(&event)) {
+	if (can_event_occur(&event)) {
 		newptr = realloc(ptr, size);
 	} else {
 		newptr = NULL;
 	}
 
-	if (!IS_LISTENING) {
-		notify_listeners(&event, newptr);
-	}
+	log_event(&event, newptr);
 	
 	return newptr;
 }
@@ -355,15 +353,13 @@ yadsl_memdb_calloc(
 		},
 	};
 
-	if (!IS_LISTENING && ask_listeners(&event)) {
+	if (can_event_occur(&event)) {
 		ptr = calloc(nmemb, size);
 	} else {
 		ptr = NULL;
 	}
 
-	if (!IS_LISTENING) {
-		notify_listeners(&event, ptr);
-	}
+	log_event(&event, ptr);
 
 	return ptr;
 }

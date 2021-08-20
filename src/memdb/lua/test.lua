@@ -475,4 +475,81 @@ function t:testPcallBasicPaths()
 	end
 end
 
+function t:testListenerAllocatingMemory()
+	-- Allocating inside listen_cb
+	do
+		local events = {}
+		local constptrs = {}
+		local ptr
+		local ok, ret = memdb.pcall{
+			memdb.malloc, 8, 'abc', 123,
+			listen_cb = function(e, p)
+				table.insert(events, e)
+				table.insert(constptrs, p)
+				ptr = memdb.malloc(4, 'cde', 234)
+			end,
+		}
+		lt.assertTrue(ok)
+		lt.assertEqual(#constptrs, 1)
+		self:assertNotNull(ret)
+		lt.assertEqual(ret:asconst(), constptrs[1])
+		lt.assertEqual(#events, 1)
+		lt.assertDeepEqual(events[1], {
+			func = 'malloc',
+			file = 'abc',
+			line = 123,
+			size = 8,
+		})
+		self:assertNotNull(ptr)
+		lt.assertNotEqual(ptr, ret)
+	end
+	-- Allocating inside ask_cb that approves
+	do
+		local events = {}
+		local ptr
+		local ok, ret = memdb.pcall{
+			memdb.malloc, 8, 'abc', 123,
+			ask_cb = function(e)
+				table.insert(events, e)
+				ptr = memdb.malloc(4, 'cde', 234)
+				return true
+			end,
+		}
+		lt.assertTrue(ok)
+		self:assertNotNull(ret)
+		lt.assertEqual(#events, 1)
+		lt.assertDeepEqual(events[1], {
+			func = 'malloc',
+			file = 'abc',
+			line = 123,
+			size = 8,
+		})
+		self:assertNotNull(ptr)
+		lt.assertNotEqual(ptr, ret)
+	end
+	-- Allocating inside ask_cb that denies
+	do
+		local events = {}
+		local ptr
+		local ok, ret = memdb.pcall{
+			memdb.malloc, 8, 'abc', 123,
+			ask_cb = function(e)
+				table.insert(events, e)
+				ptr = memdb.malloc(4, 'cde', 234)
+				return false
+			end,
+		}
+		lt.assertFalse(ok)
+		lt.assertSubstring('bad malloc', ret)
+		lt.assertEqual(#events, 1)
+		lt.assertDeepEqual(events[1], {
+			func = 'malloc',
+			file = 'abc',
+			line = 123,
+			size = 8,
+		})
+		self:assertNotNull(ptr)
+	end
+end
+
 return t
