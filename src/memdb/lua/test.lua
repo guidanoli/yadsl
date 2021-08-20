@@ -143,6 +143,7 @@ function t:testListen()
 		local constptr = nil
 		table.insert(case.args, file)
 		table.insert(case.args, line)
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			listen_cb = function(e, p)
 				event = e
@@ -229,6 +230,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb
 	do
 		local event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -249,6 +251,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb raising error
 	do
 		local event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -327,6 +330,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb + ask_cb raising error
 	do
 		local levent, event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -351,6 +355,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb + ask_cb returning true
 	do
 		local levent, event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -376,6 +381,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb + ask_cb returning false
 	do
 		local levent, event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -400,6 +406,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb raising error + ask_cb raising error
 	do
 		local levent, event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -425,6 +432,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb raising error + ask_cb returning true
 	do
 		local levent, event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -451,6 +459,7 @@ function t:testPcallBasicPaths()
 	-- function + listen_cb raising error + ask_cb returning false
 	do
 		local levent, event, constptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
@@ -481,6 +490,7 @@ function t:testListenerAllocatingMemory()
 		local events = {}
 		local constptrs = {}
 		local ptr
+		collectgarbage()
 		local ok, ret = memdb.pcall{
 			memdb.malloc, 8, 'abc', 123,
 			listen_cb = function(e, p)
